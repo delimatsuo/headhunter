@@ -9,3 +9,23 @@ Create GCP project, enable required APIs, set up service accounts, configure Fir
 
 # Test Strategy:
 Verify all required services are enabled and accessible via API
+
+# Subtasks:
+## 1. Create GCP project and enable core APIs [pending]
+### Dependencies: None
+### Description: Set up new GCP project and enable Vertex AI, Firestore, Cloud Storage, and Cloud Functions APIs
+### Details:
+
+
+## 2. Configure service accounts and IAM permissions [pending]
+### Dependencies: None
+### Description: Create service accounts with appropriate permissions for Vertex AI, Firestore, and Cloud Storage access
+### Details:
+
+
+## 3. Set up Firebase Hosting and Functions [pending]
+### Dependencies: None
+### Description: Initialize Firebase project and configure Hosting and Cloud Functions for the web application
+### Details:
+
+

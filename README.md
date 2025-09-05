@@ -38,6 +38,8 @@ An intelligent system for analyzing recruitment data using local LLMs to extract
 - Python 3.x
 - Ollama installed locally
 - At least 5GB free disk space for Llama 3.1 8b model
+- Google Cloud Platform account (for cloud features)
+- Firebase CLI (for deployment)
 
 ### Optional Dependencies for Resume Text Extraction
 
@@ -55,6 +57,9 @@ brew install tesseract  # or pip install pytesseract pillow
 
 # For generating test files
 pip install reportlab
+
+# For Google Cloud Platform features
+pip install google-cloud-aiplatform google-cloud-firestore google-cloud-storage
 ```
 
 ## Installation
@@ -91,6 +96,28 @@ ollama list
 ollama run llama3.1:8b "Hello, are you working?"
 ```
 
+### 4. Google Cloud Platform Setup (Optional)
+
+For cloud features like Vertex AI, Firestore, and Cloud Functions:
+
+```bash
+# Run automated setup script
+./scripts/setup_gcp_infrastructure.sh
+
+# Or follow manual setup in docs/gcp-infrastructure-setup.md
+
+# Test connectivity
+python scripts/test_gcp_connectivity.py
+```
+
+The GCP infrastructure includes:
+- **Project ID**: `headhunter-ai-0088`
+- **Vertex AI**: Enhanced LLM processing
+- **Firestore**: Structured data storage
+- **Cloud Storage**: File storage for resumes
+- **Cloud Functions**: Serverless API endpoints
+- **Firebase Hosting**: Web application deployment
+
 ## Testing
 
 Run the test suites:
@@ -107,6 +134,9 @@ PYTHONPATH=scripts python tests/test_llm_processor.py
 
 # Test resume text extraction
 python tests/test_resume_extractor.py
+
+# Test GCP infrastructure connectivity
+python scripts/test_gcp_connectivity.py
 ```
 
 Tests include:
@@ -122,6 +152,10 @@ Tests include:
 - OCR functionality validation
 - Batch file processing tests
 - Error handling for unsupported formats
+- GCP infrastructure connectivity and permissions
+- Firestore database operations
+- Cloud Storage access
+- Vertex AI API functionality
 
 ## Project Structure
 
@@ -141,7 +175,23 @@ headhunter/
 │   ├── llm_prompts.py          # Resume analysis prompts
 │   ├── recruiter_prompts.py    # Recruiter comment analysis
 │   ├── llm_processor.py        # Integrated processing pipeline
-│   └── resume_extractor.py     # Text extraction from files
+│   ├── resume_extractor.py     # Text extraction from files
+│   ├── setup_gcp_infrastructure.sh  # GCP setup automation
+│   └── test_gcp_connectivity.py     # Infrastructure testing
+├── docs/               # Documentation
+│   └── gcp-infrastructure-setup.md  # GCP setup guide
+├── functions/          # Cloud Functions
+│   ├── package.json           # Node.js dependencies
+│   └── index.js              # Function implementations
+├── public/             # Firebase Hosting files
+│   └── index.html            # Web application
+├── .gcp/              # GCP credentials (not in git)
+│   └── headhunter-service-key.json  # Service account key
+├── firebase.json      # Firebase configuration
+├── .firebaserc        # Firebase project settings
+├── firestore.rules    # Firestore security rules
+├── firestore.indexes.json  # Database indexes
+├── storage.rules      # Cloud Storage security rules
 ├── CSV files/          # Data directory
 └── README.md           # This file
 ```
@@ -177,7 +227,8 @@ For each completed task:
 - ✅ Task #3: Create LLM prompts for recruiter comments complete
 - ✅ Task #4: Implement Python LLM processor complete
 - ✅ Task #5: Implement resume text extraction complete
-- ⏳ Task #6: Set up Google Cloud Platform infrastructure (next)
+- ✅ Task #6: Set up Google Cloud Platform infrastructure complete
+- ⏳ Task #7: Implement quality validation system (next)
 
 ## Resume Analysis Usage
 
