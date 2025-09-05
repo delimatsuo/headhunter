@@ -1,0 +1,248 @@
+candidate_id,name,role_level,resume_text,recruiter_comments
+1,Sarah Chen,Senior Engineer,"Sarah Chen - Senior Software Engineer
+
+Experience:
+Senior Software Engineer | Google (2019-Present)
+- Led architecture redesign improving performance by 40%
+- Mentored 8 junior engineers, 5 promoted to senior roles
+- Built distributed systems serving 100M+ users daily
+
+Software Engineer | Microsoft (2016-2019)
+- Developed cloud infrastructure components
+- Contributed to Azure container platform
+- Led cross-team integration projects
+
+Junior Developer | Tech Startup (2014-2016)
+- Full-stack web development
+- Implemented CI/CD pipelines
+
+Education:
+MS Computer Science - Stanford University (2014)
+BS Computer Science - UC Berkeley (2012)
+
+Skills: Python, Java, Go, Kubernetes, AWS, System Design, Leadership","Great interview with Sarah. Very strong technical background and excellent communication skills. She demonstrated deep system design knowledge and gave thoughtful answers about scaling challenges. 
+
+Leadership experience is impressive - her team has 95% retention rate which is exceptional. She's clearly invested in developing others.
+
+Some concerns about culture fit - she's used to big tech environments and our startup culture might be different. However, she asked great questions about our growth trajectory and seemed genuinely excited about the opportunity.
+
+Technical assessment was excellent - solved complex problems efficiently and explained her thought process clearly. Would recommend moving forward with team interviews."
+
+2,Marcus Rodriguez,Lead Engineer,"Marcus Rodriguez
+Principal Engineer
+
+Professional Summary:
+Technical leader with 12+ years building scalable systems and leading engineering teams.
+
+Experience:
+
+Principal Engineer | Netflix (2020-Present)
+• Architect for recommendation platform serving 200M+ users
+• Lead technical strategy for ML infrastructure
+• Built real-time data pipeline processing 1TB+ daily
+• Mentor for senior engineering promotion track
+
+Senior Engineer | Uber (2017-2020)
+• Led marketplace optimization team (15 engineers)
+• Reduced ride matching latency by 60%
+• Implemented dynamic pricing algorithms
+
+Engineer | PayPal (2014-2017)
+• Payment processing system development
+• Fraud detection algorithm improvements
+
+Software Developer | Accenture (2011-2014)
+• Enterprise software consulting
+
+Education:
+MS Software Engineering - Carnegie Mellon (2011)
+
+Skills: Python, Scala, Java, Apache Spark, Kafka, AWS, GCP, Machine Learning, Team Leadership","Exceptional candidate for the Principal Engineer role. Marcus has exactly the kind of experience we need for scaling our ML platform.
+
+His work at Netflix on recommendation systems is directly relevant. The scale he's operated at (200M users) far exceeds our current needs, which gives confidence he can handle our growth.
+
+Leadership style seems collaborative - gave specific examples of mentoring and cross-team projects. His team at Uber delivered consistently while maintaining high engineering standards.
+
+Only potential concern is compensation expectations - he's coming from FAANG and we may be at the lower end of his range. However, he expressed interest in our mission and startup environment.
+
+Technical deep-dive was impressive. Drew out system architecture on the whiteboard and identified potential bottlenecks we hadn't considered. This person could immediately contribute to our technical strategy.
+
+Strong hire recommendation."
+
+3,Emily Watson,Entry Level,"Emily Watson
+Software Developer
+
+Objective:
+Recent computer science graduate seeking entry-level software development position to apply my academic knowledge and internship experience.
+
+Education:
+Bachelor of Science in Computer Science
+University of Washington (Graduated May 2023)
+GPA: 3.8/4.0, Dean's List
+
+Experience:
+
+Software Engineering Intern | Amazon (Summer 2022)
+• Developed features for Prime Video recommendation engine
+• Wrote unit tests achieving 95% code coverage
+• Participated in code reviews and agile ceremonies
+
+Teaching Assistant | UW Computer Science (2021-2023)
+• Assisted with Data Structures course for 150+ students
+• Held weekly office hours and graded assignments
+• Helped students debug complex programming problems
+
+Projects:
+
+Task Management Web App (Capstone Project)
+• Built full-stack application using React and Node.js
+• Implemented user authentication and real-time updates
+• Deployed on AWS with CI/CD pipeline
+
+Mobile Expense Tracker (Personal Project)
+• iOS app built with Swift and Core Data
+• Published on App Store with 200+ downloads
+
+Open Source Contributions:
+• Contributed bug fixes to React Native
+• Active member of local tech meetups
+
+Technical Skills:
+Programming: Python, Java, JavaScript, Swift, C++
+Web: React, Node.js, HTML/CSS, REST APIs
+Database: MySQL, PostgreSQL, MongoDB
+Tools: Git, Docker, AWS, Xcode","Phone screen with Emily went well. She's clearly bright and has good fundamentals from her CS program. The Amazon internship gives her some real-world experience which is valuable.
+
+Positives:
+- Great enthusiasm and eagerness to learn
+- Solid technical foundation from UW program
+- The Prime Video internship shows she can work in a professional environment
+- Her side projects demonstrate initiative and passion
+- Asked thoughtful questions about our engineering practices
+
+Areas for growth:
+- Limited production experience beyond the internship
+- Would need significant mentoring and onboarding
+- Not familiar with our specific tech stack (Python/Django)
+- Some nervousness during technical questions
+
+For an entry-level position, she shows promise. Her GPA and internship performance suggest she's a quick learner. The teaching assistant role shows she can explain complex concepts, which is valuable for team collaboration.
+
+Salary expectations are reasonable for a new grad. If we have the bandwidth to provide proper mentoring, she could develop into a strong contributor.
+
+Recommend bringing her in for team interviews to assess culture fit and learning ability."
+
+4,James Thompson,Senior Manager,"James Thompson
+Senior Engineering Manager
+
+Professional Experience:
+
+Senior Engineering Manager | Slack (2019-Present)
+- Manage 25 engineers across 3 product teams
+- Responsible for platform reliability (99.99% uptime)
+- Led migration to microservices architecture
+- Grew team from 12 to 25 engineers during scale-up
+
+Engineering Manager | Dropbox (2016-2019)
+- Built and managed file sync team (15 engineers)
+- Delivered major storage optimization saving $2M annually  
+- Established engineering hiring processes and standards
+- Mentored 5 engineers to senior roles
+
+Senior Software Engineer | Twitter (2013-2016)
+- Tech lead for timeline infrastructure
+- Scaled systems from 100M to 300M daily active users
+- Led incident response for major outages
+
+Software Engineer | Square (2011-2013)
+- Payment processing system development
+- Early contributor to mobile SDK
+
+Education:
+MS Computer Science - UC Berkeley (2011)
+BS Electrical Engineering - Georgia Tech (2009)
+
+Leadership Philosophy:
+Servant leadership focused on unblocking teams and developing people. Believe in clear communication, data-driven decisions, and creating psychologically safe environments for innovation.
+
+Recent Achievements:
+- Team satisfaction score: 4.8/5.0
+- Reduced time-to-delivery by 30%
+- Zero critical production incidents in 2023","Excellent conversation with James for the Engineering Manager role. This is exactly the kind of experienced leader we need as we scale our engineering organization.
+
+His track record at Slack is particularly relevant - managed teams through hypergrowth while maintaining high reliability standards. The fact that he grew his team from 12 to 25 engineers shows he can handle scaling challenges.
+
+Leadership approach resonates with our values:
+- Focuses on developing people (5 promotions to senior roles)
+- Data-driven decision making
+- Strong emphasis on team culture and satisfaction (4.8/5 score)
+- Hands-on enough to understand technical challenges
+
+The combination of strong technical background (was a senior IC) and proven management skills is rare. His experience with incident response and reliability will be crucial for our SaaS platform.
+
+Cultural fit seems excellent - asked thoughtful questions about our engineering culture and growth plans. Showed genuine interest in our mission and market opportunity.
+
+Compensation expectations are within our range for this level. References from Dropbox and Slack were very positive - described as 'best manager they've worked with.'
+
+This is a strong hire that could immediately improve our engineering effectiveness and team satisfaction. Recommend extending offer."
+
+5,Lisa Park,Mid-Level,"Lisa Park
+Full-Stack Developer
+
+About:
+Creative developer with 4 years of experience building user-focused applications. Passionate about clean code and great user experiences.
+
+Experience:
+
+Full-Stack Developer | Spotify (2020-Present)
+- Built features for artist dashboard used by 50K+ musicians
+- Implemented A/B testing framework for UI experiments
+- Reduced page load times by 45% through optimization
+- Collaborated with design team on user research
+
+Software Developer | Medium (2018-2020)  
+- Developed content management system features
+- Built recommendation algorithm improving engagement 25%
+- Mentored 2 junior developers
+- Led migration from PHP to Node.js
+
+Junior Developer | Local Agency (2016-2018)
+- Client websites and e-commerce platforms
+- Learned foundation of web development
+
+Freelance Projects:
+- E-commerce platform for local businesses
+- Portfolio websites for creative professionals
+
+Education:
+Coding Bootcamp - General Assembly (2016)
+BA Art History - UCLA (2014)
+
+Technical Skills:
+Frontend: React, Vue.js, TypeScript, HTML/CSS, Design Systems
+Backend: Node.js, Python, PostgreSQL, MongoDB
+Tools: Git, Docker, AWS, Figma
+
+Personal:
+Art background brings unique perspective to product development. Volunteer teach coding workshops for underrepresented groups.","Mixed feelings about Lisa's interview. She has solid mid-level skills and good experience at well-known companies, but some concerns came up.
+
+Strengths:
+- Strong portfolio of work, especially the artist dashboard at Spotify
+- Good collaboration skills with design teams
+- The art background gives her a unique perspective on UX/UI
+- Performance optimization work shows technical depth
+- Mentoring experience demonstrates leadership potential
+
+Concerns:
+- Job hopping pattern - 4 companies in 6 years
+- When asked about challenges, tended to blame external factors rather than taking ownership
+- Some gaps in backend knowledge for our stack
+- Seemed more interested in frontend/design work than full-stack role
+
+Technical assessment was decent but not exceptional. Solved problems correctly but took longer than expected on algorithm questions.
+
+The non-traditional background (art history + bootcamp) isn't necessarily negative, but combined with the job pattern makes me question long-term commitment.
+
+She's asking for senior-level compensation but experience feels more solid mid-level. Would need to see growth into technical leadership for that salary range.
+
+Maybe hire with focus on frontend/UX work initially and see how she develops. Team should meet her to assess culture fit."

@@ -4,23 +4,28 @@ An intelligent system for analyzing recruitment data using local LLMs to extract
 
 ## Features
 
-- Local LLM processing using Ollama and Llama 3.1 8b
-- Resume analysis and career trajectory insights
-- Structured JSON output for all analysis results
-- Multi-dimensional candidate assessment:
+- **Local LLM processing** using Ollama and Llama 3.1 8b
+- **Integrated processing pipeline** with CSV input/JSON output
+- **Resume analysis** with multi-dimensional assessment:
   - Career trajectory and progression speed
   - Leadership scope and experience
   - Company pedigree analysis
   - Technical and soft skills extraction
   - Cultural fit signals
-- Recruiter comment analysis:
+- **Recruiter comment analysis**:
   - Sentiment and recommendation extraction
   - Strengths, concerns, and red flags identification
   - Leadership insights from feedback
   - Cultural fit assessment
   - Readiness evaluation
   - Competitive advantage identification
-- Pattern recognition across candidate profiles
+- **Batch processing capabilities**:
+  - CSV file input with flexible schema
+  - JSON structured output with metadata
+  - Processing statistics and performance metrics
+  - Health monitoring and error handling
+- **Command-line interface** for automation
+- **Python API** for integration
 
 ## Prerequisites
 
@@ -131,7 +136,8 @@ For each completed task:
 - ✅ Task #1: Ollama with Llama 3.1 8b setup complete
 - ✅ Task #2: Create LLM prompts for resume analysis complete
 - ✅ Task #3: Create LLM prompts for recruiter comments complete
-- ⏳ Task #4: Implement Python LLM processor (next)
+- ✅ Task #4: Implement Python LLM processor complete
+- ⏳ Task #5: Implement resume text extraction (next)
 
 ## Resume Analysis Usage
 
@@ -170,6 +176,54 @@ print(f"Recommendation: {insights.recommendation}")
 print(f"Key Strengths: {insights.strengths}")
 print(f"Concerns: {insights.concerns}")
 print(f"Cultural Fit: {insights.cultural_fit['cultural_alignment']}")
+```
+
+## LLM Processing Pipeline Usage
+
+### Command Line Interface
+
+```bash
+# Health check
+python3 scripts/llm_processor.py --health-check
+
+# Process CSV file
+python3 scripts/llm_processor.py input_data.csv -o results.json
+
+# Process with limits
+python3 scripts/llm_processor.py input_data.csv --limit 10 -o results.json
+
+# Use different model
+python3 scripts/llm_processor.py input_data.csv -m llama3.1:8b -o results.json
+```
+
+### Python API
+
+```python
+from scripts.llm_processor import LLMProcessor
+
+# Initialize processor
+processor = LLMProcessor()
+
+# Process single record
+record = {
+    'candidate_id': '001',
+    'name': 'John Doe', 
+    'resume_text': 'Resume content...',
+    'recruiter_comments': 'Feedback...'
+}
+profile = processor.process_single_record(record)
+
+# Process batch from CSV
+profiles, stats = processor.process_batch('data.csv', output_file='results.json')
+print(f"Processed {stats.successful}/{stats.total_records} records")
+```
+
+### Expected CSV Format
+
+```csv
+candidate_id,name,role_level,resume_text,recruiter_comments
+1,John Doe,Senior,"Resume content here","Recruiter feedback here"
+2,Jane Smith,Manager,"Resume content here","Recruiter feedback here"
 ```
 
 ## API Usage

@@ -28,7 +28,7 @@
         "id": 3,
         "title": "Create LLM prompts for recruiter comments analysis",
         "description": "Design prompts to synthesize insights from recruiter comments and qualitative feedback",
-        "status": "in-progress",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           1
@@ -40,7 +40,7 @@
         "id": 4,
         "title": "Implement Python LLM processing pipeline",
         "description": "Build Python script that integrates Ollama API to process unstructured data into structured JSON profiles",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "high",
         "dependencies": [
           2,
@@ -309,7 +309,7 @@
     ],
     "metadata": {
       "created": "2025-09-05T18:18:48.859Z",
-      "updated": "2025-09-05T19:36:21.478Z",
+      "updated": "2025-09-05T21:14:16.646Z",
       "description": "Tasks for master context"
     }
   }
