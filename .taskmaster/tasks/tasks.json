@@ -4,12 +4,13 @@
       {
         "id": 1,
         "title": "Set up Ollama with Llama 3.1 8b",
-        "description": "Install and configure Ollama locally, pull the llama3.1:8b model for LLM-powered data processing",
-        "status": "pending",
-        "priority": "high",
+        "description": "Install and configure Ollama locally, pull the llama3.1:8b model for LLM-powered data processing - COMPLETED",
+        "status": "done",
         "dependencies": [],
-        "details": "Install Ollama on Mac, pull llama3.1:8b model, verify local LLM functionality for processing unstructured candidate data",
-        "testStrategy": "Run ollama run llama3.1:8b and verify model loads and responds to basic prompts"
+        "priority": "high",
+        "details": "Successfully installed Ollama on Mac and pulled llama3.1:8b model (4.9 GB). Verified local LLM functionality with test prompts. System is now ready for processing unstructured candidate data including resume analysis and recruiter comment synthesis.",
+        "testStrategy": "Completed: Ran ollama run llama3.1:8b, verified model loads correctly and responds accurately to basic prompts. Model is operational and ready for production use.",
+        "subtasks": []
       },
       {
         "id": 2,
@@ -46,7 +47,45 @@
           3
         ],
         "details": "Create llm_processor.py with functions to: read CSV data, call Ollama API with prompts, parse LLM responses, generate structured JSON profiles",
-        "testStrategy": "Process sample candidate data and validate output JSON structure matches requirements"
+        "testStrategy": "Process sample candidate data and validate output JSON structure matches requirements",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up Ollama API client integration",
+            "description": "Create Python functions to interact with Ollama API for LLM processing",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 4
+          },
+          {
+            "id": 2,
+            "title": "Implement CSV data loading and preprocessing",
+            "description": "Build functions to load candidate and comment data from CSV files with proper data cleaning",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 4
+          },
+          {
+            "id": 3,
+            "title": "Create LLM prompt orchestration system",
+            "description": "Build system to dynamically select and execute appropriate prompts for different data types",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 4
+          },
+          {
+            "id": 4,
+            "title": "Implement JSON output parsing and validation",
+            "description": "Build robust parsing system for LLM responses with error handling and data validation",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 4
+          }
+        ]
       },
       {
         "id": 5,
@@ -58,7 +97,36 @@
           4
         ],
         "details": "Integrate PyPDF2, python-docx, and OCR libraries to extract text from resume files before LLM processing",
-        "testStrategy": "Test text extraction from various resume formats and verify quality"
+        "testStrategy": "Test text extraction from various resume formats and verify quality",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Integrate PDF text extraction with PyPDF2",
+            "description": "Add PyPDF2 library and implement PDF text extraction functionality",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 5
+          },
+          {
+            "id": 2,
+            "title": "Add DOCX text extraction with python-docx",
+            "description": "Implement Microsoft Word document text extraction functionality",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 5
+          },
+          {
+            "id": 3,
+            "title": "Implement OCR for image-based resumes",
+            "description": "Add Tesseract OCR functionality for extracting text from scanned resume images",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 5
+          }
+        ]
       },
       {
         "id": 6,
@@ -68,7 +136,36 @@
         "priority": "high",
         "dependencies": [],
         "details": "Create GCP project, enable required APIs, set up service accounts, configure Firebase Hosting and Functions",
-        "testStrategy": "Verify all required services are enabled and accessible via API"
+        "testStrategy": "Verify all required services are enabled and accessible via API",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create GCP project and enable core APIs",
+            "description": "Set up new GCP project and enable Vertex AI, Firestore, Cloud Storage, and Cloud Functions APIs",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 6
+          },
+          {
+            "id": 2,
+            "title": "Configure service accounts and IAM permissions",
+            "description": "Create service accounts with appropriate permissions for Vertex AI, Firestore, and Cloud Storage access",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 6
+          },
+          {
+            "id": 3,
+            "title": "Set up Firebase Hosting and Functions",
+            "description": "Initialize Firebase project and configure Hosting and Cloud Functions for the web application",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 6
+          }
+        ]
       },
       {
         "id": 7,
@@ -80,7 +177,18 @@
           4
         ],
         "details": "Implement JSON schema validation, output quality scoring, and fallback mechanisms for LLM responses",
-        "testStrategy": "Test validation system with known good/bad outputs and verify error handling"
+        "testStrategy": "Test validation system with known good/bad outputs and verify error handling",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create JSON schema validation for LLM outputs",
+            "description": "Define and implement JSON schema validation for structured LLM response parsing",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 7
+          }
+        ]
       },
       {
         "id": 8,
@@ -92,7 +200,18 @@
           6
         ],
         "details": "Implement Node.js/TypeScript Cloud Function that triggers on GCS uploads, calls Vertex AI Gemini, and stores results in Firestore",
-        "testStrategy": "Test end-to-end flow from file upload to enriched profile storage"
+        "testStrategy": "Test end-to-end flow from file upload to enriched profile storage",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Cloud Function boilerplate and deployment setup",
+            "description": "Set up basic Cloud Function structure with TypeScript and deployment configuration",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 8
+          }
+        ]
       },
       {
         "id": 9,
@@ -104,7 +223,18 @@
           6
         ],
         "details": "Create vector embeddings from candidate profiles, configure Vector Search index, implement similarity search functionality",
-        "testStrategy": "Test vector search with sample profiles and verify relevant results"
+        "testStrategy": "Test vector search with sample profiles and verify relevant results",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up Vertex AI Vector Search index",
+            "description": "Create and configure Vector Search index for candidate profile embeddings",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 9
+          }
+        ]
       },
       {
         "id": 10,
@@ -117,7 +247,18 @@
           9
         ],
         "details": "Implement semantic search logic, ranking algorithm, and JSON response formatting for candidate matches with rationale",
-        "testStrategy": "Test API with sample job descriptions and validate match quality and ranking"
+        "testStrategy": "Test API with sample job descriptions and validate match quality and ranking",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement semantic search logic and ranking algorithm",
+            "description": "Build the core search algorithm that matches job descriptions to candidate profiles using embeddings",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 10
+          }
+        ]
       },
       {
         "id": 11,
@@ -129,7 +270,18 @@
           10
         ],
         "details": "Create React app with: JD input form, results display with candidate cards, 'Why they're a match' explanations, deployed to Firebase Hosting",
-        "testStrategy": "Test complete user flow from JD input to candidate selection"
+        "testStrategy": "Test complete user flow from JD input to candidate selection",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create React app structure and basic components",
+            "description": "Set up React application with routing, state management, and core component structure",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 11
+          }
+        ]
       },
       {
         "id": 12,
@@ -141,12 +293,23 @@
           11
         ],
         "details": "Implement Firebase Authentication, secure API calls, data access controls, and privacy protections",
-        "testStrategy": "Test authentication flows and verify secure data handling"
+        "testStrategy": "Test authentication flows and verify secure data handling",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Firebase Authentication setup",
+            "description": "Configure Firebase Auth with secure login/logout flows and user session management",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 12
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-09-05T18:18:48.859Z",
-      "updated": "2025-09-05T18:18:48.860Z",
+      "updated": "2025-09-05T18:35:37.839Z",
       "description": "Tasks for master context"
     }
   }
