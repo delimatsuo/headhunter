@@ -1,14 +1,19 @@
 {
   "name": "headhunter-functions",
   "version": "1.0.0",
-  "description": "Cloud Functions for Headhunter AI",
-  "main": "index.js",
+  "description": "Cloud Functions for Headhunter AI data enrichment pipeline",
+  "main": "lib/index.js",
   "scripts": {
-    "serve": "firebase emulators:start --only functions",
-    "shell": "firebase functions:shell",
+    "build": "tsc",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
-    "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
+    "deploy": "npm run build && firebase deploy --only functions",
+    "logs": "firebase functions:log",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix"
   },
   "engines": {
     "node": "20"
@@ -20,10 +25,29 @@
     "firebase-admin": "^12.6.0",
     "firebase-functions": "^6.1.1",
     "express": "^4.21.2",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
-    "firebase-functions-test": "^3.3.0"
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.17",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.56.0",
+    "firebase-functions-test": "^3.3.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.3.3"
   },
+  "keywords": [
+    "cloud-functions",
+    "firebase",
+    "vertex-ai",
+    "headhunter",
+    "recruitment",
+    "ai"
+  ],
   "private": true
 }
