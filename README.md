@@ -13,7 +13,13 @@ An intelligent system for analyzing recruitment data using local LLMs to extract
   - Company pedigree analysis
   - Technical and soft skills extraction
   - Cultural fit signals
-- Recruiter comment synthesis
+- Recruiter comment analysis:
+  - Sentiment and recommendation extraction
+  - Strengths, concerns, and red flags identification
+  - Leadership insights from feedback
+  - Cultural fit assessment
+  - Readiness evaluation
+  - Competitive advantage identification
 - Pattern recognition across candidate profiles
 
 ## Prerequisites
@@ -124,7 +130,8 @@ For each completed task:
 
 - ✅ Task #1: Ollama with Llama 3.1 8b setup complete
 - ✅ Task #2: Create LLM prompts for resume analysis complete
-- ⏳ Task #3: Create LLM prompts for recruiter comments (next)
+- ✅ Task #3: Create LLM prompts for recruiter comments complete
+- ⏳ Task #4: Implement Python LLM processor (next)
 
 ## Resume Analysis Usage
 
@@ -143,6 +150,26 @@ print(f"Career Level: {analysis.career_trajectory['current_level']}")
 print(f"Years Experience: {analysis.years_experience}")
 print(f"Has Leadership: {analysis.leadership_scope['has_leadership']}")
 print(f"Top Skills: {analysis.technical_skills[:5]}")
+```
+
+## Recruiter Comment Analysis Usage
+
+```python
+from scripts.recruiter_prompts import RecruiterCommentAnalyzer
+
+# Initialize analyzer
+analyzer = RecruiterCommentAnalyzer()
+
+# Analyze recruiter feedback
+comments = "Recruiter notes and feedback here..."
+insights = analyzer.analyze_full_feedback(comments, role_level="Senior Engineer")
+
+# Access insights
+print(f"Overall Sentiment: {insights.sentiment}")
+print(f"Recommendation: {insights.recommendation}")
+print(f"Key Strengths: {insights.strengths}")
+print(f"Concerns: {insights.concerns}")
+print(f"Cultural Fit: {insights.cultural_fit['cultural_alignment']}")
 ```
 
 ## API Usage
