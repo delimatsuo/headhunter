@@ -1,0 +1,153 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Set up Ollama with Llama 3.1 8b",
+        "description": "Install and configure Ollama locally, pull the llama3.1:8b model for LLM-powered data processing",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [],
+        "details": "Install Ollama on Mac, pull llama3.1:8b model, verify local LLM functionality for processing unstructured candidate data",
+        "testStrategy": "Run ollama run llama3.1:8b and verify model loads and responds to basic prompts"
+      },
+      {
+        "id": 2,
+        "title": "Create LLM prompts for resume analysis",
+        "description": "Design and implement prompts for Llama 3.1 8b to analyze resume content and extract career insights",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "details": "Create structured prompts that extract: career trajectory, leadership scope, company pedigree, skill assessment, cultural signals from resume text",
+        "testStrategy": "Test prompts with sample resume data and validate JSON output structure"
+      },
+      {
+        "id": 3,
+        "title": "Create LLM prompts for recruiter comments analysis",
+        "description": "Design prompts to synthesize insights from recruiter comments and qualitative feedback",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "details": "Create prompts that analyze recruiter notes, identify strengths/red flags, extract leadership insights, and generate structured takeaways",
+        "testStrategy": "Test with sample recruiter comments and validate insight extraction quality"
+      },
+      {
+        "id": 4,
+        "title": "Implement Python LLM processing pipeline",
+        "description": "Build Python script that integrates Ollama API to process unstructured data into structured JSON profiles",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          2,
+          3
+        ],
+        "details": "Create llm_processor.py with functions to: read CSV data, call Ollama API with prompts, parse LLM responses, generate structured JSON profiles",
+        "testStrategy": "Process sample candidate data and validate output JSON structure matches requirements"
+      },
+      {
+        "id": 5,
+        "title": "Implement resume text extraction",
+        "description": "Add functionality to extract text from resume files (PDF, DOCX, images) for LLM analysis",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          4
+        ],
+        "details": "Integrate PyPDF2, python-docx, and OCR libraries to extract text from resume files before LLM processing",
+        "testStrategy": "Test text extraction from various resume formats and verify quality"
+      },
+      {
+        "id": 6,
+        "title": "Set up Google Cloud Platform infrastructure",
+        "description": "Enable Vertex AI, Firestore, Cloud Storage, and Vector Search in GCP project",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [],
+        "details": "Create GCP project, enable required APIs, set up service accounts, configure Firebase Hosting and Functions",
+        "testStrategy": "Verify all required services are enabled and accessible via API"
+      },
+      {
+        "id": 7,
+        "title": "Implement quality validation system",
+        "description": "Create evaluation metrics and validation system for LLM analysis accuracy and consistency",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          4
+        ],
+        "details": "Implement JSON schema validation, output quality scoring, and fallback mechanisms for LLM responses",
+        "testStrategy": "Test validation system with known good/bad outputs and verify error handling"
+      },
+      {
+        "id": 8,
+        "title": "Build Cloud Function for data enrichment",
+        "description": "Create Cloud Function that processes LLM-generated profiles with Vertex AI Gemini for additional enrichment",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          6
+        ],
+        "details": "Implement Node.js/TypeScript Cloud Function that triggers on GCS uploads, calls Vertex AI Gemini, and stores results in Firestore",
+        "testStrategy": "Test end-to-end flow from file upload to enriched profile storage"
+      },
+      {
+        "id": 9,
+        "title": "Implement Vector Search integration",
+        "description": "Set up Vertex AI Vector Search for semantic similarity matching of candidate profiles",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          6
+        ],
+        "details": "Create vector embeddings from candidate profiles, configure Vector Search index, implement similarity search functionality",
+        "testStrategy": "Test vector search with sample profiles and verify relevant results"
+      },
+      {
+        "id": 10,
+        "title": "Build search API endpoint",
+        "description": "Create Cloud Function API that accepts job descriptions and returns ranked candidate matches",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          8,
+          9
+        ],
+        "details": "Implement semantic search logic, ranking algorithm, and JSON response formatting for candidate matches with rationale",
+        "testStrategy": "Test API with sample job descriptions and validate match quality and ranking"
+      },
+      {
+        "id": 11,
+        "title": "Create React search interface",
+        "description": "Build simple web UI for job description input and candidate results display",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          10
+        ],
+        "details": "Create React app with: JD input form, results display with candidate cards, 'Why they're a match' explanations, deployed to Firebase Hosting",
+        "testStrategy": "Test complete user flow from JD input to candidate selection"
+      },
+      {
+        "id": 12,
+        "title": "Implement authentication and security",
+        "description": "Add secure access controls and authentication for the search interface",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          11
+        ],
+        "details": "Implement Firebase Authentication, secure API calls, data access controls, and privacy protections",
+        "testStrategy": "Test authentication flows and verify secure data handling"
+      }
+    ],
+    "metadata": {
+      "created": "2025-09-05T18:18:48.859Z",
+      "updated": "2025-09-05T18:18:48.860Z",
+      "description": "Tasks for master context"
+    }
+  }
+}

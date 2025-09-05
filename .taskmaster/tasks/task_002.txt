@@ -1,0 +1,11 @@
+# Task ID: 2
+# Title: Create LLM prompts for resume analysis
+# Status: pending
+# Dependencies: 1
+# Priority: high
+# Description: Design and implement prompts for Llama 3.1 8b to analyze resume content and extract career insights
+# Details:
+Create structured prompts that extract: career trajectory, leadership scope, company pedigree, skill assessment, cultural signals from resume text
+
+# Test Strategy:
+Test prompts with sample resume data and validate JSON output structure

@@ -1,0 +1,11 @@
+# Task ID: 3
+# Title: Create LLM prompts for recruiter comments analysis
+# Status: pending
+# Dependencies: 1
+# Priority: high
+# Description: Design prompts to synthesize insights from recruiter comments and qualitative feedback
+# Details:
+Create prompts that analyze recruiter notes, identify strengths/red flags, extract leadership insights, and generate structured takeaways
+
+# Test Strategy:
+Test with sample recruiter comments and validate insight extraction quality

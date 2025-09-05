@@ -1,0 +1,11 @@
+# Task ID: 9
+# Title: Implement Vector Search integration
+# Status: pending
+# Dependencies: 6
+# Priority: medium
+# Description: Set up Vertex AI Vector Search for semantic similarity matching of candidate profiles
+# Details:
+Create vector embeddings from candidate profiles, configure Vector Search index, implement similarity search functionality
+
+# Test Strategy:
+Test vector search with sample profiles and verify relevant results

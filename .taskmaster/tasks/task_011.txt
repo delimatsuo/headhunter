@@ -1,0 +1,11 @@
+# Task ID: 11
+# Title: Create React search interface
+# Status: pending
+# Dependencies: 10
+# Priority: high
+# Description: Build simple web UI for job description input and candidate results display
+# Details:
+Create React app with: JD input form, results display with candidate cards, 'Why they're a match' explanations, deployed to Firebase Hosting
+
+# Test Strategy:
+Test complete user flow from JD input to candidate selection

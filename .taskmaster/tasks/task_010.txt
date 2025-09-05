@@ -1,0 +1,11 @@
+# Task ID: 10
+# Title: Build search API endpoint
+# Status: pending
+# Dependencies: 8, 9
+# Priority: high
+# Description: Create Cloud Function API that accepts job descriptions and returns ranked candidate matches
+# Details:
+Implement semantic search logic, ranking algorithm, and JSON response formatting for candidate matches with rationale
+
+# Test Strategy:
+Test API with sample job descriptions and validate match quality and ranking

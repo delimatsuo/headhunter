@@ -1,0 +1,11 @@
+# Task ID: 1
+# Title: Set up Ollama with Llama 3.1 8b
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Install and configure Ollama locally, pull the llama3.1:8b model for LLM-powered data processing
+# Details:
+Install Ollama on Mac, pull llama3.1:8b model, verify local LLM functionality for processing unstructured candidate data
+
+# Test Strategy:
+Run ollama run llama3.1:8b and verify model loads and responds to basic prompts

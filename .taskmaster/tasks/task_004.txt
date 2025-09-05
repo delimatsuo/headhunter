@@ -1,0 +1,11 @@
+# Task ID: 4
+# Title: Implement Python LLM processing pipeline
+# Status: pending
+# Dependencies: 2, 3
+# Priority: high
+# Description: Build Python script that integrates Ollama API to process unstructured data into structured JSON profiles
+# Details:
+Create llm_processor.py with functions to: read CSV data, call Ollama API with prompts, parse LLM responses, generate structured JSON profiles
+
+# Test Strategy:
+Process sample candidate data and validate output JSON structure matches requirements

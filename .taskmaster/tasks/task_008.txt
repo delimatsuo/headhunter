@@ -1,0 +1,11 @@
+# Task ID: 8
+# Title: Build Cloud Function for data enrichment
+# Status: pending
+# Dependencies: 6
+# Priority: medium
+# Description: Create Cloud Function that processes LLM-generated profiles with Vertex AI Gemini for additional enrichment
+# Details:
+Implement Node.js/TypeScript Cloud Function that triggers on GCS uploads, calls Vertex AI Gemini, and stores results in Firestore
+
+# Test Strategy:
+Test end-to-end flow from file upload to enriched profile storage
