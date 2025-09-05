@@ -5,6 +5,11 @@ An intelligent system for analyzing recruitment data using local LLMs to extract
 ## Features
 
 - **Local LLM processing** using Ollama and Llama 3.1 8b
+- **Resume text extraction** from multiple formats:
+  - PDF files (using PyPDF2 or pdftotext)
+  - Microsoft Word documents (.docx) 
+  - Plain text files (.txt)
+  - Images with OCR (PNG, JPG, etc. using Tesseract)
 - **Integrated processing pipeline** with CSV input/JSON output
 - **Resume analysis** with multi-dimensional assessment:
   - Career trajectory and progression speed
@@ -33,6 +38,24 @@ An intelligent system for analyzing recruitment data using local LLMs to extract
 - Python 3.x
 - Ollama installed locally
 - At least 5GB free disk space for Llama 3.1 8b model
+
+### Optional Dependencies for Resume Text Extraction
+
+For full functionality, install these packages:
+
+```bash
+# For PDF extraction
+pip install PyPDF2
+
+# For DOCX extraction  
+pip install python-docx
+
+# For OCR from images
+brew install tesseract  # or pip install pytesseract pillow
+
+# For generating test files
+pip install reportlab
+```
 
 ## Installation
 
@@ -78,6 +101,12 @@ python3 tests/test_ollama_setup.py
 
 # Test LLM prompts and resume analysis
 python3 tests/test_llm_prompts.py
+
+# Test LLM processing pipeline
+PYTHONPATH=scripts python tests/test_llm_processor.py
+
+# Test resume text extraction
+python tests/test_resume_extractor.py
 ```
 
 Tests include:
@@ -89,6 +118,10 @@ Tests include:
 - Resume analysis prompt validation
 - JSON output structure verification
 - Multi-level career assessment tests
+- Resume text extraction from PDF, DOCX, TXT, and image files
+- OCR functionality validation
+- Batch file processing tests
+- Error handling for unsupported formats
 
 ## Project Structure
 
@@ -99,10 +132,16 @@ headhunter/
 │   └── docs/           # PRD and documentation
 ├── tests/              # Test suites
 │   ├── test_ollama_setup.py    # Ollama installation tests
-│   ├── test_llm_prompts.py     # Resume analysis tests
+│   ├── test_llm_prompts.py     # Resume analysis tests  
+│   ├── test_llm_processor.py   # Pipeline integration tests
+│   ├── test_resume_extractor.py # Text extraction tests
+│   ├── sample_resumes/         # Test resume files
 │   └── sample_resumes.py       # Test data
 ├── scripts/            # Utility scripts
-│   └── llm_prompts.py  # Resume analysis prompts
+│   ├── llm_prompts.py          # Resume analysis prompts
+│   ├── recruiter_prompts.py    # Recruiter comment analysis
+│   ├── llm_processor.py        # Integrated processing pipeline
+│   └── resume_extractor.py     # Text extraction from files
 ├── CSV files/          # Data directory
 └── README.md           # This file
 ```
@@ -134,10 +173,11 @@ For each completed task:
 ## Current Status
 
 - ✅ Task #1: Ollama with Llama 3.1 8b setup complete
-- ✅ Task #2: Create LLM prompts for resume analysis complete
+- ✅ Task #2: Create LLM prompts for resume analysis complete  
 - ✅ Task #3: Create LLM prompts for recruiter comments complete
 - ✅ Task #4: Implement Python LLM processor complete
-- ⏳ Task #5: Implement resume text extraction (next)
+- ✅ Task #5: Implement resume text extraction complete
+- ⏳ Task #6: Set up Google Cloud Platform infrastructure (next)
 
 ## Resume Analysis Usage
 
@@ -178,7 +218,63 @@ print(f"Concerns: {insights.concerns}")
 print(f"Cultural Fit: {insights.cultural_fit['cultural_alignment']}")
 ```
 
+## Resume Text Extraction Usage
+
+### Command Line Interface
+
+Extract text from various resume formats:
+
+```bash
+# Extract from single file
+python3 scripts/resume_extractor.py resume.pdf
+
+# Extract from multiple files
+python3 scripts/resume_extractor.py resume.pdf resume.docx resume.txt
+
+# Extract and save to directory
+python3 scripts/resume_extractor.py resume.pdf -o extracted_text/
+
+# Supported formats: .pdf, .docx, .txt, .png, .jpg, .jpeg, .gif, .bmp, .tiff
+```
+
+### Python API
+
+```python
+from scripts.resume_extractor import ResumeTextExtractor
+
+# Initialize extractor
+extractor = ResumeTextExtractor()
+
+# Extract from single file
+result = extractor.extract_text_from_file('resume.pdf')
+if result.success:
+    print(f"Extracted {len(result.text)} characters")
+    print(f"Method used: {result.metadata['method']}")
+else:
+    print(f"Failed: {result.error_message}")
+
+# Extract from multiple files
+results = extractor.extract_text_from_multiple_files([
+    'resume1.pdf', 'resume2.docx', 'resume3.png'
+])
+
+# Get summary statistics
+summary = extractor.get_extraction_summary(results)
+print(f"Success rate: {summary['success_rate']:.1f}%")
+```
+
 ## LLM Processing Pipeline Usage
+
+The pipeline can now process resume files directly without pre-extracting text.
+
+### CSV Format with File References
+
+```csv
+candidate_id,name,role_level,resume_file,recruiter_comments
+1,John Doe,Senior,resumes/john_doe.pdf,"Great technical skills"
+2,Jane Smith,Manager,resumes/jane_smith.docx,"Strong leadership potential"
+3,Bob Wilson,Entry,resumes/bob_wilson.png,"New grad with promise"
+```
 
 ### Command Line Interface
 

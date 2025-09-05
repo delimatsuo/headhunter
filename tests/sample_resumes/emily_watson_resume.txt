@@ -1,0 +1,83 @@
+Emily Watson
+Software Developer
+
+Contact:
+emily.watson@email.com | (555) 456-7890
+linkedin.com/in/emilywatson | github.com/emilyw
+Seattle, WA
+
+Objective:
+Recent Computer Science graduate seeking entry-level software development position to apply academic knowledge and internship experience in building innovative web and mobile applications.
+
+Education:
+Bachelor of Science in Computer Science
+University of Washington, Seattle, WA
+Graduated: May 2023 | GPA: 3.8/4.0
+Dean's List: Fall 2021, Spring 2022, Fall 2022
+
+Relevant Coursework:
+• Data Structures and Algorithms
+• Software Engineering Principles
+• Database Systems
+• Computer Networks
+• Machine Learning Fundamentals
+• Human-Computer Interaction
+
+Professional Experience:
+
+Software Engineering Intern | Amazon (Summer 2022)
+• Developed features for Prime Video recommendation engine using React and Java
+• Wrote comprehensive unit tests achieving 95% code coverage
+• Participated in agile development process and sprint planning
+• Collaborated with senior engineers on code reviews and technical design
+• Implemented API improvements that reduced response times by 20%
+• Presented final project to engineering leadership team
+
+Teaching Assistant | UW Computer Science Department (2021-2023)
+• Assisted with CSE 143 (Data Structures) for 150+ undergraduate students
+• Held weekly office hours helping students with programming assignments
+• Graded exams and programming projects with detailed feedback
+• Led study sessions before major exams
+• Helped students debug complex Java and Python programs
+• Received excellent feedback from students and professors
+
+Projects:
+
+TaskFlow - Full-Stack Task Management Application (Capstone Project, 2023)
+• Built responsive web application using React, Node.js, and PostgreSQL
+• Implemented user authentication with JWT tokens and password hashing
+• Added real-time updates using WebSocket connections
+• Deployed on AWS with automated CI/CD pipeline using GitHub Actions
+• Collaborated with team of 4 students using Agile methodologies
+
+ExpenseTracker - iOS Mobile Application (Personal Project, 2022)
+• Developed native iOS app using Swift and Core Data for local storage
+• Implemented intuitive user interface with charts and expense categorization
+• Added photo receipt scanning using iOS Vision framework
+• Published on App Store with 200+ downloads and 4.5-star rating
+• Continuously updated based on user feedback and analytics
+
+Open Source Contributions:
+• React Native: Fixed accessibility bugs affecting screen readers (2 PRs merged)
+• Jest Testing Framework: Improved error messages for failed assertions
+• Local Tech Meetups: Regular attendee and occasional presenter
+
+Technical Skills:
+Programming Languages: Python, Java, JavaScript, Swift, C++, HTML/CSS
+Frameworks & Libraries: React, Node.js, Express, Flask, SwiftUI
+Databases: MySQL, PostgreSQL, MongoDB, SQLite
+Tools & Technologies: Git, Docker, AWS, Firebase, REST APIs
+Development: Agile/Scrum, Test-Driven Development, CI/CD
+
+Achievements:
+• Dean's List for academic excellence (3 semesters)
+• Winner - UW Hackathon "Best Mobile App" (2022)
+• Volunteer coding instructor for local high school students
+• Active member of Women in Computing organization
+
+Languages:
+• English (Native)
+• Spanish (Conversational)
+• Mandarin (Basic)
+
+References available upon request.

@@ -1,0 +1,6 @@
+candidate_id,name,role_level,resume_file,recruiter_comments
+sarah_file,Sarah Chen,Senior Engineer,tests/sample_resumes/sarah_chen_resume.txt,"Excellent technical skills and leadership experience. Strong candidate with great communication."
+marcus_file,Marcus Rodriguez,Principal Engineer,tests/sample_resumes/marcus_rodriguez_resume.txt,"Outstanding technical leader with perfect experience for our ML platform needs. Strong hire."
+james_pdf,James Thompson,Senior Manager,tests/sample_resumes/james_thompson_resume.pdf,"Great engineering management experience. Team leadership skills are exactly what we need."
+lisa_docx,Lisa Park,Mid-Level Developer,tests/sample_resumes/lisa_park_resume.docx,"Solid mid-level skills with good design sense. Some concerns about job stability."
+emily_entry,Emily Watson,Entry Level,tests/sample_resumes/emily_watson_resume.txt,"Bright new grad with good fundamentals. Would need mentoring but shows great potential."

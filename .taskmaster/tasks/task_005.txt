@@ -9,3 +9,23 @@ Integrate PyPDF2, python-docx, and OCR libraries to extract text from resume fil
 
 # Test Strategy:
 Test text extraction from various resume formats and verify quality
+
+# Subtasks:
+## 1. Integrate PDF text extraction with PyPDF2 [pending]
+### Dependencies: None
+### Description: Add PyPDF2 library and implement PDF text extraction functionality
+### Details:
+
+
+## 2. Add DOCX text extraction with python-docx [pending]
+### Dependencies: None
+### Description: Implement Microsoft Word document text extraction functionality
+### Details:
+
+
+## 3. Implement OCR for image-based resumes [pending]
+### Dependencies: None
+### Description: Add Tesseract OCR functionality for extracting text from scanned resume images
+### Details:
+
+
