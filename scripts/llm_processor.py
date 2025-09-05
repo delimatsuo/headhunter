@@ -19,6 +19,8 @@ import time
 # Import our analysis modules
 from llm_prompts import ResumeAnalyzer, ResumeAnalysis
 from recruiter_prompts import RecruiterCommentAnalyzer, RecruiterInsights
+from resume_extractor import ResumeTextExtractor, ExtractionResult
+from quality_validator import LLMOutputValidator, ValidationResult, QualityMetrics
 
 
 @dataclass
@@ -56,6 +58,8 @@ class CandidateProfile:
     recommendation: Optional[str] = None
     processing_timestamp: Optional[str] = None
     source_data: Optional[Dict[str, Any]] = None
+    resume_validation: Optional[ValidationResult] = None
+    recruiter_validation: Optional[ValidationResult] = None
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary with proper serialization"""
@@ -64,7 +68,7 @@ class CandidateProfile:
         for field_name, value in asdict(self).items():
             if value is None:
                 result[field_name] = None
-            elif isinstance(value, (ResumeAnalysis, RecruiterInsights)):
+            elif isinstance(value, (ResumeAnalysis, RecruiterInsights, ValidationResult, QualityMetrics)):
                 result[field_name] = asdict(value)
             else:
                 result[field_name] = value
@@ -162,6 +166,8 @@ class LLMProcessor:
         self.api_client = OllamaAPIClient(model)
         self.resume_analyzer = ResumeAnalyzer(model)
         self.recruiter_analyzer = RecruiterCommentAnalyzer(model)
+        self.text_extractor = ResumeTextExtractor(log_level)
+        self.quality_validator = LLMOutputValidator(log_level)
         
         self.logger.info(f"LLMProcessor initialized with model: {model}")
     
@@ -212,35 +218,92 @@ class LLMProcessor:
         
         return processed
     
-    def analyze_resume(self, resume_text: str) -> Optional[ResumeAnalysis]:
-        """Analyze resume text"""
+    def extract_text_from_file(self, file_path: str) -> Optional[str]:
+        """Extract text from resume file"""
+        try:
+            result = self.text_extractor.extract_text_from_file(file_path)
+            if result.success:
+                self.logger.info(f"Successfully extracted text from {Path(file_path).name}")
+                return result.text
+            else:
+                self.logger.error(f"Failed to extract text from {Path(file_path).name}: {result.error_message}")
+                return None
+        except Exception as e:
+            self.logger.error(f"Text extraction error for {file_path}: {e}")
+            return None
+    
+    def process_resume_file(self, file_path: str) -> Tuple[Optional[ResumeAnalysis], Optional[ValidationResult]]:
+        """Extract text from resume file and analyze it"""
+        resume_text = self.extract_text_from_file(file_path)
+        if resume_text:
+            return self.analyze_resume(resume_text)
+        return None, None
+    
+    def analyze_resume(self, resume_text: str) -> Tuple[Optional[ResumeAnalysis], Optional[ValidationResult]]:
+        """Analyze resume text with quality validation"""
         if not resume_text or len(resume_text.strip()) < 50:
             self.logger.warning("Resume text too short or empty, skipping analysis")
-            return None
+            return None, None
         
         try:
             self.logger.debug("Starting resume analysis...")
             analysis = self.resume_analyzer.analyze_full_resume(resume_text)
+            
+            # Validate the analysis if successful
+            validation_result = None
+            if analysis:
+                self.logger.debug("Validating resume analysis...")
+                validation_result = self.quality_validator.validate_resume_analysis(analysis)
+                
+                # Log validation results
+                if validation_result.is_valid:
+                    self.logger.debug(f"Resume analysis validation passed - Quality: {validation_result.quality_score:.2f}")
+                else:
+                    self.logger.warning(f"Resume analysis validation failed - Quality: {validation_result.quality_score:.2f}")
+                    if validation_result.fallback_applied:
+                        self.logger.info("Fallback corrections applied to resume analysis")
+                        # Use the corrected data if available
+                        if validation_result.validated_data:
+                            analysis = ResumeAnalysis(**validation_result.validated_data)
+            
             self.logger.debug("Resume analysis completed")
-            return analysis
+            return analysis, validation_result
         except Exception as e:
             self.logger.error(f"Resume analysis failed: {e}")
-            return None
+            return None, None
     
-    def analyze_recruiter_comments(self, comments: str, role_level: Optional[str] = None) -> Optional[RecruiterInsights]:
-        """Analyze recruiter comments"""
+    def analyze_recruiter_comments(self, comments: str, role_level: Optional[str] = None) -> Tuple[Optional[RecruiterInsights], Optional[ValidationResult]]:
+        """Analyze recruiter comments with quality validation"""
         if not comments or len(comments.strip()) < 20:
             self.logger.warning("Recruiter comments too short or empty, skipping analysis")
-            return None
+            return None, None
         
         try:
             self.logger.debug("Starting recruiter comment analysis...")
             insights = self.recruiter_analyzer.analyze_full_feedback(comments, role_level)
+            
+            # Validate the insights if successful
+            validation_result = None
+            if insights:
+                self.logger.debug("Validating recruiter insights...")
+                validation_result = self.quality_validator.validate_recruiter_insights(insights)
+                
+                # Log validation results
+                if validation_result.is_valid:
+                    self.logger.debug(f"Recruiter insights validation passed - Quality: {validation_result.quality_score:.2f}")
+                else:
+                    self.logger.warning(f"Recruiter insights validation failed - Quality: {validation_result.quality_score:.2f}")
+                    if validation_result.fallback_applied:
+                        self.logger.info("Fallback corrections applied to recruiter insights")
+                        # Use the corrected data if available
+                        if validation_result.validated_data:
+                            insights = RecruiterInsights(**validation_result.validated_data)
+            
             self.logger.debug("Recruiter comment analysis completed")
-            return insights
+            return insights, validation_result
         except Exception as e:
             self.logger.error(f"Recruiter comment analysis failed: {e}")
-            return None
+            return None, None
     
     def calculate_overall_score(self, resume_analysis: Optional[ResumeAnalysis], 
                               recruiter_insights: Optional[RecruiterInsights]) -> float:
@@ -310,6 +373,7 @@ class LLMProcessor:
         
         # Extract data fields
         resume_text = processed_record.get('resume_text', '')
+        resume_file = processed_record.get('resume_file', '')
         recruiter_comments = processed_record.get('recruiter_comments', '')
         role_level = processed_record.get('role_level', None)
         name = processed_record.get('name', processed_record.get('candidate_name', None))
@@ -317,12 +381,17 @@ class LLMProcessor:
         # Perform analyses
         resume_analysis = None
         recruiter_insights = None
+        resume_validation = None
+        recruiter_validation = None
         
+        # Handle resume analysis - either text or file
         if resume_text:
-            resume_analysis = self.analyze_resume(resume_text)
+            resume_analysis, resume_validation = self.analyze_resume(resume_text)
+        elif resume_file and os.path.exists(resume_file):
+            resume_analysis, resume_validation = self.process_resume_file(resume_file)
         
         if recruiter_comments:
-            recruiter_insights = self.analyze_recruiter_comments(recruiter_comments, role_level)
+            recruiter_insights, recruiter_validation = self.analyze_recruiter_comments(recruiter_comments, role_level)
         
         # Calculate scores
         overall_score = self.calculate_overall_score(resume_analysis, recruiter_insights)
@@ -339,7 +408,9 @@ class LLMProcessor:
             overall_score=overall_score,
             recommendation=recommendation,
             processing_timestamp=datetime.now().isoformat(),
-            source_data=processed_record
+            source_data=processed_record,
+            resume_validation=resume_validation,
+            recruiter_validation=recruiter_validation
         )
     
     def process_batch(self, data: Union[str, List[Dict[str, Any]]], 
@@ -438,6 +509,7 @@ class LLMProcessor:
             # Check analyzers
             health["resume_analyzer"] = {"status": "available"}
             health["recruiter_analyzer"] = {"status": "available"}
+            health["quality_validator"] = {"status": "available"}
             
             # Overall status
             if api_health["status"] != "healthy":
