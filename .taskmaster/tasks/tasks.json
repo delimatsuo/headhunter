@@ -16,7 +16,7 @@
         "id": 2,
         "title": "Create LLM prompts for resume analysis",
         "description": "Design and implement prompts for Llama 3.1 8b to analyze resume content and extract career insights",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "high",
         "dependencies": [
           1
@@ -309,7 +309,7 @@
     ],
     "metadata": {
       "created": "2025-09-05T18:18:48.859Z",
-      "updated": "2025-09-05T18:35:37.839Z",
+      "updated": "2025-09-05T19:12:23.590Z",
       "description": "Tasks for master context"
     }
   }

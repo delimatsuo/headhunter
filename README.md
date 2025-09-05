@@ -6,6 +6,13 @@ An intelligent system for analyzing recruitment data using local LLMs to extract
 
 - Local LLM processing using Ollama and Llama 3.1 8b
 - Resume analysis and career trajectory insights
+- Structured JSON output for all analysis results
+- Multi-dimensional candidate assessment:
+  - Career trajectory and progression speed
+  - Leadership scope and experience
+  - Company pedigree analysis
+  - Technical and soft skills extraction
+  - Cultural fit signals
 - Recruiter comment synthesis
 - Pattern recognition across candidate profiles
 
@@ -52,10 +59,14 @@ ollama run llama3.1:8b "Hello, are you working?"
 
 ## Testing
 
-Run the test suite to verify Ollama setup:
+Run the test suites:
 
 ```bash
+# Test Ollama setup
 python3 tests/test_ollama_setup.py
+
+# Test LLM prompts and resume analysis
+python3 tests/test_llm_prompts.py
 ```
 
 Tests include:
@@ -64,6 +75,9 @@ Tests include:
 - Integration test with model response
 - API endpoint accessibility
 - Performance benchmarks
+- Resume analysis prompt validation
+- JSON output structure verification
+- Multi-level career assessment tests
 
 ## Project Structure
 
@@ -73,8 +87,11 @@ headhunter/
 │   ├── tasks/          # Task definitions
 │   └── docs/           # PRD and documentation
 ├── tests/              # Test suites
-│   └── test_ollama_setup.py
+│   ├── test_ollama_setup.py    # Ollama installation tests
+│   ├── test_llm_prompts.py     # Resume analysis tests
+│   └── sample_resumes.py       # Test data
 ├── scripts/            # Utility scripts
+│   └── llm_prompts.py  # Resume analysis prompts
 ├── CSV files/          # Data directory
 └── README.md           # This file
 ```
@@ -106,7 +123,27 @@ For each completed task:
 ## Current Status
 
 - ✅ Task #1: Ollama with Llama 3.1 8b setup complete
-- ⏳ Task #2: Create LLM prompts for resume analysis (next)
+- ✅ Task #2: Create LLM prompts for resume analysis complete
+- ⏳ Task #3: Create LLM prompts for recruiter comments (next)
+
+## Resume Analysis Usage
+
+```python
+from scripts.llm_prompts import ResumeAnalyzer
+
+# Initialize analyzer
+analyzer = ResumeAnalyzer()
+
+# Analyze a resume
+resume_text = "Your resume content here..."
+analysis = analyzer.analyze_full_resume(resume_text)
+
+# Access structured results
+print(f"Career Level: {analysis.career_trajectory['current_level']}")
+print(f"Years Experience: {analysis.years_experience}")
+print(f"Has Leadership: {analysis.leadership_scope['has_leadership']}")
+print(f"Top Skills: {analysis.technical_skills[:5]}")
+```
 
 ## API Usage
 
