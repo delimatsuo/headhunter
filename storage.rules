@@ -1,19 +1,45 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow authenticated users to upload resume files
-    match /resumes/{allPaths=**} {
-      allow read, write: if request.auth != null;
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
     }
     
-    // Allow authenticated users to access processed profiles
-    match /profiles/{allPaths=**} {
-      allow read, write: if request.auth != null;
+    // Helper function to check if user owns the file
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
     }
     
-    // Public read access for web assets
+    // Resume files - authenticated users can read, only Cloud Functions can write
+    match /resumes/{resumeId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only Cloud Functions can write
+    }
+    
+    // Profile data - authenticated users can read, only Cloud Functions can write
+    match /profiles/{candidateId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only Cloud Functions can write
+    }
+    
+    // User uploads - private to each user with size limit
+    match /users/{userId}/{allPaths=**} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && request.resource.size < 10 * 1024 * 1024; // 10MB limit
+      allow delete: if isOwner(userId);
+    }
+    
+    // Public assets - anyone can read
     match /public/{allPaths=**} {
       allow read: if true;
+      allow write: if false; // Admin only
+    }
+    
+    // Deny all other access by default
+    match /{allPaths=**} {
+      allow read: if false;
+      allow write: if false;
     }
   }
 }

@@ -619,6 +619,11 @@ export const searchJobCandidates = onCall(
     timeoutSeconds: 120,
   },
   async (request) => {
+    // Check if user is authenticated
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Authentication required to search candidates");
+    }
+
     const { job_description, limit = 20, use_cache = true } = request.data;
 
     if (!job_description) {
@@ -682,6 +687,11 @@ export const quickMatch = onCall(
     timeoutSeconds: 60,
   },
   async (request) => {
+    // Check if user is authenticated
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Authentication required to use quick match");
+    }
+
     const { job_title, skills, experience_years, limit = 10 } = request.data;
 
     if (!job_title) {

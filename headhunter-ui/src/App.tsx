@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import './App.css';
 import JobDescriptionForm from './components/JobDescriptionForm';
 import CandidateResults from './components/CandidateResults';
+import Login from './components/Login';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { searchJobCandidates, quickMatch } from './config/firebase';
 import { JobDescription, SearchResponse, CandidateMatch } from './types';
 
-function App() {
+function AppContent() {
+  const { user, loading, signOut } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchResults, setSearchResults] = useState<{
@@ -14,6 +17,21 @@ function App() {
     queryTime?: number;
   } | null>(null);
   const [quickMode, setQuickMode] = useState(false);
+
+  // Show loading screen while checking auth
+  if (loading) {
+    return (
+      <div className="loading-container" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="loading-spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  // Show login screen if not authenticated
+  if (!user) {
+    return <Login />;
+  }
 
   const handleSearch = async (jobDesc: JobDescription) => {
     setIsLoading(true);
@@ -118,6 +136,12 @@ function App() {
               />
               <span>Quick Mode</span>
             </label>
+            <div className="user-menu">
+              <span className="user-email">{user.email}</span>
+              <button className="sign-out-btn" onClick={signOut}>
+                Sign Out
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -157,6 +181,14 @@ function App() {
         <p>© 2025 Headhunter AI • Powered by Vertex AI & Cloud Functions</p>
       </footer>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
