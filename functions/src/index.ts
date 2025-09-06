@@ -11,6 +11,7 @@ import { Storage } from "@google-cloud/storage";
 import * as aiplatform from "@google-cloud/aiplatform";
 import { z } from "zod";
 import { VectorSearchService } from "./vector-search";
+import { JobSearchService, JobDescription } from "./job-search";
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -32,6 +33,9 @@ const client = new aiplatform.v1.PredictionServiceClient({
 
 // Vector Search service
 const vectorSearchService = new VectorSearchService();
+
+// Job Search service
+const jobSearchService = new JobSearchService();
 
 // Types and schemas
 const CandidateProfileSchema = z.object({
@@ -602,6 +606,121 @@ export const vectorSearchStats = onCall(
     } catch (error) {
       console.error("Error getting vector search stats:", error);
       throw new HttpsError("internal", "Failed to get statistics");
+    }
+  }
+);
+
+/**
+ * Main job search endpoint - accepts job descriptions and returns ranked candidates
+ */
+export const searchJobCandidates = onCall(
+  {
+    memory: "512MiB",
+    timeoutSeconds: 120,
+  },
+  async (request) => {
+    const { job_description, limit = 20, use_cache = true } = request.data;
+
+    if (!job_description) {
+      throw new HttpsError("invalid-argument", "Job description is required");
+    }
+
+    // Validate job description structure
+    const jobDesc: JobDescription = {
+      title: job_description.title || "Software Engineer",
+      description: job_description.description || "",
+      required_skills: job_description.required_skills || [],
+      preferred_skills: job_description.preferred_skills || [],
+      years_experience: job_description.years_experience || undefined,
+      education_level: job_description.education_level || undefined,
+      company_type: job_description.company_type || undefined,
+      team_size: job_description.team_size || undefined,
+      location: job_description.location || undefined,
+      salary_range: job_description.salary_range || undefined,
+    };
+
+    try {
+      console.log(`Processing job search for: ${jobDesc.title}`);
+      
+      // Check cache if enabled
+      if (use_cache) {
+        const cachedResults = await jobSearchService.getCachedResults(jobDesc);
+        if (cachedResults) {
+          console.log("Returning cached search results");
+          return {
+            ...cachedResults,
+            from_cache: true,
+          };
+        }
+      }
+
+      // Perform search
+      const searchResults = await jobSearchService.searchCandidates(jobDesc, limit);
+
+      // Cache results for future use
+      if (use_cache) {
+        await jobSearchService.cacheSearchResults(jobDesc, searchResults);
+      }
+
+      return {
+        ...searchResults,
+        from_cache: false,
+      };
+    } catch (error) {
+      console.error("Error in job search:", error);
+      throw new HttpsError("internal", "Failed to search for candidates");
+    }
+  }
+);
+
+/**
+ * Quick match endpoint - simplified job search for quick results
+ */
+export const quickMatch = onCall(
+  {
+    memory: "256MiB",
+    timeoutSeconds: 60,
+  },
+  async (request) => {
+    const { job_title, skills, experience_years, limit = 10 } = request.data;
+
+    if (!job_title) {
+      throw new HttpsError("invalid-argument", "Job title is required");
+    }
+
+    try {
+      // Create simplified job description
+      const jobDesc: JobDescription = {
+        title: job_title,
+        description: `Looking for ${job_title} with ${experience_years || 3}+ years experience`,
+        required_skills: skills || [],
+        years_experience: experience_years || 3,
+      };
+
+      // Perform quick search
+      const searchResults = await jobSearchService.searchCandidates(jobDesc, limit);
+
+      // Return simplified results
+      const simplifiedResults = {
+        success: true,
+        job_title: job_title,
+        matches: searchResults.matches.map(match => ({
+          candidate_id: match.candidate_id,
+          name: match.name,
+          score: Math.round(match.ranking_score * 100),
+          level: match.key_qualifications.current_level,
+          experience: match.key_qualifications.years_experience,
+          match_summary: match.match_rationale.summary,
+          recommendation: match.recommendation_level,
+        })),
+        total_found: searchResults.matches.length,
+        top_recommendation: searchResults.search_insights.recommendation,
+      };
+
+      return simplifiedResults;
+    } catch (error) {
+      console.error("Error in quick match:", error);
+      throw new HttpsError("internal", "Failed to perform quick match");
     }
   }
 );

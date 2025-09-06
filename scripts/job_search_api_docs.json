@@ -1,0 +1,89 @@
+{
+  "endpoints": [
+    {
+      "name": "searchJobCandidates",
+      "method": "POST",
+      "description": "Search for candidates matching a job description",
+      "request": {
+        "jobDescription": {
+          "title": "string - Job title",
+          "company": "string - Company name",
+          "description": "string - Full job description with requirements",
+          "required_skills": "string[] - Optional list of required skills",
+          "nice_to_have": "string[] - Optional list of nice-to-have skills",
+          "min_experience": "number - Optional minimum years of experience",
+          "max_experience": "number - Optional maximum years of experience",
+          "leadership_required": "boolean - Optional flag for leadership requirement"
+        },
+        "limit": "number - Maximum number of results (default: 20)"
+      },
+      "response": {
+        "success": "boolean",
+        "matches": [
+          {
+            "candidate": "CandidateProfile object",
+            "score": "number (0-100)",
+            "similarity": "number (0-1)",
+            "rationale": {
+              "strengths": "string[]",
+              "gaps": "string[]",
+              "risk_factors": "string[]",
+              "overall_assessment": "string"
+            }
+          }
+        ],
+        "insights": {
+          "total_candidates": "number",
+          "avg_match_score": "number",
+          "top_skills_matched": "string[]",
+          "common_gaps": "string[]",
+          "market_analysis": "string",
+          "recommendations": "string[]"
+        },
+        "query_time_ms": "number"
+      }
+    },
+    {
+      "name": "quickMatch",
+      "method": "POST",
+      "description": "Quick candidate matching with simple text description",
+      "request": {
+        "description": "string - Simple text description of the role",
+        "limit": "number - Optional limit (default: 10)"
+      },
+      "response": {
+        "success": "boolean",
+        "matches": [
+          {
+            "candidate_id": "string",
+            "name": "string",
+            "score": "number",
+            "summary": "string"
+          }
+        ]
+      }
+    }
+  ],
+  "scoring": {
+    "weights": {
+      "skills_match": 0.4,
+      "experience_match": 0.3,
+      "leadership_match": 0.2,
+      "education_match": 0.1
+    },
+    "factors": [
+      "Technical skills alignment",
+      "Years of experience range",
+      "Leadership experience if required",
+      "Company tier and pedigree",
+      "Educational background",
+      "Cultural fit indicators",
+      "Career trajectory alignment"
+    ]
+  },
+  "caching": {
+    "enabled": true,
+    "ttl_minutes": 30,
+    "key_generation": "Hash of job description + limit"
+  }
+}

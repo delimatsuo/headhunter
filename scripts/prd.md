@@ -2,10 +2,10 @@
 # Overview  
 Headhunter v1.1 transforms Ella Executive Search's historical candidate database into an intelligent, semantic search engine. It solves the inefficiency and blind spots of keyword-based ATS queries by deeply analyzing each candidate's experience, leadership scope, and cultural signals, then matching them contextually to new role descriptions. Primary users are recruiters who need to build qualified long-lists in under 30 minutes while improving search quality and unlocking the strategic value of proprietary candidate data.
 
-# Core Features  
-- **Candidate ingestion and normalization**: Local Python pipeline parses Workable export into standardized JSON using a local LLM (Ollama), then bulk uploads to Cloud Storage.
+# Core Features
+- **LLM-Powered Data Processing**: Use Llama 3.1 8b via Ollama to intelligently read and analyze unstructured candidate data (resumes, recruiter comments, experience descriptions) and create structured JSON profiles with deep insights.
 - **AI enrichment pipeline**: Cloud Functions invoke Vertex AI Gemini to produce enriched candidate profiles including career arc analysis, standardized role scope, company pedigree, and recruiter takeaways (strengths/red flags). Results stored in Firestore with embeddings in Vertex AI Vector Search.
-- **Semantic search UI**: Secure web app where recruiters paste a full job description and receive a ranked list of 10–20 candidates with name, current title, AI summary, and “Why they’re a match” bullets.
+- **Semantic search UI**: Secure web app where recruiters paste a full job description and receive a ranked list of 10–20 candidates with name, current title, AI summary, and "Why they're a match" bullets.
 
 # User Experience  
 - **Persona: Alex (Senior Recruiter)**
@@ -18,28 +18,30 @@ Headhunter v1.1 transforms Ella Executive Search's historical candidate database
 <PRD>
 # Technical Architecture  
 - **System components**
-  - Local Processing (Mac): Python 3.10+, Ollama (llama3.1:8b) to convert Workable export into clean JSON; bulk uploader to GCS.
+  - LLM Data Processing (Mac): Python 3.10+ with Ollama integration; Llama 3.1 8b reads unstructured data (resumes, comments, experience text) and generates intelligent JSON profiles with career insights, leadership analysis, and cultural fit assessments.
   - Cloud Enrichment: Cloud Functions (Node.js/TypeScript) triggered by GCS object finalize; Vertex AI Gemini for deep analysis; Firestore for enriched profiles; Vertex AI Vector Search for embeddings.
   - Frontend: React (or Vue) app on Firebase Hosting calling secure Cloud Function search API.
 - **Data models**
-  - Clean Candidate JSON (normalized from Workable export).
-  - Enriched Profile:
-    - `career_arc_analysis`: { velocity: "High|Moderate", trajectory_pattern: string, key_transitions: array }
-    - `quantified_scope[]`: { role_title, company, team_size, direct_reports, budget_managed }
-    - `company_tier[]`: tags per company (e.g., "FAANG/Big Tech", "Top-Tier VC-Backed Startup")
-    - `recruiter_takeaways`: { unique_strengths: string[], red_flags: string[] }
-    - `embedding_ref`: pointer to vector stored in Vertex AI Vector Search
+  - LLM-Generated Candidate Profiles: Intelligent analysis of unstructured data producing:
+    - `career_trajectory`: Deep analysis of career progression patterns and velocity
+    - `leadership_scope`: Extracted team size, reporting structure, and management experience
+    - `company_pedigree`: Categorized company tiers and industry context
+    - `cultural_signals`: Identified strengths, red flags, and fit indicators
+    - `skill_assessment`: Technical and soft skill evaluation from resume content
+    - `recruiter_insights`: Synthesized analysis of all recruiter comments and notes
+  - Search-Ready Profiles: Structured JSON optimized for semantic search and matching
 - **APIs & integrations**
   - Vertex AI Gemini (analysis), Vertex AI Embeddings, Firestore SDK, Cloud Storage triggers, Firebase Hosting/Functions.
 - **Infrastructure requirements**
   - GCP project with Vertex AI, Firestore, Cloud Storage, and Vector Search enabled; Firebase Hosting and Functions.
 
-# Development Roadmap  
+# Development Roadmap
 - **MVP requirements**
-  - Local parser: Workable export → standardized JSON via Ollama.
-  - GCS upload + Cloud Function trigger.
-  - Gemini-based enrichment producing all specified analytical objects.
-  - Persist enriched profiles to Firestore and embeddings to Vector Search.
+  - LLM Data Processing: Implement Llama 3.1 8b pipeline to read unstructured data (resumes, comments, experience text) and generate intelligent candidate profiles with career analysis, leadership insights, and cultural assessments.
+  - Local Testing Environment: Set up Ollama with Llama 3.1 8b for iterative development and testing of analysis quality.
+  - Structured Output Generation: Create prompts that produce consistent JSON structures for career trajectory, leadership scope, company tiers, and recruiter takeaways.
+  - Quality Validation: Implement evaluation metrics to ensure LLM analysis accuracy and consistency.
+  - GCS upload + Cloud Function trigger for production scaling.
   - Simple secure web page: paste JD → ranked results (10–20) with match rationale.
 - **Future enhancements**
   - Advanced search filters (boolean logic, save/share searches).
@@ -50,16 +52,17 @@ Headhunter v1.1 transforms Ella Executive Search's historical candidate database
   - Build end-to-end vertical slice from JD input to ranked results before adding extras.
 
 # Logical Dependency Chain
-- Foundation: Enable Vertex AI, Firestore, GCS, Vector Search; set up Firebase Hosting/Functions.
-- Data path: Local parsing → GCS upload → Cloud Function enrichment → Firestore + embeddings.
+- Foundation: Set up Ollama with Llama 3.1 8b; enable Vertex AI, Firestore, GCS, Vector Search; set up Firebase Hosting/Functions.
+- Data path: LLM analysis of unstructured data → Structured JSON profiles → GCS upload → Cloud Function enrichment → Firestore + embeddings.
 - Search path: Embedding index ready → Search API → Frontend results with rationale.
-- Fast-path to usable demo: Minimal UI + working search over a small enriched dataset.
+- Fast-path to usable demo: LLM processing of sample candidates → Local search testing → Minimal UI with working semantic matching.
 
-# Risks and Mitigations  
-- **LLM analysis variability**: Use structured prompts/schemas; add validation; log anomalies for review.
-- **Embedding quality**: Evaluate models; adjust chunking/fields; test retrieval metrics against real JDs.
-- **Cost control**: Batch enrichment, use local parsing to reduce cloud spend; monitor quotas.
-- **Data quality from ATS**: Add normalization and fallbacks; surface low-confidence flags to recruiters.
+# Risks and Mitigations
+- **LLM analysis quality**: Implement prompt engineering, few-shot examples, and output validation; test analysis accuracy against known profiles; establish quality metrics and human review workflows.
+- **Local LLM performance**: Optimize Llama 3.1 8b context windows for resume processing; implement batch processing for large datasets; monitor memory usage and processing times.
+- **Structured output consistency**: Use JSON schema validation and retry mechanisms; implement output parsing with fallbacks; establish quality thresholds for automated processing.
+- **Data privacy and security**: Ensure local LLM processing maintains data confidentiality; implement secure data handling protocols; avoid external API calls during initial processing.
+- **Cost control**: Local processing reduces cloud costs; batch enrichment for production; monitor quotas and implement cost-effective scaling strategies.
 
 # Appendix  
 - **Goals & success metrics**
@@ -67,8 +70,9 @@ Headhunter v1.1 transforms Ella Executive Search's historical candidate database
 - **Out of scope (v1.0)**
   - Client-facing access, multi-tenancy, billing/subscriptions, real-time ingestion, advanced boolean search or sharing.
 - **User stories (traceability)**
-  - Epic 1 (Ingestion & Enrichment): 1.1 local processing, 1.2 JSON via Ollama, 1.3 upload to GCS, 1.4 Gemini deep analysis with specified objects, 1.5 save to Firestore + Vector Search.
-  - Epic 2 (Search Interface): 2.1 secure access, 2.2 JD textbox, 2.3 ranked 10–20 results, 2.4 match rationale bullets.
+  - Epic 1 (LLM Data Processing): 1.1 Set up Ollama with Llama 3.1 8b, 1.2 Create prompts for resume analysis and career insights, 1.3 Process unstructured data into structured JSON profiles, 1.4 Validate LLM output quality and consistency.
+  - Epic 2 (Ingestion & Enrichment): 2.1 Upload processed profiles to GCS, 2.2 Cloud Function triggers Gemini deep analysis, 2.3 Generate embeddings and store in Firestore + Vector Search.
+  - Epic 3 (Search Interface): 3.1 Secure web access, 3.2 JD input interface, 3.3 Ranked candidate results (10–20), 3.4 "Why they're a match" rationale generation.
  - **Version & status**
    - Date: September 5, 2025; Status: Final Draft.
    - v1.1 change: Enhanced AI enrichment for deeper career trajectory, role scope, company pedigree, strengths/red flags.
