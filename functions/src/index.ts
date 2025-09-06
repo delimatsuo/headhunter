@@ -10,6 +10,7 @@ import * as admin from "firebase-admin";
 import { Storage } from "@google-cloud/storage";
 import * as aiplatform from "@google-cloud/aiplatform";
 import { z } from "zod";
+import { VectorSearchService } from "./vector-search";
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -28,6 +29,9 @@ const firestore = admin.firestore();
 const client = new aiplatform.v1.PredictionServiceClient({
   apiEndpoint: "us-central1-aiplatform.googleapis.com",
 });
+
+// Vector Search service
+const vectorSearchService = new VectorSearchService();
 
 // Types and schemas
 const CandidateProfileSchema = z.object({
@@ -303,6 +307,15 @@ export const processUploadedProfile = onObjectFinalized(
           updated_at: admin.firestore.FieldValue.serverTimestamp(),
         });
 
+      // Generate and store vector embedding for similarity search
+      try {
+        await vectorSearchService.storeEmbedding(enrichedProfile);
+        console.log(`Generated embedding for candidate: ${profile.candidate_id}`);
+      } catch (embeddingError) {
+        console.error(`Error generating embedding for ${profile.candidate_id}:`, embeddingError);
+        // Don't fail the entire process if embedding fails
+      }
+
       console.log(`Successfully enriched and stored profile for: ${profile.candidate_id}`);
     } catch (error) {
       console.error(`Error processing profile ${filePath}:`, error);
@@ -448,6 +461,147 @@ export const searchCandidates = onCall(
     } catch (error) {
       console.error("Error searching candidates:", error);
       throw new HttpsError("internal", "Failed to search candidates");
+    }
+  }
+);
+
+/**
+ * Semantic search endpoint using vector similarity
+ */
+export const semanticSearch = onCall(
+  {
+    memory: "512MiB",
+    timeoutSeconds: 60,
+  },
+  async (request) => {
+    const { query_text, filters, limit = 20 } = request.data;
+
+    if (!query_text) {
+      throw new HttpsError("invalid-argument", "Query text is required");
+    }
+
+    try {
+      console.log(`Performing semantic search for: "${query_text}"`);
+
+      const searchQuery = {
+        query_text,
+        filters,
+        limit,
+      };
+
+      const results = await vectorSearchService.searchSimilar(searchQuery);
+
+      // Enhance results with full candidate data
+      const enhancedResults = await Promise.all(
+        results.map(async (result) => {
+          try {
+            const candidateDoc = await firestore
+              .collection("candidates")
+              .doc(result.candidate_id)
+              .get();
+
+            const candidateData = candidateDoc.exists ? candidateDoc.data() : null;
+
+            return {
+              candidate_id: result.candidate_id,
+              similarity_score: Math.round(result.similarity_score * 100) / 100,
+              match_reasons: result.match_reasons,
+              candidate_data: candidateData,
+              metadata: result.metadata,
+            };
+          } catch (error) {
+            console.error(`Error fetching candidate ${result.candidate_id}:`, error);
+            return {
+              candidate_id: result.candidate_id,
+              similarity_score: result.similarity_score,
+              match_reasons: result.match_reasons,
+              candidate_data: null,
+              metadata: result.metadata,
+            };
+          }
+        })
+      );
+
+      return {
+        success: true,
+        query: query_text,
+        results: enhancedResults,
+        total: enhancedResults.length,
+        search_type: "semantic",
+      };
+    } catch (error) {
+      console.error("Error in semantic search:", error);
+      throw new HttpsError("internal", "Failed to perform semantic search");
+    }
+  }
+);
+
+/**
+ * Generate embedding for a single profile (manual/testing)
+ */
+export const generateEmbedding = onCall(
+  {
+    memory: "256MiB",
+    timeoutSeconds: 120,
+  },
+  async (request) => {
+    const { candidate_id } = request.data;
+
+    if (!candidate_id) {
+      throw new HttpsError("invalid-argument", "Candidate ID is required");
+    }
+
+    try {
+      // Get the enriched profile
+      const profileDoc = await firestore
+        .collection("enriched_profiles")
+        .doc(candidate_id)
+        .get();
+
+      if (!profileDoc.exists) {
+        throw new HttpsError("not-found", "Candidate profile not found");
+      }
+
+      const profile = profileDoc.data();
+      const embedding = await vectorSearchService.storeEmbedding(profile);
+
+      return {
+        success: true,
+        candidate_id,
+        embedding_generated: true,
+        embedding_text_length: embedding.embedding_text.length,
+        vector_dimensions: embedding.embedding_vector.length,
+        metadata: embedding.metadata,
+      };
+    } catch (error) {
+      console.error(`Error generating embedding for ${candidate_id}:`, error);
+      throw new HttpsError("internal", "Failed to generate embedding");
+    }
+  }
+);
+
+/**
+ * Vector search statistics endpoint
+ */
+export const vectorSearchStats = onCall(
+  {
+    memory: "256MiB",
+    timeoutSeconds: 30,
+  },
+  async (request) => {
+    try {
+      const stats = await vectorSearchService.getEmbeddingStats();
+      const healthCheck = await vectorSearchService.healthCheck();
+
+      return {
+        success: true,
+        timestamp: new Date().toISOString(),
+        stats,
+        health: healthCheck,
+      };
+    } catch (error) {
+      console.error("Error getting vector search stats:", error);
+      throw new HttpsError("internal", "Failed to get statistics");
     }
   }
 );
