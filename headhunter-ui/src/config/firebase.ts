@@ -3,13 +3,17 @@ import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "AIzaSyBiM5mGxGTXqj2xSvdXvKBzRzGKqSLBQzg",
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
   authDomain: "headhunter-ai-0088.firebaseapp.com",
   projectId: "headhunter-ai-0088",
   storageBucket: "headhunter-ai-0088-profiles",
   messagingSenderId: "1034162584026",
   appId: "1:1034162584026:web:9a8e7f6d5c4f3b2e1a9c8d"
 };
+
+if (!firebaseConfig.apiKey) {
+  throw new Error('Firebase API key not configured. Please set REACT_APP_FIREBASE_API_KEY environment variable.');
+}
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

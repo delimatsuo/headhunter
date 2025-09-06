@@ -95,7 +95,7 @@ function AppContent() {
       } else {
         // Full search mode
         const result = await searchJobCandidates({ 
-          jobDescription: jobDesc,
+          job_description: jobDesc, // Fixed: Match backend expectation
           limit: 20 
         });
         
