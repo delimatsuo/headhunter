@@ -11,7 +11,7 @@
     }
   ],
   "hosting": {
-    "public": "public",
+    "public": "headhunter-ui/build",
     "ignore": [
       "firebase.json",
       "**/.*",
