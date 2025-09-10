@@ -18,6 +18,7 @@ from firebase_admin import credentials, firestore
 from dotenv import load_dotenv
 from scripts.json_repair import repair_json
 from scripts.schemas import IntelligentAnalysis
+from scripts.prompt_builder import PromptBuilder
 
 # Load environment variables
 load_dotenv()
@@ -90,141 +91,8 @@ class IntelligentSkillProcessor:
     
     def create_intelligent_analysis_prompt(self, candidate_data: Dict[str, Any]) -> str:
         """Create prompt with probabilistic skill inference"""
-        
-        name = candidate_data.get('name', 'Unknown')
-        experience = candidate_data.get('experience', '')
-        education = candidate_data.get('education', '')
-        comments = candidate_data.get('comments', [])
-        
-        comment_text = ""
-        if comments:
-            comment_text = "\n".join([f"- {comment.get('text', '')}" for comment in comments])
-        
-        prompt = f"""
-You are an elite executive recruiter with deep knowledge of role requirements across industries. Analyze this candidate with sophisticated skill inference.
-
-CRITICAL FRAMEWORK FOR SKILL INFERENCE:
-1. EXPLICIT SKILLS: Only skills directly mentioned in the resume (100% confidence)
-2. INFERRED SKILLS: Skills typically required for their roles (with probability)
-3. CORE COMPETENCIES: Standard skills for each position type
-4. COMPANY-SPECIFIC SKILLS: Skills typically required at specific companies
-
-SKILL INFERENCE RULES:
-- Principal Engineer at FAANG → 95% system design, distributed systems, mentoring, code review
-- FP&A Analyst at Fortune 500 → 90% Excel modeling, SQL, budgeting, forecasting, Tableau
-- Product Manager at Startup → 85% agile, user research, A/B testing, roadmapping
-- Software Engineer at Enterprise → 80% JIRA, Confluence, enterprise patterns
-- Data Scientist at Tech → 90% Python, ML frameworks, statistics, A/B testing
-
-CANDIDATE DATA:
-Name: {name}
-Experience: {experience[:3000] if experience else "No experience data"}
-Education: {education[:1500] if education else "No education data"}
-Recruiter Comments: {comment_text[:1500] if comment_text else "No comments"}
-
-Provide ONLY a JSON response with this EXACT structure:
-
-{{
-  "explicit_skills": {{
-    "technical_skills": ["Skills directly mentioned in resume"],
-    "tools_technologies": ["Tools explicitly stated"],
-    "soft_skills": ["Soft skills explicitly mentioned"],
-    "certifications": ["Certifications listed"],
-    "confidence": "100%"
-  }},
-  
-  "inferred_skills": {{
-    "highly_probable_skills": [
-      {{"skill": "skill name", "confidence": 95, "reasoning": "Principal Engineer at Google typically requires this"}}
-    ],
-    "probable_skills": [
-      {{"skill": "skill name", "confidence": 85, "reasoning": "Common for this role level"}}
-    ],
-    "likely_skills": [
-      {{"skill": "skill name", "confidence": 75, "reasoning": "Often associated with this domain"}}
-    ],
-    "possible_skills": [
-      {{"skill": "skill name", "confidence": 60, "reasoning": "May have based on background"}}
-    ]
-  }},
-  
-  "role_based_competencies": {{
-    "current_role_competencies": {{
-      "role": "Current or most recent role",
-      "core_competencies": ["Standard skills for this role"],
-      "typical_tools": ["Common tools for this role"],
-      "domain_knowledge": ["Domain expertise typically required"]
-    }},
-    "historical_competencies": [
-      {{
-        "role": "Previous role",
-        "acquired_skills": ["Skills likely gained in this role"],
-        "transferable_skills": ["Skills that transfer to other roles"]
-      }}
-    ]
-  }},
-  
-  "company_context_skills": {{
-    "company_specific": [
-      {{
-        "company": "Company name",
-        "typical_stack": ["Tech stack typically used"],
-        "methodologies": ["Common practices at this company"],
-        "scale_experience": "startup/midmarket/enterprise/hyperscale"
-      }}
-    ],
-    "industry_skills": ["Skills common in their industry"]
-  }},
-  
-  "skill_evolution_analysis": {{
-    "skill_trajectory": "expanding/specializing/pivoting/stagnant",
-    "emerging_skills": ["New skills they're likely developing"],
-    "skill_gaps": ["Skills they likely lack for next level"],
-    "learning_velocity": "fast/moderate/slow",
-    "skill_currency": "cutting-edge/current/aging/outdated"
-  }},
-  
-  "composite_skill_profile": {{
-    "primary_expertise": ["Top 5 most certain skills (explicit + high confidence inferred)"],
-    "secondary_expertise": ["Next tier of skills"],
-    "domain_specialization": "Area of deepest expertise",
-    "skill_breadth": "specialist/t-shaped/generalist",
-    "unique_combination": ["Rare skill combinations they possess"]
-  }},
-  
-  "career_trajectory_analysis": {{
-    "current_level": "entry/mid/senior/lead/principal/director/vp/c-level",
-    "years_experience": <number>,
-    "promotion_velocity": "slow/average/fast/exceptional",
-    "career_progression": "linear/accelerated/lateral/varied",
-    "performance_indicator": "below-average/average/above-average/top-performer"
-  }},
-  
-  "market_positioning": {{
-    "skill_market_value": "low/moderate/high/exceptional",
-    "skill_rarity": "common/uncommon/rare/unique",
-    "competitive_advantage": ["Skills that differentiate them"],
-    "placement_difficulty": "easy/moderate/challenging/difficult",
-    "ideal_next_roles": ["Roles that match their skill profile"],
-    "salary_range": "$XXX,XXX - $XXX,XXX"
-  }},
-  
-  "recruiter_insights": {{
-    "overall_rating": "A+/A/B+/B/C+/C/D",
-    "recommendation": "highly-recommend/recommend/consider/pass",
-    "confidence_in_assessment": "high/medium/low",
-    "verification_needed": ["Skills that need verification in interview"],
-    "red_flags": ["Concerning patterns or gaps"],
-    "selling_points": ["Top reasons to hire"],
-    "interview_focus": ["Key areas to probe"],
-    "one_line_pitch": "Compelling summary for clients"
-  }}
-}}
-
-Remember: Separate what you KNOW (explicit) from what you INFER (probabilistic). Be precise about confidence levels.
-"""
-        
-        return prompt
+        builder = PromptBuilder()
+        return builder.build_resume_analysis_prompt(candidate_data)
     
     async def process_candidate(self, candidate_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Process single candidate with intelligent skill inference"""
