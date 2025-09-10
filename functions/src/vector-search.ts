@@ -39,6 +39,7 @@ interface SearchQuery {
     min_score?: number;
   };
   limit?: number;
+  org_id?: string;
 }
 
 export class VectorSearchService {
@@ -190,137 +191,198 @@ export class VectorSearchService {
   }
 
   /**
-   * Perform similarity search using cosine distance
+   * Search candidates using semantic similarity
    */
-  async searchSimilar(query: SearchQuery): Promise<VectorSearchResult[]> {
+  async searchCandidates(query: SearchQuery): Promise<VectorSearchResult[]> {
     try {
       // Generate embedding for query text
       const queryEmbedding = await this.generateEmbedding(query.query_text);
       
-      // For now, use Firestore to get all embeddings and compute similarity locally
-      // In production, this would use Vertex AI Vector Search
-      const embeddingsSnapshot = await this.firestore
-        .collection("candidate_embeddings")
-        .get();
+      // Get all embeddings from Firestore with organization filter
+      let embeddingsQuery = this.firestore.collection("candidate_embeddings");
       
-      const results: VectorSearchResult[] = [];
+      if (query.org_id) {
+        // We need to join with candidates collection to filter by org_id
+        // For now, get all embeddings and filter in memory
+      }
       
-      embeddingsSnapshot.docs.forEach((doc) => {
-        const embedding = doc.data() as EmbeddingData;
+      const snapshot = await embeddingsQuery.get();
+      const embeddings: EmbeddingData[] = [];
+      
+      for (const doc of snapshot.docs) {
+        const data = doc.data() as EmbeddingData;
         
-        // Apply filters
-        if (query.filters) {
-          if (query.filters.min_years_experience && 
-              embedding.metadata.years_experience < query.filters.min_years_experience) {
-            return;
-          }
+        // If org_id filter is provided, check candidate's organization
+        if (query.org_id) {
+          const candidateDoc = await this.firestore
+            .collection('candidates')
+            .doc(data.candidate_id)
+            .get();
           
-          if (query.filters.current_level && 
-              embedding.metadata.current_level !== query.filters.current_level) {
-            return;
-          }
-          
-          if (query.filters.company_tier && 
-              embedding.metadata.company_tier !== query.filters.company_tier) {
-            return;
-          }
-          
-          if (query.filters.min_score && 
-              embedding.metadata.overall_score < query.filters.min_score) {
-            return;
+          if (!candidateDoc.exists || candidateDoc.data()?.org_id !== query.org_id) {
+            continue;
           }
         }
         
+        embeddings.push(data);
+      }
+      
+      // Calculate similarity scores
+      const results: VectorSearchResult[] = [];
+      
+      for (const embedding of embeddings) {
+        // Apply filters
+        if (query.filters?.min_years_experience && 
+            embedding.metadata.years_experience < query.filters.min_years_experience) {
+          continue;
+        }
+        
+        if (query.filters?.current_level && 
+            embedding.metadata.current_level !== query.filters.current_level) {
+          continue;
+        }
+        
+        if (query.filters?.company_tier && 
+            embedding.metadata.company_tier !== query.filters.company_tier) {
+          continue;
+        }
+        
+        if (query.filters?.min_score && 
+            embedding.metadata.overall_score < query.filters.min_score) {
+          continue;
+        }
+        
         // Calculate cosine similarity
-        const similarity = this.cosineSimilarity(queryEmbedding, embedding.embedding_vector);
+        const similarity = this.calculateCosineSimilarity(queryEmbedding, embedding.embedding_vector);
         
         // Generate match reasons
-        const matchReasons = this.generateMatchReasons(query.query_text, embedding);
+        const matchReasons = this.generateMatchReasons(embedding, similarity);
         
         results.push({
           candidate_id: embedding.candidate_id,
           similarity_score: similarity,
           metadata: embedding.metadata,
-          match_reasons: matchReasons,
+          match_reasons: matchReasons
         });
-      });
+      }
       
-      // Sort by similarity score (descending) and apply limit
+      // Sort by similarity score and apply limit
       results.sort((a, b) => b.similarity_score - a.similarity_score);
       
       const limit = query.limit || 20;
       return results.slice(0, limit);
       
     } catch (error) {
-      console.error("Error in similarity search:", error);
+      console.error("Error in searchCandidates:", error);
       throw error;
     }
   }
 
   /**
+   * Find candidates similar to a reference candidate
+   */
+  async findSimilarCandidates(candidateId: string, options: { 
+    limit?: number; 
+    org_id?: string; 
+  } = {}): Promise<VectorSearchResult[]> {
+    try {
+      // Get the reference candidate's embedding
+      const embeddingDoc = await this.firestore
+        .collection("candidate_embeddings")
+        .doc(candidateId)
+        .get();
+      
+      if (!embeddingDoc.exists) {
+        throw new Error(`Embedding not found for candidate: ${candidateId}`);
+      }
+      
+      const referenceEmbedding = embeddingDoc.data() as EmbeddingData;
+      
+      // Search for similar candidates using the reference embedding
+      const query: SearchQuery = {
+        query_text: referenceEmbedding.embedding_text,
+        limit: (options.limit || 10) + 1, // +1 to exclude the reference candidate
+        org_id: options.org_id
+      };
+      
+      const results = await this.searchCandidates(query);
+      
+      // Remove the reference candidate from results
+      const filteredResults = results.filter(result => result.candidate_id !== candidateId);
+      
+      // Return up to the requested limit
+      return filteredResults.slice(0, options.limit || 10);
+      
+    } catch (error) {
+      console.error("Error in findSimilarCandidates:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Perform similarity search using cosine distance (legacy method)
+   */
+  async searchSimilar(query: SearchQuery): Promise<VectorSearchResult[]> {
+    // Delegate to the new searchCandidates method for backward compatibility
+    return this.searchCandidates(query);
+  }
+
+  /**
    * Calculate cosine similarity between two vectors
    */
-  private cosineSimilarity(vecA: number[], vecB: number[]): number {
-    if (vecA.length !== vecB.length) {
-      throw new Error("Vectors must have the same dimensions");
+  private calculateCosineSimilarity(vectorA: number[], vectorB: number[]): number {
+    if (vectorA.length !== vectorB.length) {
+      throw new Error("Vector dimensions must match");
     }
     
     let dotProduct = 0;
     let normA = 0;
     let normB = 0;
     
-    for (let i = 0; i < vecA.length; i++) {
-      dotProduct += vecA[i] * vecB[i];
-      normA += vecA[i] * vecA[i];
-      normB += vecB[i] * vecB[i];
+    for (let i = 0; i < vectorA.length; i++) {
+      dotProduct += vectorA[i] * vectorB[i];
+      normA += vectorA[i] * vectorA[i];
+      normB += vectorB[i] * vectorB[i];
     }
     
-    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    normA = Math.sqrt(normA);
+    normB = Math.sqrt(normB);
+    
+    if (normA === 0 || normB === 0) {
+      return 0;
+    }
+    
+    return dotProduct / (normA * normB);
   }
 
   /**
-   * Generate match reasons based on query and candidate profile
+   * Generate match reasons based on embedding metadata and similarity
    */
-  private generateMatchReasons(queryText: string, embedding: EmbeddingData): string[] {
+  private generateMatchReasons(embedding: EmbeddingData, similarity: number): string[] {
     const reasons: string[] = [];
-    const queryLower = queryText.toLowerCase();
-    const embeddingTextLower = embedding.embedding_text.toLowerCase();
     
-    // Technical skills matching
-    const techKeywords = ["python", "javascript", "react", "machine learning", "ai", "cloud", "aws", "gcp"];
-    const matchedTech = techKeywords.filter(skill => 
-      queryLower.includes(skill) && embeddingTextLower.includes(skill)
-    );
-    if (matchedTech.length > 0) {
-      reasons.push(`Technical skills match: ${matchedTech.join(", ")}`);
+    if (similarity > 0.9) {
+      reasons.push("Excellent overall match");
+    } else if (similarity > 0.8) {
+      reasons.push("Strong overall alignment");
+    } else if (similarity > 0.7) {
+      reasons.push("Good profile match");
     }
     
-    // Experience level matching
-    if (queryLower.includes("senior") && embeddingTextLower.includes("senior")) {
-      reasons.push("Senior-level experience alignment");
+    if (embedding.metadata.technical_skills && embedding.metadata.technical_skills.length > 0) {
+      reasons.push(`Technical skills: ${embedding.metadata.technical_skills.slice(0, 3).join(", ")}`);
     }
     
-    if (queryLower.includes("lead") && embeddingTextLower.includes("leadership")) {
-      reasons.push("Leadership experience match");
+    if (embedding.metadata.years_experience > 5) {
+      reasons.push(`${embedding.metadata.years_experience} years experience`);
     }
     
-    // Industry/company matching
-    const companyKeywords = ["startup", "big tech", "faang", "enterprise"];
-    const matchedCompany = companyKeywords.filter(keyword =>
-      queryLower.includes(keyword) && embeddingTextLower.includes(keyword)
-    );
-    if (matchedCompany.length > 0) {
-      reasons.push(`Company background match: ${matchedCompany.join(", ")}`);
+    if (embedding.metadata.leadership_level) {
+      reasons.push(`Leadership: ${embedding.metadata.leadership_level}`);
     }
     
-    // Overall score consideration
-    if (embedding.metadata.overall_score >= 0.8) {
-      reasons.push("High overall candidate score");
-    }
-    
-    // Default reason if no specific matches
-    if (reasons.length === 0) {
-      reasons.push("Profile similarity based on experience and skills");
+    if (embedding.metadata.company_tier && embedding.metadata.company_tier !== "Unknown") {
+      reasons.push(`${embedding.metadata.company_tier} company background`);
     }
     
     return reasons;
@@ -377,7 +439,7 @@ export class VectorSearchService {
       await this.firestore
         .collection("health")
         .doc("vector_search_test")
-        .set({ timestamp: admin.firestore.FieldValue.serverTimestamp() });
+        .set({ timestamp: new Date().toISOString() });
       
       // Get embedding count
       const embeddingsSnapshot = await this.firestore

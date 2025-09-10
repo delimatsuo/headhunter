@@ -4,7 +4,13 @@ module.exports = {
   roots: ["<rootDir>/src"],
   testMatch: ["**/__tests__/**/*.ts", "**/*.(test|spec).ts"],
   transform: {
-    "^.+\\.ts$": "ts-jest",
+    "^.+\\.ts$": ["ts-jest", {
+      isolatedModules: true,
+      tsconfig: {
+        noUnusedLocals: false,
+        noUnusedParameters: false
+      }
+    }]
   },
   collectCoverageFrom: [
     "src/**/*.ts",
@@ -13,5 +19,5 @@ module.exports = {
     "!src/**/__tests__/**",
   ],
   coverageDirectory: "coverage",
-  coverageReporters: ["text", "lcov", "html"],
+  coverageReporters: ["text", "lcov", "html"]
 };

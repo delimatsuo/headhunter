@@ -909,3 +909,6 @@ export {
   completeOnboarding,
   getOnboardingStatus,
 } from './user-onboarding';
+
+// Export REST API
+export { api } from './rest-api';
