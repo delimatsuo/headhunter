@@ -67,3 +67,4 @@ CSV files/
 # tasks.json
 # tasks/ 
 .mcp.json
+.checkpoints/

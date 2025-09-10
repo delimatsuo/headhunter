@@ -18,6 +18,7 @@ from firebase_admin import credentials, firestore
 from dotenv import load_dotenv
 from scripts.json_validator import JSONValidator
 from scripts.prompt_builder import PromptBuilder
+from scripts.firestore_streamer import FirestoreStreamer
 
 # Load environment variables
 load_dotenv()
@@ -77,6 +78,22 @@ class IntelligentSkillProcessor:
         
         # JSON validation system
         self.json_validator = JSONValidator()
+        
+        # Enhanced Firestore streaming system
+        if self.use_firestore:
+            # Ensure checkpoint directory exists
+            checkpoint_dir = ".checkpoints"
+            if not os.path.exists(checkpoint_dir):
+                os.makedirs(checkpoint_dir, exist_ok=True)
+                
+            self.firestore_streamer = FirestoreStreamer(
+                firestore_client=self.db,
+                batch_size=10,  # Smaller batches for real-time processing
+                collections=["candidates", "enriched_profiles"],
+                checkpoint_file=f"{checkpoint_dir}/intelligent_processor_checkpoint.json"
+            )
+        else:
+            self.firestore_streamer = None
         
     async def __aenter__(self):
         self.session = aiohttp.ClientSession(
@@ -224,31 +241,68 @@ class IntelligentSkillProcessor:
         return " ".join(filter(None, keywords)).lower()
     
     async def upload_batch_to_firestore(self, candidates: List[Dict[str, Any]]) -> int:
-        """Upload batch to Firestore"""
+        """Upload batch to Firestore using enhanced streaming system"""
         
-        if not self.db or not candidates:
+        if not self.firestore_streamer or not candidates:
             return 0
             
         uploaded = 0
         
         try:
-            batch = self.db.batch()
-            
             for candidate in candidates:
                 candidate_id = candidate.get('candidate_id', f"unknown_{uploaded}")
-                # Use candidates collection (main collection)
-                doc_ref = self.db.collection('candidates').document(candidate_id)
-                batch.set(doc_ref, candidate, merge=True)
-                uploaded += 1
+                
+                # Add to main candidates collection
+                result = self.firestore_streamer.add_document(
+                    "candidates", 
+                    candidate_id, 
+                    candidate,
+                    upsert=True
+                )
+                
+                if result.success:
+                    uploaded += 1
+                    
+                    # Also add to enriched_profiles collection for specialized queries
+                    if "intelligent_analysis" in candidate:
+                        enriched_doc = {
+                            "candidate_id": candidate_id,
+                            "name": candidate.get("name"),
+                            "intelligent_analysis": candidate["intelligent_analysis"],
+                            "processing_metadata": candidate.get("processing_metadata"),
+                            "enrichment_timestamp": firestore.SERVER_TIMESTAMP
+                        }
+                        
+                        self.firestore_streamer.add_document(
+                            "enriched_profiles",
+                            candidate_id,
+                            enriched_doc,
+                            upsert=True
+                        )
             
-            batch.commit()
-            self.stats.uploaded += uploaded
+            # Flush any remaining documents
+            flush_result = await self.firestore_streamer.flush_batch()
             
-            logger.info(f"📤 Uploaded {uploaded} intelligently analyzed candidates (Total: {self.stats.uploaded})")
-            return uploaded
+            if flush_result.success:
+                self.stats.uploaded += uploaded
+                
+                # Get streaming metrics
+                streaming_metrics = self.firestore_streamer.get_metrics()
+                logger.info(f"""📤 Enhanced streaming upload complete:
+   ✅ Documents: {uploaded} candidates + {uploaded} enriched profiles
+   📊 Streaming metrics:
+      - Total streamed: {streaming_metrics['total_documents']}
+      - Success rate: {streaming_metrics['successful_writes']}/{streaming_metrics['total_documents']}
+      - Avg latency: {streaming_metrics['write_latency_ms']:.1f}ms
+      - Throughput: {streaming_metrics['documents_per_second']:.1f} docs/sec""")
+                
+                return uploaded
+            else:
+                logger.error(f"Flush failed: {flush_result.error_message}")
+                return 0
             
         except Exception as e:
-            logger.error(f"Firestore upload error: {e}")
+            logger.error(f"Enhanced Firestore streaming error: {e}")
             return 0
     
     async def process_batch_streaming(self, candidates: List[Dict[str, Any]], 
@@ -262,7 +316,25 @@ class IntelligentSkillProcessor:
         logger.info("🧠 Using probabilistic inference to identify likely skills based on roles and companies")
         logger.info("📊 Separating explicit skills (100% confidence) from inferred skills (with probability scores)")
         
-        for i in range(0, self.stats.total_candidates, batch_size):
+        # Check for existing checkpoint
+        start_index = 0
+        if self.firestore_streamer:
+            checkpoint = self.firestore_streamer.load_checkpoint()
+            if checkpoint:
+                logger.info(f"💾 Found checkpoint: resuming from {checkpoint.get('last_processed_id')}")
+                additional_data = checkpoint.get('additional_data', {})
+                start_batch = additional_data.get('batch_number', 0)
+                start_index = start_batch * batch_size
+                
+                # Restore stats from checkpoint
+                if 'processed_count' in additional_data:
+                    self.stats.processed = additional_data['processed_count']
+                if 'upload_count' in additional_data:
+                    self.stats.uploaded = additional_data['upload_count']
+                    
+                logger.info(f"📊 Resuming from batch {start_batch + 1}, processed: {self.stats.processed}")
+        
+        for i in range(start_index, self.stats.total_candidates, batch_size):
             batch = candidates[i:i + batch_size]
             batch_num = (i // batch_size) + 1
             total_batches = (self.stats.total_candidates + batch_size - 1) // batch_size
@@ -282,6 +354,19 @@ class IntelligentSkillProcessor:
             # Upload to Firestore
             if successful_results:
                 await self.upload_batch_to_firestore(successful_results)
+                
+                # Save checkpoint after successful upload
+                if self.firestore_streamer:
+                    last_candidate_id = successful_results[-1].get('candidate_id', f'batch_{batch_num}')
+                    self.firestore_streamer.save_checkpoint(
+                        last_processed_id=last_candidate_id,
+                        additional_data={
+                            'batch_number': batch_num,
+                            'total_batches': total_batches,
+                            'processed_count': self.stats.processed,
+                            'upload_count': self.stats.uploaded
+                        }
+                    )
             
             # Progress update
             elapsed = (datetime.now() - self.stats.start_time).total_seconds()
