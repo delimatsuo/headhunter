@@ -40,6 +40,9 @@ export const firestoreService = {
           matchScore: parseFloat(data.overall_rating === 'A' ? '0.9' : 
                                data.overall_rating === 'B' ? '0.7' : 
                                data.overall_rating === 'C' ? '0.5' : '0.3'),
+          overall_score: parseFloat(data.overall_rating === 'A' ? '0.9' : 
+                                    data.overall_rating === 'B' ? '0.7' : 
+                                    data.overall_rating === 'C' ? '0.5' : '0.3'),
           strengths: data.ai_analysis?.recruiter_recommendations?.strengths || [],
           fitReasons: [],
           availability: 'Unknown',
@@ -150,7 +153,7 @@ export const firestoreService = {
           ${candidate.name} 
           ${candidate.title} 
           ${candidate.company} 
-          ${candidate.skills.join(' ')} 
+          ${(candidate.skills || []).join(' ')} 
           ${candidate.summary}
         `.toLowerCase();
         

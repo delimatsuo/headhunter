@@ -129,12 +129,12 @@ export const apiService = {
         const candidates = candidatesResult.data;
         const totalCandidates = candidates.length;
         const averageScore = candidates.reduce((sum, candidate) => 
-          sum + candidate.overall_score, 0) / totalCandidates || 0;
+          sum + (candidate.overall_score || 0), 0) / totalCandidates || 0;
         
         // Extract top skills
         const skillsCount = new Map<string, number>();
         candidates.forEach(candidate => {
-          candidate.resume_analysis.technical_skills.forEach(skill => {
+          (candidate.resume_analysis?.technical_skills || []).forEach(skill => {
             skillsCount.set(skill, (skillsCount.get(skill) || 0) + 1);
           });
         });
@@ -142,11 +142,12 @@ export const apiService = {
         const topSkills = Array.from(skillsCount.entries())
           .sort((a, b) => b[1] - a[1])
           .slice(0, 10)
-          .map(([skill]) => skill);
+          .map(([skill, count]) => ({ skill, count }));
 
         return {
           totalCandidates,
           averageScore: Math.round(averageScore * 100) / 100,
+          activeSearches: 0, // This would come from search tracking
           recentSearches: 0, // This would come from search logs
           topSkills,
         };

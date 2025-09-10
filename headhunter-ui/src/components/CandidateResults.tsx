@@ -98,18 +98,18 @@ const CandidateResults: React.FC<CandidateResultsProps> = ({ matches, insights, 
           
           return (
             <div key={match.candidate.candidate_id} className="candidate-card">
-              <div className="candidate-header" onClick={() => toggleExpand(match.candidate.candidate_id)}>
+              <div className="candidate-header" onClick={() => toggleExpand(match.candidate.candidate_id || '')}>
                 <div className="candidate-main">
                   <h4 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(match.candidate.name) }} />
                   <div className="candidate-info">
                     <span className="info-item">
-                      {match.candidate.resume_analysis.career_trajectory.current_level}
+                      {match.candidate.resume_analysis?.career_trajectory?.current_level || 'Not specified'}
                     </span>
                     <span className="info-item">
-                      {match.candidate.resume_analysis.years_experience} years
+                      {match.candidate.resume_analysis?.years_experience || 0} years
                     </span>
                     <span className="info-item">
-                      {match.candidate.resume_analysis.company_pedigree.recent_companies[0]}
+                      {match.candidate.resume_analysis?.company_pedigree?.recent_companies?.[0] || 'No company info'}
                     </span>
                   </div>
                 </div>
@@ -178,7 +178,7 @@ const CandidateResults: React.FC<CandidateResultsProps> = ({ matches, insights, 
                     <div className="detail-section">
                       <h6>Technical Skills</h6>
                       <div className="skill-tags">
-                        {match.candidate.resume_analysis.technical_skills.map((skill, idx) => (
+                        {(match.candidate.resume_analysis?.technical_skills || []).map((skill, idx) => (
                           <span key={idx} className="skill-tag" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(skill) }} />
                         ))}
                       </div>
@@ -186,27 +186,27 @@ const CandidateResults: React.FC<CandidateResultsProps> = ({ matches, insights, 
                     
                     <div className="detail-section">
                       <h6>Career Trajectory</h6>
-                      <p>{match.candidate.resume_analysis.career_trajectory.trajectory_type}</p>
+                      <p>{match.candidate.resume_analysis?.career_trajectory?.trajectory_type || 'Not specified'}</p>
                       <p className="sub-text">
-                        {match.candidate.resume_analysis.career_trajectory.progression_speed} progression
+                        {match.candidate.resume_analysis?.career_trajectory?.progression_speed || 'Not specified'} progression
                       </p>
                     </div>
                     
-                    {match.candidate.resume_analysis.leadership_scope?.has_leadership && (
+                    {match.candidate.resume_analysis?.leadership_scope?.has_leadership && (
                       <div className="detail-section">
                         <h6>Leadership Experience</h6>
-                        <p>{match.candidate.resume_analysis.leadership_scope.leadership_level}</p>
+                        <p>{match.candidate.resume_analysis?.leadership_scope?.leadership_level || 'Not specified'}</p>
                         <p className="sub-text">
-                          Team size: {match.candidate.resume_analysis.leadership_scope.team_size}
+                          Team size: {match.candidate.resume_analysis?.leadership_scope?.team_size || 'Not specified'}
                         </p>
                       </div>
                     )}
                     
                     <div className="detail-section">
                       <h6>Education</h6>
-                      <p>{match.candidate.resume_analysis.education.highest_degree}</p>
+                      <p>{match.candidate.resume_analysis?.education?.highest_degree || 'Not specified'}</p>
                       <p className="sub-text">
-                        {match.candidate.resume_analysis.education.institutions[0]}
+                        {match.candidate.resume_analysis?.education?.institutions?.[0] || 'Not specified'}
                       </p>
                     </div>
                   </div>

@@ -49,10 +49,10 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
           <div className="candidate-details">
             <h3 className="candidate-name">{candidate.name}</h3>
             <p className="candidate-level">
-              {candidate.resume_analysis.career_trajectory.current_level}
+              {candidate.resume_analysis?.career_trajectory?.current_level || 'Not specified'}
             </p>
             <p className="candidate-experience">
-              {candidate.resume_analysis.years_experience} years experience
+              {candidate.resume_analysis?.years_experience || 0} years experience
             </p>
           </div>
         </div>
@@ -72,8 +72,8 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
             </div>
           )}
 
-          <div className={`score-badge ${getScoreColor(candidate.overall_score)}`}>
-            <span className="score-value">{formatScore(candidate.overall_score)}%</span>
+          <div className={`score-badge ${getScoreColor(candidate.overall_score || 0)}`}>
+            <span className="score-value">{formatScore(candidate.overall_score || 0)}%</span>
             <span className="score-label">Overall</span>
           </div>
         </div>
@@ -84,24 +84,24 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
           <div className="skill-category">
             <h4>Technical Skills</h4>
             <div className="skills-tags">
-              {candidate.resume_analysis.technical_skills.slice(0, 4).map((skill, index) => (
+              {(candidate.resume_analysis?.technical_skills || []).slice(0, 4).map((skill, index) => (
                 <span key={index} className="skill-tag technical">{skill}</span>
               ))}
-              {candidate.resume_analysis.technical_skills.length > 4 && (
-                <span className="skill-tag more">+{candidate.resume_analysis.technical_skills.length - 4}</span>
+              {(candidate.resume_analysis?.technical_skills?.length || 0) > 4 && (
+                <span className="skill-tag more">+{(candidate.resume_analysis?.technical_skills?.length || 0) - 4}</span>
               )}
             </div>
           </div>
 
-          {candidate.resume_analysis.soft_skills.length > 0 && (
+          {(candidate.resume_analysis?.soft_skills?.length || 0) > 0 && (
             <div className="skill-category">
               <h4>Soft Skills</h4>
               <div className="skills-tags">
-                {candidate.resume_analysis.soft_skills.slice(0, 3).map((skill, index) => (
+                {(candidate.resume_analysis?.soft_skills || []).slice(0, 3).map((skill, index) => (
                   <span key={index} className="skill-tag soft">{skill}</span>
                 ))}
-                {candidate.resume_analysis.soft_skills.length > 3 && (
-                  <span className="skill-tag more">+{candidate.resume_analysis.soft_skills.length - 3}</span>
+                {(candidate.resume_analysis?.soft_skills?.length || 0) > 3 && (
+                  <span className="skill-tag more">+{(candidate.resume_analysis?.soft_skills?.length || 0) - 3}</span>
                 )}
               </div>
             </div>
@@ -111,12 +111,12 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
         <div className="company-info">
           <h4>Recent Companies</h4>
           <div className="companies">
-            {candidate.resume_analysis.company_pedigree.recent_companies.slice(0, 3).map((company, index) => (
+            {(candidate.resume_analysis?.company_pedigree?.recent_companies || []).slice(0, 3).map((company, index) => (
               <span key={index} className="company-tag">{company}</span>
             ))}
           </div>
-          <span className={`tier-badge ${candidate.resume_analysis.company_pedigree.tier_level.toLowerCase()}`}>
-            {candidate.resume_analysis.company_pedigree.tier_level} Tier
+          <span className={`tier-badge ${(candidate.resume_analysis?.company_pedigree?.tier_level || 'unknown').toLowerCase()}`}>
+            {candidate.resume_analysis?.company_pedigree?.tier_level || 'Unknown'} Tier
           </span>
         </div>
 
@@ -150,17 +150,17 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
           <div className="details-grid">
             <div className="detail-section">
               <h4>Career Trajectory</h4>
-              <p><strong>Progression:</strong> {candidate.resume_analysis.career_trajectory.progression_speed}</p>
-              <p><strong>Type:</strong> {candidate.resume_analysis.career_trajectory.trajectory_type}</p>
+              <p><strong>Progression:</strong> {candidate.resume_analysis?.career_trajectory?.progression_speed || 'Not specified'}</p>
+              <p><strong>Type:</strong> {candidate.resume_analysis?.career_trajectory?.trajectory_type || 'Not specified'}</p>
               <div className="domain-expertise">
                 <strong>Domain Expertise:</strong>
-                {candidate.resume_analysis.career_trajectory.domain_expertise.map((domain, index) => (
+                {(candidate.resume_analysis?.career_trajectory?.domain_expertise || []).map((domain, index) => (
                   <span key={index} className="domain-tag">{domain}</span>
                 ))}
               </div>
             </div>
 
-            {candidate.resume_analysis.leadership_scope && (
+            {candidate.resume_analysis?.leadership_scope && (
               <div className="detail-section">
                 <h4>Leadership</h4>
                 <p><strong>Has Leadership:</strong> {candidate.resume_analysis.leadership_scope.has_leadership ? 'Yes' : 'No'}</p>
@@ -175,10 +175,10 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
 
             <div className="detail-section">
               <h4>Education</h4>
-              <p><strong>Highest Degree:</strong> {candidate.resume_analysis.education.highest_degree}</p>
+              <p><strong>Highest Degree:</strong> {candidate.resume_analysis?.education?.highest_degree || 'Not specified'}</p>
               <div className="institutions">
                 <strong>Institutions:</strong>
-                {candidate.resume_analysis.education.institutions.map((institution, index) => (
+                {(candidate.resume_analysis?.education?.institutions || []).map((institution, index) => (
                   <span key={index} className="institution-tag">{institution}</span>
                 ))}
               </div>
@@ -190,12 +190,12 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 <div className="recruiter-strengths">
                   <strong>Strengths:</strong>
                   <ul>
-                    {candidate.recruiter_insights.strengths.map((strength, index) => (
+                    {(candidate.recruiter_insights.strengths || []).map((strength, index) => (
                       <li key={index}>{strength}</li>
                     ))}
                   </ul>
                 </div>
-                <p><strong>Recommendation:</strong> {candidate.recruiter_insights.recommendation}</p>
+                <p><strong>Recommendation:</strong> {candidate.recruiter_insights.recommendation || 'Not specified'}</p>
               </div>
             )}
 
