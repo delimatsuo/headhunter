@@ -1,0 +1,12 @@
+{
+  "quarantine_id": "quarantine_c9386479",
+  "timestamp": "2025-09-10T13:40:10.870066",
+  "original_response": "completely broken json {{{ [",
+  "error_info": {
+    "error_type": "JSONValidationFailure",
+    "error_message": "All repair attempts failed",
+    "candidate_id": null,
+    "processor": "json_validator",
+    "repair_attempts": 3
+  }
+}

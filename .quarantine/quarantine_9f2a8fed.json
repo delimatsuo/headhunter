@@ -1,0 +1,12 @@
+{
+  "quarantine_id": "quarantine_9f2a8fed",
+  "timestamp": "2025-09-10T13:39:25.926176",
+  "original_response": "not json at all",
+  "error_info": {
+    "error_type": "JSONValidationFailure",
+    "error_message": "All repair attempts failed",
+    "candidate_id": null,
+    "processor": "json_validator",
+    "repair_attempts": 3
+  }
+}

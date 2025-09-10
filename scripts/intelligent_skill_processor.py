@@ -16,8 +16,7 @@ import logging
 import firebase_admin
 from firebase_admin import credentials, firestore
 from dotenv import load_dotenv
-from scripts.json_repair import repair_json
-from scripts.schemas import IntelligentAnalysis
+from scripts.json_validator import JSONValidator
 from scripts.prompt_builder import PromptBuilder
 
 # Load environment variables
@@ -46,6 +45,7 @@ class ProcessingStats:
     processed: int = 0
     uploaded: int = 0
     failed: int = 0
+    failed_validations: int = 0
     start_time: Optional[datetime] = None
     estimated_cost: float = 0.0
     
@@ -74,6 +74,9 @@ class IntelligentSkillProcessor:
         # Cost tracking
         self.cost_per_token = 0.10 / 1_000_000
         self.stats = ProcessingStats()
+        
+        # JSON validation system
+        self.json_validator = JSONValidator()
         
     async def __aenter__(self):
         self.session = aiohttp.ClientSession(
@@ -118,9 +121,20 @@ class IntelligentSkillProcessor:
                         content = result['choices'][0]['message']['content']
                         
                         try:
-                            # Repair and parse JSON then validate against schema
-                            repaired = repair_json(content)
-                            analysis = IntelligentAnalysis.model_validate(repaired).model_dump()
+                            # Use JSON validation system with repair and quarantine
+                            validation_result = self.json_validator.validate(content, candidate_id=candidate_id)
+                            
+                            if validation_result.is_valid:
+                                analysis = validation_result.data
+                            else:
+                                # JSON validation failed and was quarantined
+                                logger.error(f"❌ JSON validation failed for candidate {candidate_id}")
+                                logger.error(f"   Errors: {validation_result.errors}")
+                                if validation_result.quarantined:
+                                    logger.error(f"   Quarantined as: {validation_result.quarantine_id}")
+                                
+                                self.stats.failed_validations += 1
+                                return None  # Skip this candidate
                             
                             # Create enhanced document with intelligent analysis
                             enhanced_data = {
@@ -279,6 +293,7 @@ class IntelligentSkillProcessor:
    ✅ Intelligent Analysis Complete: {self.stats.processed}/{self.stats.total_candidates}
    📤 Uploaded with Skill Inference: {self.stats.uploaded}
    ❌ Failed: {self.stats.failed}
+   🔧 JSON Validation Failures: {self.stats.failed_validations}
    ⚡ Rate: {rate:.1f} candidates/sec
    ⏱️ ETA: {eta_seconds/60:.1f} minutes
    
@@ -293,16 +308,25 @@ class IntelligentSkillProcessor:
             if i + batch_size < self.stats.total_candidates:
                 await asyncio.sleep(2.0)  # Slower pace to avoid rate limits
         
-        # Final summary
+        # Final summary with validation metrics
         total_time = (datetime.now() - self.stats.start_time).total_seconds()
+        validation_metrics = self.json_validator.get_metrics()
         
         logger.info(f"""
 🎯 INTELLIGENT ANALYSIS COMPLETE:
    ✅ Successfully analyzed: {self.stats.processed}/{self.stats.total_candidates}
    📤 Uploaded to Firestore: {self.stats.uploaded}
    ❌ Failed: {self.stats.failed}
+   🔧 JSON Validation Failures: {self.stats.failed_validations}
    ⏱️ Total time: {total_time/60:.1f} minutes
    💰 Estimated cost: ${self.stats.processed * 6000 * self.cost_per_token:.2f}
+   
+   📊 JSON VALIDATION METRICS:
+      - Total validations: {validation_metrics.get('total_validations', 0)}
+      - Successful validations: {validation_metrics.get('successful_validations', 0)}
+      - Repair attempts: {validation_metrics.get('repair_attempts', 0)}
+      - Quarantined responses: {validation_metrics.get('quarantined_count', 0)}
+      - Avg processing time: {validation_metrics.get('avg_processing_time_ms', 0):.1f}ms
    
    🧠 Analysis included:
       - Explicit vs Inferred skill separation
