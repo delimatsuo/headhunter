@@ -1,0 +1,50 @@
+# Task ID: 18
+# Title: Set up Cloud Functions for Search and CRUD APIs
+# Status: pending
+# Dependencies: 15
+# Priority: medium
+# Description: Deploy Firebase Cloud Functions for candidate CRUD operations, job management, and semantic search endpoints
+# Details:
+Implement Cloud Functions API:
+
+1. **Implementation**:
+   - Set up TypeScript Cloud Functions project structure
+   - Implement CRUD endpoints for candidates and jobs
+   - Create semantic search endpoint
+   - Add authentication middleware
+   - Implement request validation with Zod
+   - Add CORS configuration
+   - Create error handling and logging
+
+2. **API Endpoints**:
+   - GET/POST/PUT/DELETE /candidates
+   - GET/POST /jobs
+   - POST /search/semantic
+   - GET /candidates/:id/similar
+
+3. **Security**:
+   - Implement Firebase Authentication checks
+   - Add rate limiting
+   - Validate all inputs with Zod schemas
+
+# Test Strategy:
+Test Suite:
+1. **Unit Tests** (Jest/TypeScript):
+   - Test CRUD operations with mocked Firestore
+   - Test authentication middleware
+   - Test request validation with Zod
+   - Test error handling
+
+2. **Integration Tests** (with emulator):
+   - Test with Firestore emulator
+   - Test search functionality
+   - Test CORS headers
+
+3. **Load Tests**:
+   - Test with 100 concurrent requests
+   - Measure response times
+   - Test rate limiting
+
+4. **Test Execution**:
+   - Run: `npm test` for unit tests
+   - Run: `npm run test:integration` with emulator

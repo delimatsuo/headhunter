@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import DOMPurify from 'dompurify';
 import { CandidateMatch, SearchInsights } from '../types';
 import './CandidateResults.css';
 
@@ -63,7 +64,7 @@ const CandidateResults: React.FC<CandidateResultsProps> = ({ matches, insights, 
               <h4>Top Skills Matched</h4>
               <div className="skill-tags">
                 {insights.top_skills_matched.map((skill, idx) => (
-                  <span key={idx} className="skill-tag">{skill}</span>
+                  <span key={idx} className="skill-tag" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(skill) }} />
                 ))}
               </div>
             </div>
@@ -72,7 +73,7 @@ const CandidateResults: React.FC<CandidateResultsProps> = ({ matches, insights, 
           {insights.market_analysis && (
             <div className="insight-section">
               <h4>Market Analysis</h4>
-              <p>{insights.market_analysis}</p>
+              <p dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(insights.market_analysis) }} />
             </div>
           )}
           
@@ -81,7 +82,7 @@ const CandidateResults: React.FC<CandidateResultsProps> = ({ matches, insights, 
               <h4>Recommendations</h4>
               <ul>
                 {insights.recommendations.map((rec, idx) => (
-                  <li key={idx}>{rec}</li>
+                  <li key={idx} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rec) }} />
                 ))}
               </ul>
             </div>
@@ -99,7 +100,7 @@ const CandidateResults: React.FC<CandidateResultsProps> = ({ matches, insights, 
             <div key={match.candidate.candidate_id} className="candidate-card">
               <div className="candidate-header" onClick={() => toggleExpand(match.candidate.candidate_id)}>
                 <div className="candidate-main">
-                  <h4>{match.candidate.name}</h4>
+                  <h4 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(match.candidate.name) }} />
                   <div className="candidate-info">
                     <span className="info-item">
                       {match.candidate.resume_analysis.career_trajectory.current_level}
@@ -137,14 +138,14 @@ const CandidateResults: React.FC<CandidateResultsProps> = ({ matches, insights, 
                 <div className="candidate-details">
                   <div className="rationale-section">
                     <h5>Why They're a Match</h5>
-                    <p className="assessment">{match.rationale.overall_assessment}</p>
+                    <p className="assessment" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(match.rationale.overall_assessment) }} />
                     
                     <div className="rationale-grid">
                       <div className="rationale-column">
                         <h6>✅ Strengths</h6>
                         <ul>
                           {match.rationale.strengths.map((strength, idx) => (
-                            <li key={idx}>{strength}</li>
+                            <li key={idx} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(strength) }} />
                           ))}
                         </ul>
                       </div>
@@ -154,7 +155,7 @@ const CandidateResults: React.FC<CandidateResultsProps> = ({ matches, insights, 
                           <h6>⚠️ Gaps</h6>
                           <ul>
                             {match.rationale.gaps.map((gap, idx) => (
-                              <li key={idx}>{gap}</li>
+                              <li key={idx} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(gap) }} />
                             ))}
                           </ul>
                         </div>
@@ -165,7 +166,7 @@ const CandidateResults: React.FC<CandidateResultsProps> = ({ matches, insights, 
                           <h6>🚨 Risk Factors</h6>
                           <ul>
                             {match.rationale.risk_factors.map((risk, idx) => (
-                              <li key={idx}>{risk}</li>
+                              <li key={idx} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(risk) }} />
                             ))}
                           </ul>
                         </div>
@@ -178,7 +179,7 @@ const CandidateResults: React.FC<CandidateResultsProps> = ({ matches, insights, 
                       <h6>Technical Skills</h6>
                       <div className="skill-tags">
                         {match.candidate.resume_analysis.technical_skills.map((skill, idx) => (
-                          <span key={idx} className="skill-tag">{skill}</span>
+                          <span key={idx} className="skill-tag" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(skill) }} />
                         ))}
                       </div>
                     </div>
@@ -215,7 +216,7 @@ const CandidateResults: React.FC<CandidateResultsProps> = ({ matches, insights, 
                       <h6>Recruiter Insights</h6>
                       <div className="key-themes">
                         {match.candidate.recruiter_insights.key_themes.map((theme, idx) => (
-                          <span key={idx} className="theme-tag">{theme}</span>
+                          <span key={idx} className="theme-tag" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(theme) }} />
                         ))}
                       </div>
                       <p className="recommendation">

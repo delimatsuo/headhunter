@@ -1,0 +1,32 @@
+[
+  {
+    "candidate_id": "sample_001",
+    "embedding_text": "Senior Software Engineer with 8+ years Python, machine learning, team leadership at Google and startups",
+    "metadata": {
+      "years_experience": 8,
+      "current_level": "Senior",
+      "company_tier": "Tier1",
+      "overall_score": 0.92
+    }
+  },
+  {
+    "candidate_id": "sample_002",
+    "embedding_text": "Mid-level Frontend Developer with 5 years React, TypeScript, responsive design experience at tech companies",
+    "metadata": {
+      "years_experience": 5,
+      "current_level": "Mid",
+      "company_tier": "Tier2",
+      "overall_score": 0.78
+    }
+  },
+  {
+    "candidate_id": "sample_003",
+    "embedding_text": "Principal Engineer with 12+ years distributed systems, cloud architecture, technical leadership at FAANG companies",
+    "metadata": {
+      "years_experience": 12,
+      "current_level": "Principal",
+      "company_tier": "Tier1",
+      "overall_score": 0.95
+    }
+  }
+]

@@ -1,0 +1,65 @@
+{
+  "candidate_id": "473608332",
+  "name": "Luma Arruda",
+  "enhanced_analysis": {
+    "career_trajectory": {
+      "current_level": "Junior",
+      "progression_speed": "accelerating",
+      "trajectory_type": "individual_contributor",
+      "years_experience": null,
+      "velocity": null
+    },
+    "leadership_scope": {
+      "has_leadership": false,
+      "team_size": 0,
+      "leadership_level": "none",
+      "leadership_style": null
+    },
+    "company_pedigree": {
+      "company_tier": "startup/mid_market",
+      "company_tiers": [
+        "startup",
+        "mid_market"
+      ],
+      "stability_pattern": "job_hopper"
+    },
+    "cultural_signals": {
+      "strengths": [],
+      "red_flags": null,
+      "work_style": null
+    },
+    "skill_assessment": {
+      "technical_skills": {
+        "core_competencies": [
+          "Python"
+        ],
+        "skill_depth": "intermediate"
+      },
+      "soft_skills": {
+        "communication": "developing",
+        "leadership": "developing"
+      }
+    },
+    "recruiter_insights": {
+      "placement_likelihood": "high",
+      "best_fit_roles": null,
+      "salary_expectations": null,
+      "availability": null
+    },
+    "search_optimization": {
+      "keywords": [
+        "python",
+        "startup"
+      ],
+      "search_tags": [
+        "technical"
+      ]
+    },
+    "executive_summary": {
+      "one_line_pitch": "",
+      "ideal_next_role": "",
+      "overall_rating": null
+    }
+  },
+  "timestamp": "2025-09-07T00:36:37.897630"
+}

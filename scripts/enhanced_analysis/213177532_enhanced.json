@@ -1,0 +1,73 @@
+{
+  "candidate_id": "213177532",
+  "name": "Fabio Valbuena",
+  "enhanced_analysis": {
+    "career_trajectory": {
+      "current_level": "Unknown",
+      "progression_speed": "Unknown",
+      "trajectory_type": "Unknown",
+      "years_experience": 5,
+      "velocity": "Unknown"
+    },
+    "leadership_scope": {
+      "has_leadership": false,
+      "team_size": 0,
+      "leadership_level": "none",
+      "leadership_style": "Unknown"
+    },
+    "company_pedigree": {
+      "company_tier": "Unknown",
+      "company_tiers": [
+        "Unknown"
+      ],
+      "stability_pattern": "Job Hopper"
+    },
+    "cultural_signals": {
+      "strengths": [
+        "Technical Expertise",
+        "Communication"
+      ],
+      "red_flags": [],
+      "work_style": "Independent/Collaborative"
+    },
+    "skill_assessment": {
+      "technical_skills": {
+        "core_competencies": [
+          "Python",
+          "React"
+        ],
+        "skill_depth": "Intermediate"
+      },
+      "soft_skills": {
+        "communication": "Developing",
+        "leadership": "Developing"
+      }
+    },
+    "recruiter_insights": {
+      "placement_likelihood": "Low",
+      "best_fit_roles": [
+        "Senior Engineer",
+        "Tech Lead"
+      ],
+      "salary_expectations": "Market",
+      "availability": "Immediate"
+    },
+    "search_optimization": {
+      "keywords": [
+        "python",
+        "react",
+        "leadership"
+      ],
+      "search_tags": [
+        "Technical",
+        "Growth"
+      ]
+    },
+    "executive_summary": {
+      "one_line_pitch": "Experienced engineer with startup experience",
+      "ideal_next_role": "Senior or Lead role at growth-stage company",
+      "overall_rating": 75
+    }
+  },
+  "timestamp": "2025-09-07T00:30:54.623047"
+}

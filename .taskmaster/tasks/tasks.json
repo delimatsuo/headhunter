@@ -40,7 +40,7 @@
         "id": 4,
         "title": "Implement Python LLM processing pipeline",
         "description": "Build Python script that integrates Ollama API to process unstructured data into structured JSON profiles",
-        "status": "in-progress",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           2,
@@ -54,7 +54,7 @@
             "title": "Set up Ollama API client integration",
             "description": "Create Python functions to interact with Ollama API for LLM processing",
             "details": "",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 4
           },
@@ -63,7 +63,7 @@
             "title": "Implement CSV data loading and preprocessing",
             "description": "Build functions to load candidate and comment data from CSV files with proper data cleaning",
             "details": "",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 4
           },
@@ -72,7 +72,7 @@
             "title": "Create LLM prompt orchestration system",
             "description": "Build system to dynamically select and execute appropriate prompts for different data types",
             "details": "",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 4
           },
@@ -81,7 +81,7 @@
             "title": "Implement JSON output parsing and validation",
             "description": "Build robust parsing system for LLM responses with error handling and data validation",
             "details": "",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 4
           }
@@ -91,7 +91,7 @@
         "id": 5,
         "title": "Implement resume text extraction",
         "description": "Add functionality to extract text from resume files (PDF, DOCX, images) for LLM analysis",
-        "status": "pending",
+        "status": "done",
         "priority": "medium",
         "dependencies": [
           4
@@ -104,7 +104,7 @@
             "title": "Integrate PDF text extraction with PyPDF2",
             "description": "Add PyPDF2 library and implement PDF text extraction functionality",
             "details": "",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 5
           },
@@ -113,7 +113,7 @@
             "title": "Add DOCX text extraction with python-docx",
             "description": "Implement Microsoft Word document text extraction functionality",
             "details": "",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 5
           },
@@ -122,7 +122,7 @@
             "title": "Implement OCR for image-based resumes",
             "description": "Add Tesseract OCR functionality for extracting text from scanned resume images",
             "details": "",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 5
           }
@@ -132,7 +132,7 @@
         "id": 6,
         "title": "Set up Google Cloud Platform infrastructure",
         "description": "Enable Vertex AI, Firestore, Cloud Storage, and Vector Search in GCP project",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "dependencies": [],
         "details": "Create GCP project, enable required APIs, set up service accounts, configure Firebase Hosting and Functions",
@@ -143,7 +143,7 @@
             "title": "Create GCP project and enable core APIs",
             "description": "Set up new GCP project and enable Vertex AI, Firestore, Cloud Storage, and Cloud Functions APIs",
             "details": "",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 6
           },
@@ -152,7 +152,7 @@
             "title": "Configure service accounts and IAM permissions",
             "description": "Create service accounts with appropriate permissions for Vertex AI, Firestore, and Cloud Storage access",
             "details": "",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 6
           },
@@ -161,7 +161,7 @@
             "title": "Set up Firebase Hosting and Functions",
             "description": "Initialize Firebase project and configure Hosting and Cloud Functions for the web application",
             "details": "",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 6
           }
@@ -171,7 +171,7 @@
         "id": 7,
         "title": "Implement quality validation system",
         "description": "Create evaluation metrics and validation system for LLM analysis accuracy and consistency",
-        "status": "pending",
+        "status": "done",
         "priority": "medium",
         "dependencies": [
           4
@@ -184,7 +184,7 @@
             "title": "Create JSON schema validation for LLM outputs",
             "description": "Define and implement JSON schema validation for structured LLM response parsing",
             "details": "",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 7
           }
@@ -194,7 +194,7 @@
         "id": 8,
         "title": "Build Cloud Function for data enrichment",
         "description": "Create Cloud Function that processes LLM-generated profiles with Vertex AI Gemini for additional enrichment",
-        "status": "pending",
+        "status": "done",
         "priority": "medium",
         "dependencies": [
           6
@@ -207,7 +207,7 @@
             "title": "Create Cloud Function boilerplate and deployment setup",
             "description": "Set up basic Cloud Function structure with TypeScript and deployment configuration",
             "details": "",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 8
           }
@@ -217,7 +217,7 @@
         "id": 9,
         "title": "Implement Vector Search integration",
         "description": "Set up Vertex AI Vector Search for semantic similarity matching of candidate profiles",
-        "status": "pending",
+        "status": "done",
         "priority": "medium",
         "dependencies": [
           6
@@ -230,7 +230,7 @@
             "title": "Set up Vertex AI Vector Search index",
             "description": "Create and configure Vector Search index for candidate profile embeddings",
             "details": "",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 9
           }
@@ -240,7 +240,7 @@
         "id": 10,
         "title": "Build search API endpoint",
         "description": "Create Cloud Function API that accepts job descriptions and returns ranked candidate matches",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           8,
@@ -254,7 +254,7 @@
             "title": "Implement semantic search logic and ranking algorithm",
             "description": "Build the core search algorithm that matches job descriptions to candidate profiles using embeddings",
             "details": "",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 10
           }
@@ -264,7 +264,7 @@
         "id": 11,
         "title": "Create React search interface",
         "description": "Build simple web UI for job description input and candidate results display",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           10
@@ -277,7 +277,7 @@
             "title": "Create React app structure and basic components",
             "description": "Set up React application with routing, state management, and core component structure",
             "details": "",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 11
           }
@@ -287,7 +287,7 @@
         "id": 12,
         "title": "Implement authentication and security",
         "description": "Add secure access controls and authentication for the search interface",
-        "status": "pending",
+        "status": "done",
         "priority": "medium",
         "dependencies": [
           11
@@ -300,16 +300,149 @@
             "title": "Implement Firebase Authentication setup",
             "description": "Configure Firebase Auth with secure login/logout flows and user session management",
             "details": "",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 12
           }
         ]
+      },
+      {
+        "id": 13,
+        "title": "Configure Together AI API Integration",
+        "description": "Set up Together AI API access and create reusable client wrapper for chat completions with Llama 3.1 8B Instruct Turbo model",
+        "details": "Configure Together AI integration for production use:\n\n1. **Implementation**:\n   - Create TogetherAIClient class with async methods using aiohttp\n   - Set up environment variable TOGETHER_API_KEY\n   - Configure model endpoint: meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo\n   - Add retry logic with exponential backoff (3 retries, 2-4-8 second delays)\n   - Implement rate limiting (100 requests/minute default)\n   - Add circuit breaker pattern for API failures\n   - Create cost estimation methods based on token usage\n   - Implement request/response logging for debugging\n\n2. **Configuration**:\n   - Store API key securely in environment variables\n   - Configure timeout and retry settings\n   - Set up logging for API interactions\n\n3. **Error Handling**:\n   - Handle API rate limits gracefully\n   - Implement circuit breaker for system stability\n   - Add fallback mechanisms for API failures",
+        "testStrategy": "Test Suite:\n1. **Unit Tests** (test_together_ai_client.py):\n   - Test client initialization with/without API key\n   - Test chat_completion with mocked responses\n   - Test retry logic with simulated failures (verify 3 attempts)\n   - Test rate limiting with 100+ concurrent requests\n   - Test circuit breaker triggers after 5 consecutive failures\n   - Test cost estimation calculations\n\n2. **Integration Tests** (test_together_ai_integration.py):\n   - Test real API connection (use test key)\n   - Test with minimal tokens (5 max) to minimize cost\n   - Test timeout handling\n\n3. **Test Execution**:\n   - Run: `pytest tests/test_together_ai_client.py -v`\n   - Ensure 100% test coverage for critical paths",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "Implement Recruiter-Grade Prompt Templates",
+        "description": "Create comprehensive prompt engineering system for candidate analysis with structured JSON output schemas",
+        "details": "Develop prompt template system:\n\n1. **Implementation**:\n   - Create PromptBuilder class with methods for each analysis type\n   - Define Pydantic/TypedDict models for expected JSON outputs\n   - Implement prompt templates for:\n     * Resume analysis (education, experience, skills)\n     * Recruiter comment analysis\n     * Market insights generation\n     * Cultural assessment\n     * Executive summary creation\n   - Add JSON repair prompts for malformed responses\n   - Include few-shot examples in prompts\n   - Implement prompt versioning system\n\n2. **JSON Schema Design**:\n   - Define strict schemas for each analysis type\n   - Ensure consistent field naming\n   - Add validation rules for data types and ranges\n\n3. **Optimization**:\n   - Keep prompts under token limits\n   - Use clear, concise instructions\n   - Include examples for better output quality",
+        "testStrategy": "Test Suite:\n1. **Unit Tests** (test_prompt_templates.py):\n   - Test each prompt template generates valid output\n   - Test prompt length stays under token limits\n   - Test few-shot examples are properly formatted\n   - Test prompt versioning system\n\n2. **Schema Tests** (test_json_schemas.py):\n   - Test Pydantic model validation\n   - Test required fields are present\n   - Test data type validation\n   - Test nested object validation\n\n3. **Repair Tests** (test_json_repair.py):\n   - Test repair with missing brackets\n   - Test repair with invalid quotes\n   - Test repair with malformed arrays\n\n4. **Test Execution**:\n   - Run: `pytest tests/test_prompt_templates.py -v`\n   - Run: `pytest tests/test_json_schemas.py -v`",
+        "priority": "high",
+        "dependencies": [
+          13
+        ],
+        "status": "in-progress",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Build Firestore Streaming Pipeline",
+        "description": "Implement direct streaming of processed candidate profiles to Firebase Firestore with batch optimization",
+        "details": "Create Firestore streaming pipeline:\n\n1. **Implementation**:\n   - Initialize Firebase Admin SDK with service account\n   - Implement FirestoreStreamer class with batch writes\n   - Create collections: candidates/, enriched_profiles/, embeddings/\n   - Implement upsert logic by candidate_id\n   - Add batch size optimization (500 docs per batch)\n   - Create flattened search-ready fields\n   - Implement transaction support for consistency\n   - Add progress tracking and resumption\n\n2. **Data Structure**:\n   - Design document schema for efficient queries\n   - Create indexes for common search patterns\n   - Implement data flattening for search optimization\n\n3. **Error Handling**:\n   - Handle batch write failures\n   - Implement transaction rollback\n   - Add checkpoint/resume capability",
+        "testStrategy": "Test Suite:\n1. **Unit Tests** (test_firestore_streamer.py):\n   - Test FirestoreStreamer initialization\n   - Test batch accumulation logic\n   - Test flush_batch with mocked Firestore\n   - Test upsert behavior with existing documents\n   - Test flattening logic for search fields\n\n2. **Integration Tests** (test_firestore_integration.py):\n   - Test with Firestore emulator\n   - Test batch write performance (1000 samples)\n   - Test transaction rollback scenarios\n   - Test checkpoint/resume functionality\n\n3. **Security Tests** (test_firestore_security.py):\n   - Test security rules allow writes\n   - Test unauthorized access is blocked\n\n4. **Test Execution**:\n   - Run: `firebase emulators:start --only firestore`\n   - Run: `pytest tests/test_firestore_streamer.py -v`",
+        "priority": "high",
+        "dependencies": [
+          13,
+          14
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "Create Batch Processing Orchestrator",
+        "description": "Build async batch processor to analyze candidates via Together AI with concurrency control and progress tracking",
+        "details": "Implement batch processing system:\n\n1. **Implementation**:\n   - Create BatchProcessor class with async/await\n   - Implement CSV/JSON input parsers\n   - Add concurrent processing with semaphore (10 concurrent by default)\n   - Create progress tracking with checkpoint saves\n   - Implement cost estimation and MAX_ESTIMATED_COST safeguards\n   - Add graceful shutdown and resume capability\n   - Create processing statistics and reporting\n\n2. **Concurrency Control**:\n   - Use asyncio semaphore for rate limiting\n   - Implement adaptive concurrency based on API response times\n   - Add memory usage monitoring\n\n3. **Progress Management**:\n   - Save checkpoints after each batch\n   - Enable resume from last checkpoint\n   - Track success/failure statistics",
+        "testStrategy": "Test Suite:\n1. **Unit Tests** (test_batch_processor.py):\n   - Test CSV/JSON parsing\n   - Test semaphore limits concurrency\n   - Test checkpoint saving/loading\n   - Test cost estimation calculations\n   - Test graceful shutdown handling\n\n2. **Async Tests** (test_batch_async.py):\n   - Test async candidate processing\n   - Test concurrent batch operations\n   - Test error handling in async context\n\n3. **Integration Tests** (test_batch_integration.py):\n   - Test with 50-candidate sample\n   - Test resume after interruption\n   - Measure throughput metrics\n\n4. **Test Execution**:\n   - Run: `pytest tests/test_batch_processor.py -v --asyncio-mode=auto`\n   - Verify memory usage stays within limits",
+        "priority": "high",
+        "dependencies": [
+          13,
+          14,
+          15
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "Implement JSON Validation and Repair System",
+        "description": "Create robust JSON parsing with schema validation, automatic repair, and quarantine for malformed responses",
+        "details": "Build JSON validation system:\n\n1. **Implementation**:\n   - Create JSONValidator class with jsonschema/Pydantic\n   - Implement parse attempts with code fence stripping\n   - Add repair mechanism using Together AI\n   - Create quarantine system for unfixable responses\n   - Implement validation metrics and reporting\n   - Add schema versioning support\n\n2. **Repair Logic**:\n   - Strip markdown code fences\n   - Fix common JSON syntax errors\n   - Use AI to repair complex malformations\n   - Maximum 3 repair attempts before quarantine\n\n3. **Quarantine System**:\n   - Store failed responses for manual review\n   - Track error patterns\n   - Generate repair statistics",
+        "testStrategy": "Test Suite:\n1. **Unit Tests** (test_json_validator.py):\n   - Test valid JSON parsing\n   - Test code fence removal\n   - Test schema validation with Pydantic\n   - Test missing field detection\n\n2. **Repair Tests** (test_json_repair.py):\n   - Test repair with missing brackets\n   - Test repair with invalid quotes\n   - Test repair with truncated JSON\n   - Test max repair attempts\n\n3. **Quarantine Tests** (test_quarantine.py):\n   - Test quarantine after failed repairs\n   - Test quarantine data structure\n   - Test retrieval from quarantine\n\n4. **Test Execution**:\n   - Run: `pytest tests/test_json_validator.py -v`\n   - Ensure >95% parse success rate",
+        "priority": "high",
+        "dependencies": [
+          14
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 18,
+        "title": "Set up Cloud Functions for Search and CRUD APIs",
+        "description": "Deploy Firebase Cloud Functions for candidate CRUD operations, job management, and semantic search endpoints",
+        "details": "Implement Cloud Functions API:\n\n1. **Implementation**:\n   - Set up TypeScript Cloud Functions project structure\n   - Implement CRUD endpoints for candidates and jobs\n   - Create semantic search endpoint\n   - Add authentication middleware\n   - Implement request validation with Zod\n   - Add CORS configuration\n   - Create error handling and logging\n\n2. **API Endpoints**:\n   - GET/POST/PUT/DELETE /candidates\n   - GET/POST /jobs\n   - POST /search/semantic\n   - GET /candidates/:id/similar\n\n3. **Security**:\n   - Implement Firebase Authentication checks\n   - Add rate limiting\n   - Validate all inputs with Zod schemas",
+        "testStrategy": "Test Suite:\n1. **Unit Tests** (Jest/TypeScript):\n   - Test CRUD operations with mocked Firestore\n   - Test authentication middleware\n   - Test request validation with Zod\n   - Test error handling\n\n2. **Integration Tests** (with emulator):\n   - Test with Firestore emulator\n   - Test search functionality\n   - Test CORS headers\n\n3. **Load Tests**:\n   - Test with 100 concurrent requests\n   - Measure response times\n   - Test rate limiting\n\n4. **Test Execution**:\n   - Run: `npm test` for unit tests\n   - Run: `npm run test:integration` with emulator",
+        "priority": "medium",
+        "dependencies": [
+          15
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 19,
+        "title": "Implement Embedding Generation Service",
+        "description": "Create pluggable embedding service supporting Vertex AI initially with migration path to Together AI embeddings",
+        "details": "Build embedding service:\n\n1. **Implementation**:\n   - Create EmbeddingService interface\n   - Implement VertexAIEmbeddingProvider (text-embedding-004)\n   - Add TogetherAIEmbeddingProvider stub\n   - Implement deterministic fallback for dev\n   - Create batch embedding generation\n   - Store embeddings in Firestore embeddings/ collection\n   - Add caching layer for repeated texts\n\n2. **Provider Architecture**:\n   - Design pluggable provider interface\n   - Support multiple embedding models\n   - Enable easy provider switching\n\n3. **Optimization**:\n   - Batch requests for efficiency\n   - Cache frequently used embeddings\n   - Implement dimension reduction if needed",
+        "testStrategy": "Test Suite:\n1. **Unit Tests** (test_embedding_service.py):\n   - Test provider initialization\n   - Test single text embedding\n   - Test batch embedding generation\n   - Test cache hit/miss scenarios\n   - Test fallback mechanism\n\n2. **Provider Tests** (test_embedding_providers.py):\n   - Test Vertex AI provider (mocked)\n   - Test Together AI provider stub\n   - Test deterministic fallback\n   - Verify embedding dimensions (768)\n\n3. **Integration Tests** (test_embedding_integration.py):\n   - Test with real API (limited calls)\n   - Test Firestore storage\n   - Test similarity calculations\n\n4. **Test Execution**:\n   - Run: `pytest tests/test_embedding_service.py -v`\n   - Test embedding quality with known pairs",
+        "priority": "medium",
+        "dependencies": [
+          18
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 20,
+        "title": "Build React Search Interface",
+        "description": "Create secure web application for recruiters to search candidates using job descriptions with ranked results",
+        "details": "Develop React frontend:\n\n1. **Implementation**:\n   - Set up React app with TypeScript and Tailwind CSS\n   - Implement Firebase Authentication (Google Sign-In)\n   - Create job description input interface\n   - Build candidate results component with cards\n   - Add 'Why they match' rationale display\n   - Implement filtering and sorting options\n   - Add candidate shortlisting functionality\n   - Deploy to Firebase Hosting\n\n2. **UI Components**:\n   - SearchBar with job description input\n   - CandidateCard with profile summary\n   - MatchRationale component\n   - FilterPanel for refinement\n   - ShortlistManager for saved candidates\n\n3. **State Management**:\n   - Use React Context for auth state\n   - Implement search state management\n   - Add shortlist persistence",
+        "testStrategy": "Test Suite:\n1. **Component Tests** (React Testing Library):\n   - Test SearchInterface renders\n   - Test job description input\n   - Test search button triggers API call\n   - Test results display\n   - Test candidate card interactions\n\n2. **Integration Tests** (Cypress):\n   - Test authentication flow\n   - Test search workflow\n   - Test shortlisting\n   - Test responsive design\n\n3. **Accessibility Tests**:\n   - Test WCAG 2.1 AA compliance\n   - Test keyboard navigation\n   - Test screen reader support\n\n4. **Test Execution**:\n   - Run: `npm test` for unit tests\n   - Run: `npm run test:e2e` for Cypress",
+        "priority": "medium",
+        "dependencies": [
+          18,
+          19
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 21,
+        "title": "Implement Authentication and Access Control",
+        "description": "Set up Firebase Authentication with role-based access control and admin management interface",
+        "details": "Configure authentication system:\n\n1. **Implementation**:\n   - Configure Firebase Authentication with Google provider\n   - Create Firestore allowed_users collection\n   - Implement role-based middleware (admin, recruiter, viewer)\n   - Build admin UI for user management\n   - Add audit logging for sensitive operations\n   - Implement session management\n   - Create Firestore security rules\n\n2. **Role Management**:\n   - Define roles: admin, recruiter, viewer\n   - Implement role-based UI rendering\n   - Add permission checks on all API endpoints\n\n3. **Audit System**:\n   - Log all data access\n   - Track user actions\n   - Generate audit reports",
+        "testStrategy": "Test Suite:\n1. **Backend Tests** (test_auth_middleware.ts):\n   - Test token verification\n   - Test role-based access control\n   - Test audit logging\n   - Test session management\n\n2. **Frontend Tests** (test_auth_components.tsx):\n   - Test Google Sign-In flow\n   - Test protected routes\n   - Test admin UI components\n\n3. **Security Rule Tests** (test_security_rules.ts):\n   - Test unauthorized access is blocked\n   - Test role-based permissions\n   - Test audit log access\n\n4. **Test Execution**:\n   - Run: `npm test` for all tests\n   - Run: `firebase emulators:exec --only firestore 'npm test'`",
+        "priority": "high",
+        "dependencies": [
+          20
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 22,
+        "title": "Create Cloud Run Worker for Pub/Sub Processing",
+        "description": "Deploy Python Cloud Run service to process candidate enrichment requests via Pub/Sub for scalable async processing",
+        "details": "Build Cloud Run worker:\n\n1. **Implementation**:\n   - Create Cloud Run Python service with FastAPI\n   - Set up Pub/Sub topic 'candidate-process-requests'\n   - Implement message handler for candidate processing\n   - Add autoscaling configuration (min 1, max 100)\n   - Implement health checks and metrics\n   - Add dead letter queue for failed messages\n   - Create Cloud Scheduler for batch processing\n\n2. **Message Processing**:\n   - Parse Pub/Sub messages for candidate IDs\n   - Fetch candidate data from GCS/Firestore\n   - Process with Together AI\n   - Store results in Firestore\n\n3. **Reliability**:\n   - Implement retry logic\n   - Add dead letter queue\n   - Monitor processing metrics",
+        "testStrategy": "Test Suite:\n1. **Unit Tests** (test_pubsub_worker.py):\n   - Test message parsing\n   - Test candidate processing logic\n   - Test retry mechanism\n   - Test dead letter queue\n\n2. **Integration Tests** (test_worker_integration.py):\n   - Test with Pub/Sub emulator\n   - Test GCS integration\n   - Test Firestore writes\n\n3. **Load Tests** (test_worker_load.py):\n   - Test autoscaling behavior\n   - Test memory usage under load\n   - Test graceful shutdown\n\n4. **Test Execution**:\n   - Run: `pytest tests/test_pubsub_worker.py -v`\n   - Test with `gcloud beta emulators pubsub start`",
+        "priority": "low",
+        "dependencies": [
+          16,
+          17
+        ],
+        "status": "pending",
+        "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-09-05T18:18:48.859Z",
-      "updated": "2025-09-05T21:14:16.646Z",
+      "updated": "2025-09-10T16:51:57.192Z",
       "description": "Tasks for master context"
     }
   }

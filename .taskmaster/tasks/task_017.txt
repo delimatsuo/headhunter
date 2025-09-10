@@ -1,0 +1,50 @@
+# Task ID: 17
+# Title: Implement JSON Validation and Repair System
+# Status: pending
+# Dependencies: 14
+# Priority: high
+# Description: Create robust JSON parsing with schema validation, automatic repair, and quarantine for malformed responses
+# Details:
+Build JSON validation system:
+
+1. **Implementation**:
+   - Create JSONValidator class with jsonschema/Pydantic
+   - Implement parse attempts with code fence stripping
+   - Add repair mechanism using Together AI
+   - Create quarantine system for unfixable responses
+   - Implement validation metrics and reporting
+   - Add schema versioning support
+
+2. **Repair Logic**:
+   - Strip markdown code fences
+   - Fix common JSON syntax errors
+   - Use AI to repair complex malformations
+   - Maximum 3 repair attempts before quarantine
+
+3. **Quarantine System**:
+   - Store failed responses for manual review
+   - Track error patterns
+   - Generate repair statistics
+
+# Test Strategy:
+Test Suite:
+1. **Unit Tests** (test_json_validator.py):
+   - Test valid JSON parsing
+   - Test code fence removal
+   - Test schema validation with Pydantic
+   - Test missing field detection
+
+2. **Repair Tests** (test_json_repair.py):
+   - Test repair with missing brackets
+   - Test repair with invalid quotes
+   - Test repair with truncated JSON
+   - Test max repair attempts
+
+3. **Quarantine Tests** (test_quarantine.py):
+   - Test quarantine after failed repairs
+   - Test quarantine data structure
+   - Test retrieval from quarantine
+
+4. **Test Execution**:
+   - Run: `pytest tests/test_json_validator.py -v`
+   - Ensure >95% parse success rate

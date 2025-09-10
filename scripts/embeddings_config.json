@@ -1,0 +1,32 @@
+{
+  "name": "candidate-profile-embeddings",
+  "description": "Generate embeddings for candidate profiles using Vertex AI text embeddings",
+  "embedding_model": "text-embedding-004",
+  "dimensions": 768,
+  "batch_size": 100,
+  "fields_to_embed": [
+    "resume_analysis.technical_skills",
+    "resume_analysis.soft_skills",
+    "resume_analysis.career_trajectory.trajectory_type",
+    "resume_analysis.career_trajectory.domain_expertise",
+    "resume_analysis.company_pedigree.company_types",
+    "recruiter_insights.strengths",
+    "recruiter_insights.key_themes",
+    "recruiter_insights.competitive_advantages",
+    "enrichment.ai_summary",
+    "enrichment.career_analysis.trajectory_insights",
+    "enrichment.strategic_fit.competitive_positioning"
+  ],
+  "output_format": {
+    "candidate_id": "string",
+    "embedding_vector": "float[]",
+    "embedding_text": "string",
+    "metadata": {
+      "years_experience": "number",
+      "current_level": "string",
+      "company_tier": "string",
+      "overall_score": "number",
+      "updated_at": "timestamp"
+    }
+  }
+}

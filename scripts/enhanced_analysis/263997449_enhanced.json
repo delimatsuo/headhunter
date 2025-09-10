@@ -1,0 +1,58 @@
+{
+  "candidate_id": "263997449",
+  "name": "Ricardo L0gan",
+  "enhanced_analysis": {
+    "career_trajectory": {
+      "current_level": "Unknown",
+      "progression_speed": "Unknown",
+      "trajectory_type": "Unknown",
+      "years_experience": 0,
+      "velocity": "Unknown"
+    },
+    "leadership_scope": {
+      "has_leadership": false,
+      "team_size": 0,
+      "leadership_level": "none",
+      "leadership_style": "Unknown"
+    },
+    "company_pedigree": {
+      "company_tier": "Unknown",
+      "company_tiers": [],
+      "stability_pattern": "Unknown"
+    },
+    "cultural_signals": {
+      "strengths": [],
+      "red_flags": [],
+      "work_style": "Unknown"
+    },
+    "skill_assessment": {
+      "technical_skills": {
+        "core_competencies": [],
+        "skill_depth": "Unknown"
+      },
+      "soft_skills": {
+        "communication": "Unknown",
+        "leadership": "Unknown"
+      }
+    },
+    "recruiter_insights": {
+      "placement_likelihood": "low",
+      "best_fit_roles": [],
+      "salary_expectations": "market",
+      "availability": "immediate"
+    },
+    "search_optimization": {
+      "keywords": [
+        "python",
+        "react"
+      ],
+      "search_tags": []
+    },
+    "executive_summary": {
+      "one_line_pitch": "",
+      "ideal_next_role": "Unknown",
+      "overall_rating": 0
+    }
+  },
+  "timestamp": "2025-09-06T23:46:07.207719"
+}

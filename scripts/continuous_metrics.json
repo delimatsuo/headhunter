@@ -1,0 +1,18 @@
+{
+  "batches": [
+    {
+      "batch_number": 1,
+      "timestamp": "2025-09-08T11:40:57.600258",
+      "processing_time": 0.005972862243652344,
+      "candidates_processed": 73,
+      "rate_per_minute": 733316.7619351748
+    }
+  ],
+  "overall": {
+    "total_batches": 1,
+    "total_candidates": 73,
+    "total_time_seconds": 0.005972862243652344,
+    "avg_rate_per_minute": 733316.7619351748,
+    "last_updated": "2025-09-08T11:40:57.600270"
+  }
+}

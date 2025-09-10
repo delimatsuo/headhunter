@@ -1,0 +1,54 @@
+# Task ID: 20
+# Title: Build React Search Interface
+# Status: pending
+# Dependencies: 18, 19
+# Priority: medium
+# Description: Create secure web application for recruiters to search candidates using job descriptions with ranked results
+# Details:
+Develop React frontend:
+
+1. **Implementation**:
+   - Set up React app with TypeScript and Tailwind CSS
+   - Implement Firebase Authentication (Google Sign-In)
+   - Create job description input interface
+   - Build candidate results component with cards
+   - Add 'Why they match' rationale display
+   - Implement filtering and sorting options
+   - Add candidate shortlisting functionality
+   - Deploy to Firebase Hosting
+
+2. **UI Components**:
+   - SearchBar with job description input
+   - CandidateCard with profile summary
+   - MatchRationale component
+   - FilterPanel for refinement
+   - ShortlistManager for saved candidates
+
+3. **State Management**:
+   - Use React Context for auth state
+   - Implement search state management
+   - Add shortlist persistence
+
+# Test Strategy:
+Test Suite:
+1. **Component Tests** (React Testing Library):
+   - Test SearchInterface renders
+   - Test job description input
+   - Test search button triggers API call
+   - Test results display
+   - Test candidate card interactions
+
+2. **Integration Tests** (Cypress):
+   - Test authentication flow
+   - Test search workflow
+   - Test shortlisting
+   - Test responsive design
+
+3. **Accessibility Tests**:
+   - Test WCAG 2.1 AA compliance
+   - Test keyboard navigation
+   - Test screen reader support
+
+4. **Test Execution**:
+   - Run: `npm test` for unit tests
+   - Run: `npm run test:e2e` for Cypress

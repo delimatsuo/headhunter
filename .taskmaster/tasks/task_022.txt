@@ -1,0 +1,50 @@
+# Task ID: 22
+# Title: Create Cloud Run Worker for Pub/Sub Processing
+# Status: pending
+# Dependencies: 16, 17
+# Priority: low
+# Description: Deploy Python Cloud Run service to process candidate enrichment requests via Pub/Sub for scalable async processing
+# Details:
+Build Cloud Run worker:
+
+1. **Implementation**:
+   - Create Cloud Run Python service with FastAPI
+   - Set up Pub/Sub topic 'candidate-process-requests'
+   - Implement message handler for candidate processing
+   - Add autoscaling configuration (min 1, max 100)
+   - Implement health checks and metrics
+   - Add dead letter queue for failed messages
+   - Create Cloud Scheduler for batch processing
+
+2. **Message Processing**:
+   - Parse Pub/Sub messages for candidate IDs
+   - Fetch candidate data from GCS/Firestore
+   - Process with Together AI
+   - Store results in Firestore
+
+3. **Reliability**:
+   - Implement retry logic
+   - Add dead letter queue
+   - Monitor processing metrics
+
+# Test Strategy:
+Test Suite:
+1. **Unit Tests** (test_pubsub_worker.py):
+   - Test message parsing
+   - Test candidate processing logic
+   - Test retry mechanism
+   - Test dead letter queue
+
+2. **Integration Tests** (test_worker_integration.py):
+   - Test with Pub/Sub emulator
+   - Test GCS integration
+   - Test Firestore writes
+
+3. **Load Tests** (test_worker_load.py):
+   - Test autoscaling behavior
+   - Test memory usage under load
+   - Test graceful shutdown
+
+4. **Test Execution**:
+   - Run: `pytest tests/test_pubsub_worker.py -v`
+   - Test with `gcloud beta emulators pubsub start`

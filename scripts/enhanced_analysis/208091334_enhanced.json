@@ -1,0 +1,56 @@
+{
+  "candidate_id": "208091334",
+  "name": "Dherik Barison",
+  "enhanced_analysis": {
+    "candidate_name": "Dherik Barison",
+    "career_trajectory": {
+      "current_level": "Unknown",
+      "progression_speed": "Unknown",
+      "trajectory_type": "Unknown",
+      "years_experience": 5,
+      "velocity": "Unknown"
+    },
+    "leadership_scope": {
+      "has_leadership": false,
+      "team_size": 0,
+      "leadership_level": "none",
+      "leadership_style": "Unknown"
+    },
+    "company_pedigree": {
+      "company_tier": "Unknown",
+      "company_tiers": [],
+      "stability_pattern": "Unknown"
+    },
+    "cultural_signals": {
+      "strengths": [],
+      "red_flags": [],
+      "work_style": "Unknown"
+    },
+    "skill_assessment": {
+      "technical_skills": {
+        "core_competencies": [],
+        "skill_depth": "Unknown"
+      },
+      "soft_skills": {
+        "communication": "Unknown",
+        "leadership": "Unknown"
+      }
+    },
+    "recruiter_insights": {
+      "placement_likelihood": "Unknown",
+      "best_fit_roles": [],
+      "salary_expectations": "Unknown",
+      "availability": "Unknown"
+    },
+    "search_optimization": {
+      "keywords": [],
+      "search_tags": []
+    },
+    "executive_summary": {
+      "one_line_pitch": "Experienced engineer with startup experience",
+      "ideal_next_role": "Senior or Lead role at growth-stage company",
+      "overall_rating": 0
+    }
+  },
+  "timestamp": "2025-09-07T00:39:54.179191"
+}

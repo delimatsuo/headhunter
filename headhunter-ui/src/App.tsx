@@ -1,185 +1,173 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
-import JobDescriptionForm from './components/JobDescriptionForm';
-import CandidateResults from './components/CandidateResults';
-import Login from './components/Login';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { searchJobCandidates, quickMatch } from './config/firebase';
-import { JobDescription, SearchResponse, CandidateMatch } from './types';
+import { Navbar } from './components/Navigation/Navbar';
+import { AuthModal } from './components/Auth/AuthModal';
+import { Dashboard } from './components/Dashboard/Dashboard';
+import { SearchPage } from './components/Search/SearchPage';
+
+type PageType = 'dashboard' | 'search' | 'candidates' | 'analytics' | 'profile' | 'settings';
 
 function AppContent() {
-  const { user, loading, signOut } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [searchResults, setSearchResults] = useState<{
-    matches: CandidateMatch[];
-    insights?: any;
-    queryTime?: number;
-  } | null>(null);
-  const [quickMode, setQuickMode] = useState(false);
+  const { user, loading } = useAuth();
+  const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
+  const [showAuth, setShowAuth] = useState(false);
+
+  // Close auth modal when user signs in
+  useEffect(() => {
+    if (user && showAuth) {
+      setShowAuth(false);
+    }
+  }, [user, showAuth]);
 
   // Show loading screen while checking auth
   if (loading) {
     return (
-      <div className="loading-container" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="loading-spinner"></div>
-        <p>Loading...</p>
+      <div className="app">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading Headhunter AI...</p>
+        </div>
       </div>
     );
   }
 
-  // Show login screen if not authenticated
-  if (!user) {
-    return <Login />;
-  }
+  const handleShowAuth = () => {
+    if (!user) {
+      setShowAuth(true);
+    }
+  };
 
-  const handleSearch = async (jobDesc: JobDescription) => {
-    setIsLoading(true);
-    setError(null);
-    setSearchResults(null);
+  const handleNavigation = (page: string) => {
+    // If user tries to navigate while not authenticated, show auth modal
+    if (!user) {
+      setShowAuth(true);
+      return;
+    }
+    
+    setCurrentPage(page as PageType);
+  };
 
-    try {
-      const startTime = Date.now();
-      
-      if (quickMode) {
-        // Quick match mode
-        const quickDescription = `${jobDesc.title} at ${jobDesc.company}. ${jobDesc.description}`;
-        const result = await quickMatch({ 
-          description: quickDescription,
-          limit: 10 
-        });
-        
-        const data = result.data as any;
-        
-        // Convert quick match results to full match format
-        const matches: CandidateMatch[] = data.matches.map((match: any) => ({
-          candidate: {
-            candidate_id: match.candidate_id,
-            name: match.name,
-            resume_analysis: {
-              career_trajectory: {
-                current_level: 'N/A',
-                progression_speed: 'N/A',
-                trajectory_type: 'N/A',
-                domain_expertise: []
-              },
-              company_pedigree: {
-                tier_level: 'N/A',
-                company_types: [],
-                recent_companies: []
-              },
-              years_experience: 0,
-              technical_skills: [],
-              soft_skills: [],
-              education: {
-                highest_degree: 'N/A',
-                institutions: []
-              }
-            },
-            overall_score: match.score
-          },
-          score: match.score,
-          similarity: match.score / 100,
-          rationale: {
-            strengths: [match.summary],
-            gaps: [],
-            risk_factors: [],
-            overall_assessment: match.summary
-          }
-        }));
-        
-        setSearchResults({
-          matches,
-          queryTime: Date.now() - startTime
-        });
-      } else {
-        // Full search mode
-        const result = await searchJobCandidates({ 
-          job_description: jobDesc, // Fixed: Match backend expectation
-          limit: 20 
-        });
-        
-        const data = result.data as SearchResponse;
-        
-        if (data.success) {
-          setSearchResults({
-            matches: data.matches,
-            insights: data.insights,
-            queryTime: data.query_time_ms || (Date.now() - startTime)
-          });
-        } else {
-          throw new Error('Search failed');
-        }
-      }
-    } catch (err: any) {
-      console.error('Search error:', err);
-      setError(err.message || 'Failed to search candidates. Please try again.');
-    } finally {
-      setIsLoading(false);
+  const renderCurrentPage = () => {
+    // Show landing page for unauthenticated users
+    if (!user) {
+      return (
+        <div className="landing-page">
+          <div className="hero-section">
+            <div className="hero-content">
+              <h1>Welcome to Headhunter AI</h1>
+              <p className="hero-subtitle">
+                AI-powered candidate matching and recruitment analytics
+              </p>
+              <div className="hero-features">
+                <div className="feature">
+                  <div className="feature-icon">🎯</div>
+                  <h3>Smart Matching</h3>
+                  <p>Find the perfect candidates using advanced AI algorithms</p>
+                </div>
+                <div className="feature">
+                  <div className="feature-icon">📊</div>
+                  <h3>Analytics Dashboard</h3>
+                  <p>Track recruitment metrics and optimize your hiring process</p>
+                </div>
+                <div className="feature">
+                  <div className="feature-icon">🚀</div>
+                  <h3>Fast Processing</h3>
+                  <p>Process resumes and generate insights in seconds</p>
+                </div>
+              </div>
+              <div className="hero-actions">
+                <button 
+                  className="btn btn-primary btn-large"
+                  onClick={() => setShowAuth(true)}
+                >
+                  Get Started
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    switch (currentPage) {
+      case 'dashboard':
+        return <Dashboard />;
+      case 'search':
+        return <SearchPage />;
+      case 'candidates':
+        return (
+          <div className="page-placeholder">
+            <div className="empty-state">
+              <div className="empty-icon">👥</div>
+              <h2>Candidate Database</h2>
+              <p>Browse and manage your candidate database</p>
+              <button className="btn btn-primary" onClick={() => setCurrentPage('search')}>
+                Start Searching
+              </button>
+            </div>
+          </div>
+        );
+      case 'analytics':
+        return (
+          <div className="page-placeholder">
+            <div className="empty-state">
+              <div className="empty-icon">📊</div>
+              <h2>Analytics & Reports</h2>
+              <p>Analyze your recruitment metrics and trends</p>
+              <p className="text-muted">Coming soon...</p>
+            </div>
+          </div>
+        );
+      case 'profile':
+        return (
+          <div className="page-placeholder">
+            <div className="empty-state">
+              <div className="empty-icon">👤</div>
+              <h2>Profile Settings</h2>
+              <p>Manage your account and preferences</p>
+              <div className="user-info-card">
+                <h3>Current User</h3>
+                <p><strong>Email:</strong> {user?.email}</p>
+                <p><strong>Display Name:</strong> {user?.displayName || 'Not set'}</p>
+                <p><strong>Account ID:</strong> {user?.uid}</p>
+              </div>
+            </div>
+          </div>
+        );
+      case 'settings':
+        return (
+          <div className="page-placeholder">
+            <div className="empty-state">
+              <div className="empty-icon">⚙️</div>
+              <h2>Application Settings</h2>
+              <p>Configure your Headhunter AI experience</p>
+              <p className="text-muted">Settings panel coming soon...</p>
+            </div>
+          </div>
+        );
+      default:
+        return <Dashboard />;
     }
   };
 
   return (
-    <div className="App">
-      <header className="app-header">
-        <div className="header-content">
-          <div className="logo-section">
-            <h1>🎯 Headhunter AI</h1>
-            <p>AI-Powered Candidate Matching</p>
-          </div>
-          <div className="header-actions">
-            <label className="mode-toggle">
-              <input
-                type="checkbox"
-                checked={quickMode}
-                onChange={(e) => setQuickMode(e.target.checked)}
-              />
-              <span>Quick Mode</span>
-            </label>
-            <div className="user-menu">
-              <span className="user-email">{user.email}</span>
-              <button className="sign-out-btn" onClick={signOut}>
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="app">
+      <Navbar
+        currentPage={currentPage}
+        onNavigate={handleNavigation}
+        onShowAuth={handleShowAuth}
+      />
 
-      <main className="app-main">
-        <div className="container">
-          <JobDescriptionForm 
-            onSubmit={handleSearch}
-            isLoading={isLoading}
-          />
-          
-          {error && (
-            <div className="error-message">
-              <h3>Error</h3>
-              <p>{error}</p>
-            </div>
-          )}
-          
-          {isLoading && (
-            <div className="loading-container">
-              <div className="loading-spinner"></div>
-              <p>Searching for matching candidates...</p>
-            </div>
-          )}
-          
-          {searchResults && !isLoading && (
-            <CandidateResults 
-              matches={searchResults.matches}
-              insights={searchResults.insights}
-              queryTime={searchResults.queryTime}
-            />
-          )}
-        </div>
+      <main className="main-content">
+        {renderCurrentPage()}
       </main>
 
-      <footer className="app-footer">
-        <p>© 2025 Headhunter AI • Powered by Vertex AI & Cloud Functions</p>
-      </footer>
+      <AuthModal
+        isOpen={showAuth}
+        onClose={() => setShowAuth(false)}
+        initialMode="login"
+      />
     </div>
   );
 }

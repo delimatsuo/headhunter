@@ -1,0 +1,77 @@
+{
+  "candidate_id": "184820185",
+  "name": "Lucas Torre\u00e3o Machado",
+  "enhanced_analysis": {
+    "career_trajectory": {
+      "current_level": null,
+      "progression_speed": "slow",
+      "trajectory_type": null,
+      "years_experience": 5,
+      "velocity": "plateauing"
+    },
+    "leadership_scope": {
+      "has_leadership": false,
+      "team_size": 0,
+      "leadership_level": "none",
+      "leadership_style": null
+    },
+    "company_pedigree": {
+      "company_tier": "startup/mid_market/enterprise/faang",
+      "company_tiers": [
+        "startup",
+        "mid_market"
+      ],
+      "stability_pattern": "job_hopper"
+    },
+    "cultural_signals": {
+      "strengths": [
+        "technical expertise",
+        "communication"
+      ],
+      "red_flags": [],
+      "work_style": null
+    },
+    "skill_assessment": {
+      "technical_skills": {
+        "core_competencies": [
+          "Python",
+          "React",
+          "AWS"
+        ],
+        "skill_depth": "intermediate"
+      },
+      "soft_skills": {
+        "communication": "developing",
+        "leadership": "developing"
+      }
+    },
+    "recruiter_insights": {
+      "placement_likelihood": "low",
+      "best_fit_roles": [
+        "Senior Engineer",
+        "Tech Lead"
+      ],
+      "salary_expectations": null,
+      "availability": null
+    },
+    "search_optimization": {
+      "keywords": [
+        "python",
+        "react",
+        "leadership",
+        "startup"
+      ],
+      "search_tags": [
+        "technical",
+        "leadership",
+        "growth"
+      ]
+    },
+    "executive_summary": {
+      "one_line_pitch": "Experienced engineer with startup experience",
+      "ideal_next_role": "Senior or Lead role at growth-stage company",
+      "overall_rating": null
+    }
+  },
+  "timestamp": "2025-09-07T00:31:45.745149"
+}

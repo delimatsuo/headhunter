@@ -1,0 +1,63 @@
+{
+  "candidate_id": "280315661",
+  "name": "Gabriel Sanchez",
+  "enhanced_analysis": {
+    "career_trajectory": {
+      "current_level": "",
+      "progression_speed": "",
+      "trajectory_type": "",
+      "years_experience": 0,
+      "velocity": ""
+    },
+    "leadership_scope": {
+      "has_leadership": false,
+      "team_size": 0,
+      "leadership_level": "none",
+      "leadership_style": ""
+    },
+    "company_pedigree": {
+      "company_tier": "",
+      "company_tiers": [],
+      "stability_pattern": ""
+    },
+    "cultural_signals": {
+      "strengths": [
+        "communication"
+      ],
+      "red_flags": [],
+      "work_style": "independent"
+    },
+    "skill_assessment": {
+      "technical_skills": {
+        "core_competencies": [],
+        "skill_depth": ""
+      },
+      "soft_skills": {
+        "communication": "strong",
+        "leadership": "developing"
+      }
+    },
+    "recruiter_insights": {
+      "placement_likelihood": "low",
+      "best_fit_roles": [],
+      "salary_expectations": "",
+      "availability": ""
+    },
+    "search_optimization": {
+      "keywords": [
+        "python",
+        "react",
+        "leadership"
+      ],
+      "search_tags": [
+        "technical"
+      ]
+    },
+    "executive_summary": {
+      "one_line_pitch": "Contacted candidate for potential opportunity, but no response.",
+      "ideal_next_role": "",
+      "overall_rating": 0
+    }
+  },
+  "timestamp": "2025-09-07T00:48:53.129297"
+}

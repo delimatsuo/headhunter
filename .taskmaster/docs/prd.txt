@@ -1,86 +1,175 @@
-# Headhunter v1.1 - Intelligent Candidate Search Engine
+# Headhunter v2.0 – Cloud Processing with Together AI
 
 ## Overview
-Headhunter v1.1 transforms Ella Executive Search's historical candidate database into an intelligent, semantic search engine. It solves the inefficiency and blind spots of keyword-based ATS queries by deeply analyzing each candidate's experience, leadership scope, and cultural signals, then matching them contextually to new role descriptions. Primary users are recruiters who need to build qualified long-lists in under 30 minutes while improving search quality and unlocking the strategic value of proprietary candidate data.
+Headhunter transforms Ella Executive Search's historical candidate database into an intelligent, semantic search engine using a cloud processing pipeline powered by Together AI. The system analyzes unstructured candidate data (resumes, recruiter comments, experience text) to produce enriched, structured profiles and semantic search embeddings, then serves ranked results to recruiters.
+
+Key change: AI analysis and enrichment run via Together AI’s hosted models (e.g., Llama 3.1 8B Instruct Turbo) from Python batch processors, with results streamed directly to Firebase Firestore. Cloud Functions provide ingestion, CRUD APIs, search, and embedding generation. Local-only processing is retained as a fallback for development, but production processing uses Together AI.
 
 ## Core Features
-- **LLM-Powered Data Processing**: Use Llama 3.1 8b via Ollama to intelligently read and analyze unstructured candidate data (resumes, recruiter comments, experience descriptions) and create structured JSON profiles with deep insights.
-- **AI enrichment pipeline**: Cloud Functions invoke Vertex AI Gemini to produce enriched candidate profiles including career arc analysis, standardized role scope, company pedigree, and recruiter takeaways (strengths/red flags). Results stored in Firestore with embeddings in Vertex AI Vector Search.
-- **Semantic search UI**: Secure web app where recruiters paste a full job description and receive a ranked list of 10-20 candidates with name, current title, AI summary, and "Why they're a match" bullets.
+- **Cloud AI Processing (Together AI)**: Python async processors call Together AI chat completion API with recruiter-grade prompts to analyze resumes and recruiter comments, returning structured JSON analysis.
+- **Streaming to Firebase**: Processed/enhanced profiles are streamed directly to Firestore (candidates collection) and optionally uploaded to Cloud Storage to trigger Cloud Functions.
+- **Embeddings + Semantic Search**: Cloud Functions generate text embeddings for profiles and provide vector-similarity search endpoints. Current implementation uses Vertex AI text-embedding-004 (with a deterministic fallback in development). Migration to Together AI embeddings is feasible.
+- **Semantic search UI**: Secure web app where recruiters paste a full job description and receive a ranked list of 10–20 candidates with AI summary and “Why they’re a match”.
 
 ## User Experience
 **Persona: Alex (Senior Recruiter)**
-- Goals: Quickly surface the best candidates; fill roles faster; deliver high client value.
-- Frustrations: Time-consuming keyword searches; fear of missing the "perfect" past candidate.
+- Goals: Quickly surface the best candidates; fill roles faster; deliver high client value; maintain data privacy.
+- Frustrations: Time-consuming keyword searches; fear of missing the "perfect" past candidate; concerns about data security with cloud AI.
 
 **Key flow**
 1) Paste JD → 2) Submit search → 3) View ranked candidates → 4) Read "Why they're a match" → 5) Shortlist.
 
-**UX considerations**: Minimal inputs, fast results, clear rationale bullets, accessible UI on Firebase Hosting.
+**UX considerations**: Minimal inputs, fast results, clear rationale bullets, accessible UI on Firebase Hosting, confidence in data privacy.
 
 ## Technical Architecture
 **System components**
-- LLM Data Processing (Mac): Python 3.10+ with Ollama integration; Llama 3.1 8b reads unstructured data (resumes, comments, experience text) and generates intelligent JSON profiles with career insights, leadership analysis, and cultural fit assessments.
-- Cloud Enrichment: Cloud Functions (Node.js/TypeScript) triggered by GCS object finalize; Vertex AI Gemini for deep analysis; Firestore for enriched profiles; Vertex AI Vector Search for embeddings.
-- Frontend: React (or Vue) app on Firebase Hosting calling secure Cloud Function search API.
+- **Cloud LLM Processing (Together AI)**: Python 3.10+ async processors (aiohttp) call Together AI chat completions (model: `meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo`) to produce enriched candidate JSON. Entrypoints include:
+  - `scripts/together_ai_processor.py`
+  - `scripts/enhanced_together_ai_processor.py`
+  - `scripts/firebase_streaming_processor.py`
+  - `scripts/together_ai_firestore_processor.py`
+- **Data Ingestion**: Two supported paths:
+  - Direct Firestore streaming from processors (primary at scale).
+  - Cloud Storage upload of profile JSON to `profiles/*.json`, triggering Cloud Functions (`processUploadedProfile`).
+- **Storage & API Layer**: Firebase Cloud Functions (Node/TS) provide:
+  - CRUD APIs (`candidates-crud.ts`, `jobs-crud.ts`)
+  - File upload pipeline (`file-upload-pipeline.ts`)
+  - Enrichment orchestration and Firestore writes (`index.ts`)
+  - Semantic search + embeddings (`vector-search.ts`, `generate-embeddings.ts`)
+- **Embeddings**: `VectorSearchService` currently generates embeddings via Vertex AI `text-embedding-004`; includes deterministic fallback to support dev/offline. Embeddings stored in `embeddings/` collection for similarity search.
+- **Frontend**: React app on Firebase Hosting calling secure Cloud Functions.
 
 **Data models**
-- LLM-Generated Candidate Profiles: Intelligent analysis of unstructured data producing:
-  - career_trajectory: Deep analysis of career progression patterns and velocity
-  - leadership_scope: Extracted team size, reporting structure, and management experience
-  - company_pedigree: Categorized company tiers and industry context
-  - cultural_signals: Identified strengths, red flags, and fit indicators
-  - skill_assessment: Technical and soft skill evaluation from resume content
-  - recruiter_insights: Synthesized analysis of all recruiter comments and notes
-- Search-Ready Profiles: Structured JSON optimized for semantic search and matching
+- **AI-Generated Candidate Profiles** (via Together AI):
+  - personal_details: name, seniority_level, years_of_experience, location
+  - education_analysis: degrees, quality_score, relevance
+  - experience_analysis: companies, current_role, career_progression, industry_focus
+  - technical_assessment: primary_skills, expertise_level
+  - market_insights: salary_range, market_demand, placement_difficulty
+  - cultural_assessment / recruiter_recommendations: strengths, red_flags, ideal_roles, target_companies
+  - executive_summary: one_line_pitch, overall_rating, recommendation
+  - processing_metadata: timestamp, processor, model, version
+- **Search-Ready Profiles**: Flattened fields for querying (years_experience, current_role, primary_skills, overall_rating, search_keywords, etc.) plus embedding vectors.
 
 **APIs & integrations**
-- Vertex AI Gemini (analysis), Vertex AI Embeddings, Firestore SDK, Cloud Storage triggers, Firebase Hosting/Functions.
+- Together AI Inference API (`https://api.together.xyz/v1/chat/completions`)
+- Firebase Admin/Client SDKs (Firestore, Storage, Auth)
+- Cloud Functions v2 (HTTP/callable + Storage triggers)
+- Vertex AI embeddings (current implementation) with plan to evaluate Together AI embeddings
 
 **Infrastructure requirements**
-- GCP project with Vertex AI, Firestore, Cloud Storage, and Vector Search enabled; Firebase Hosting and Functions.
+- GCP project with Firestore and Cloud Storage enabled (`headhunter-ai-0088`)
+- Firebase Hosting and Functions with service account
+- Together AI API key in environment (`TOGETHER_API_KEY`)
+- Optional: local dev credentials for Firebase Admin
 
 ## Development Roadmap
 
 ### MVP requirements
-- LLM Data Processing: Implement Llama 3.1 8b pipeline to read unstructured data (resumes, comments, experience text) and generate intelligent candidate profiles with career analysis, leadership insights, and cultural assessments.
-- Local Testing Environment: Set up Ollama with Llama 3.1 8b for iterative development and testing of analysis quality.
-- Structured Output Generation: Create prompts that produce consistent JSON structures for career trajectory, leadership scope, company tiers, and recruiter takeaways.
-- Quality Validation: Implement evaluation metrics to ensure LLM analysis accuracy and consistency.
-- GCS upload + Cloud Function trigger for production scaling.
-- Simple secure web page: paste JD → ranked results (10-20) with match rationale.
+- **Together AI Processing**: Run batch processors to analyze candidates via Together AI and produce structured JSON analysis.
+- **Firestore Streaming**: Stream processed profiles to `candidates/` with flattened fields for search; optionally store full enriched profiles in `enriched_profiles/`.
+- **Embeddings & Search**: Generate embeddings for profiles and expose a semantic search endpoint. Keep Vertex AI embedding service initially; evaluate Together AI embeddings for parity/cost.
+- **Quality Validation**: Add schema validation and JSON parsing guards; retry on malformed outputs.
+- **Secure Web UI**: JD input → ranked results with rationale, authenticated via Firebase.
 
 ### Future enhancements
-- Advanced search filters (boolean logic, save/share searches).
-- Near-real-time ingestion for new candidates.
-- Multi-tenant, client-facing portals and billing.
-- Expanded UX (candidate detail pages, export lists).
+- Replace Vertex AI embeddings with Together AI embeddings where advantageous.
+- Advanced filters, saved searches, export lists.
+- Real-time ingestion pipeline for ongoing candidate updates.
+- Organization multi-tenancy and role-based access (RBAC) expansion.
 
-### Scope guidance (no timelines)
-- Build end-to-end vertical slice from JD input to ranked results before adding extras.
+### Scope guidance
+- Prioritize stable, scalable batch processing + search relevance; avoid regressions in parsing/validation.
 
 ## Logical Dependency Chain
-- Foundation: Set up Ollama with Llama 3.1 8b; enable Vertex AI, Firestore, GCS, Vector Search; set up Firebase Hosting/Functions.
-- Data path: LLM analysis of unstructured data → Structured JSON profiles → GCS upload → Cloud Function enrichment → Firestore + embeddings.
-- Search path: Embedding index ready → Search API → Frontend results with rationale.
-- Fast-path to usable demo: LLM processing of sample candidates → Local search testing → Minimal UI with working semantic matching.
+- **Foundation**: Configure Together AI API access; enable Firestore/Storage; set up Firebase Hosting/Functions.
+- **Data path**: Together AI analysis → Structured profile JSON → Firestore (and/or GCS → Cloud Function) → Embeddings.
+- **Search path**: Embedding generation → Vector similarity search → Ranked results with rationale in UI.
+- **Fast-path to usable demo**: Process a sample set via Together AI → Stream to Firestore → Generate embeddings → Minimal UI search.
 
 ## Risks and Mitigations
-- **LLM analysis quality**: Implement prompt engineering, few-shot examples, and output validation; test analysis accuracy against known profiles; establish quality metrics and human review workflows.
-- **Local LLM performance**: Optimize Llama 3.1 8b context windows for resume processing; implement batch processing for large datasets; monitor memory usage and processing times.
-- **Structured output consistency**: Use JSON schema validation and retry mechanisms; implement output parsing with fallbacks; establish quality thresholds for automated processing.
-- **Data privacy and security**: Ensure local LLM processing maintains data confidentiality; implement secure data handling protocols; avoid external API calls during initial processing.
-- **Cost control**: Local processing reduces cloud costs; batch enrichment for production; monitor quotas and implement cost-effective scaling strategies.
+- **API reliability/latency**: Add retries, backoff, and circuit breakers around Together AI requests; batch and rate-limit.
+- **JSON parsing robustness**: Strip code fences, validate against schema, retry with repair prompts; quarantine malformed results.
+- **Cost control**: Batch sizes, concurrency caps, and MAX_ESTIMATED_COST safeguards (see `scripts/.env.template`); per-run confirmation flags.
+- **Data privacy**: Minimize PII in prompts; store only required fields; enforce Firebase security rules; audit logging for access.
+- **Embedding consistency**: Until Together embeddings are adopted, keep stable Vertex AI embeddings with deterministic fallback for dev.
+- **Scalability**: Horizontal scale by increasing concurrent requests and batching; streaming writes to Firestore in batches.
 
 ## Goals & Success Metrics
 - Time-to-Longlist < 30 minutes
 - > 5 searches per recruiter per week
-- satisfaction > 4.5/5
+- Satisfaction > 4.5/5
+- Predictable cost per processed candidate with guardrails
+- > 95% valid JSON parse rate from Together AI responses
 
-## Out of Scope (v1.0)
-- Client-facing access, multi-tenancy, billing/subscriptions, real-time ingestion, advanced boolean search or sharing.
+## Access Control & CRUD (Phase after Processing)
+
+- Authentication: Firebase Authentication with Google Sign-In (Ella employees only initially)
+- Authorization: Simple allowlist of email domains/users in Firestore (`allowed_users/{email}` with role) and an Admin-only page to manage access
+- Roles (initial):
+  - admin: manage users, view all data, run maintenance jobs
+  - recruiter: search candidates, view details, save/export lists
+  - viewer (future): read-only search and view results
+- CRUD scope:
+  - Candidates: view enhanced profiles, edit recruiter notes/tags, bookmark
+  - Jobs: create/search job descriptions, attach JD text, view suggested matches
+  - Lists: save and share candidate lists per job (internal only for now)
+  - Activity log: basic audit trail for edits/exports
+- Admin UI (minimal):
+  - Add/remove allowed users, set role
+  - View system health (Firestore counts, embedding stats)
+
+## Bake-off: Embeddings and Model Choice
+
+- Baseline: Vertex `text-embedding-004` (768-dim, cosine)
+- Alternatives: Together AI embeddings (strong retrieval models), open models (e.g., BGE, Nomic, Embedding Gemma via self-hosting)
+- Dataset: ~2,000 candidates × 30–50 representative JDs (or candidate-to-candidate similarity)
+- Metrics: NDCG@10, MRR@10, Hit@10; latency and cost per 10k embeddings
+- Outcome: Standardize on best performer; keep provider pluggable via env
+
+## Development Process (TDD Required)
+
+- All tasks follow Test-Driven Development (see `docs/TDD_PROTOCOL.md`).
+- Each task includes: write tests first → implement → tests green → docs update → commit/push → next task.
+- CI (future): Add GitHub Actions to enforce tests on PR.
+
+## Orchestration & Resilience
+
+- Buckets: `*-raw-csv`, `*-raw-json`, `*-profiles`
+- Pub/Sub: `candidate-process-requests` (1 msg per candidate JSON in GCS)
+- Cloud Run: `candidate-enricher` (Python aiohttp) processes messages → Together AI → Firestore
+- Embedding Worker: pub/sub-triggered to generate embeddings and upsert to Cloud SQL `pgvector`
+- Scheduler: batch enqueues for initial 29k, nightly reprocessing for updated resumes
+- Idempotency: Upsert by `candidate_id` across Firestore and pgvector
+
+## Permissions & Security
+
+- Minimize PII in prompts; redact where possible
+- Firestore rules enforce `allowed_users`
+- Admin actions behind role checks; audit logs for sensitive operations
+
+## Deliverables (Tracked by Task Master)
+
+1. Cloud Run worker (Together AI enrichment)
+2. Pub/Sub topic + Scheduler for batch and nightly updates
+3. Cloud SQL (Postgres + pgvector) provisioning and schema
+4. Embedding provider adapter (env-driven: vertex|together|local)
+5. Embedding bake-off harness + report
+6. React UI search: JD input, ranked results with rationale, filters
+7. Auth: Google Sign-In; Firestore allowlist + minimal Admin page
+8. Migrate NAS → GCS; one-time 50-candidate test run
+9. Remove Gemini enrichment references from Functions; fix mismatch
+10. Handover docs kept up-to-date (crash-safe)
+
+## Out of Scope (current)
+- Client-facing multi-tenancy and billing
+- Real-time ingestion of resumes (beyond current bucket triggers)
+- Open-ended generative features in the UI
 
 ## User Stories
-- **Epic 1 (LLM Data Processing)**: 1.1 Set up Ollama with Llama 3.1 8b, 1.2 Create prompts for resume analysis and career insights, 1.3 Process unstructured data into structured JSON profiles, 1.4 Validate LLM output quality and consistency.
-- **Epic 2 (Ingestion & Enrichment)**: 2.1 Upload processed profiles to GCS, 2.2 Cloud Function triggers Gemini deep analysis, 2.3 Generate embeddings and store in Firestore + Vector Search.
-- **Epic 3 (Search Interface)**: 3.1 Secure web access, 3.2 JD input interface, 3.3 Ranked candidate results (10-20), 3.4 "Why they're a match" rationale generation.
+- **Epic 1 (Together AI Processing)**: 1.1 Configure TOGETHER_API_KEY, 1.2 Implement/validate recruiter-grade prompts, 1.3 Batch process candidates with streaming to Firestore, 1.4 Robust JSON validation and retries.
+- **Epic 2 (Storage & API)**: 2.1 Cloud Storage upload pipeline + trigger, 2.2 CRUD/search APIs via Cloud Functions, 2.3 Embedding generation + vector search.
+- **Epic 3 (Search Interface)**: 3.1 Secure web access, 3.2 JD input interface, 3.3 Ranked candidate results (10–20), 3.4 “Why they’re a match” rationale generation.
+
+## Privacy & Security Statement
+Headhunter prioritizes data privacy by minimizing sensitive content sent to external services and enforcing strict access controls. Candidate analysis is performed via Together AI with guarded prompts and schema-constrained outputs. All persisted data is protected by Firebase Authentication and Firestore security rules. Audit logs capture access and processing events for traceability.

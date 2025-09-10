@@ -1,0 +1,47 @@
+# Task ID: 13
+# Title: Configure Together AI API Integration
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Set up Together AI API access and create reusable client wrapper for chat completions with Llama 3.1 8B Instruct Turbo model
+# Details:
+Configure Together AI integration for production use:
+
+1. **Implementation**:
+   - Create TogetherAIClient class with async methods using aiohttp
+   - Set up environment variable TOGETHER_API_KEY
+   - Configure model endpoint: meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo
+   - Add retry logic with exponential backoff (3 retries, 2-4-8 second delays)
+   - Implement rate limiting (100 requests/minute default)
+   - Add circuit breaker pattern for API failures
+   - Create cost estimation methods based on token usage
+   - Implement request/response logging for debugging
+
+2. **Configuration**:
+   - Store API key securely in environment variables
+   - Configure timeout and retry settings
+   - Set up logging for API interactions
+
+3. **Error Handling**:
+   - Handle API rate limits gracefully
+   - Implement circuit breaker for system stability
+   - Add fallback mechanisms for API failures
+
+# Test Strategy:
+Test Suite:
+1. **Unit Tests** (test_together_ai_client.py):
+   - Test client initialization with/without API key
+   - Test chat_completion with mocked responses
+   - Test retry logic with simulated failures (verify 3 attempts)
+   - Test rate limiting with 100+ concurrent requests
+   - Test circuit breaker triggers after 5 consecutive failures
+   - Test cost estimation calculations
+
+2. **Integration Tests** (test_together_ai_integration.py):
+   - Test real API connection (use test key)
+   - Test with minimal tokens (5 max) to minimize cost
+   - Test timeout handling
+
+3. **Test Execution**:
+   - Run: `pytest tests/test_together_ai_client.py -v`
+   - Ensure 100% test coverage for critical paths

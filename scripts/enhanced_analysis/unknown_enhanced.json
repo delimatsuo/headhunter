@@ -1,0 +1,55 @@
+{
+  "candidate_id": "unknown",
+  "name": "Mateus Matinato",
+  "enhanced_analysis": {
+    "career_trajectory": {
+      "current_level": "Junior",
+      "progression_speed": "slow",
+      "years_experience": 0
+    },
+    "leadership_scope": {
+      "has_leadership": false,
+      "team_size": 0,
+      "leadership_level": "none"
+    },
+    "company_pedigree": {
+      "company_tier": "startup",
+      "stability_pattern": "job_hopper"
+    },
+    "cultural_signals": {
+      "strengths": [
+        "Creativity",
+        "Problem-solving"
+      ],
+      "red_flags": []
+    },
+    "skill_assessment": {
+      "technical_skills": {
+        "core_competencies": [
+          "Programming languages (e.g. Python, Java)",
+          "Data structures and algorithms"
+        ]
+      },
+      "soft_skills": {
+        "communication": "developing"
+      }
+    },
+    "recruiter_insights": {
+      "placement_likelihood": "low",
+      "best_fit_roles": [
+        "Software Development Engineer"
+      ]
+    },
+    "search_optimization": {
+      "keywords": [
+        "Machine learning",
+        "Artificial intelligence"
+      ]
+    },
+    "executive_summary": {
+      "one_line_pitch": "Highly motivated and detail-oriented software engineer with a strong foundation in programming languages and data structures.",
+      "overall_rating": 3.5
+    }
+  },
+  "timestamp": "2025-09-06T23:26:16.251860"
+}

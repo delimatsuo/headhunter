@@ -1,0 +1,106 @@
+{
+  "candidate_id": "test_001",
+  "name": "John Smith",
+  "resume_analysis": {
+    "career_trajectory": {
+      "current_level": "Senior",
+      "progression_speed": "steady",
+      "trajectory_type": "technical",
+      "domain_expertise": [
+        "Software Engineering",
+        "Python"
+      ]
+    },
+    "leadership_scope": {
+      "has_leadership": true,
+      "team_size": 8,
+      "leadership_level": "Team Lead"
+    },
+    "company_pedigree": {
+      "tier_level": "Tier1",
+      "company_types": [
+        "Technology",
+        "Startup"
+      ],
+      "brand_recognition": "Strong"
+    },
+    "years_experience": 8,
+    "technical_skills": [
+      "Python",
+      "JavaScript",
+      "React",
+      "AWS",
+      "Docker"
+    ],
+    "soft_skills": [
+      "Communication",
+      "Leadership",
+      "Problem Solving"
+    ],
+    "cultural_signals": [
+      "Innovation",
+      "Growth mindset",
+      "Collaboration"
+    ]
+  },
+  "recruiter_insights": {
+    "sentiment": "positive",
+    "strengths": [
+      "Technical expertise",
+      "Leadership experience",
+      "Team building"
+    ],
+    "cultural_fit": {
+      "cultural_alignment": "strong",
+      "work_style": [
+        "collaborative",
+        "results-oriented"
+      ],
+      "values_alignment": [
+        "innovation",
+        "quality",
+        "growth"
+      ]
+    },
+    "recommendation": "strong_hire",
+    "readiness_level": "immediate",
+    "key_themes": [
+      "technical excellence",
+      "leadership potential"
+    ],
+    "development_areas": [
+      "strategic thinking"
+    ],
+    "competitive_advantages": [
+      "Full-stack expertise",
+      "Team leadership"
+    ]
+  },
+  "overall_score": 0.89,
+  "enrichment": {
+    "career_analysis": {
+      "trajectory_insights": "Based on 8 years experience at Senior level, showing steady progression in Software Engineering.",
+      "growth_potential": "Strong leadership foundation combined with expertise in Python, JavaScript, React.",
+      "leadership_readiness": "Proven leadership managing 8 with hands-on management.",
+      "market_positioning": "Well-positioned in Tier1 with Strong company background and positive market reception."
+    },
+    "strategic_fit": {
+      "role_alignment_score": 89,
+      "cultural_match_indicators": [
+        "Innovation",
+        "Growth mindset",
+        "innovation",
+        "quality"
+      ],
+      "development_recommendations": [
+        "strategic thinking",
+        "Strategic thinking expansion",
+        "Industry expertise deepening"
+      ],
+      "competitive_positioning": "Strong market position leveraging 5+ technical skills across 1 companies with strong_hire assessment."
+    },
+    "ai_summary": "Senior Software Engineering professional with 8+ years, proven leadership capabilities, and strong cultural fit indicators.",
+    "enrichment_timestamp": "2025-09-10T16:43:49.655Z",
+    "enrichment_version": "1.0-fallback"
+  }
+}

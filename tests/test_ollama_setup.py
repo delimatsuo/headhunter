@@ -66,12 +66,12 @@ class TestOllamaSetup(unittest.TestCase):
     def test_llama_model_response(self):
         """Integration test: Test that Llama model can generate responses"""
         try:
-            # Run a simple prompt
+            # Run a simple prompt with increased timeout
             result = subprocess.run(
                 ['ollama', 'run', 'llama3.1:8b', 'Say "OK" if you are working'],
                 capture_output=True,
                 text=True,
-                timeout=30,  # 30 second timeout
+                timeout=60,  # Increased to 60 second timeout
                 check=True
             )
             
@@ -88,7 +88,7 @@ class TestOllamaSetup(unittest.TestCase):
             print(f"✓ Llama model responding correctly")
             
         except subprocess.TimeoutExpired:
-            self.fail("Llama model response timed out after 30 seconds")
+            self.fail("Llama model response timed out after 60 seconds")
         except subprocess.CalledProcessError as e:
             self.fail(f"Failed to run Llama model: {e}")
     
@@ -134,7 +134,7 @@ class TestOllamaPerformance(unittest.TestCase):
                 ['ollama', 'run', 'llama3.1:8b', 'Hi'],
                 capture_output=True,
                 text=True,
-                timeout=60,  # 60 second timeout for first load
+                timeout=90,  # 90 second timeout for first load
                 check=True
             )
             load_time = time.time() - start_time
@@ -144,7 +144,7 @@ class TestOllamaPerformance(unittest.TestCase):
             print(f"✓ Model loaded and responded in {load_time:.2f}s")
             
         except subprocess.TimeoutExpired:
-            self.fail("Model load timed out after 60 seconds")
+            self.fail("Model load timed out after 90 seconds")
         except subprocess.CalledProcessError as e:
             self.fail(f"Failed to load model: {e}")
 

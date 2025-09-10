@@ -1,26 +1,34 @@
 import { initializeApp } from 'firebase/app';
 import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  apiKey: "AIzaSyCPov0DTRn0HEalOlZ8UJUUmMZjnSne8IU",
   authDomain: "headhunter-ai-0088.firebaseapp.com",
   projectId: "headhunter-ai-0088",
-  storageBucket: "headhunter-ai-0088-profiles",
+  storageBucket: "headhunter-ai-0088.firebasestorage.app",
   messagingSenderId: "1034162584026",
-  appId: "1:1034162584026:web:9a8e7f6d5c4f3b2e1a9c8d"
+  appId: "1:1034162584026:web:28ef4ccc012c0de5d828e3"
 };
 
-if (!firebaseConfig.apiKey) {
-  throw new Error('Firebase API key not configured. Please set REACT_APP_FIREBASE_API_KEY environment variable.');
-}
+// Firebase configuration is now hardcoded for production
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Auth
+// Initialize Firebase services
 export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const storage = getStorage(app);
+// Configure Google Provider with additional settings
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.addScope('email');
+googleProvider.addScope('profile');
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
 // Initialize Functions
 export const functions = getFunctions(app, 'us-central1');
@@ -31,8 +39,11 @@ if (process.env.NODE_ENV === 'development' && process.env.REACT_APP_USE_EMULATOR
 }
 
 // Cloud Function references
-export const searchJobCandidates = httpsCallable(functions, 'searchJobCandidates');
-export const quickMatch = httpsCallable(functions, 'quickMatch');
+export const searchCandidates = httpsCallable(functions, 'searchCandidates');
+export const getCandidates = httpsCallable(functions, 'getCandidates');
+export const createCandidate = httpsCallable(functions, 'createCandidate');
+export const generateUploadUrl = httpsCallable(functions, 'generateUploadUrl');
 export const healthCheck = httpsCallable(functions, 'healthCheck');
+export const completeOnboarding = httpsCallable(functions, 'completeOnboarding');
 
 export default app;

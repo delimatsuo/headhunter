@@ -1,0 +1,50 @@
+# Task ID: 16
+# Title: Create Batch Processing Orchestrator
+# Status: pending
+# Dependencies: 13, 14, 15
+# Priority: high
+# Description: Build async batch processor to analyze candidates via Together AI with concurrency control and progress tracking
+# Details:
+Implement batch processing system:
+
+1. **Implementation**:
+   - Create BatchProcessor class with async/await
+   - Implement CSV/JSON input parsers
+   - Add concurrent processing with semaphore (10 concurrent by default)
+   - Create progress tracking with checkpoint saves
+   - Implement cost estimation and MAX_ESTIMATED_COST safeguards
+   - Add graceful shutdown and resume capability
+   - Create processing statistics and reporting
+
+2. **Concurrency Control**:
+   - Use asyncio semaphore for rate limiting
+   - Implement adaptive concurrency based on API response times
+   - Add memory usage monitoring
+
+3. **Progress Management**:
+   - Save checkpoints after each batch
+   - Enable resume from last checkpoint
+   - Track success/failure statistics
+
+# Test Strategy:
+Test Suite:
+1. **Unit Tests** (test_batch_processor.py):
+   - Test CSV/JSON parsing
+   - Test semaphore limits concurrency
+   - Test checkpoint saving/loading
+   - Test cost estimation calculations
+   - Test graceful shutdown handling
+
+2. **Async Tests** (test_batch_async.py):
+   - Test async candidate processing
+   - Test concurrent batch operations
+   - Test error handling in async context
+
+3. **Integration Tests** (test_batch_integration.py):
+   - Test with 50-candidate sample
+   - Test resume after interruption
+   - Measure throughput metrics
+
+4. **Test Execution**:
+   - Run: `pytest tests/test_batch_processor.py -v --asyncio-mode=auto`
+   - Verify memory usage stays within limits

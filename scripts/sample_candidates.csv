@@ -1,0 +1,5 @@
+candidate_id,name,current_role,current_company,years_experience,technical_skills
+sample-001,Sarah Chen,Senior Engineering Manager,Meta,8,Python|React|TypeScript|AWS|Machine Learning|Kubernetes|System Design|GraphQL
+sample-002,Marcus Rodriguez,Principal Software Engineer,Spotify,6,Node.js|Python|Go|Docker|Kubernetes|GraphQL|Microservices|Redis|PostgreSQL
+sample-003,Dr. Emily Watson,Distinguished Engineer,Amazon,12,Java|Python|System Design|Microservices|AWS|Kafka|Cassandra|Terraform|Docker
+sample-004,Alex Kim,Senior Frontend Engineer,Airbnb,5,React|TypeScript|Next.js|GraphQL|CSS|Webpack|Testing|Figma|Storybook

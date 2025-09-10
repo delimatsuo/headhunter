@@ -1,0 +1,64 @@
+{
+  "candidate_id": "199004594",
+  "name": "Sandro Medeiros",
+  "enhanced_analysis": {
+    "career_trajectory": {
+      "current_level": "Junior/Mid/Senior/Principal/Executive",
+      "progression_speed": "slow/steady/fast",
+      "trajectory_type": "individual_contributor/technical_leadership/people_management",
+      "years_experience": 5,
+      "velocity": "accelerating/steady/plateauing"
+    },
+    "leadership_scope": {
+      "has_leadership": false,
+      "team_size": 0,
+      "leadership_level": "none/lead/manager/director/vp",
+      "leadership_style": "collaborative/directive/coaching"
+    },
+    "company_pedigree": {
+      "company_tier": "",
+      "company_tiers": [],
+      "stability_pattern": ""
+    },
+    "cultural_signals": {
+      "strengths": [
+        "technical expertise",
+        "communication"
+      ],
+      "red_flags": [],
+      "work_style": "independent/collaborative"
+    },
+    "skill_assessment": {
+      "technical_skills": {
+        "core_competencies": [
+          "Python",
+          "React"
+        ],
+        "skill_depth": ""
+      },
+      "soft_skills": {
+        "communication": "",
+        "leadership": ""
+      }
+    },
+    "recruiter_insights": {
+      "placement_likelihood": "low/medium/high",
+      "best_fit_roles": [],
+      "salary_expectations": "",
+      "availability": "immediate/short_notice/not_looking"
+    },
+    "search_optimization": {
+      "keywords": [
+        "python",
+        "react"
+      ],
+      "search_tags": []
+    },
+    "executive_summary": {
+      "one_line_pitch": "",
+      "ideal_next_role": "",
+      "overall_rating": 0
+    }
+  },
+  "timestamp": "2025-09-07T00:46:14.103010"
+}

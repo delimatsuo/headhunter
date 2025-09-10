@@ -1,0 +1,51 @@
+# Task ID: 19
+# Title: Implement Embedding Generation Service
+# Status: pending
+# Dependencies: 18
+# Priority: medium
+# Description: Create pluggable embedding service supporting Vertex AI initially with migration path to Together AI embeddings
+# Details:
+Build embedding service:
+
+1. **Implementation**:
+   - Create EmbeddingService interface
+   - Implement VertexAIEmbeddingProvider (text-embedding-004)
+   - Add TogetherAIEmbeddingProvider stub
+   - Implement deterministic fallback for dev
+   - Create batch embedding generation
+   - Store embeddings in Firestore embeddings/ collection
+   - Add caching layer for repeated texts
+
+2. **Provider Architecture**:
+   - Design pluggable provider interface
+   - Support multiple embedding models
+   - Enable easy provider switching
+
+3. **Optimization**:
+   - Batch requests for efficiency
+   - Cache frequently used embeddings
+   - Implement dimension reduction if needed
+
+# Test Strategy:
+Test Suite:
+1. **Unit Tests** (test_embedding_service.py):
+   - Test provider initialization
+   - Test single text embedding
+   - Test batch embedding generation
+   - Test cache hit/miss scenarios
+   - Test fallback mechanism
+
+2. **Provider Tests** (test_embedding_providers.py):
+   - Test Vertex AI provider (mocked)
+   - Test Together AI provider stub
+   - Test deterministic fallback
+   - Verify embedding dimensions (768)
+
+3. **Integration Tests** (test_embedding_integration.py):
+   - Test with real API (limited calls)
+   - Test Firestore storage
+   - Test similarity calculations
+
+4. **Test Execution**:
+   - Run: `pytest tests/test_embedding_service.py -v`
+   - Test embedding quality with known pairs

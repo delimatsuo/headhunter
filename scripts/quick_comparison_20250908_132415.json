@@ -1,0 +1,20 @@
+[
+  {
+    "model": "llama3.1:8b",
+    "success": false,
+    "error": "Timeout",
+    "time": 30
+  },
+  {
+    "model": "deepseek-r1:8b",
+    "success": false,
+    "error": "Timeout",
+    "time": 30
+  },
+  {
+    "model": "qwen2.5:7b",
+    "success": true,
+    "response": "Career Level: Mid to Senior\n\nMarket Value: $150,000 - $200,00+ per year depending on location and specific experience.\n\nKey Strengths: Extensive experience in Python/React/AWS stack, proven track record at leading tech giants like Google and Meta. Strong problem-solving skills and ability to deliver high-quality software solutions.\n\n",
+    "time": 29.612940073013306
+  }
+]

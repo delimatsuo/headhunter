@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Headhunter Candidate Viewer</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .stats { background: #f0f0f0; padding: 20px; border-radius: 5px; }
+        .stat-item { margin: 10px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f2f2f2; }
+        .stage { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .json-view { background: #f5f5f5; padding: 10px; border-radius: 3px; white-space: pre-wrap; font-family: monospace; font-size: 12px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        .prompt { background: #e8f4f8; padding: 15px; margin: 10px 0; border-left: 4px solid #0084ff; }
+        .search-box { background: #f9f9f9; padding: 20px; border-radius: 5px; margin: 20px 0; }
+        input[type="text"] { padding: 10px; font-size: 16px; border: 1px solid #ddd; border-radius: 3px; }
+        .highlight { background-color: yellow; }
+        .info-box { background: #e7f3ff; padding: 15px; border-radius: 5px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>Headhunter Candidate Data Viewer</h1>
+    
+    <div class="stats">
+        <h2>Data Statistics</h2>
+        <div class="stat-item">Total Raw Candidates: {{ stats.total_raw }}</div>
+        <div class="stat-item">Total Merged: {{ stats.total_merged }}</div>
+        <div class="stat-item" style="margin-left: 20px;">→ Normal Candidates: {{ stats.normal_candidates }}</div>
+        <div class="stat-item" style="margin-left: 20px;">→ Orphaned (Comments Only): {{ stats.orphaned_candidates }}</div>
+        <div class="stat-item">Total Processed: {{ stats.total_processed }}</div>
+        <div class="stat-item">With Comments: {{ stats.with_comments }}</div>
+        <div class="stat-item">With Resumes: {{ stats.with_resumes }}</div>
+        <div class="stat-item">With LLM Analysis: {{ stats.with_llm_analysis }}</div>
+        <div class="stat-item">Processing Errors: {{ stats.processing_errors }}</div>
+    </div>
+    
+    <div class="search-box">
+        <h2>Search Candidates</h2>
+        <div style="margin: 10px 0;">
+            <input type="text" id="searchInput" placeholder="Search by name (partial or full), email, company, title, or ID..." style="width: 500px;">
+            <button onclick="searchCandidates()" style="background: #0084ff; color: white;">Search</button>
+            <button onclick="clearSearch()">Clear</button>
+            <select id="stageSelect" style="padding: 10px; margin-left: 20px;">
+                <option value="merged">Merged Data</option>
+                <option value="raw">Raw Data</option>
+                <option value="processed">Processed Data</option>
+            </select>
+        </div>
+        <div id="searchStatus" style="margin-top: 10px; color: #666;"></div>
+    </div>
+    
+    <div style="margin-top: 20px;">
+        <h2>Quick Navigation</h2>
+        <button onclick="loadCandidates('raw')">View All Raw Data</button>
+        <button onclick="loadCandidates('merged')">View All Merged Data</button>
+        <button onclick="loadCandidates('processed')">View All Processed Data</button>
+        <button onclick="viewPrompts()" style="background: #28a745; color: white;">View LLM Prompts</button>
+        <button onclick="viewProcessingEstimate()" style="background: #ffc107; color: black;">Processing Time Estimate</button>
+    </div>
+    
+    <div id="content" style="margin-top: 30px;"></div>
+    
+    <script>
+        let currentStage = 'merged';
+        let currentSearch = '';
+        
+        function loadCandidates(stage, search = '') {
+            currentStage = stage;
+            currentSearch = search;
+            document.getElementById('stageSelect').value = stage;
+            
+            let url = `/api/candidates?stage=${stage}`;
+            if (search) {
+                url += `&search=${encodeURIComponent(search)}`;
+            }
+            
+            fetch(url)
+                .then(r => r.json())
+                .then(data => {
+                    let html = `<h3>${stage.charAt(0).toUpperCase() + stage.slice(1)} Candidates`;
+                    if (search) {
+                        html += ` - Search: "${search}" (${data.total} results)`;
+                    } else {
+                        html += ` (${data.total} total)`;
+                    }
+                    html += '</h3>';
+                    
+                    if (data.total === 0) {
+                        html += '<p>No candidates found.</p>';
+                    } else {
+                        html += '<table><tr><th>ID</th><th>Name</th><th>Title</th><th>Company</th><th>Data Status</th><th>Actions</th></tr>';
+                        data.candidates.forEach(c => {
+                            let status = [];
+                            if (c.data_status === 'orphaned') status.push('⚠️ Orphaned');
+                            if (c.has_comments) status.push('💬 Comments');
+                            if (c.has_resume) status.push('📄 Resume');
+                            if (c.has_analysis) status.push('🤖 LLM');
+                            
+                            let nameClass = c.data_status === 'orphaned' ? 'style="color: #666; font-style: italic;"' : '';
+                            
+                            html += `<tr>
+                                <td>${c.id}</td>
+                                <td ${nameClass}><strong>${highlightText(c.name, search)}</strong></td>
+                                <td>${highlightText(c.title || '-', search)}</td>
+                                <td>${highlightText(c.company || '-', search)}</td>
+                                <td>${status.join(' | ') || 'Basic only'}</td>
+                                <td>
+                                    <button onclick="viewCandidate('${c.id}')">View All Data</button>
+                                    <button onclick="analyzeQuality('${c.id}')">Quality Check</button>
+                                </td>
+                            </tr>`;
+                        });
+                        html += '</table>';
+                        
+                        if (data.total_pages > 1) {
+                            html += '<p>Showing page 1 of ' + data.total_pages + '</p>';
+                        }
+                    }
+                    
+                    document.getElementById('content').innerHTML = html;
+                    
+                    if (search) {
+                        document.getElementById('searchStatus').innerHTML = `Found ${data.total} candidates matching "${search}"`;
+                    } else {
+                        document.getElementById('searchStatus').innerHTML = '';
+                    }
+                });
+        }
+        
+        function searchCandidates() {
+            const search = document.getElementById('searchInput').value.trim();
+            const stage = document.getElementById('stageSelect').value;
+            
+            if (search) {
+                loadCandidates(stage, search);
+            } else {
+                alert('Please enter a search term');
+            }
+        }
+        
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchStatus').innerHTML = '';
+            loadCandidates(currentStage);
+        }
+        
+        function highlightText(text, search) {
+            if (!search || !text) return text;
+            const regex = new RegExp(`(${search})`, 'gi');
+            return text.replace(regex, '<span class="highlight">$1</span>');
+        }
+        
+        function viewCandidate(id) {
+            fetch(`/api/candidate/${id}`)
+                .then(r => r.json())
+                .then(data => {
+                    let html = `<h3>Candidate: ${id}</h3>`;
+                    html += '<button onclick="loadCandidates(\'' + currentStage + '\', \'' + currentSearch + '\')">← Back to List</button>';
+                    
+                    // Summary
+                    if (data.summary && Object.keys(data.summary).length > 0) {
+                        html += '<div class="stage"><h4>📊 Quick Summary (from LLM Analysis)</h4>';
+                        html += '<div class="json-view">' + JSON.stringify(data.summary, null, 2) + '</div></div>';
+                    }
+                    
+                    // Stage 1: Raw
+                    html += '<div class="stage"><h4>📁 Stage 1: Raw CSV Data</h4>';
+                    html += '<p>Original data as imported from CSV files</p>';
+                    html += '<div class="json-view">' + JSON.stringify(data.stages.raw, null, 2) + '</div></div>';
+                    
+                    // Stage 2: Merged
+                    html += '<div class="stage"><h4>🔗 Stage 2: Merged Data</h4>';
+                    html += '<p>CSV data merged with comments and resume files</p>';
+                    const mergedComments = data.stages.merged.comments ? data.stages.merged.comments.length : 0;
+                    const mergedResumes = data.stages.merged.resume_files ? data.stages.merged.resume_files.length : 0;
+                    html += `<p><strong>${mergedComments} comments, ${mergedResumes} resume files</strong></p>`;
+                    html += '<div class="json-view">' + JSON.stringify(data.stages.merged, null, 2) + '</div></div>';
+                    
+                    // Stage 3: Processed
+                    if (data.stages.processed && data.stages.processed.llm_analysis) {
+                        html += '<div class="stage"><h4>🤖 Stage 3: LLM Analysis (Llama 3.1:8b)</h4>';
+                        html += '<p>AI-extracted insights and structured data</p>';
+                        html += '<div class="json-view">' + JSON.stringify(data.stages.processed.llm_analysis, null, 2) + '</div></div>';
+                    } else {
+                        html += '<div class="stage"><h4>⏳ Stage 3: Not Yet Processed</h4>';
+                        html += '<p>This candidate has not been processed by the LLM yet.</p></div>';
+                    }
+                    
+                    document.getElementById('content').innerHTML = html;
+                });
+        }
+        
+        function analyzeQuality(id) {
+            fetch(`/api/quality/${id}`)
+                .then(r => r.json())
+                .then(data => {
+                    let html = `<h3>Quality Analysis: ${id}</h3>`;
+                    html += '<button onclick="loadCandidates(\'' + currentStage + '\', \'' + currentSearch + '\')">← Back to List</button>';
+                    
+                    html += `<div class="stage">
+                        <h4>Overall Quality Score: ${data.overall_score}/100</h4>
+                        <div class="info-box">
+                            <strong>Score Breakdown:</strong><br>
+                            • Basic Info (name, email): 20 points<br>
+                            • Professional Info (title, company): 20 points<br>
+                            • Has Comments: 20 points<br>
+                            • Has Resume: 20 points<br>
+                            • LLM Processing Success: 20 points
+                        </div>
+                        <h5>Data Completeness:</h5>
+                        <div class="json-view">${JSON.stringify(data.data_completeness, null, 2)}</div>
+                        <h5>LLM Analysis Quality:</h5>
+                        <div class="json-view">${JSON.stringify(data.llm_analysis_quality, null, 2)}</div>
+                        <h5>Issues Found:</h5>
+                        <ul>${data.issues.length > 0 ? data.issues.map(i => '<li>' + i + '</li>').join('') : '<li>No issues found</li>'}</ul>
+                    </div>`;
+                    document.getElementById('content').innerHTML = html;
+                });
+        }
+        
+        function viewPrompts() {
+            fetch('/api/prompts')
+                .then(r => r.json())
+                .then(data => {
+                    let html = '<h3>LLM Prompts Used for Candidate Analysis</h3>';
+                    html += '<button onclick="loadCandidates(\'' + currentStage + '\')">← Back</button>';
+                    html += '<div class="info-box">These prompts are sent to Llama 3.1:8b via Ollama for local processing</div>';
+                    
+                    for (let [key, prompt] of Object.entries(data)) {
+                        html += `<div class="prompt">
+                            <h4>${key.replace(/_/g, ' ').toUpperCase()}</h4>
+                            <pre>${prompt}</pre>
+                        </div>`;
+                    }
+                    document.getElementById('content').innerHTML = html;
+                });
+        }
+        
+        function viewProcessingEstimate() {
+            const html = `
+                <h3>Processing Time & Resource Estimates</h3>
+                <button onclick="loadCandidates('${currentStage}')">← Back</button>
+                
+                <div class="info-box">
+                    <h4>📊 Data Volume</h4>
+                    <ul>
+                        <li><strong>240,279 candidates</strong> to process</li>
+                        <li><strong>87,422 comments</strong> to match and analyze</li>
+                        <li><strong>~2,000 resume files</strong> to extract text from</li>
+                        <li><strong>Batch size: 50 candidates</strong> per batch</li>
+                        <li><strong>Total batches: ~4,806</strong></li>
+                    </ul>
+                </div>
+                
+                <div class="info-box">
+                    <h4>⏱️ Time Estimates (using Llama 3.1:8b locally)</h4>
+                    <ul>
+                        <li><strong>Per candidate:</strong> 3-5 seconds (with resume text extraction)</li>
+                        <li><strong>Per batch (50):</strong> 2.5-4 minutes</li>
+                        <li><strong>Total processing time:</strong> 200-320 hours (8-13 days continuous)</li>
+                        <li><strong>With breaks/pauses:</strong> 2-3 weeks realistic</li>
+                        <li><strong>Quick test (100 candidates):</strong> 5-8 minutes</li>
+                    </ul>
+                </div>
+                
+                <div class="info-box">
+                    <h4>💻 Resource Usage</h4>
+                    <ul>
+                        <li><strong>CPU:</strong> 60-80% utilization (Ollama is CPU-intensive)</li>
+                        <li><strong>RAM:</strong> 8-12 GB (Llama 3.1:8b model + data)</li>
+                        <li><strong>Disk I/O:</strong> Moderate (reading CSVs, writing JSON)</li>
+                        <li><strong>Disk Space:</strong> ~5-10 GB for processed JSON files</li>
+                        <li><strong>Network:</strong> None (all local processing)</li>
+                    </ul>
+                </div>
+                
+                <div class="info-box" style="background: #fff3cd;">
+                    <h4>⚡ Optimization Options</h4>
+                    <ul>
+                        <li><strong>Sample Processing:</strong> Process 1,000 candidates first for testing (30-50 minutes)</li>
+                        <li><strong>Priority Candidates:</strong> Process only candidates with comments/resumes first</li>
+                        <li><strong>Parallel Processing:</strong> Run multiple Ollama instances (requires more RAM)</li>
+                        <li><strong>Night Processing:</strong> Run overnight when computer is idle</li>
+                        <li><strong>Cloud Alternative:</strong> Use Gemini 2.5 Flash-Lite (~$95 total, 4-6 hours)</li>
+                    </ul>
+                </div>
+                
+                <div class="info-box" style="background: #d4edda;">
+                    <h4>✅ Recommended Approach</h4>
+                    <ol>
+                        <li>Start with 100 candidates to test quality (5-8 minutes)</li>
+                        <li>Review output in this viewer</li>
+                        <li>If quality is good, process 1,000 candidates (30-50 minutes)</li>
+                        <li>Then decide whether to process all or use cloud API</li>
+                    </ol>
+                </div>
+            `;
+            
+            document.getElementById('content').innerHTML = html;
+        }
+        
+        // Allow Enter key to search
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchCandidates();
+            }
+        });
+        
+        // Load merged candidates by default
+        loadCandidates('merged');
+    </script>
+</body>
+</html>

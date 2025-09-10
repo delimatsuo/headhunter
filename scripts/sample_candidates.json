@@ -1,0 +1,371 @@
+[
+  {
+    "candidate_id": "sample-001",
+    "name": "Sarah Chen",
+    "current_role": "Senior Engineering Manager",
+    "current_company": "Meta",
+    "resume_analysis": {
+      "career_trajectory": {
+        "current_level": "Senior Manager",
+        "progression_speed": "steady",
+        "trajectory_type": "technical_leadership",
+        "domain_expertise": [
+          "Machine Learning",
+          "Distributed Systems",
+          "Team Leadership"
+        ]
+      },
+      "years_experience": 8,
+      "technical_skills": [
+        "Python",
+        "React",
+        "TypeScript",
+        "AWS",
+        "Machine Learning",
+        "Kubernetes",
+        "System Design",
+        "GraphQL"
+      ],
+      "soft_skills": [
+        "Leadership",
+        "Mentoring",
+        "Communication",
+        "Strategic Planning"
+      ],
+      "leadership_scope": {
+        "has_leadership": true,
+        "team_size": 12,
+        "leadership_level": "Engineering Manager",
+        "leadership_style": [
+          "Collaborative",
+          "Data-driven"
+        ],
+        "mentorship_experience": true
+      },
+      "company_pedigree": {
+        "tier_level": "tier_1",
+        "recent_companies": [
+          "Meta",
+          "Google",
+          "Stripe"
+        ],
+        "company_types": [
+          "Big Tech",
+          "Fintech"
+        ],
+        "brand_recognition": "high"
+      },
+      "education": {
+        "highest_degree": "MS Computer Science",
+        "institutions": [
+          "Stanford University"
+        ],
+        "fields_of_study": [
+          "Computer Science",
+          "Machine Learning"
+        ]
+      }
+    },
+    "recruiter_insights": {
+      "sentiment": "very_positive",
+      "strengths": [
+        "Exceptional technical leadership at scale",
+        "Proven track record building ML platforms",
+        "Strong cultural fit and communication skills"
+      ],
+      "concerns": [
+        "May be overqualified for IC roles"
+      ],
+      "recommendation": "strong_hire",
+      "readiness_level": "immediately_available",
+      "key_themes": [
+        "Technical depth",
+        "Leadership growth",
+        "Cultural ambassador"
+      ],
+      "competitive_advantages": [
+        "ML expertise",
+        "Big tech experience",
+        "Team building"
+      ]
+    },
+    "overall_score": 0.92,
+    "processing_timestamp": "2025-09-06T14:11:57.165874"
+  },
+  {
+    "candidate_id": "sample-002",
+    "name": "Marcus Rodriguez",
+    "current_role": "Principal Software Engineer",
+    "current_company": "Spotify",
+    "resume_analysis": {
+      "career_trajectory": {
+        "current_level": "Principal",
+        "progression_speed": "fast",
+        "trajectory_type": "individual_contributor",
+        "domain_expertise": [
+          "Backend Systems",
+          "API Design",
+          "Performance Optimization"
+        ]
+      },
+      "years_experience": 6,
+      "technical_skills": [
+        "Node.js",
+        "Python",
+        "Go",
+        "Docker",
+        "Kubernetes",
+        "GraphQL",
+        "Microservices",
+        "Redis",
+        "PostgreSQL"
+      ],
+      "soft_skills": [
+        "Problem-solving",
+        "Innovation",
+        "Collaboration",
+        "Mentoring"
+      ],
+      "leadership_scope": {
+        "has_leadership": false,
+        "team_size": 0,
+        "leadership_level": "Individual Contributor",
+        "mentorship_experience": true
+      },
+      "company_pedigree": {
+        "tier_level": "tier_2",
+        "recent_companies": [
+          "Spotify",
+          "Airbnb",
+          "Shopify"
+        ],
+        "company_types": [
+          "Music/Media",
+          "Travel",
+          "E-commerce"
+        ],
+        "brand_recognition": "high"
+      },
+      "education": {
+        "highest_degree": "BS Computer Engineering",
+        "institutions": [
+          "UC Berkeley"
+        ],
+        "fields_of_study": [
+          "Computer Engineering"
+        ]
+      }
+    },
+    "recruiter_insights": {
+      "sentiment": "positive",
+      "strengths": [
+        "Deep backend expertise with modern stack",
+        "Fast learner with strong problem-solving",
+        "Great cultural fit for product-driven teams"
+      ],
+      "concerns": [
+        "Limited leadership experience"
+      ],
+      "recommendation": "hire",
+      "readiness_level": "available_in_month",
+      "key_themes": [
+        "Technical excellence",
+        "Growth mindset",
+        "Product focus"
+      ],
+      "competitive_advantages": [
+        "Modern tech stack",
+        "Scale experience",
+        "Product intuition"
+      ]
+    },
+    "overall_score": 0.85,
+    "processing_timestamp": "2025-09-06T14:11:57.165890"
+  },
+  {
+    "candidate_id": "sample-003",
+    "name": "Dr. Emily Watson",
+    "current_role": "Distinguished Engineer",
+    "current_company": "Amazon",
+    "resume_analysis": {
+      "career_trajectory": {
+        "current_level": "Distinguished",
+        "progression_speed": "steady",
+        "trajectory_type": "technical_architecture",
+        "domain_expertise": [
+          "Distributed Systems",
+          "System Architecture",
+          "Platform Engineering"
+        ]
+      },
+      "years_experience": 12,
+      "technical_skills": [
+        "Java",
+        "Python",
+        "System Design",
+        "Microservices",
+        "AWS",
+        "Kafka",
+        "Cassandra",
+        "Terraform",
+        "Docker"
+      ],
+      "soft_skills": [
+        "Architecture",
+        "Mentoring",
+        "Strategic thinking",
+        "Technical writing"
+      ],
+      "leadership_scope": {
+        "has_leadership": true,
+        "team_size": 25,
+        "leadership_level": "Distinguished Engineer",
+        "leadership_style": [
+          "Technical",
+          "Mentoring-focused"
+        ],
+        "mentorship_experience": true
+      },
+      "company_pedigree": {
+        "tier_level": "tier_1",
+        "recent_companies": [
+          "Amazon",
+          "Netflix",
+          "Uber"
+        ],
+        "company_types": [
+          "Cloud/Infrastructure",
+          "Streaming",
+          "Mobility"
+        ],
+        "brand_recognition": "very_high"
+      },
+      "education": {
+        "highest_degree": "PhD Computer Science",
+        "institutions": [
+          "MIT"
+        ],
+        "fields_of_study": [
+          "Computer Science",
+          "Distributed Systems"
+        ]
+      }
+    },
+    "recruiter_insights": {
+      "sentiment": "very_positive",
+      "strengths": [
+        "World-class system architecture expertise",
+        "Proven ability to scale teams and systems",
+        "Thought leader in distributed systems"
+      ],
+      "concerns": [
+        "Very senior - limited roles at this level"
+      ],
+      "recommendation": "strong_hire",
+      "readiness_level": "exploring_options",
+      "key_themes": [
+        "Technical authority",
+        "Architecture leadership",
+        "Industry recognition"
+      ],
+      "competitive_advantages": [
+        "PhD + industry experience",
+        "Published research",
+        "Scale expertise"
+      ]
+    },
+    "overall_score": 0.95,
+    "processing_timestamp": "2025-09-06T14:11:57.165896"
+  },
+  {
+    "candidate_id": "sample-004",
+    "name": "Alex Kim",
+    "current_role": "Senior Frontend Engineer",
+    "current_company": "Airbnb",
+    "resume_analysis": {
+      "career_trajectory": {
+        "current_level": "Senior",
+        "progression_speed": "steady",
+        "trajectory_type": "frontend_specialist",
+        "domain_expertise": [
+          "Frontend Architecture",
+          "User Experience",
+          "Design Systems"
+        ]
+      },
+      "years_experience": 5,
+      "technical_skills": [
+        "React",
+        "TypeScript",
+        "Next.js",
+        "GraphQL",
+        "CSS",
+        "Webpack",
+        "Testing",
+        "Figma",
+        "Storybook"
+      ],
+      "soft_skills": [
+        "Design thinking",
+        "User empathy",
+        "Collaboration",
+        "Attention to detail"
+      ],
+      "leadership_scope": {
+        "has_leadership": false,
+        "team_size": 0,
+        "leadership_level": "Individual Contributor",
+        "mentorship_experience": true
+      },
+      "company_pedigree": {
+        "tier_level": "tier_2",
+        "recent_companies": [
+          "Airbnb",
+          "Pinterest",
+          "Figma"
+        ],
+        "company_types": [
+          "Travel",
+          "Social",
+          "Design Tools"
+        ],
+        "brand_recognition": "high"
+      },
+      "education": {
+        "highest_degree": "BS Computer Science",
+        "institutions": [
+          "UC San Diego"
+        ],
+        "fields_of_study": [
+          "Computer Science",
+          "Human-Computer Interaction"
+        ]
+      }
+    },
+    "recruiter_insights": {
+      "sentiment": "positive",
+      "strengths": [
+        "Exceptional frontend skills and design sense",
+        "Strong user experience focus",
+        "Great at building design systems"
+      ],
+      "concerns": [
+        "Limited full-stack experience"
+      ],
+      "recommendation": "hire",
+      "readiness_level": "available_in_weeks",
+      "key_themes": [
+        "Design excellence",
+        "User focus",
+        "Technical craftsmanship"
+      ],
+      "competitive_advantages": [
+        "Design + engineering hybrid",
+        "UX expertise",
+        "Modern frontend stack"
+      ]
+    },
+    "overall_score": 0.82,
+    "processing_timestamp": "2025-09-06T14:11:57.165899"
+  }
+]

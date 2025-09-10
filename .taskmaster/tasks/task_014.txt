@@ -1,0 +1,54 @@
+# Task ID: 14
+# Title: Implement Recruiter-Grade Prompt Templates
+# Status: pending
+# Dependencies: 13
+# Priority: high
+# Description: Create comprehensive prompt engineering system for candidate analysis with structured JSON output schemas
+# Details:
+Develop prompt template system:
+
+1. **Implementation**:
+   - Create PromptBuilder class with methods for each analysis type
+   - Define Pydantic/TypedDict models for expected JSON outputs
+   - Implement prompt templates for:
+     * Resume analysis (education, experience, skills)
+     * Recruiter comment analysis
+     * Market insights generation
+     * Cultural assessment
+     * Executive summary creation
+   - Add JSON repair prompts for malformed responses
+   - Include few-shot examples in prompts
+   - Implement prompt versioning system
+
+2. **JSON Schema Design**:
+   - Define strict schemas for each analysis type
+   - Ensure consistent field naming
+   - Add validation rules for data types and ranges
+
+3. **Optimization**:
+   - Keep prompts under token limits
+   - Use clear, concise instructions
+   - Include examples for better output quality
+
+# Test Strategy:
+Test Suite:
+1. **Unit Tests** (test_prompt_templates.py):
+   - Test each prompt template generates valid output
+   - Test prompt length stays under token limits
+   - Test few-shot examples are properly formatted
+   - Test prompt versioning system
+
+2. **Schema Tests** (test_json_schemas.py):
+   - Test Pydantic model validation
+   - Test required fields are present
+   - Test data type validation
+   - Test nested object validation
+
+3. **Repair Tests** (test_json_repair.py):
+   - Test repair with missing brackets
+   - Test repair with invalid quotes
+   - Test repair with malformed arrays
+
+4. **Test Execution**:
+   - Run: `pytest tests/test_prompt_templates.py -v`
+   - Run: `pytest tests/test_json_schemas.py -v`

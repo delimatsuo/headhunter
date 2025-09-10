@@ -1,0 +1,55 @@
+{
+  "candidate_id": "218237808",
+  "name": "Pedro Ruiz",
+  "enhanced_analysis": {
+    "career_trajectory": {
+      "current_level": "",
+      "progression_speed": "",
+      "trajectory_type": "",
+      "years_experience": null,
+      "velocity": ""
+    },
+    "leadership_scope": {
+      "has_leadership": true,
+      "team_size": null,
+      "leadership_level": "",
+      "leadership_style": ""
+    },
+    "company_pedigree": {
+      "company_tier": "",
+      "company_tiers": [],
+      "stability_pattern": ""
+    },
+    "cultural_signals": {
+      "strengths": [],
+      "red_flags": [],
+      "work_style": ""
+    },
+    "skill_assessment": {
+      "technical_skills": {
+        "core_competencies": [],
+        "skill_depth": ""
+      },
+      "soft_skills": {
+        "communication": "",
+        "leadership": ""
+      }
+    },
+    "recruiter_insights": {
+      "placement_likelihood": "",
+      "best_fit_roles": [],
+      "salary_expectations": "",
+      "availability": ""
+    },
+    "search_optimization": {
+      "keywords": [],
+      "search_tags": []
+    },
+    "executive_summary": {
+      "one_line_pitch": "",
+      "ideal_next_role": "",
+      "overall_rating": null
+    }
+  },
+  "timestamp": "2025-09-06T23:43:50.199794"
+}

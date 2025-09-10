@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Headhunter AI - Auth Test</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      max-width: 400px;
+      width: 90%;
+    }
+    .header { text-align: center; margin-bottom: 2rem; }
+    .header h1 { color: #333; margin-bottom: 0.5rem; }
+    .header p { color: #666; }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px 0;
+      transition: background 0.3s;
+    }
+    .btn-google {
+      background: #4285f4;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .btn-google:hover { background: #3367d6; }
+    .btn-email {
+      background: #28a745;
+      color: white;
+    }
+    .btn-email:hover { background: #218838; }
+    .status {
+      margin-top: 1rem;
+      padding: 10px;
+      border-radius: 5px;
+      text-align: center;
+      display: none;
+    }
+    .status.success { background: #d4edda; color: #155724; }
+    .status.error { background: #f8d7da; color: #721c24; }
+    .user-info {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 5px;
+      margin-top: 1rem;
+      display: none;
+    }
+    .email-form { margin-top: 1rem; display: none; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎯 Headhunter AI</h1>
+      <p>Firebase Authentication Test</p>
+    </div>
+    
+    <div id="auth-section">
+      <button class="btn btn-google" onclick="signInWithGoogle()">
+        <span>🔍</span>
+        Sign in with Google
+      </button>
+      
+      <button class="btn btn-email" onclick="toggleEmailForm()">
+        📧 Sign in with Email
+      </button>
+      
+      <div class="email-form" id="email-form">
+        <div class="form-group">
+          <input type="email" id="email" placeholder="Enter your email" />
+        </div>
+        <div class="form-group">
+          <input type="password" id="password" placeholder="Enter your password" />
+        </div>
+        <button class="btn btn-email" onclick="signInWithEmail()">Sign In</button>
+        <button class="btn btn-email" onclick="signUpWithEmail()">Sign Up</button>
+      </div>
+    </div>
+    
+    <div id="user-section" style="display: none;">
+      <div class="user-info" id="user-info"></div>
+      <button class="btn" onclick="signOut()" style="background: #dc3545; color: white;">Sign Out</button>
+    </div>
+    
+    <div class="status" id="status"></div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { 
+      getAuth, 
+      GoogleAuthProvider, 
+      signInWithPopup, 
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      signOut as firebaseSignOut,
+      onAuthStateChanged 
+    } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPov0DTRn0HEalOlZ8UJUUmMZjnSne8IU",
+      authDomain: "headhunter-ai-0088.firebaseapp.com",
+      projectId: "headhunter-ai-0088",
+      storageBucket: "headhunter-ai-0088.firebasestorage.app",
+      messagingSenderId: "1034162584026",
+      appId: "1:1034162584026:web:28ef4ccc012c0de5d828e3"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const googleProvider = new GoogleAuthProvider();
+    
+    // Configure Google Provider
+    googleProvider.addScope('email');
+    googleProvider.addScope('profile');
+    googleProvider.setCustomParameters({
+      prompt: 'select_account'
+    });
+
+    // Global functions
+    window.signInWithGoogle = async function() {
+      showStatus('Signing in with Google...', 'info');
+      try {
+        const result = await signInWithPopup(auth, googleProvider);
+        showStatus('Successfully signed in with Google!', 'success');
+        showUserInfo(result.user);
+      } catch (error) {
+        console.error('Google sign-in error:', error);
+        showStatus(`Google sign-in failed: ${error.message}`, 'error');
+      }
+    };
+
+    window.toggleEmailForm = function() {
+      const form = document.getElementById('email-form');
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    };
+
+    window.signInWithEmail = async function() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      if (!email || !password) {
+        showStatus('Please enter email and password', 'error');
+        return;
+      }
+      
+      showStatus('Signing in...', 'info');
+      try {
+        const result = await signInWithEmailAndPassword(auth, email, password);
+        showStatus('Successfully signed in!', 'success');
+        showUserInfo(result.user);
+      } catch (error) {
+        console.error('Email sign-in error:', error);
+        showStatus(`Sign-in failed: ${error.message}`, 'error');
+      }
+    };
+
+    window.signUpWithEmail = async function() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      if (!email || !password) {
+        showStatus('Please enter email and password', 'error');
+        return;
+      }
+      
+      showStatus('Creating account...', 'info');
+      try {
+        const result = await createUserWithEmailAndPassword(auth, email, password);
+        showStatus('Account created successfully!', 'success');
+        showUserInfo(result.user);
+      } catch (error) {
+        console.error('Sign-up error:', error);
+        showStatus(`Sign-up failed: ${error.message}`, 'error');
+      }
+    };
+
+    window.signOut = async function() {
+      try {
+        await firebaseSignOut(auth);
+        showStatus('Successfully signed out', 'success');
+        document.getElementById('auth-section').style.display = 'block';
+        document.getElementById('user-section').style.display = 'none';
+      } catch (error) {
+        console.error('Sign-out error:', error);
+        showStatus(`Sign-out failed: ${error.message}`, 'error');
+      }
+    };
+
+    function showUserInfo(user) {
+      const userInfo = document.getElementById('user-info');
+      userInfo.innerHTML = `
+        <strong>Welcome!</strong><br>
+        <strong>Email:</strong> ${user.email}<br>
+        <strong>Display Name:</strong> ${user.displayName || 'Not set'}<br>
+        <strong>UID:</strong> ${user.uid}<br>
+        <strong>Verified:</strong> ${user.emailVerified ? 'Yes' : 'No'}
+      `;
+      
+      document.getElementById('auth-section').style.display = 'none';
+      document.getElementById('user-section').style.display = 'block';
+      userInfo.style.display = 'block';
+    }
+
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status ${type}`;
+      status.style.display = 'block';
+      
+      if (type === 'success') {
+        setTimeout(() => {
+          status.style.display = 'none';
+        }, 3000);
+      }
+    }
+
+    // Listen for auth state changes
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log('User is signed in:', user.email);
+        showUserInfo(user);
+      } else {
+        console.log('User is signed out');
+        document.getElementById('auth-section').style.display = 'block';
+        document.getElementById('user-section').style.display = 'none';
+      }
+    });
+
+    console.log('Firebase initialized successfully!');
+    showStatus('Firebase loaded - ready for authentication', 'success');
+  </script>
+</body>
+</html>

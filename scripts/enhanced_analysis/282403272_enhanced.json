@@ -1,0 +1,59 @@
+{
+  "candidate_id": "282403272",
+  "name": "Erich Menezes",
+  "enhanced_analysis": {
+    "career_trajectory": {
+      "current_level": "Junior/Mid/Senior/Principal/Executive",
+      "progression_speed": "slow/steady/fast",
+      "trajectory_type": "individual_contributor/technical_leadership/people_management",
+      "years_experience": null,
+      "velocity": "accelerating/steady/plateauing"
+    },
+    "leadership_scope": {
+      "has_leadership": false,
+      "team_size": null,
+      "leadership_level": "none/lead/manager/director/vp",
+      "leadership_style": "collaborative/directive/coaching"
+    },
+    "company_pedigree": {
+      "company_tier": "startup/mid_market/enterprise/faang",
+      "company_tiers": null,
+      "stability_pattern": "job_hopper/stable/very_stable"
+    },
+    "cultural_signals": {
+      "strengths": [],
+      "red_flags": [],
+      "work_style": "independent/collaborative"
+    },
+    "skill_assessment": {
+      "technical_skills": {
+        "core_competencies": null,
+        "skill_depth": "intermediate/deep/expert"
+      },
+      "soft_skills": {
+        "communication": "developing/strong/exceptional",
+        "leadership": "developing/strong/exceptional"
+      }
+    },
+    "recruiter_insights": {
+      "placement_likelihood": "low/medium/high",
+      "best_fit_roles": null,
+      "salary_expectations": "market/above_market",
+      "availability": "immediate/short_notice/not_looking"
+    },
+    "search_optimization": {
+      "keywords": [],
+      "search_tags": [
+        "technical",
+        "leadership",
+        "growth"
+      ]
+    },
+    "executive_summary": {
+      "one_line_pitch": "Experienced engineer with startup experience",
+      "ideal_next_role": "Senior or Lead role at growth-stage company",
+      "overall_rating": null
+    }
+  },
+  "timestamp": "2025-09-06T23:48:22.198669"
+}

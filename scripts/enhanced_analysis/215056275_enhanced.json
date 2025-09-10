@@ -1,0 +1,55 @@
+{
+  "candidate_id": "215056275",
+  "name": "Hern\u00e1n Di Chello",
+  "enhanced_analysis": {
+    "career_trajectory": {
+      "current_level": "Junior/Mid/Senior/Principal/Executive",
+      "progression_speed": "",
+      "trajectory_type": "",
+      "years_experience": 5,
+      "velocity": ""
+    },
+    "leadership_scope": {
+      "has_leadership": false,
+      "team_size": 0,
+      "leadership_level": "none/lead/manager/director/vp",
+      "leadership_style": ""
+    },
+    "company_pedigree": {
+      "company_tier": "",
+      "company_tiers": [],
+      "stability_pattern": ""
+    },
+    "cultural_signals": {
+      "strengths": [],
+      "red_flags": [],
+      "work_style": ""
+    },
+    "skill_assessment": {
+      "technical_skills": {
+        "core_competencies": [],
+        "skill_depth": ""
+      },
+      "soft_skills": {
+        "communication": "",
+        "leadership": ""
+      }
+    },
+    "recruiter_insights": {
+      "placement_likelihood": "low/medium/high",
+      "best_fit_roles": [],
+      "salary_expectations": "",
+      "availability": ""
+    },
+    "search_optimization": {
+      "keywords": [],
+      "search_tags": []
+    },
+    "executive_summary": {
+      "one_line_pitch": "Experienced engineer with startup experience",
+      "ideal_next_role": "Senior or Lead role at growth-stage company",
+      "overall_rating": 75
+    }
+  },
+  "timestamp": "2025-09-07T00:31:57.284142"
+}

@@ -1,0 +1,55 @@
+{
+  "candidate_id": "482007866",
+  "name": "Jo\u00e3o Louren\u00e7o Castagnari Willimann Pimenta",
+  "enhanced_analysis": {
+    "career_trajectory": {
+      "current_level": null,
+      "progression_speed": null,
+      "trajectory_type": null,
+      "years_experience": null,
+      "velocity": null
+    },
+    "leadership_scope": {
+      "has_leadership": false,
+      "team_size": 0,
+      "leadership_level": "none",
+      "leadership_style": null
+    },
+    "company_pedigree": {
+      "company_tier": "Unknown",
+      "company_tiers": [],
+      "stability_pattern": "Unknown"
+    },
+    "cultural_signals": {
+      "strengths": [],
+      "red_flags": [],
+      "work_style": null
+    },
+    "skill_assessment": {
+      "technical_skills": {
+        "core_competencies": [],
+        "skill_depth": null
+      },
+      "soft_skills": {
+        "communication": null,
+        "leadership": null
+      }
+    },
+    "recruiter_insights": {
+      "placement_likelihood": "Unknown",
+      "best_fit_roles": [],
+      "salary_expectations": "Unknown",
+      "availability": "Unknown"
+    },
+    "search_optimization": {
+      "keywords": [],
+      "search_tags": []
+    },
+    "executive_summary": {
+      "one_line_pitch": "Experienced engineer with startup experience",
+      "ideal_next_role": "Senior or Lead role at growth-stage company",
+      "overall_rating": null
+    }
+  },
+  "timestamp": "2025-09-07T00:35:31.812426"
+}

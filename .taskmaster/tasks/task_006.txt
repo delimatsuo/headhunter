@@ -1,6 +1,6 @@
 # Task ID: 6
 # Title: Set up Google Cloud Platform infrastructure
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: high
 # Description: Enable Vertex AI, Firestore, Cloud Storage, and Vector Search in GCP project
@@ -11,19 +11,19 @@ Create GCP project, enable required APIs, set up service accounts, configure Fir
 Verify all required services are enabled and accessible via API
 
 # Subtasks:
-## 1. Create GCP project and enable core APIs [pending]
+## 1. Create GCP project and enable core APIs [done]
 ### Dependencies: None
 ### Description: Set up new GCP project and enable Vertex AI, Firestore, Cloud Storage, and Cloud Functions APIs
 ### Details:
 
 
-## 2. Configure service accounts and IAM permissions [pending]
+## 2. Configure service accounts and IAM permissions [done]
 ### Dependencies: None
 ### Description: Create service accounts with appropriate permissions for Vertex AI, Firestore, and Cloud Storage access
 ### Details:
 
 
-## 3. Set up Firebase Hosting and Functions [pending]
+## 3. Set up Firebase Hosting and Functions [done]
 ### Dependencies: None
 ### Description: Initialize Firebase project and configure Hosting and Cloud Functions for the web application
 ### Details:

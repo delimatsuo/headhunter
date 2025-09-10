@@ -1,0 +1,55 @@
+{
+  "candidate_id": "216926446",
+  "name": "Julio Larrechart",
+  "enhanced_analysis": {
+    "career_trajectory": {
+      "current_level": null,
+      "progression_speed": null,
+      "trajectory_type": null,
+      "years_experience": 5,
+      "velocity": null
+    },
+    "leadership_scope": {
+      "has_leadership": false,
+      "team_size": 0,
+      "leadership_level": null,
+      "leadership_style": null
+    },
+    "company_pedigree": {
+      "company_tier": null,
+      "company_tiers": [],
+      "stability_pattern": null
+    },
+    "cultural_signals": {
+      "strengths": [],
+      "red_flags": [],
+      "work_style": null
+    },
+    "skill_assessment": {
+      "technical_skills": {
+        "core_competencies": [],
+        "skill_depth": null
+      },
+      "soft_skills": {
+        "communication": null,
+        "leadership": null
+      }
+    },
+    "recruiter_insights": {
+      "placement_likelihood": null,
+      "best_fit_roles": [],
+      "salary_expectations": null,
+      "availability": null
+    },
+    "search_optimization": {
+      "keywords": [],
+      "search_tags": []
+    },
+    "executive_summary": {
+      "one_line_pitch": null,
+      "ideal_next_role": null,
+      "overall_rating": null
+    }
+  },
+  "timestamp": "2025-09-07T00:33:04.971956"
+}

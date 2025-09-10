@@ -1,7 +1,7 @@
 {
   "name": "headhunter-functions",
   "version": "1.0.0",
-  "description": "Cloud Functions for Headhunter AI data enrichment pipeline",
+  "description": "Cloud Functions for Headhunter AI - Data API and storage endpoints only (AI processing happens locally with Ollama)",
   "main": "lib/index.js",
   "scripts": {
     "build": "tsc",
@@ -19,13 +19,13 @@
     "node": "20"
   },
   "dependencies": {
-    "@google-cloud/aiplatform": "^3.24.0",
+    "@google-cloud/aiplatform": "^3.35.0",
     "@google-cloud/firestore": "^7.10.0",
     "@google-cloud/storage": "^7.14.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
     "firebase-admin": "^12.6.0",
     "firebase-functions": "^6.1.1",
-    "express": "^4.21.2",
-    "cors": "^2.8.5",
     "zod": "^3.22.4"
   },
   "devDependencies": {

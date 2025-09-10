@@ -1,6 +1,6 @@
 # Task ID: 5
 # Title: Implement resume text extraction
-# Status: pending
+# Status: done
 # Dependencies: 4
 # Priority: medium
 # Description: Add functionality to extract text from resume files (PDF, DOCX, images) for LLM analysis
@@ -11,19 +11,19 @@ Integrate PyPDF2, python-docx, and OCR libraries to extract text from resume fil
 Test text extraction from various resume formats and verify quality
 
 # Subtasks:
-## 1. Integrate PDF text extraction with PyPDF2 [pending]
+## 1. Integrate PDF text extraction with PyPDF2 [done]
 ### Dependencies: None
 ### Description: Add PyPDF2 library and implement PDF text extraction functionality
 ### Details:
 
 
-## 2. Add DOCX text extraction with python-docx [pending]
+## 2. Add DOCX text extraction with python-docx [done]
 ### Dependencies: None
 ### Description: Implement Microsoft Word document text extraction functionality
 ### Details:
 
 
-## 3. Implement OCR for image-based resumes [pending]
+## 3. Implement OCR for image-based resumes [done]
 ### Dependencies: None
 ### Description: Add Tesseract OCR functionality for extracting text from scanned resume images
 ### Details:

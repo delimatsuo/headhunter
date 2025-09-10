@@ -10,9 +10,24 @@ export interface JobDescription {
 }
 
 export interface CandidateProfile {
-  candidate_id: string;
+  id?: string;
+  candidate_id?: string;
   name: string;
-  resume_analysis: {
+  title?: string;
+  company?: string;
+  location?: string;
+  skills?: string[];
+  experience?: string | number;
+  education?: string;
+  summary?: string;
+  matchScore?: number;
+  strengths?: string[];
+  fitReasons?: string[];
+  availability?: string;
+  desiredSalary?: string;
+  profileUrl?: string;
+  lastUpdated?: string;
+  resume_analysis?: {
     career_trajectory: {
       current_level: string;
       progression_speed: string;
@@ -80,4 +95,59 @@ export interface QuickMatchResult {
   name: string;
   score: number;
   summary: string;
+}
+
+// Authentication types
+export interface User {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+}
+
+export interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+}
+
+// API Response types
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+// File upload types
+export interface UploadProgress {
+  progress: number;
+  status: 'idle' | 'uploading' | 'completed' | 'error';
+  error?: string;
+}
+
+// Dashboard analytics types
+export interface DashboardStats {
+  totalCandidates: number;
+  averageScore?: number;
+  avgMatchScore?: number;
+  activeSearches: number;
+  recentSearches?: number;
+  topSkills: Array<{ skill: string; count: number }>;
+  topCompanies?: Array<{ company: string; count: number }>;
+  recentActivity?: {
+    searches: number;
+    newCandidates: number;
+    highMatches: number;
+  };
+}
+
+// Navigation types
+export interface NavItem {
+  name: string;
+  path: string;
+  icon: string;
 }

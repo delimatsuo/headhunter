@@ -1,0 +1,51 @@
+# Task ID: 15
+# Title: Build Firestore Streaming Pipeline
+# Status: pending
+# Dependencies: 13, 14
+# Priority: high
+# Description: Implement direct streaming of processed candidate profiles to Firebase Firestore with batch optimization
+# Details:
+Create Firestore streaming pipeline:
+
+1. **Implementation**:
+   - Initialize Firebase Admin SDK with service account
+   - Implement FirestoreStreamer class with batch writes
+   - Create collections: candidates/, enriched_profiles/, embeddings/
+   - Implement upsert logic by candidate_id
+   - Add batch size optimization (500 docs per batch)
+   - Create flattened search-ready fields
+   - Implement transaction support for consistency
+   - Add progress tracking and resumption
+
+2. **Data Structure**:
+   - Design document schema for efficient queries
+   - Create indexes for common search patterns
+   - Implement data flattening for search optimization
+
+3. **Error Handling**:
+   - Handle batch write failures
+   - Implement transaction rollback
+   - Add checkpoint/resume capability
+
+# Test Strategy:
+Test Suite:
+1. **Unit Tests** (test_firestore_streamer.py):
+   - Test FirestoreStreamer initialization
+   - Test batch accumulation logic
+   - Test flush_batch with mocked Firestore
+   - Test upsert behavior with existing documents
+   - Test flattening logic for search fields
+
+2. **Integration Tests** (test_firestore_integration.py):
+   - Test with Firestore emulator
+   - Test batch write performance (1000 samples)
+   - Test transaction rollback scenarios
+   - Test checkpoint/resume functionality
+
+3. **Security Tests** (test_firestore_security.py):
+   - Test security rules allow writes
+   - Test unauthorized access is blocked
+
+4. **Test Execution**:
+   - Run: `firebase emulators:start --only firestore`
+   - Run: `pytest tests/test_firestore_streamer.py -v`

@@ -1,0 +1,22 @@
+{
+  "test_summary": {
+    "total_candidates": 50,
+    "enriched_count": 0,
+    "success_rate": 0.0,
+    "test_duration_seconds": 16,
+    "test_timestamp": "2025-09-08T12:53:13.709259"
+  },
+  "enrichment_analysis": {
+    "gemini_enrichments": 0,
+    "fallback_enrichments": 0,
+    "total_processed": 0
+  },
+  "vector_analysis": {
+    "embeddings_generated": 0,
+    "embedding_dimensions": 0
+  },
+  "firestore_storage": {
+    "profiles_stored": 0,
+    "embeddings_stored": 0
+  }
+}

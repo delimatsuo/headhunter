@@ -1,0 +1,66 @@
+{
+  "metadata": {
+    "processing_timestamp": "2025-09-05T17:44:22.952548",
+    "model_used": "llama3.1:8b",
+    "total_records": 1,
+    "successful": 1,
+    "failed": 0,
+    "success_rate": 100.0,
+    "avg_processing_time": 14.741641283035278,
+    "total_duration": 14.741672
+  },
+  "profiles": [
+    {
+      "candidate_id": "sarah_file",
+      "name": "Sarah Chen",
+      "resume_analysis": null,
+      "recruiter_insights": {
+        "sentiment": "positive",
+        "strengths": [
+          "Excellent technical skills",
+          "Leadership experience",
+          "Great communication"
+        ],
+        "concerns": [],
+        "red_flags": [],
+        "leadership_indicators": [
+          "effective communication",
+          "strong candidate"
+        ],
+        "cultural_fit": {
+          "cultural_alignment": "moderate",
+          "work_style": [],
+          "values_alignment": [
+            "innovation"
+          ],
+          "team_fit": "excellent",
+          "communication_style": "diplomatic",
+          "adaptability": "high",
+          "cultural_add": []
+        },
+        "recommendation": "strong_hire",
+        "readiness_level": "ready_now",
+        "key_themes": [
+          "Technical Skills",
+          "Leadership Experience",
+          "Communication"
+        ],
+        "development_areas": [],
+        "competitive_advantages": [
+          "Technical skills",
+          "Leadership experience"
+        ]
+      },
+      "overall_score": 1.0,
+      "recommendation": "strong_hire",
+      "processing_timestamp": "2025-09-05T17:44:22.950705",
+      "source_data": {
+        "candidate_id": "sarah_file",
+        "name": "Sarah Chen",
+        "role_level": "Senior Engineer",
+        "resume_file": "tests/sample_resumes/sarah_chen_resume.txt",
+        "recruiter_comments": "Excellent technical skills and leadership experience. Strong candidate with great communication."
+      }
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "candidate_id": "389785499",
+  "name": "Allan Assis",
+  "enhanced_analysis": {
+    "career_trajectory": {
+      "current_level": "Junior/Mid/Senior/Principal/Executive",
+      "progression_speed": "Unknown",
+      "trajectory_type": "Unknown",
+      "years_experience": 5,
+      "velocity": "Unknown"
+    },
+    "leadership_scope": {
+      "has_leadership": false,
+      "team_size": 0,
+      "leadership_level": "none/lead/manager/director/vp",
+      "leadership_style": "Unknown"
+    },
+    "company_pedigree": {
+      "company_tier": "startup/mid_market/enterprise/faang",
+      "company_tiers": [
+        "startup",
+        "mid_market"
+      ],
+      "stability_pattern": "job_hopper/stable/very_stable"
+    },
+    "cultural_signals": {
+      "strengths": [],
+      "red_flags": [],
+      "work_style": "independent/collaborative"
+    },
+    "skill_assessment": {
+      "technical_skills": {
+        "core_competencies": [],
+        "skill_depth": "Unknown"
+      },
+      "soft_skills": {
+        "communication": "Unknown",
+        "leadership": "Unknown"
+      }
+    },
+    "recruiter_insights": {
+      "placement_likelihood": "Unknown",
+      "best_fit_roles": [],
+      "salary_expectations": "Unknown",
+      "availability": "Unknown"
+    },
+    "search_optimization": {
+      "keywords": [],
+      "search_tags": []
+    },
+    "executive_summary": {
+      "one_line_pitch": "",
+      "ideal_next_role": "",
+      "overall_rating": null
+    }
+  },
+  "timestamp": "2025-09-07T00:37:59.779104"
+}

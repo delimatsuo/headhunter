@@ -2,9 +2,10 @@
  * Vector Search functionality for candidate profile similarity matching
  */
 
-import { MatchServiceClient } from "@google-cloud/aiplatform";
-import { Storage } from "@google-cloud/storage";
+// import { MatchServiceClient } from "@google-cloud/aiplatform";
+// import { Storage } from "@google-cloud/storage";
 import * as admin from "firebase-admin";
+import { getEmbeddingProvider } from "./embedding-provider";
 
 // Types for vector search
 interface EmbeddingData {
@@ -41,75 +42,31 @@ interface SearchQuery {
 }
 
 export class VectorSearchService {
-  private matchClient: MatchServiceClient;
-  private storage: Storage;
+  // private matchClient: MatchServiceClient;
+  // private storage: Storage;
   private firestore: admin.firestore.Firestore;
-  private projectId: string;
-  private region: string;
-  private indexEndpoint: string;
-  private deployedIndexId: string;
+  // private indexEndpoint: string;
+  // private deployedIndexId: string;
 
   constructor() {
-    this.matchClient = new MatchServiceClient({
-      apiEndpoint: "us-central1-aiplatform.googleapis.com",
-    });
-    this.storage = new Storage();
+    // this.matchClient = new MatchServiceClient({
+    //   apiEndpoint: "us-central1-aiplatform.googleapis.com",
+    // });
+    // this.storage = new Storage();
     this.firestore = admin.firestore();
-    this.projectId = process.env.GOOGLE_CLOUD_PROJECT || "headhunter-ai-0088";
-    this.region = "us-central1";
+    // Project and region can be provided via environment to the provider if needed
     
     // These will need to be configured after Vector Search setup
-    this.indexEndpoint = `projects/${this.projectId}/locations/${this.region}/indexEndpoints/ENDPOINT_ID`;
-    this.deployedIndexId = "DEPLOYED_INDEX_ID";
+    // this.indexEndpoint = `projects/${this.projectId}/locations/${this.region}/indexEndpoints/ENDPOINT_ID`;
+    // this.deployedIndexId = "DEPLOYED_INDEX_ID";
   }
 
   /**
    * Generate text embeddings using Vertex AI
    */
   async generateEmbedding(text: string): Promise<number[]> {
-    // For now, return a mock embedding
-    // In production, this would call Vertex AI Text Embeddings API
-    
-    // Mock 768-dimensional embedding (text-embedding-004 dimensions)
-    const mockEmbedding = Array.from({ length: 768 }, () => Math.random() - 0.5);
-    
-    // Add some semantic meaning based on text content
-    const textLower = text.toLowerCase();
-    
-    // Boost certain dimensions based on keywords
-    if (textLower.includes("senior") || textLower.includes("lead")) {
-      for (let i = 0; i < 50; i++) {
-        mockEmbedding[i] += 0.2;
-      }
-    }
-    
-    if (textLower.includes("python") || textLower.includes("machine learning")) {
-      for (let i = 100; i < 150; i++) {
-        mockEmbedding[i] += 0.3;
-      }
-    }
-    
-    if (textLower.includes("leadership") || textLower.includes("management")) {
-      for (let i = 200; i < 250; i++) {
-        mockEmbedding[i] += 0.25;
-      }
-    }
-    
-    // Normalize the vector
-    const magnitude = Math.sqrt(mockEmbedding.reduce((sum, val) => sum + val * val, 0));
-    return mockEmbedding.map(val => val / magnitude);
-
-    /* TODO: Replace with actual Vertex AI call
-    const request = {
-      endpoint: `projects/${this.projectId}/locations/${this.region}/publishers/google/models/text-embedding-004`,
-      instances: [{
-        content: text
-      }]
-    };
-    
-    const [response] = await this.predictionClient.predict(request);
-    return response.predictions[0].embeddings.values;
-    */
+    const provider = getEmbeddingProvider();
+    return provider.generateEmbedding(text);
   }
 
   /**
@@ -417,7 +374,7 @@ export class VectorSearchService {
   }> {
     try {
       // Test Firestore connection
-      const testDoc = await this.firestore
+      await this.firestore
         .collection("health")
         .doc("vector_search_test")
         .set({ timestamp: admin.firestore.FieldValue.serverTimestamp() });

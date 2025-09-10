@@ -1,0 +1,54 @@
+{
+  "sessions": [
+    {
+      "timestamp": "2025-09-08T11:58:17.115355",
+      "mode": "DAY",
+      "threads": 2,
+      "processing_time": 0.003859996795654297,
+      "candidates_processed": 73,
+      "rate_per_minute": 1134715.9678814083
+    },
+    {
+      "timestamp": "2025-09-08T12:04:47.117582",
+      "mode": "DAY",
+      "threads": 2,
+      "processing_time": 386.99637389183044,
+      "candidates_processed": 66,
+      "rate_per_minute": 10.232654017339351
+    },
+    {
+      "timestamp": "2025-09-08T12:29:44.096024",
+      "mode": "DAY",
+      "threads": 2,
+      "processing_time": 1493.9745490550995,
+      "candidates_processed": 72,
+      "rate_per_minute": 2.89161552499826
+    },
+    {
+      "timestamp": "2025-09-08T12:53:42.915004",
+      "mode": "DAY",
+      "threads": 2,
+      "processing_time": 1435.810949087143,
+      "candidates_processed": 72,
+      "rate_per_minute": 3.008752651417348
+    },
+    {
+      "timestamp": "2025-09-08T13:14:32.222850",
+      "mode": "DAY",
+      "threads": 2,
+      "processing_time": 1246.296813249588,
+      "candidates_processed": 61,
+      "rate_per_minute": 2.936700119177016
+    }
+  ],
+  "performance": {
+    "night": {
+      "avg_rate": 0,
+      "total_processed": 0
+    },
+    "day": {
+      "avg_rate": 226947.00752074426,
+      "total_processed": 344
+    }
+  }
+}

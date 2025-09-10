@@ -1,0 +1,60 @@
+{
+  "candidate_id": "281960686",
+  "name": "Andressa Agnhesi",
+  "enhanced_analysis": {
+    "career_trajectory": {
+      "current_level": "",
+      "progression_speed": "",
+      "trajectory_type": "",
+      "years_experience": 0,
+      "velocity": ""
+    },
+    "leadership_scope": {
+      "has_leadership": false,
+      "team_size": 0,
+      "leadership_level": "none",
+      "leadership_style": ""
+    },
+    "company_pedigree": {
+      "company_tier": "",
+      "company_tiers": [],
+      "stability_pattern": ""
+    },
+    "cultural_signals": {
+      "strengths": [
+        "technical expertise"
+      ],
+      "red_flags": [],
+      "work_style": ""
+    },
+    "skill_assessment": {
+      "technical_skills": {
+        "core_competencies": [],
+        "skill_depth": ""
+      },
+      "soft_skills": {
+        "communication": "",
+        "leadership": ""
+      }
+    },
+    "recruiter_insights": {
+      "placement_likelihood": "low",
+      "best_fit_roles": [],
+      "salary_expectations": "market",
+      "availability": "not_looking"
+    },
+    "search_optimization": {
+      "keywords": [
+        "python",
+        "react"
+      ],
+      "search_tags": []
+    },
+    "executive_summary": {
+      "one_line_pitch": "",
+      "ideal_next_role": "",
+      "overall_rating": 0
+    }
+  },
+  "timestamp": "2025-09-07T00:42:01.382228"
+}

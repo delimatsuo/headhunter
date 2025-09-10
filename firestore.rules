@@ -1,38 +1,93 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to check if user is authenticated
+    // Helper functions
     function isAuthenticated() {
       return request.auth != null;
     }
     
-    // Helper function to check if user owns the document
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
-    // Candidate profiles - read-only for authenticated users
-    // Write access only through Cloud Functions
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    
+    function isOrgMember(orgId) {
+      return isAuthenticated() && 
+             getUserData().data.organization_id == orgId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             getUserData().data.role in ['admin', 'super_admin'];
+    }
+    
+    function isSuperAdmin() {
+      return isAuthenticated() && 
+             getUserData().data.role == 'super_admin';
+    }
+    
+    // Organizations - read by members, write by admins only
+    match /organizations/{orgId} {
+      allow read: if isOrgMember(orgId);
+      allow write: if isAdmin() && isOrgMember(orgId);
+    }
+    
+    // Users - read own profile and org members, write own profile only
+    match /users/{userId} {
+      allow read: if isOwner(userId) || 
+                     (isAuthenticated() && isOrgMember(resource.data.organization_id));
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || 
+                       (isAdmin() && isOrgMember(resource.data.organization_id));
+      allow delete: if isSuperAdmin();
+    }
+    
+    // Candidates - organization-scoped access
     match /candidates/{candidateId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() && 
+                     isOrgMember(resource.data.organization_id);
       allow write: if false; // Only Cloud Functions can write
     }
     
-    // Embeddings - read-only for authenticated users
-    // Write access only through Cloud Functions
+    // Jobs - organization-scoped access
+    match /jobs/{jobId} {
+      allow read: if isAuthenticated() && 
+                     isOrgMember(resource.data.organization_id);
+      allow write: if false; // Only Cloud Functions can write
+    }
+    
+    // Embeddings - organization-scoped access
     match /embeddings/{embeddingId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() && 
+                     isOrgMember(resource.data.organization_id);
       allow write: if false; // Only Cloud Functions can write
     }
     
-    // Search cache - read-only for authenticated users
-    // Write access only through Cloud Functions
+    // Processing queue - organization-scoped access
+    match /processing_queue/{queueId} {
+      allow read: if isAuthenticated() && 
+                     isOrgMember(resource.data.organization_id);
+      allow write: if false; // Only Cloud Functions can write
+    }
+    
+    // Search cache - organization-scoped access  
     match /search_cache/{cacheId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() && 
+                     isOrgMember(resource.data.organization_id);
       allow write: if false; // Only Cloud Functions can write
     }
     
-    // User search history - private to each user
+    // Activity logs - organization-scoped access
+    match /activity_logs/{logId} {
+      allow read: if isAuthenticated() && 
+                     isOrgMember(resource.data.organization_id);
+      allow write: if false; // Only Cloud Functions can write
+    }
+    
+    // User subcollections - private access only
     match /users/{userId}/search_history/{searchId} {
       allow read: if isOwner(userId);
       allow create: if isOwner(userId);
@@ -40,14 +95,17 @@ service cloud.firestore {
       allow delete: if isOwner(userId);
     }
     
-    // User preferences - private to each user
     match /users/{userId}/preferences/{preferenceId} {
       allow read: if isOwner(userId);
       allow write: if isOwner(userId);
     }
     
-    // Job descriptions saved by users
     match /users/{userId}/saved_jobs/{jobId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+    
+    match /users/{userId}/notifications/{notificationId} {
       allow read: if isOwner(userId);
       allow write: if isOwner(userId);
     }
