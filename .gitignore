@@ -66,3 +66,4 @@ CSV files/
 # Task files
 # tasks.json
 # tasks/ 
+.mcp.json
