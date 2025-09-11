@@ -1,0 +1,55 @@
+# Integration testing dependencies for Headhunter v2.0
+
+# Core testing framework
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0
+pytest-xdist>=3.0.0
+pytest-timeout>=2.1.0
+pytest-mock>=3.10.0
+
+# HTTP testing
+httpx>=0.24.0
+requests-mock>=1.10.0
+
+# Database testing
+pytest-postgresql>=4.1.0
+psycopg2-binary>=2.9.0
+
+# Firebase testing
+firebase-admin>=6.0.0
+
+# Performance testing
+locust>=2.15.0
+memory-profiler>=0.60.0
+
+# Data generation and factories
+faker>=19.0.0
+factory-boy>=3.2.0
+
+# Utilities
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+pyyaml>=6.0
+
+# Google Cloud testing
+google-cloud-storage>=2.10.0
+google-cloud-firestore>=2.11.0
+google-cloud-aiplatform>=1.25.0
+
+# API testing utilities
+jsonschema>=4.17.0
+responses>=0.23.0
+
+# Time manipulation for testing
+freezegun>=1.2.0
+
+# Temporary file utilities
+tempfile-utils>=1.0.0
+
+# Logging and monitoring
+structlog>=23.1.0
+
+# Test reporting
+pytest-html>=3.1.0
+pytest-json-report>=1.5.0

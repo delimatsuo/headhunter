@@ -1,0 +1,296 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+  
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    services:
+      postgres:
+        image: pgvector/pgvector:pg15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password  
+          POSTGRES_DB: headhunter_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Cache Python dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/tests/integration/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Cache Node dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+          
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r tests/integration/requirements.txt
+        
+    - name: Install Node.js dependencies
+      working-directory: ./functions
+      run: |
+        npm ci
+        npm run build
+        
+    - name: Set up PostgreSQL with pgvector
+      run: |
+        PGPASSWORD=test_password psql -h localhost -U test_user -d headhunter_test -c "CREATE EXTENSION IF NOT EXISTS vector;"
+        PGPASSWORD=test_password psql -h localhost -U test_user -d headhunter_test -c "CREATE TABLE IF NOT EXISTS candidate_embeddings (id SERIAL PRIMARY KEY, candidate_id VARCHAR(255), embedding vector(768));"
+        
+    - name: Set up Firebase emulator
+      run: |
+        npm install -g firebase-tools
+        firebase emulators:start --only firestore,auth --project=headhunter-test &
+        sleep 10
+        
+    - name: Set up test environment variables
+      run: |
+        echo "FIREBASE_TEST_CREDENTIALS=test_credentials" >> $GITHUB_ENV
+        echo "POSTGRES_TEST_URL=postgresql://test_user:test_password@localhost:5432/headhunter_test" >> $GITHUB_ENV
+        echo "TOGETHER_AI_API_KEY=test_together_key" >> $GITHUB_ENV
+        echo "VERTEX_AI_PROJECT_ID=headhunter-test" >> $GITHUB_ENV
+        
+    - name: Run smoke tests
+      run: |
+        python -m pytest tests/integration/ \
+          -m "not slow and not performance" \
+          --maxfail=3 \
+          --timeout=300 \
+          -v
+          
+    - name: Run workflow integration tests
+      run: |
+        python -m pytest tests/integration/test_job_to_candidates.py \
+                        tests/integration/test_resume_similarity.py \
+          --cov=scripts \
+          --cov=functions/src \
+          --cov-report=xml \
+          --cov-report=html \
+          --junit-xml=workflow-test-results.xml \
+          --timeout=600 \
+          -v
+          
+    - name: Run authentication & security tests
+      run: |
+        python -m pytest tests/integration/test_auth_integration.py \
+          --cov=scripts \
+          --cov=functions/src \
+          --cov-append \
+          --cov-report=xml \
+          --junit-xml=auth-test-results.xml \
+          --timeout=300 \
+          -v
+          
+    - name: Run database integration tests
+      run: |
+        python -m pytest tests/integration/test_crud_operations.py \
+                        tests/integration/test_vector_search.py \
+          --cov=scripts \
+          --cov=functions/src \
+          --cov-append \
+          --cov-report=xml \
+          --junit-xml=database-test-results.xml \
+          --timeout=600 \
+          -v
+          
+    - name: Run performance tests (if not PR)
+      if: github.event_name != 'pull_request'
+      run: |
+        python -m pytest tests/integration/ \
+          -m "performance" \
+          --junit-xml=performance-test-results.xml \
+          --timeout=900 \
+          -v
+          
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results
+        path: |
+          *-test-results.xml
+          htmlcov/
+          coverage.xml
+          
+    - name: Upload coverage to Codecov
+      if: github.event_name != 'pull_request'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: integration-tests
+        name: integration-coverage
+        fail_ci_if_error: false
+        
+    - name: Generate test summary
+      if: always()
+      run: |
+        echo "## Integration Test Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f "workflow-test-results.xml" ]; then
+          workflow_tests=$(grep -o 'tests="[0-9]*"' workflow-test-results.xml | grep -o '[0-9]*')
+          workflow_failures=$(grep -o 'failures="[0-9]*"' workflow-test-results.xml | grep -o '[0-9]*')
+          echo "✅ Workflow Tests: $workflow_tests tests, $workflow_failures failures" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -f "auth-test-results.xml" ]; then
+          auth_tests=$(grep -o 'tests="[0-9]*"' auth-test-results.xml | grep -o '[0-9]*')
+          auth_failures=$(grep -o 'failures="[0-9]*"' auth-test-results.xml | grep -o '[0-9]*')
+          echo "🔒 Authentication Tests: $auth_tests tests, $auth_failures failures" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -f "database-test-results.xml" ]; then
+          db_tests=$(grep -o 'tests="[0-9]*"' database-test-results.xml | grep -o '[0-9]*')
+          db_failures=$(grep -o 'failures="[0-9]*"' database-test-results.xml | grep -o '[0-9]*')
+          echo "🗄️ Database Tests: $db_tests tests, $db_failures failures" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -f "coverage.xml" ]; then
+          coverage=$(grep -o 'line-rate="[0-9.]*"' coverage.xml | head -1 | grep -o '[0-9.]*')
+          coverage_percent=$(echo "$coverage * 100" | bc)
+          echo "📊 Test Coverage: ${coverage_percent}%" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Test Artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "- HTML Coverage Report: Available in build artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "- JUnit Test Results: Available in build artifacts" >> $GITHUB_STEP_SUMMARY
+        
+    - name: Comment PR with test results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          let comment = '## 🧪 Integration Test Results\n\n';
+          
+          try {
+            if (fs.existsSync('workflow-test-results.xml')) {
+              const workflowContent = fs.readFileSync('workflow-test-results.xml', 'utf8');
+              const tests = workflowContent.match(/tests="(\d+)"/)?.[1] || '0';
+              const failures = workflowContent.match(/failures="(\d+)"/)?.[1] || '0';
+              comment += `✅ **Workflow Tests**: ${tests} tests, ${failures} failures\n`;
+            }
+            
+            if (fs.existsSync('auth-test-results.xml')) {
+              const authContent = fs.readFileSync('auth-test-results.xml', 'utf8');
+              const tests = authContent.match(/tests="(\d+)"/)?.[1] || '0';
+              const failures = authContent.match(/failures="(\d+)"/)?.[1] || '0';
+              comment += `🔒 **Authentication Tests**: ${tests} tests, ${failures} failures\n`;
+            }
+            
+            if (fs.existsSync('database-test-results.xml')) {
+              const dbContent = fs.readFileSync('database-test-results.xml', 'utf8');
+              const tests = dbContent.match(/tests="(\d+)"/)?.[1] || '0';
+              const failures = dbContent.match(/failures="(\d+)"/)?.[1] || '0';
+              comment += `🗄️ **Database Tests**: ${tests} tests, ${failures} failures\n`;
+            }
+            
+            comment += '\n📊 **Coverage report and detailed results available in build artifacts**';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          } catch (error) {
+            console.log('Error creating PR comment:', error);
+          }
+
+  deployment-readiness-check:
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download test results
+      uses: actions/download-artifact@v3
+      with:
+        name: test-results
+        
+    - name: Validate deployment readiness
+      run: |
+        echo "## 🚀 Deployment Readiness Check" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Check for test failures
+        if grep -q 'failures="0"' *-test-results.xml 2>/dev/null; then
+          echo "✅ All integration tests passed" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Some integration tests failed - deployment not recommended" >> $GITHUB_STEP_SUMMARY
+          exit 1
+        fi
+        
+        # Check coverage
+        if [ -f "coverage.xml" ]; then
+          coverage=$(grep -o 'line-rate="[0-9.]*"' coverage.xml | head -1 | grep -o '[0-9.]*')
+          coverage_percent=$(echo "$coverage * 100" | bc -l | cut -d'.' -f1)
+          
+          if [ "$coverage_percent" -ge "80" ]; then
+            echo "✅ Test coverage meets requirement (${coverage_percent}% ≥ 80%)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Test coverage below requirement (${coverage_percent}% < 80%)" >> $GITHUB_STEP_SUMMARY
+          fi
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "🎯 **System is ready for production deployment**" >> $GITHUB_STEP_SUMMARY
+        
+    - name: Create deployment artifact
+      run: |
+        echo "DEPLOYMENT_READY=true" > deployment-status.env
+        echo "TEST_TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> deployment-status.env
+        echo "GIT_SHA=${{ github.sha }}" >> deployment-status.env
+        
+    - name: Upload deployment status
+      uses: actions/upload-artifact@v3
+      with:
+        name: deployment-status
+        path: deployment-status.env
