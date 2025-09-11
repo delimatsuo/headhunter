@@ -2,7 +2,7 @@
 
 ## 🎯 Core Design Principle
 
-**Cloud-Powered AI Processing with Semantic Search** - All LLM analysis and candidate insights generation happens via Together AI's cloud infrastructure using Llama 3.2 3B Instruct Turbo. The system generates comprehensive candidate profiles optimized for recruiter search workflows with vector embeddings for semantic similarity matching.
+**Multi-Stage AI Processing with Contextual Intelligence** - The system processes candidates through 3 distinct AI stages: (1) Basic enhancement using Llama 3.2 3B, (2) Contextual intelligence using Qwen2.5 Coder 32B for trajectory-based skill inference, and (3) Vector generation using VertexAI embeddings for semantic search. This architecture provides sophisticated recruiter-grade analysis with company/industry pattern recognition.
 
 ## System Components
 
@@ -12,14 +12,14 @@ The heart of the system - where all AI intelligence and processing resides:
 
 ```
 ┌──────────────────────────────────────────────────┐
-│            CLOUD PROCESSING LAYER                │
+│         MULTI-STAGE CLOUD PROCESSING            │
 ├──────────────────────────────────────────────────┤
-│  AI Provider: Together AI                        │
-│  Model: meta-llama/Llama-3.2-3B-Instruct-Turbo  │
+│  Stage 1: Llama 3.2 3B ($0.20/1M) - Basic       │
+│  Stage 2: Qwen2.5 32B ($0.80/1M) - Contextual   │
+│  Stage 3: VertexAI Embeddings - Vector Gen       │
 │  Runtime: Cloud Run (Python 3.11+)              │
-│  Embeddings: VertexAI text-embedding-004        │
 │  Vector DB: Cloud SQL + pgvector                 │
-│  Orchestration: Pub/Sub + Cloud Run Workers     │
+│  Orchestration: Multi-stage pipeline workers    │
 └──────────────────────────────────────────────────┘
 ```
 
@@ -32,15 +32,26 @@ The heart of the system - where all AI intelligence and processing resides:
 - `cloud_run_worker/embeddings.py` - VertexAI embeddings generation
 - `cloud_run_worker/vector_db.py` - Cloud SQL + pgvector operations
 
-**Processing Flow:**
-1. Pub/Sub triggers Cloud Run worker with candidate batch
-2. Extract text from resumes (PDF, DOCX, images via Cloud Vision)
-3. Generate comprehensive prompts for Together AI
-4. Call Together AI API with Llama 3.2 3B Instruct Turbo
-5. Parse and validate enhanced JSON profiles
-6. Generate VertexAI embeddings for semantic search
-7. Store profiles in Firestore and vectors in Cloud SQL
-8. Update processing status and metrics
+**Multi-Stage Processing Flow:**
+1. **Stage 1 - Basic Enhancement**:
+   - Extract resume text and recruiter comments
+   - Call Together AI Llama 3.2 3B with structured prompts
+   - Generate enhanced_analysis with 15+ detailed fields
+   - Store basic enhanced profile in Firestore
+
+2. **Stage 2 - Contextual Intelligence**:
+   - Extract company/role trajectory from enhanced profile
+   - Apply contextual intelligence (Google vs startup patterns)
+   - Call Qwen2.5 Coder 32B for sophisticated skill inference
+   - Add probabilistic skills with confidence scores (0-100%)
+   - Generate evidence arrays supporting each skill assessment
+   - Categorize skills: technical, soft, leadership, domain
+
+3. **Stage 3 - Vector Generation**:
+   - Extract searchable text from enriched profile
+   - Generate VertexAI embeddings (768 dimensions)
+   - Store vectors in Cloud SQL + pgvector
+   - Complete multi-stage processing pipeline
 
 ### 2. Data Storage Layer (Multi-Database Architecture)
 
@@ -90,10 +101,22 @@ Intelligent search system for recruiter workflows:
 **API Endpoints:**
 - `/search/semantic` - Vector similarity search for job descriptions
 - `/search/hybrid` - Combined semantic + keyword search
+- `/search/skill-aware` - Skill-confidence weighted search with composite ranking
 - `/candidates/{id}` - CRUD operations for individual profiles
 - `/candidates/batch` - Bulk operations and updates
 - `/embeddings/generate` - On-demand embedding generation
 - `/processing/status` - Batch processing status and metrics
+
+**Skill-Aware Search Features:**
+- **Confidence Weighting**: Skills with higher confidence scores (90%+) weighted more heavily
+- **Composite Ranking Algorithm**: 
+  - Skill Match: 40% (primary relevance factor)
+  - Confidence: 25% (reliability weighting)
+  - Vector Similarity: 25% (semantic understanding)
+  - Experience Match: 10% (additional context)
+- **Evidence-Based Filtering**: Filter candidates based on skill evidence quality
+- **Fuzzy Skill Matching**: Synonym support for skill variations (React.js ↔ ReactJS)
+- **Category Filtering**: Search within skill categories (technical, soft, leadership, domain)
 
 ### 4. Web Interface Layer (React)
 

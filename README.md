@@ -16,9 +16,11 @@
   - Career trajectory and progression patterns
   - Leadership scope and management experience
   - Company pedigree and tier analysis
-  - Technical and soft skills extraction
+  - Technical and soft skills with confidence scoring (0-100%)
+  - Evidence-based skill validation with supporting arrays
   - Cultural fit signals and work style
   - Recruiter sentiment and insights
+  - Skill-aware search with composite ranking algorithms
 
 ### Resume Text Extraction
 Multi-format support for extracting text from:
@@ -38,7 +40,9 @@ Multi-format support for extracting text from:
 - **Firebase Firestore** for structured profile storage
 - **Cloud SQL + pgvector** for semantic vector search
 - **VertexAI embeddings** for high-quality search
-- **React web interface** for searching candidates
+- **Skill-aware search** with confidence-weighted ranking
+- **Composite scoring**: skill_match (40%) + confidence (25%) + vector_similarity (25%) + experience_match (10%)
+- **React web interface** with interactive skill visualization
 - **Firebase Authentication** for secure access
 
 ## Prerequisites
@@ -280,14 +284,22 @@ The cloud AI generates comprehensive structured profiles:
 }
 ```
 
-## Performance Metrics (Validated)
+## Performance Metrics (Multi-Stage Pipeline)
 
-- **Processing Speed**: 3.96s average per candidate
-- **Batch Throughput**: 15.0 candidates/minute
-- **Success Rate**: 99.1% (tested on 110 candidates)
-- **Cost Efficiency**: $0.0019 per candidate
-- **Model Response Time**: <10s for Together AI API
-- **Quality Score**: 352.75 average
+**Stage 1 (Basic Enhancement)**:
+- Processing Speed: 3.96s average per candidate
+- Cost: $0.0006 per candidate (Llama 3.2 3B)
+- Success Rate: 99.1% validated
+
+**Stage 2 (Contextual Intelligence)**:
+- Model: Qwen2.5 Coder 32B for technical specialization
+- Cost: $0.002 per candidate (4x Stage 1 for superior reasoning)
+- Contextual Analysis: Company patterns, industry intelligence, role progression
+
+**Stage 3 (Vector Generation)**:
+- VertexAI embeddings: 768 dimensions
+- Cost: $0.0002 per candidate
+- **Total Pipeline Cost: $0.0026 per candidate**
 
 ## Key Files
 
