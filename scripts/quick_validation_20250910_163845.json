@@ -1,0 +1,74 @@
+{
+  "ollama_available": true,
+  "data_quality": {
+    "files_found": [
+      {
+        "file": "tests/sample_candidate_data.csv",
+        "count": 5,
+        "fields": [
+          "candidate_id",
+          "name",
+          "role_level",
+          "resume_text",
+          "recruiter_comments"
+        ]
+      },
+      {
+        "file": "scripts/sample_candidates.csv",
+        "count": 4,
+        "fields": [
+          "candidate_id",
+          "name",
+          "current_role",
+          "current_company",
+          "years_experience",
+          "technical_skills"
+        ]
+      }
+    ],
+    "candidate_count": 9,
+    "data_quality": {
+      "sufficient_for_testing": false,
+      "recommendation": "Insufficient data - need more test candidates"
+    }
+  },
+  "embedding_tests": {
+    "deterministic": {
+      "success": false,
+      "error": "name 'PredictionServiceClient' is not defined"
+    },
+    "vertex_ai": {
+      "success": false,
+      "error": "cannot access local variable 'EmbeddingService' where it is not associated with a value"
+    }
+  },
+  "llm_tests": {
+    "ollama_llama": {
+      "success": false,
+      "error": "'LLMProcessor' object has no attribute 'process_candidate_sync'"
+    },
+    "together_ai": {
+      "success": false,
+      "error": "Not implemented"
+    }
+  },
+  "firebase_test": {
+    "success": true,
+    "collections_found": 3,
+    "status": "Connected"
+  },
+  "mini_workflow": {
+    "candidates_tested": 3,
+    "successful_enrichments": 0,
+    "successful_embeddings": 0,
+    "processing_times": [],
+    "errors": [
+      "Failed to process Test Engineer 1: name 'PredictionServiceClient' is not defined",
+      "Failed to process Test Manager 2: name 'PredictionServiceClient' is not defined",
+      "Failed to process Test Senior 3: name 'PredictionServiceClient' is not defined"
+    ],
+    "embedding_success_rate": 0.0,
+    "enrichment_success_rate": 0.0,
+    "avg_processing_time": 0
+  }
+}

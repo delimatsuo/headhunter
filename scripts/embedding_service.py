@@ -21,8 +21,8 @@ import math
 # Optional Google Cloud imports
 try:
     from google.cloud import firestore
-    from google.cloud.aiplatform import aiplatform
-    from google.cloud.aiplatform_v1 import PredictionServiceClient
+    from vertexai.language_models import TextEmbeddingModel
+    import vertexai
     GOOGLE_CLOUD_AVAILABLE = True
 except ImportError:
     GOOGLE_CLOUD_AVAILABLE = False
@@ -30,11 +30,12 @@ except ImportError:
     class firestore:
         class Client:
             def collection(self, name): return None
-    class aiplatform:
+    class TextEmbeddingModel:
+        @staticmethod
+        def from_pretrained(model_name): return None
+    class vertexai:
         @staticmethod
         def init(*args, **kwargs): pass
-    class PredictionServiceClient:
-        def __init__(self, *args, **kwargs): pass
 
 
 @dataclass
@@ -47,6 +48,16 @@ class EmbeddingResult:
     timestamp: datetime
     cache_hit: bool = False
     processing_time_ms: int = 0
+    
+    @property
+    def embedding(self) -> List[float]:
+        """Alias for vector to maintain compatibility"""
+        return self.vector
+    
+    @property
+    def processing_time(self) -> float:
+        """Processing time in seconds"""
+        return self.processing_time_ms / 1000.0
 
 
 @dataclass
@@ -99,11 +110,14 @@ class VertexAIEmbeddingProvider(EmbeddingProvider):
     def __init__(self, project_id: str = "headhunter-ai-0088", location: str = "us-central1"):
         self.project_id = project_id
         self.location = location
-        self._client = None
+        self._model = None
         self._endpoint = f"projects/{project_id}/locations/{location}/publishers/google/models/text-embedding-004"
         
-        # Initialize aiplatform
-        aiplatform.init(project=project_id, location=location)
+        # Initialize VertexAI
+        try:
+            vertexai.init(project=project_id, location=location)
+        except Exception as e:
+            logging.warning(f"Failed to initialize VertexAI: {e}")
     
     @property
     def name(self) -> str:
@@ -118,13 +132,11 @@ class VertexAIEmbeddingProvider(EmbeddingProvider):
         return 768
     
     @property
-    def client(self) -> PredictionServiceClient:
-        """Lazy initialization of client"""
-        if self._client is None:
-            self._client = PredictionServiceClient(
-                client_options={"api_endpoint": f"{self.location}-aiplatform.googleapis.com"}
-            )
-        return self._client
+    def embedding_model(self):
+        """Lazy initialization of model"""
+        if self._model is None:
+            self._model = TextEmbeddingModel.from_pretrained("text-embedding-004")
+        return self._model
     
     async def generate_embedding(self, text: str) -> List[float]:
         """Generate embedding for single text"""

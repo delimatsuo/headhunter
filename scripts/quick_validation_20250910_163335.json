@@ -1,0 +1,74 @@
+{
+  "ollama_available": true,
+  "data_quality": {
+    "files_found": [
+      {
+        "file": "tests/sample_candidate_data.csv",
+        "count": 5,
+        "fields": [
+          "candidate_id",
+          "name",
+          "role_level",
+          "resume_text",
+          "recruiter_comments"
+        ]
+      },
+      {
+        "file": "scripts/sample_candidates.csv",
+        "count": 4,
+        "fields": [
+          "candidate_id",
+          "name",
+          "current_role",
+          "current_company",
+          "years_experience",
+          "technical_skills"
+        ]
+      }
+    ],
+    "candidate_count": 9,
+    "data_quality": {
+      "sufficient_for_testing": false,
+      "recommendation": "Insufficient data - need more test candidates"
+    }
+  },
+  "embedding_tests": {
+    "deterministic": {
+      "success": false,
+      "error": "'EmbeddingResult' object has no attribute 'embedding'"
+    },
+    "vertex_ai": {
+      "success": false,
+      "error": "'EmbeddingResult' object has no attribute 'embedding'"
+    }
+  },
+  "llm_tests": {
+    "ollama_llama": {
+      "success": false,
+      "error": "No module named 'jsonschema'"
+    },
+    "together_ai": {
+      "success": false,
+      "error": "Not implemented"
+    }
+  },
+  "firebase_test": {
+    "success": true,
+    "collections_found": 3,
+    "status": "Connected"
+  },
+  "mini_workflow": {
+    "candidates_tested": 3,
+    "successful_enrichments": 0,
+    "successful_embeddings": 0,
+    "processing_times": [],
+    "errors": [
+      "Failed to process Test Engineer 1: 'EmbeddingResult' object has no attribute 'embedding'",
+      "Failed to process Test Manager 2: 'EmbeddingResult' object has no attribute 'embedding'",
+      "Failed to process Test Senior 3: 'EmbeddingResult' object has no attribute 'embedding'"
+    ],
+    "embedding_success_rate": 0.0,
+    "enrichment_success_rate": 0.0,
+    "avg_processing_time": 0
+  }
+}

@@ -35,6 +35,9 @@ python3 scripts/together_ai_processor.py
 python3 scripts/firebase_streaming_processor.py
 python3 scripts/together_ai_firestore_processor.py
 python3 scripts/intelligent_skill_processor.py     # Explicit vs inferred skills
+
+# PRD Compliance Validation
+python3 scripts/prd_compliant_validation.py        # Test actual Together AI architecture
 ```
 
 ### Cloud Functions / Cloud Run (Storage, API, Search)
@@ -71,13 +74,14 @@ npm run lint:fix
 5. **Storage**: Firestore (`candidates/`, `enriched_profiles/`) + Cloud SQL (pgvector) for embeddings
 
 ### Technology Stack
-- **AI**: Together AI (Llama 3.1 8B Instruct Turbo)
+- **AI**: Together AI (Llama 3.1 8B Instruct Turbo) - PRIMARY PRODUCTION
 - **Storage**: Firebase Firestore
-- **Vector DB**: Cloud SQL (PostgreSQL + pgvector)
+- **Vector DB**: Cloud SQL (PostgreSQL + pgvector) OR VertexAI embeddings
 - **API**: Firebase Cloud Functions / Cloud Run
 - **Python**: Core processing (scripts in `/scripts`)
 - **TypeScript**: Cloud Functions (`/functions`)
 - **React**: UI (`/headhunter-ui`)
+- **Cloud Run**: Pub/Sub worker for scalable processing
 
 ## TDD Protocol
 - Always begin by writing/adjusting tests for the selected Task Master task.
@@ -86,12 +90,19 @@ npm run lint:fix
 
 ### Key Local Processing Scripts
 
-#### Primary Processors (All use Ollama locally)
-- `llm_processor.py`: Main pipeline orchestrator
-- `intelligent_batch_processor.py`: Resource-aware processing with system monitoring
-- `enhanced_batch_processor.py`: Comprehensive analysis with all data fields
-- `enhanced_processor_full.py`: Most detailed analysis with complete prompts
-- `high_throughput_processor.py`: Optimized for speed with parallel processing
+#### Primary Processors (Together AI Cloud Processing)
+- `together_ai_processor.py`: Main Together AI batch processor
+- `firebase_streaming_processor.py`: Streaming to Firebase
+- `together_ai_firestore_processor.py`: Direct Firestore integration
+- `intelligent_skill_processor.py`: Skill analysis and inference
+- `prd_compliant_validation.py`: PRD architecture validation
+
+#### Legacy Local Processors (Development Only)
+- `llm_processor.py`: Local Ollama pipeline orchestrator
+- `intelligent_batch_processor.py`: Resource-aware local processing
+- `enhanced_batch_processor.py`: Local comprehensive analysis
+- `enhanced_processor_full.py`: Local detailed analysis
+- `high_throughput_processor.py`: Local parallel processing
 
 #### Analysis Modules
 - `llm_prompts.py`: Resume analysis prompts for Ollama
@@ -101,29 +112,54 @@ npm run lint:fix
 
 ## Data Flow
 
-1. **Input**: CSV files in `CSV files/` directory
+### Production Pipeline (Together AI)
+1. **Input**: CSV files uploaded to GCS or processed locally
+2. **Cloud Processing**: 
+   - Extract text from resumes
+   - Send to Together AI with structured prompts
+   - meta-llama/Llama-3.1-8B-Instruct-Turbo analyzes and returns JSON
+3. **Validation**: Schema validation, JSON repair, retries
+4. **Storage**: Structured profiles to Firestore
+5. **Embeddings**: VertexAI text-embedding-004 for search
+6. **Access**: Cloud Functions provide search APIs
+
+### Development Pipeline (Local Ollama)
+1. **Input**: Local CSV files
 2. **Local Processing**: 
    - Extract text from resumes
-   - Send to Ollama with structured prompts
+   - Send to local Ollama with structured prompts
    - Llama 3.1:8b analyzes and returns JSON
 3. **Validation**: Quality checks on LLM output
 4. **Storage**: Structured profiles to Firestore
-5. **Access**: Cloud Functions provide API endpoints (no AI processing)
+5. **Access**: Cloud Functions provide API endpoints
 
-## Local LLM Configuration
+## AI Processing Configuration
 
+### Production (Together AI)
+- **Model**: meta-llama/Llama-3.1-8B-Instruct-Turbo
+- **Endpoint**: `https://api.together.xyz/v1/chat/completions`
+- **API Key**: TOGETHER_API_KEY environment variable
+- **Processing Time**: 5-15 seconds per candidate
+- **Cost**: ~$0.10 per million tokens
+
+### Development Fallback (Local Ollama)
 - **Model**: Llama 3.1:8b via Ollama
 - **Endpoint**: `http://localhost:11434`
 - **Memory Usage**: ~5-6 GB when loaded
 - **Processing Time**: 30-60 seconds per candidate
-- **No External APIs**: All AI processing is local
+- **Use Case**: Development and testing only
 
 ## Development Patterns
 
-### Local Processing Priority
-- Always use Ollama for LLM tasks
-- Never send candidate data to external AI services
-- Test locally before any deployment
+### Production Processing Priority
+- Use Together AI for production LLM tasks
+- Cloud Run workers for scalable processing
+- Pub/Sub for asynchronous task distribution
+- Stream results directly to Firestore
+
+### Development Processing
+- Use Ollama for local development and testing
+- Test locally before cloud deployment
 - Monitor resource usage during batch processing
 
 ### Error Handling
@@ -145,9 +181,21 @@ candidate_id,name,role_level,resume_file,recruiter_comments
 1,John Doe,Senior,resumes/john_doe.pdf,"Great technical skills"
 ```
 
-### Local Processing Command
+### Production Processing Commands
 ```bash
-# Process with Ollama (no cloud AI)
+# Process with Together AI (production)
+python3 scripts/together_ai_processor.py
+
+# Stream to Firebase
+python3 scripts/firebase_streaming_processor.py
+
+# Validate PRD compliance
+python3 scripts/prd_compliant_validation.py
+```
+
+### Development Processing Commands
+```bash
+# Process with Ollama (development only)
 python3 scripts/llm_processor.py input.csv -o results.json
 
 # Resource-aware processing
@@ -159,13 +207,20 @@ python3 scripts/enhanced_processor_full.py
 
 ### Python API
 ```python
+# Production Together AI
+from scripts.together_ai_processor import TogetherAIProcessor
+
+async with TogetherAIProcessor(api_key) as processor:
+    results = await processor.process_batch(candidates)
+
+# Development Ollama
 from scripts.llm_processor import LLMProcessor
 
 processor = LLMProcessor()  # Uses Ollama locally
 profiles, stats = processor.process_batch('data.csv', output_file='results.json')
 ```
 
-## JSON Output Structure (Generated by Local Llama 3.1:8b)
+## JSON Output Structure (Generated by Together AI or Local Llama 3.1:8b)
 
 ```json
 {
@@ -212,10 +267,11 @@ profiles, stats = processor.process_batch('data.csv', output_file='results.json'
 ## Important Notes
 
 ### Privacy & Security
-- **All AI processing is local** - No data leaves your machine for AI analysis
-- **Ollama runs locally** - Complete control over the LLM
-- **No Vertex AI** - Despite old references in code, we don't use it
-- **Firebase is storage only** - Not for AI processing
+- **Production uses Together AI** - Secure cloud processing per PRD
+- **Development uses local Ollama** - Complete control during development
+- **VertexAI for embeddings only** - No LLM processing
+- **Firebase for storage and APIs** - Not for AI processing
+- **Minimal PII in prompts** - Data privacy safeguards
 
 ### Performance Considerations
 - Ollama needs ~8GB RAM for optimal performance
@@ -225,12 +281,17 @@ profiles, stats = processor.process_batch('data.csv', output_file='results.json'
 
 ## Dependencies
 
-### Python (Local Processing)
-- subprocess: For calling Ollama
+### Python (Processing)
+- aiohttp: For Together AI API calls
+- requests: For HTTP requests
+- subprocess: For calling local Ollama (dev only)
 - PyPDF2, python-docx: Document processing
 - pytesseract, Pillow: OCR
-- google-cloud-firestore: Database storage only
+- google-cloud-firestore: Database storage
+- google-cloud-aiplatform: VertexAI embeddings
 - psutil: Resource monitoring
+- pydantic: Data validation
+- fastapi: Cloud Run service framework
 
 ### Node.js/TypeScript (API & Storage)
 - firebase-admin, firebase-functions

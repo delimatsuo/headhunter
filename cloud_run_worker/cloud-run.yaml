@@ -1,0 +1,145 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: candidate-enricher
+  annotations:
+    run.googleapis.com/ingress: internal-and-cloud-load-balancing
+    run.googleapis.com/execution-environment: gen2
+    run.googleapis.com/cpu-throttling: "false"
+spec:
+  template:
+    metadata:
+      annotations:
+        # Resource configuration
+        run.googleapis.com/memory: "2Gi"
+        run.googleapis.com/cpu: "2"
+        
+        # Autoscaling configuration
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "100"
+        
+        # Container lifecycle
+        run.googleapis.com/startup-cpu-boost: "true"
+        run.googleapis.com/execution-environment: "gen2"
+        
+        # Networking
+        run.googleapis.com/vpc-access-connector: "candidate-enricher-connector"
+        run.googleapis.com/vpc-access-egress: "private-ranges-only"
+    spec:
+      containerConcurrency: 10
+      timeoutSeconds: 600
+      serviceAccountName: candidate-enricher-sa
+      containers:
+      - name: candidate-enricher
+        image: gcr.io/PROJECT_ID/candidate-enricher:latest
+        ports:
+        - containerPort: 8080
+          name: http1
+        env:
+        # Environment configuration
+        - name: ENVIRONMENT
+          value: "production"
+        - name: PORT
+          value: "8080"
+        - name: LOG_LEVEL
+          value: "INFO"
+        
+        # Google Cloud configuration
+        - name: PROJECT_ID
+          value: "PROJECT_ID"
+        - name: FIRESTORE_COLLECTION
+          value: "candidates"
+        - name: DEAD_LETTER_TOPIC
+          value: "candidate-processing-dlq"
+        
+        # Together AI configuration
+        - name: TOGETHER_AI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: together-ai-credentials
+              key: api_key
+        - name: TOGETHER_AI_MODEL
+          value: "meta-llama/Llama-3.1-8B-Instruct-Turbo"
+        - name: TOGETHER_AI_BASE_URL
+          value: "https://api.together.xyz/v1"
+        
+        # Processing configuration
+        - name: MAX_CONCURRENT_WORKERS
+          value: "5"
+        - name: REQUEST_TIMEOUT
+          value: "300"
+        - name: MAX_RETRIES
+          value: "3"
+        - name: RETRY_BASE_DELAY
+          value: "1"
+        
+        # Performance thresholds
+        - name: ERROR_RATE_THRESHOLD
+          value: "0.1"
+        - name: RESPONSE_TIME_THRESHOLD
+          value: "60"
+        
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+          requests:
+            memory: "1Gi"
+            cpu: "1000m"
+        
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
+---
+# Pub/Sub subscription for triggering the Cloud Run service
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pubsub-config
+data:
+  subscription.yaml: |
+    name: projects/PROJECT_ID/subscriptions/candidate-enrichment-sub
+    topic: projects/PROJECT_ID/topics/candidate-enrichment
+    pushConfig:
+      pushEndpoint: https://CLOUD_RUN_URL/pubsub/webhook
+      oidcToken:
+        serviceAccountEmail: candidate-enricher-sa@PROJECT_ID.iam.gserviceaccount.com
+    ackDeadlineSeconds: 600
+    retryPolicy:
+      minimumBackoff: 10s
+      maximumBackoff: 600s
+    deadLetterPolicy:
+      deadLetterTopic: projects/PROJECT_ID/topics/candidate-processing-dlq
+      maxDeliveryAttempts: 5
+---
+# IAM Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: candidate-enricher-sa
+  annotations:
+    iam.gke.io/gcp-service-account: candidate-enricher-sa@PROJECT_ID.iam.gserviceaccount.com

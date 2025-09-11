@@ -1,0 +1,37 @@
+{
+  "together_ai_available": false,
+  "together_ai_test": {
+    "together_ai_processor": {
+      "success": false,
+      "error": "expected an indented block after 'if' statement on line 413 (together_ai_processor.py, line 414)"
+    },
+    "cloud_run_together_ai": {
+      "success": false,
+      "error": "No module named 'cloud_run_worker'"
+    }
+  },
+  "embedding_test": {
+    "vertex_ai_embeddings": {
+      "success": true,
+      "dimensions": 768,
+      "processing_time": 0.00027370452880859375,
+      "provider": "vertex_ai",
+      "model": "text-embedding-004"
+    }
+  },
+  "architecture_test": {
+    "fastapi_app": {
+      "success": false,
+      "error": "No module named 'cloud_run_worker'"
+    },
+    "pubsub_handler": {
+      "success": false,
+      "error": "No module named 'cloud_run_worker'"
+    }
+  },
+  "e2e_test": {
+    "steps_completed": [],
+    "total_time": 2.002716064453125e-05,
+    "success": false
+  }
+}

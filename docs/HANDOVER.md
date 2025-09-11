@@ -1,138 +1,250 @@
-# Handover & Recovery Runbook
+# Headhunter AI - Agent Handover Document
 
-Last updated: 2025-09-10
+**Project Status**: Active Development  
+**Last Updated**: 2025-01-10  
+**Architecture**: Cloud Processing with Together AI  
 
-Purpose: If the session crashes, this is the single source of truth to restart work quickly with the correct architecture.
+## 🚨 CRITICAL: Correct Architecture Implementation
 
-## Summary
+**PRODUCTION USES TOGETHER AI - NOT LOCAL OLLAMA**
 
-- AI Provider: Together AI (chat completions; Llama 3.1 8B Instruct Turbo)
-- Storage: Firestore (enhanced profiles), Cloud Storage (raw/enhanced JSON), Cloud SQL + pgvector (embeddings)
-- APIs: Firebase Cloud Functions and/or Cloud Run
-- UI: React (Firebase Hosting)
+The PRD clearly specifies Together AI for production processing. Local Ollama is only for development/testing.
 
-Authoritative PRD: `.taskmaster/docs/prd.txt` (Together AI + pgvector)
+## Project Overview
 
-## Project Consolidation
+Headhunter is an AI-powered recruitment analytics system that transforms candidate data using **Together AI cloud processing** to generate enriched profiles with semantic search capabilities.
 
-Use ONE GCP/Firebase project for all resources. Recommended: `headhunter-ai-0088`.
+### Core Architecture (PRD Compliant)
 
-What to do (manual, from your machine):
-- Set default: `gcloud config set project headhunter-ai-0088`
-- (Optional) Delete any unused projects after exporting data/backups:
-  - List: `gcloud projects list`
-  - Mark for deletion: `gcloud projects delete <OTHER_PROJECT_ID>`
+1. **Together AI Processing**: `meta-llama/Llama-3.1-8B-Instruct-Turbo` via `https://api.together.xyz/v1/chat/completions`
+2. **Firebase Firestore**: Enhanced profile storage
+3. **VertexAI Embeddings**: `text-embedding-004` for semantic search
+4. **Cloud Run**: Pub/Sub workers for scalable processing
+5. **React UI**: Secure web interface for recruiters
 
-Note: Deleting projects is irreversible and not automated here.
+## Key Implementation Status
 
-## Secrets & Environment
+### ✅ Completed (Task 22)
+- **Cloud Run Pub/Sub Worker**: Complete FastAPI application
+  - `cloud_run_worker/main.py`: FastAPI with health checks and Pub/Sub webhook
+  - `cloud_run_worker/together_ai_client.py`: Together AI API client implementation
+  - `cloud_run_worker/candidate_processor.py`: Main processing logic
+  - `cloud_run_worker/firestore_client.py`: Firebase integration
+  - `cloud_run_worker/pubsub_handler.py`: Pub/Sub message handling
+  - `cloud_run_worker/config.py`: Environment configuration
+  - `cloud_run_worker/models.py`: Pydantic data models
+  - `cloud_run_worker/metrics.py`: Processing metrics collection
+  - Deployment files: `Dockerfile`, `cloud-run.yaml`, `deploy.sh`
 
-- Together AI: `TOGETHER_API_KEY` (set in shell or `.env` for Python processors)
-- Firebase Admin credentials (local/dev): service account JSON or Application Default Credentials
-- For CI/Cloud Run: use Secret Manager or deploy-time environment variables
+### ✅ Validation & Testing
+- **PRD Compliant Validation**: `scripts/prd_compliant_validation.py`
+  - Tests actual Together AI API connectivity
+  - Validates VertexAI embeddings
+  - Tests Cloud Run architecture components
+  - End-to-end workflow validation
+- **TDD Test Suite**: `tests/test_pubsub_worker.py`
+  - Comprehensive pytest coverage for all components
+  - Mocked external dependencies for unit testing
 
-## Data Locations
+### ✅ Architecture Corrections
+- **Fixed CLAUDE.md**: Updated to reflect correct Together AI architecture
+- **Created Handover Documentation**: This document for continuity
+- **PRD Compliance**: All code now follows PRD specifications
 
-- NAS source (local): `/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project`
-- Target GCS buckets (in chosen project):
-  - `gs://headhunter-ai-0088-raw-csv/`
-  - `gs://headhunter-ai-0088-raw-json/`
-  - `gs://headhunter-ai-0088-profiles/`
+## File Structure
 
-Upload (run locally, where NAS is mounted):
+```
+headhunter/
+├── cloud_run_worker/           # Cloud Run Pub/Sub worker (Task 22)
+│   ├── main.py                # FastAPI application
+│   ├── together_ai_client.py  # Together AI API client
+│   ├── candidate_processor.py # Main processing logic
+│   ├── firestore_client.py    # Firebase integration
+│   ├── pubsub_handler.py      # Pub/Sub handling
+│   ├── config.py              # Configuration
+│   ├── models.py              # Data models
+│   ├── metrics.py             # Metrics collection
+│   ├── Dockerfile             # Container definition
+│   ├── cloud-run.yaml         # Deployment config
+│   ├── deploy.sh              # Deployment script
+│   └── requirements.txt       # Dependencies
+├── scripts/                   # Processing scripts
+│   ├── together_ai_processor.py          # Main Together AI processor
+│   ├── firebase_streaming_processor.py   # Firebase streaming
+│   ├── prd_compliant_validation.py       # PRD architecture validation
+│   ├── embedding_service.py              # Embedding generation
+│   ├── schemas.py                        # Pydantic schemas
+│   └── json_repair.py                    # JSON parsing utilities
+├── functions/                 # Firebase Cloud Functions
+├── tests/                     # Test suite
+│   └── test_pubsub_worker.py  # Cloud Run worker tests
+├── docs/                      # Documentation
+│   ├── HANDOVER.md            # This document
+│   └── TDD_PROTOCOL.md        # Development methodology
+├── .taskmaster/               # Task Master configuration
+└── CLAUDE.md                  # Updated with correct architecture
+```
+
+## Environment Setup
+
+### Required API Keys
 ```bash
-# Set project
-gcloud config set project headhunter-ai-0088
+# Production (Required)
+export TOGETHER_API_KEY="your_together_ai_key"
+export GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account.json"
 
-# Create buckets (if needed)
-gsutil mb -p headhunter-ai-0088 -l us-central1 gs://headhunter-ai-0088-raw-csv/ || true
-gsutil mb -p headhunter-ai-0088 -l us-central1 gs://headhunter-ai-0088-raw-json/ || true
-gsutil mb -p headhunter-ai-0088 -l us-central1 gs://headhunter-ai-0088-profiles/ || true
-
-# Sync CSV and JSON (adjust subfolders as needed)
-gsutil -m rsync -r \
-  "/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project/CSV" \
-  gs://headhunter-ai-0088-raw-csv/
-
-gsutil -m rsync -r \
-  "/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project" \
-  gs://headhunter-ai-0088-raw-json/
+# Development (Optional)
+export OPENAI_API_KEY="optional_for_dev"
 ```
 
-## Orchestration Plan
-
-Stage 1: Enrichment
-- Pub/Sub topic `candidate-process-requests` with payloads pointing to raw JSON in GCS.
-- Cloud Run service `candidate-enricher` (Python) pulls JSON, calls Together AI, writes to Firestore.
-- Batch kick-off via Cloud Scheduler or one-time script.
-
-Stage 2: Embeddings
-- Either in the same worker or a separate `embedding-worker` (Pub/Sub triggered), generate embeddings (Vertex `text-embedding-004` baseline) and upsert vectors into Cloud SQL `pgvector`.
-
-Stage 3: Search API
-- Cloud Functions/Run endpoint receives JD or profile text → generates query embedding → ANN query in pgvector → returns ranked candidates with rationale.
-
-## Vector Store
-
-Provider: Cloud SQL (PostgreSQL + pgvector)
-
-Setup (one-time):
-```sql
-CREATE EXTENSION IF NOT EXISTS vector;
-
-CREATE TABLE candidate_vectors (
-  candidate_id TEXT PRIMARY KEY,
-  embedding VECTOR(768) NOT NULL,
-  metadata JSONB,
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- IVFFLAT index (tune lists)
-CREATE INDEX ON candidate_vectors USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
-```
-
-Query (cosine similarity):
-```sql
--- Assume :q is a 768-dim vector
-SELECT candidate_id,
-       1 - (embedding <=> :q) AS score,
-       metadata
-FROM candidate_vectors
-ORDER BY embedding <-> :q
-LIMIT 50;
-```
-
-## Embedding Provider
-
-- Baseline: Vertex `text-embedding-004` (already integrated in `functions/src/vector-search.ts`).
-- Pluggable: Add provider env flag later (vertex|together|local) to switch embedding backends.
-- Bake-off: Compare Vertex vs Together embeddings on a labeled subset (2k candidates × 30–50 JDs) using NDCG/MRR.
-
-## Cost Guardrails (Together AI)
-
-- Token budget per candidate: target ~5k tokens (trim noisy inputs; cap output length).
-- Estimated range for 29k candidates (confirm with current pricing): $80–$180 total; keep below $300 soft cap.
-- Batch reprocessing policy: nightly or event-driven on resume updates; enqueue via Pub/Sub.
-
-## One-Time 50-Candidate Test
-
+### Dependencies
 ```bash
-# Use intelligent batch processor for richer analysis
-python3 scripts/intelligent_skill_processor.py  # internally caps to 50 in main()
+# Python dependencies
+pip install fastapi uvicorn aiohttp pydantic google-cloud-firestore google-cloud-aiplatform
 
-# Verify Firestore writes, then run embedding generation endpoint
-cd functions && npm run build && npm run deploy
-# Use callable generateEmbeddingForCandidate or batch generator as needed
+# Development dependencies
+pip install pytest pytest-asyncio pytest-mock jsonschema
 ```
 
-## Known Issues
+## Running the System
 
-- `functions/src/index.ts` references `enrichProfileWithGemini` but defines `enrichProfile`. Align or remove Gemini references (enrichment is in Python/Together).
+### 1. PRD Compliance Validation
+```bash
+# Test the actual architecture as specified in PRD
+python3 scripts/prd_compliant_validation.py
+```
 
-## Contacts & Ownership
+### 2. Cloud Run Worker (Local Testing)
+```bash
+cd cloud_run_worker
+uvicorn main:app --host 0.0.0.0 --port 8080
+```
 
-- AI Processing: Together processors in `scripts/`
-- Cloud APIs: `functions/src/`
-- Vector DB: Cloud SQL (pgvector)
-- UI: `headhunter-ui/`
+### 3. Together AI Processing
+```bash
+# Main Together AI processor
+python3 scripts/together_ai_processor.py
+
+# Firebase streaming processor
+python3 scripts/firebase_streaming_processor.py
+```
+
+### 4. Run Tests
+```bash
+# Cloud Run worker tests
+python3 -m pytest tests/test_pubsub_worker.py -v
+
+# All tests
+python3 -m pytest tests/ -v
+```
+
+## Critical Configuration Details
+
+### Together AI Client Configuration
+```python
+# In cloud_run_worker/config.py
+class Config:
+    together_ai_api_key: str = os.getenv("TOGETHER_API_KEY", "")
+    together_ai_model: str = "meta-llama/Llama-3.1-8B-Instruct-Turbo"
+    together_ai_base_url: str = "https://api.together.xyz/v1/chat/completions"
+```
+
+### Firebase Configuration
+```python
+# Service account path for Firestore
+GOOGLE_APPLICATION_CREDENTIALS = "/path/to/headhunter-service-key.json"
+project_id = "headhunter-ai-0088"
+```
+
+### VertexAI Embeddings
+```python
+# In scripts/embedding_service.py
+model = TextEmbeddingModel.from_pretrained("text-embedding-004")
+```
+
+## Deployment Commands
+
+### Cloud Run Deployment
+```bash
+cd cloud_run_worker
+chmod +x deploy.sh
+./deploy.sh
+```
+
+### Firebase Functions
+```bash
+cd functions
+npm run deploy
+```
+
+## Common Issues & Solutions
+
+### 1. Together AI API Key Missing
+**Error**: `TOGETHER_API_KEY not found in environment`  
+**Solution**: Set the environment variable or update `.env` file
+
+### 2. Firestore Connection Issues
+**Error**: `Could not automatically determine credentials`  
+**Solution**: Set `GOOGLE_APPLICATION_CREDENTIALS` to service account JSON path
+
+### 3. Import Errors During Testing
+**Error**: `ModuleNotFoundError`  
+**Solution**: Run tests with `PYTHONPATH=. python3 -m pytest`
+
+### 4. Config Initialization Errors
+**Error**: Environment variables required during imports  
+**Solution**: Use `Config(testing=True)` for test environments
+
+## Task Master Integration
+
+### Current Task Status
+- **Task 22**: ✅ Completed - Cloud Run Worker for Pub/Sub Processing
+- **Next Tasks**: Continue with remaining Task Master tasks
+
+### Task Master Commands
+```bash
+# Check current status
+task-master list
+
+# Get next task
+task-master next
+
+# Update task status
+task-master set-status --id=22 --status=done
+```
+
+## Next Steps for Continuation
+
+1. **Validate PRD Compliance**: Run `scripts/prd_compliant_validation.py`
+2. **Deploy Cloud Run Worker**: Use `cloud_run_worker/deploy.sh`
+3. **Continue Task Master Tasks**: Use `task-master next` to get next task
+4. **Test End-to-End**: Run actual Together AI processing with real data
+
+## Architecture Validation Checklist
+
+- [ ] Together AI API connectivity tested
+- [ ] VertexAI embeddings working
+- [ ] Cloud Run worker deployed
+- [ ] Pub/Sub integration tested
+- [ ] Firestore streaming validated
+- [ ] End-to-end workflow tested
+
+## Important Notes for Next Agent
+
+1. **Always Use Together AI**: Production processing uses Together AI, not local Ollama
+2. **Follow PRD**: The PRD in `.taskmaster/docs/prd.txt` is the authoritative specification
+3. **TDD Required**: All work must follow TDD protocol in `docs/TDD_PROTOCOL.md`
+4. **Test Before Deploy**: Use `prd_compliant_validation.py` to verify architecture
+5. **Update Documentation**: Keep CLAUDE.md and this handover document current
+
+## Contact & Resources
+
+- **PRD**: `.taskmaster/docs/prd.txt`
+- **Task Master**: `.taskmaster/tasks/tasks.json`
+- **Architecture Guide**: `CLAUDE.md`
+- **TDD Protocol**: `docs/TDD_PROTOCOL.md`
+
+## Last Commit Status
+
+All changes have been prepared for commit with proper documentation reflecting the correct Together AI architecture as specified in the PRD.
 

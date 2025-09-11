@@ -1,0 +1,45 @@
+# Cloud Run Worker Dependencies
+
+# Web Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# HTTP Client
+aiohttp==3.9.1
+httpx==0.25.2
+
+# Data Validation
+pydantic==2.5.0
+
+# Google Cloud Services
+google-cloud-firestore==2.13.1
+google-cloud-pubsub==2.18.4
+
+# Async Support
+asyncio-throttle==1.0.2
+
+# Monitoring and Metrics
+psutil==5.9.6
+
+# JSON Processing
+orjson==3.9.10
+
+# Logging
+structlog==23.2.0
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# Type Hints
+typing-extensions==4.8.0
+
+# Testing Dependencies (for development)
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-mock==3.12.0
+httpx==0.25.2
+
+# Code Quality
+black==23.11.0
+isort==5.12.0
+mypy==1.7.1
