@@ -2,336 +2,514 @@
 
 ## 🎯 Core Design Principle
 
-**100% Local AI Processing** - All LLM analysis and candidate insights generation happens locally using Ollama with Llama 3.1 8b. Cloud services are used only for data storage and API endpoints.
+**Cloud-Powered AI Processing with Semantic Search** - All LLM analysis and candidate insights generation happens via Together AI's cloud infrastructure using Llama 3.2 3B Instruct Turbo. The system generates comprehensive candidate profiles optimized for recruiter search workflows with vector embeddings for semantic similarity matching.
 
 ## System Components
 
-### 1. Local Processing Layer (Python)
+### 1. Cloud Processing Layer (Together AI + Google Cloud)
 
-The heart of the system - where all AI intelligence resides:
+The heart of the system - where all AI intelligence and processing resides:
 
 ```
 ┌──────────────────────────────────────────────────┐
-│           LOCAL PROCESSING LAYER                  │
+│            CLOUD PROCESSING LAYER                │
 ├──────────────────────────────────────────────────┤
-│  Operating System: macOS/Linux                   │
-│  Runtime: Python 3.10+                           │
-│  LLM Engine: Ollama                              │
-│  Model: Llama 3.1:8b (4.9 GB)                   │
-│  Memory Required: 8GB+ RAM                       │
+│  AI Provider: Together AI                        │
+│  Model: meta-llama/Llama-3.2-3B-Instruct-Turbo  │
+│  Runtime: Cloud Run (Python 3.11+)              │
+│  Embeddings: VertexAI text-embedding-004        │
+│  Vector DB: Cloud SQL + pgvector                 │
+│  Orchestration: Pub/Sub + Cloud Run Workers     │
 └──────────────────────────────────────────────────┘
 ```
 
-**Key Scripts:**
-- `llm_processor.py` - Main orchestrator
-- `intelligent_batch_processor.py` - Resource-aware processing
-- `enhanced_processor_full.py` - Comprehensive analysis
-- `llm_prompts.py` - Resume analysis templates
-- `recruiter_prompts.py` - Comment analysis templates
-- `resume_extractor.py` - Multi-format text extraction
+**Key Components:**
+- `cloud_run_worker/` - FastAPI Cloud Run workers for scalable processing
+- `cloud_run_worker/main.py` - FastAPI application with Pub/Sub endpoints
+- `cloud_run_worker/processor.py` - Enhanced candidate profile processor
+- `cloud_run_worker/config.py` - Configuration with Secret Manager integration
+- `cloud_run_worker/prompts.py` - Comprehensive analysis prompt templates
+- `cloud_run_worker/embeddings.py` - VertexAI embeddings generation
+- `cloud_run_worker/vector_db.py` - Cloud SQL + pgvector operations
 
 **Processing Flow:**
-1. Extract text from resumes (PDF, DOCX, images)
-2. Structure prompts for Ollama
-3. Send to local Llama 3.1:8b model
-4. Parse JSON response
-5. Validate output quality
-6. Store in Firestore
+1. Pub/Sub triggers Cloud Run worker with candidate batch
+2. Extract text from resumes (PDF, DOCX, images via Cloud Vision)
+3. Generate comprehensive prompts for Together AI
+4. Call Together AI API with Llama 3.2 3B Instruct Turbo
+5. Parse and validate enhanced JSON profiles
+6. Generate VertexAI embeddings for semantic search
+7. Store profiles in Firestore and vectors in Cloud SQL
+8. Update processing status and metrics
 
-### 2. Data Storage Layer (Firebase/GCP)
+### 2. Data Storage Layer (Multi-Database Architecture)
 
-Cloud services for persistence and access - NO AI processing:
+Distributed storage optimized for both structured data and semantic search:
 
 ```
 ┌──────────────────────────────────────────────────┐
 │              STORAGE LAYER                        │
 ├──────────────────────────────────────────────────┤
-│  Database: Firestore                             │
-│  File Storage: Cloud Storage                     │
-│  Authentication: Firebase Auth                   │
-│  API: Cloud Functions (Node.js)                  │
-│  Hosting: Firebase Hosting                       │
+│  Structured Data: Firestore                     │
+│  Vector Storage: Cloud SQL + pgvector           │
+│  File Storage: Cloud Storage                    │
+│  Configuration: Secret Manager                  │
+│  Authentication: Firebase Auth                  │
+│  API: Cloud Functions + Cloud Run              │
+│  Hosting: Firebase Hosting                      │
 └──────────────────────────────────────────────────┘
 ```
 
-**Cloud Functions (API endpoints only):**
-- `healthCheck` - System monitoring
-- `searchCandidates` - Query Firestore
-- `uploadCandidates` - Batch upload
-- `quickMatch` - Fast search
+**Storage Collections:**
+- `enhanced_candidates` - Comprehensive candidate profiles with 15+ detailed fields
+- `processing_jobs` - Batch processing status and metrics
+- `search_queries` - Job descriptions and search optimization data
+- `embeddings_metadata` - Vector database synchronization status
 
-### 3. Web Interface Layer (React)
+**Cloud SQL Tables:**
+- `candidate_embeddings` - pgvector storage for semantic search
+- `search_cache` - Pre-computed similarity matches
+- `performance_metrics` - Processing and search performance tracking
 
-User-facing search application:
+### 3. Semantic Search & API Layer
+
+Intelligent search system for recruiter workflows:
+
+```
+┌──────────────────────────────────────────────────┐
+│              SEARCH & API LAYER                   │
+├──────────────────────────────────────────────────┤
+│  Search API: FastAPI + Cloud Run                │
+│  Vector Search: pgvector + cosine similarity    │
+│  Embeddings: VertexAI text-embedding-004        │
+│  Results Ranking: Hybrid semantic + keyword     │
+│  CRUD Operations: Firestore + Cloud SQL sync    │
+└──────────────────────────────────────────────────┘
+```
+
+**API Endpoints:**
+- `/search/semantic` - Vector similarity search for job descriptions
+- `/search/hybrid` - Combined semantic + keyword search
+- `/candidates/{id}` - CRUD operations for individual profiles
+- `/candidates/batch` - Bulk operations and updates
+- `/embeddings/generate` - On-demand embedding generation
+- `/processing/status` - Batch processing status and metrics
+
+### 4. Web Interface Layer (React)
+
+Recruiter-focused search and management application:
 
 ```
 ┌──────────────────────────────────────────────────┐
 │              WEB INTERFACE                        │
 ├──────────────────────────────────────────────────┤
-│  Framework: React                                │
-│  Authentication: Firebase Auth                   │
-│  API Client: Firebase SDK                        │
-│  Hosting: Firebase Hosting                       │
+│  Framework: React + TypeScript                  │
+│  Search UI: Job description → candidate matches │
+│  Profile Management: CRUD + LinkedIn sync       │
+│  Authentication: Firebase Auth                  │
+│  API Client: Fetch + Firebase SDK               │
+│  Hosting: Firebase Hosting                      │
 └──────────────────────────────────────────────────┘
 ```
 
 ## Data Flow Architecture
 
 ```
-Step 1: Input Processing (Local)
-================================
-CSV Files → Python Scripts → Text Extraction
+Step 1: Data Ingestion (Cloud)
+==============================
+CSV Files → Cloud Storage → Pub/Sub Messages
                 ↓
-         Resume Text + Comments
+    Candidate Data Batches
 
-Step 2: AI Analysis (Local Only)
-=================================
-        Structured Prompts
+Step 2: AI Processing (Together AI Cloud)
+=========================================
+        Cloud Run Workers
                 ↓
-    Ollama (localhost:11434)
+    Together AI API (Llama 3.2 3B)
                 ↓
-        Llama 3.1:8b Model
+    Comprehensive JSON Profiles
                 ↓
-    JSON Structured Output
+        VertexAI Embeddings
+                ↓
+    Vector + Structured Data
 
-Step 3: Storage (Cloud)
-========================
-    Validated JSON Profiles
-                ↓
-         Firestore Database
+Step 3: Dual Storage (Cloud)
+============================
+    Enhanced Profiles → Firestore
+    Vector Embeddings → Cloud SQL (pgvector)
                 ↓
         Search Indexing
 
-Step 4: Search & Retrieval (Cloud + Web)
-=========================================
+Step 4: Semantic Search (Cloud + Web)
+=====================================
     Job Description Input (Web)
                 ↓
-      Search API (Cloud Functions)
+      Vector Search API (Cloud Run)
                 ↓
-        Firestore Query
+    pgvector Similarity Query + Firestore Profile Fetch
                 ↓
-    Ranked Results (Web Display)
+    Ranked Candidate Matches (Web Display)
+
+Step 5: Profile Management (CRUD)
+=================================
+    LinkedIn Profile Updates (Web)
+                ↓
+      Profile Update API (Cloud Run)
+                ↓
+    Firestore Update + Re-embed + pgvector Sync
+                ↓
+    Updated Search Results
 ```
 
-## JSON Data Structure
+## Comprehensive JSON Data Structure
 
-Generated locally by Llama 3.1:8b, stored in Firestore:
+Generated by Together AI Llama 3.2 3B Instruct Turbo, optimized for recruiter search:
 
 ```json
 {
   "candidate_id": "unique_id",
+  "personal_info": {
+    "name": "John Smith",
+    "current_title": "Senior Software Engineer",
+    "location": "San Francisco, CA",
+    "linkedin_url": "https://linkedin.com/in/johnsmith",
+    "email": "john@example.com",
+    "phone": "+1-555-0123"
+  },
   "processing_metadata": {
-    "processed_by": "ollama_llama3.1:8b",
+    "processed_by": "together_ai_llama3.2_3b",
     "processed_at": "2024-01-01T00:00:00Z",
-    "processing_time_seconds": 45,
-    "local_processing": true
+    "processing_time_seconds": 2.3,
+    "model_version": "meta-llama/Llama-3.2-3B-Instruct-Turbo",
+    "api_cost_dollars": 0.0045,
+    "confidence_score": 0.92
   },
   "career_trajectory": {
-    "current_level": "Senior/Principal/Executive",
-    "progression_speed": "slow/steady/fast",
-    "trajectory_type": "IC/management/hybrid",
-    "years_experience": 10,
-    "velocity": "accelerating/steady/plateauing"
+    "current_level": "senior",
+    "progression_speed": "fast",
+    "trajectory_type": "technical_leadership",
+    "years_total_experience": 12,
+    "years_current_role": 3,
+    "career_velocity": "accelerating",
+    "promotion_frequency": "every_2_3_years",
+    "role_transitions": ["IC → Senior IC → Tech Lead"]
   },
   "leadership_scope": {
     "has_leadership": true,
-    "team_size": 15,
-    "leadership_level": "lead/manager/director/vp",
-    "leadership_style": "collaborative/directive"
+    "team_size_managed": 8,
+    "leadership_level": "tech_lead",
+    "leadership_style": "servant_leadership",
+    "direct_reports": 3,
+    "cross_functional_collaboration": "high",
+    "mentorship_experience": "extensive"
   },
   "company_pedigree": {
-    "company_tier": "startup/midmarket/enterprise/faang",
-    "company_list": ["Company A", "Company B"],
-    "stability_pattern": "stable/job_hopper"
+    "current_company": "Meta",
+    "company_tier": "faang",
+    "company_list": ["Meta", "Airbnb", "Medium"],
+    "company_trajectory": "scaling_up",
+    "stability_pattern": "strategic_moves",
+    "industry_focus": ["social_media", "marketplaces", "content_platforms"],
+    "company_stage_preference": "growth_stage"
   },
-  "skill_assessment": {
-    "technical_skills": {
-      "core_competencies": ["Python", "AWS", "ML"],
-      "skill_depth": "expert/advanced/intermediate"
-    },
-    "soft_skills": {
-      "communication": "exceptional/strong/developing",
-      "leadership": "exceptional/strong/developing"
-    }
+  "technical_skills": {
+    "primary_languages": ["Python", "TypeScript", "Go"],
+    "frameworks": ["React", "Django", "FastAPI", "Node.js"],
+    "cloud_platforms": ["AWS", "GCP"],
+    "databases": ["PostgreSQL", "Redis", "MongoDB"],
+    "tools": ["Docker", "Kubernetes", "Git", "Jenkins"],
+    "specializations": ["ML/AI", "System Design", "API Architecture"],
+    "skill_depth": "expert",
+    "learning_velocity": "high",
+    "technical_breadth": "full_stack"
+  },
+  "domain_expertise": {
+    "industries": ["fintech", "social_media", "e-commerce"],
+    "business_functions": ["product_engineering", "platform_development"],
+    "domain_depth": "expert",
+    "vertical_knowledge": ["payments", "user_engagement", "scalability"],
+    "regulatory_experience": ["SOX", "GDPR", "PCI_DSS"]
+  },
+  "soft_skills": {
+    "communication": "exceptional",
+    "leadership": "strong",
+    "collaboration": "exceptional",
+    "problem_solving": "expert",
+    "adaptability": "high",
+    "emotional_intelligence": "high",
+    "conflict_resolution": "strong",
+    "presentation_skills": "strong"
   },
   "cultural_signals": {
-    "strengths": ["innovation", "collaboration"],
+    "work_style": "collaborative_autonomous",
+    "cultural_strengths": ["innovation", "ownership", "mentorship"],
+    "values_alignment": ["growth_mindset", "customer_obsession", "excellence"],
     "red_flags": [],
-    "work_style": "independent/collaborative/hybrid"
+    "team_dynamics": "positive_influence",
+    "change_adaptability": "thrives_in_change",
+    "feedback_receptiveness": "high"
+  },
+  "compensation_insights": {
+    "current_salary_range": "$180k-220k",
+    "total_compensation": "$280k-350k",
+    "salary_expectations": "market_rate",
+    "equity_preference": "growth_stage",
+    "compensation_motivators": ["equity_upside", "base_growth"],
+    "negotiation_flexibility": "moderate"
   },
   "recruiter_insights": {
-    "sentiment": "positive/neutral/negative",
-    "placement_likelihood": "high/medium/low",
-    "best_fit_roles": ["Tech Lead", "Engineering Manager"],
-    "salary_expectations": "below_market/market/above_market"
+    "engagement_history": "responsive",
+    "placement_likelihood": "high",
+    "best_fit_roles": ["Senior Staff Engineer", "Engineering Manager", "Tech Lead"],
+    "cultural_fit_companies": ["high_growth_startups", "tech_forward_enterprises"],
+    "interview_strengths": ["technical_depth", "leadership_examples"],
+    "potential_concerns": ["relocation_flexibility"],
+    "recruiter_notes": "Strong technical leader with fintech domain expertise"
   },
   "search_optimization": {
-    "keywords": ["generated", "locally", "by", "llm"],
-    "search_tags": ["senior", "technical_lead"],
-    "matching_scores": {}
+    "primary_keywords": ["python", "fintech", "technical_leadership", "aws", "machine_learning"],
+    "secondary_keywords": ["payments", "scalability", "mentorship", "full_stack"],
+    "skill_tags": ["senior_engineer", "tech_lead", "fintech_expert", "ml_engineer"],
+    "location_tags": ["san_francisco", "bay_area", "remote_friendly"],
+    "industry_tags": ["fintech", "payments", "financial_services"],
+    "seniority_indicators": ["8_plus_years", "technical_leadership", "team_management"]
+  },
+  "matching_profiles": {
+    "ideal_role_types": ["staff_engineer", "engineering_manager", "principal_engineer"],
+    "company_size_preference": ["series_b_to_ipo", "100_to_1000_employees"],
+    "technology_stack_match": 0.95,
+    "leadership_readiness": 0.88,
+    "domain_transferability": 0.82,
+    "cultural_fit_score": 0.91
   },
   "executive_summary": {
-    "one_line_pitch": "Generated by local LLM",
-    "ideal_next_role": "Based on trajectory analysis",
-    "overall_rating": 85
+    "one_line_pitch": "Senior full-stack engineer with fintech expertise and proven technical leadership track record",
+    "key_differentiators": ["Domain expertise in payments", "Technical mentorship", "Scaling experience"],
+    "ideal_next_role": "Staff Engineer or Engineering Manager at growth-stage fintech",
+    "career_narrative": "Progressive technical leadership journey from IC to team lead with strong fintech domain knowledge",
+    "overall_rating": 92,
+    "recommendation_tier": "top_10_percent"
+  },
+  "embeddings_metadata": {
+    "embedding_model": "text-embedding-004",
+    "embedding_dimensions": 768,
+    "last_embedded": "2024-01-01T00:00:00Z",
+    "similarity_cache_updated": "2024-01-01T00:00:00Z"
   }
 }
 ```
+
+## Semantic Search Architecture
+
+### Vector Generation Pipeline
+```
+Resume + Comments Text
+        ↓
+Together AI Profile Generation
+        ↓
+Profile Text Concatenation
+        ↓
+VertexAI text-embedding-004
+        ↓
+768-dimensional Vector
+        ↓
+Cloud SQL pgvector Storage
+```
+
+### Search Query Flow
+```
+Job Description Input
+        ↓
+VertexAI Embedding Generation
+        ↓
+pgvector Cosine Similarity Query
+        ↓
+Top-K Candidate Vector Matches
+        ↓
+Firestore Profile Enrichment
+        ↓
+Ranked Results with Similarity Scores
+```
+
+## Performance Characteristics
+
+### Cloud Processing (Together AI + Cloud Run)
+- **Model Loading**: ~0.5 seconds (cloud-hosted)
+- **Per Candidate**: 2-3 seconds comprehensive analysis
+- **Batch Processing**: 1,500+ candidates/hour with parallel workers
+- **Cost per Candidate**: ~$0.005 (Together AI + GCP)
+- **Embedding Generation**: ~0.3 seconds per profile
+- **Vector Search Latency**: <100ms for 10K+ candidates
+
+### Scalability Metrics
+- **Concurrent Workers**: Auto-scaling 1-100 Cloud Run instances
+- **Daily Processing Capacity**: 50,000+ candidates
+- **Search Performance**: <200ms response time for complex queries
+- **Storage Capacity**: Unlimited (Firestore + Cloud SQL)
+
+## Cost Analysis
+
+### Per-Candidate Processing Costs
+- **Together AI API**: ~$0.004 per candidate
+- **VertexAI Embeddings**: ~$0.0002 per candidate
+- **Cloud Run Processing**: ~$0.0008 per candidate
+- **Storage (Firestore + Cloud SQL)**: ~$0.0001 per candidate
+- **Total**: ~$0.005 per candidate
+
+### Monthly Operational Costs (20,000 candidates)
+- **AI Processing**: ~$100/month
+- **Storage & Database**: ~$50/month
+- **Compute & Networking**: ~$200/month
+- **Total**: ~$350/month for full operation
+
+### Comparison with Alternatives
+- **OpenAI GPT-4**: ~$0.15 per candidate (30x more expensive)
+- **Google Vertex AI**: ~$0.08 per candidate (16x more expensive)
+- **Together AI Llama 3.2**: ~$0.004 per candidate (current choice)
 
 ## Security & Privacy Architecture
 
 ### Data Privacy Layers
 
-1. **Local Processing Isolation**
-   - All AI processing on local machine
-   - No candidate data sent to external AI services
-   - Ollama runs entirely offline capable
+1. **API Key Security**
+   - Together AI API keys stored in Google Secret Manager
+   - No hardcoded credentials in codebase
+   - Automatic key rotation capability
 
-2. **Cloud Storage Security**
-   - Firebase Authentication required
-   - Firestore security rules enforced
-   - Role-based access control
+2. **Data Processing Security**
+   - HTTPS-only API communication
+   - Candidate data encrypted in transit and at rest
+   - Processing logs sanitized of PII
 
-3. **Network Security**
-   - HTTPS only for web interface
-   - API authentication tokens
-   - CORS policies enforced
+3. **Storage Security**
+   - Firebase Authentication required for all access
+   - Firestore security rules with role-based access
+   - Cloud SQL private IP with VPC peering
+   - pgvector data encrypted at rest
 
-### Data Flow Security
+### Compliance & Governance
+- **GDPR**: Right to deletion implemented via CRUD APIs
+- **Data Residency**: All processing within specified GCP regions
+- **Audit Logging**: Complete processing and access audit trail
+- **Access Control**: Firebase Auth + IAM roles
 
-```
-Local Machine (Trusted)
-    ↓ [Processed Data Only]
-Firebase/GCP (Encrypted)
-    ↓ [Authenticated Access]
-Web Client (HTTPS)
-```
+## Deployment & Operations
 
-## Performance Characteristics
-
-### Local Processing (Ollama + Llama 3.1:8b)
-- **Startup Time**: 5-10 seconds (model loading)
-- **Per Candidate**: 30-60 seconds comprehensive analysis
-- **Batch Processing**: 50-100 candidates/hour
-- **Memory Usage**: 5-6 GB when model loaded
-- **CPU Usage**: 80-100% during inference
-
-### Optimization Strategies
-1. **Batch Processing**: Process multiple candidates in sequence
-2. **Resource Monitoring**: `intelligent_batch_processor.py` adapts to system resources
-3. **Parallel Extraction**: Text extraction can run in parallel
-4. **Caching**: Model stays loaded between requests
-5. **Retry Logic**: Automatic retries for transient failures
-
-## Scalability Architecture
-
-### Current Capacity
-- Single machine: 50-100 candidates/hour
-- Limited by local CPU/RAM
-- No cloud AI costs
-
-### Scaling Options
-
-1. **Vertical Scaling**
-   - Add more RAM (16GB+ recommended)
-   - Use GPU acceleration (10x speedup possible)
-   - Upgrade to faster CPU
-
-2. **Horizontal Scaling**
-   - Run multiple Ollama instances
-   - Distribute processing across machines
-   - Use job queue for coordination
-
-3. **Future Architecture**
-   ```
-   Multiple Processing Nodes
-           ↓
-   Shared Firestore Database
-           ↓
-   Single Web Interface
-   ```
-
-## Cost Analysis
-
-### Current Architecture Costs
-- **AI Processing**: $0 (local Ollama)
-- **Storage**: Firestore free tier or ~$0.18/GB/month
-- **Hosting**: Firebase free tier or ~$10/month
-- **Total**: Near zero for AI, minimal for storage
-
-### Comparison with Cloud AI
-- **OpenAI GPT-4**: ~$30/1000 candidates
-- **Google Vertex AI**: ~$20/1000 candidates
-- **Local Ollama**: $0/∞ candidates
-
-## Development & Deployment
-
-### Local Development
+### Cloud Run Deployment
 ```bash
-# Start Ollama
-ollama serve
+# Build and deploy Cloud Run worker
+cd cloud_run_worker
+gcloud run deploy headhunter-worker \
+  --source . \
+  --region us-central1 \
+  --memory 2Gi \
+  --cpu 2 \
+  --min-instances 0 \
+  --max-instances 100 \
+  --concurrency 10
 
-# Process candidates
-python scripts/intelligent_batch_processor.py
-
-# Start web interface
-cd headhunter-ui && npm start
+# Deploy Pub/Sub trigger
+gcloud pubsub topics create candidate-processing
+gcloud eventarc triggers create headhunter-trigger \
+  --destination-run-service headhunter-worker \
+  --event-filters type=google.cloud.pubsub.topic.v1.messagePublished
 ```
 
-### Production Deployment
+### Database Setup
 ```bash
-# Deploy Cloud Functions
-cd functions && npm run deploy
+# Create Cloud SQL instance with pgvector
+gcloud sql instances create headhunter-vectors \
+  --database-version POSTGRES_15 \
+  --tier db-standard-2 \
+  --region us-central1
 
-# Deploy web interface
-cd headhunter-ui && npm run build
-firebase deploy --only hosting
+# Enable pgvector extension
+gcloud sql connect headhunter-vectors --user postgres
+CREATE EXTENSION vector;
 ```
 
-### Monitoring
-- Local: System resource monitoring via `psutil`
-- Cloud: Firebase console for API usage
-- Logs: Local Python logs + Cloud Function logs
+### Monitoring & Observability
+- **Cloud Monitoring**: Processing latency and error rates
+- **Cloud Logging**: Structured logs with candidate processing status
+- **Pub/Sub Monitoring**: Message processing rates and dead letter queues
+- **Custom Dashboards**: Candidate processing throughput and search performance
 
 ## Technology Stack Summary
 
 | Layer | Technology | Purpose |
 |-------|------------|---------|
-| AI Engine | Ollama + Llama 3.1:8b | Local LLM processing |
-| Processing | Python 3.10+ | Orchestration & data handling |
-| Text Extraction | PyPDF2, python-docx, Tesseract | Multi-format support |
-| Database | Firestore | Structured data storage |
-| API | Cloud Functions (Node.js) | Data access endpoints |
-| Web UI | React | User interface |
-| Auth | Firebase Auth | Security |
-| Hosting | Firebase Hosting | Web deployment |
+| AI Processing | Together AI + Llama 3.2 3B | Cloud LLM for candidate analysis |
+| Orchestration | Cloud Run + Pub/Sub | Scalable processing workflow |
+| Embeddings | VertexAI text-embedding-004 | Semantic search vectors |
+| Vector DB | Cloud SQL + pgvector | Fast similarity search |
+| Structured Storage | Firestore | Candidate profiles and metadata |
+| Configuration | Secret Manager | Secure API key management |
+| API Layer | FastAPI + Cloud Run | Search and CRUD endpoints |
+| Web UI | React + TypeScript | Recruiter search interface |
+| Authentication | Firebase Auth | User management and security |
+| Monitoring | Cloud Monitoring + Logging | Operations and debugging |
 
 ## Key Architectural Decisions
 
-1. **Why Local LLM?**
-   - Complete data privacy
-   - Zero AI API costs
-   - Full control over processing
-   - No rate limits or quotas
+1. **Why Together AI?**
+   - Cost-effective cloud LLM processing
+   - No local infrastructure requirements
+   - Scalable and reliable API
+   - Competitive pricing vs OpenAI/Anthropic
 
-2. **Why Ollama?**
-   - Easy local deployment
-   - Good performance
-   - Model management
-   - REST API interface
+2. **Why Dual Storage (Firestore + Cloud SQL)?**
+   - Firestore: Optimal for structured profile data and real-time sync
+   - Cloud SQL: Required for pgvector similarity search
+   - Best of both worlds for hybrid search workloads
 
-3. **Why Firestore?**
-   - Serverless scaling
-   - Real-time sync capable
-   - Good query performance
-   - Firebase integration
+3. **Why VertexAI Embeddings?**
+   - High-quality semantic representations
+   - Google Cloud native integration
+   - Optimized for search and similarity tasks
 
-4. **Why React?**
-   - Modern UI capabilities
-   - Firebase SDK support
-   - Developer familiarity
-   - Component reusability
+4. **Why Cloud Run?**
+   - Auto-scaling based on demand
+   - Pay-per-request pricing model
+   - Native integration with Pub/Sub and other GCP services
+
+## Recruiter Workflow Integration
+
+### Primary Use Cases
+
+1. **Job Description Search**
+   - Recruiters paste job requirements
+   - System generates embeddings and finds similar candidates
+   - Results ranked by technical fit and experience level
+
+2. **Profile Updates**
+   - Recruiters find updated LinkedIn profiles
+   - System re-processes and updates candidate data
+   - Embeddings refreshed for improved search accuracy
+
+3. **Batch Processing**
+   - CSV uploads trigger Pub/Sub processing
+   - Thousands of candidates processed in parallel
+   - Real-time status updates via web interface
+
+4. **Advanced Search**
+   - Hybrid semantic + keyword search
+   - Filtering by seniority, location, skills
+   - Export functionality for candidate lists
+
+## Future Enhancements
+
+### Planned Features
+- **Multi-language Support**: International candidate processing
+- **Real-time Processing**: Streaming profile updates via websockets
+- **Advanced Analytics**: Hiring success metrics and model fine-tuning
+- **Integration APIs**: ATS system connectors and third-party tools
+
+### Scaling Roadmap
+- **Multi-region Deployment**: Global processing with regional data residency
+- **Model Fine-tuning**: Custom models trained on recruiter feedback
+- **Advanced Search**: Graph-based candidate relationship mapping
+- **Performance Optimization**: Sub-50ms search response times
 
 ## Conclusion
 
-This architecture prioritizes data privacy and cost efficiency by processing all AI workloads locally while leveraging cloud services only for storage and access. The system can analyze 50-100 candidates per hour with zero AI costs and complete data control.
+This architecture provides a production-ready, scalable solution for AI-powered recruitment analytics. The cloud-native design ensures reliable processing of large candidate volumes while maintaining cost efficiency and search performance. The dual-storage approach optimizes both structured data access and semantic search capabilities, enabling sophisticated recruiter workflows at enterprise scale.

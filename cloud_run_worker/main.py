@@ -14,11 +14,11 @@ from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
 import uvicorn
 
-from .config import Config
-from .pubsub_handler import PubSubHandler
-from .candidate_processor import CandidateProcessor
-from .models import PubSubMessage, ProcessingResult
-from .metrics import MetricsCollector
+from config import Config
+from pubsub_handler import PubSubHandler
+from candidate_processor import CandidateProcessor
+from models import PubSubMessage, ProcessingResult
+from metrics import MetricsCollector
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)

@@ -12,10 +12,11 @@ class Config:
     def __init__(self, testing: bool = False):
         # Required configuration (allow defaults for testing)
         if testing:
-            self.together_ai_api_key = os.getenv("TOGETHER_AI_API_KEY", "test-api-key")
+            self.together_ai_api_key = os.getenv("TOGETHER_API_KEY", "test-api-key")
             self.project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "test-project")
         else:
-            self.together_ai_api_key = self._get_required_env("TOGETHER_AI_API_KEY")
+            # Try to get API key from environment first, fallback to secret manager
+            self.together_ai_api_key = self._get_together_ai_key()
             self.project_id = self._get_required_env("GOOGLE_CLOUD_PROJECT", "headhunter-ai-0088")
         
         # Optional configuration with defaults
@@ -24,7 +25,7 @@ class Config:
         self.dead_letter_topic = os.getenv("DEAD_LETTER_TOPIC", "candidate-process-dlq")
         
         # Together AI configuration
-        self.together_ai_model = os.getenv("TOGETHER_AI_MODEL", "meta-llama/Llama-3.1-8B-Instruct-Turbo")
+        self.together_ai_model = os.getenv("TOGETHER_AI_MODEL", "meta-llama/Llama-3.2-3B-Instruct-Turbo")
         self.together_ai_base_url = os.getenv("TOGETHER_AI_BASE_URL", "https://api.together.xyz/v1")
         self.together_ai_timeout = int(os.getenv("TOGETHER_AI_TIMEOUT", "60"))
         self.together_ai_max_retries = int(os.getenv("TOGETHER_AI_MAX_RETRIES", "3"))
@@ -56,6 +57,28 @@ class Config:
         if not value:
             raise ValueError(f"{key} is required but not set in environment variables")
         return value
+    
+    def _get_together_ai_key(self) -> str:
+        """Get Together AI API key from environment or Secret Manager"""
+        # First try environment variable
+        api_key = os.getenv("TOGETHER_API_KEY")
+        if api_key:
+            return api_key
+        
+        # Try to get from Secret Manager
+        try:
+            from google.cloud import secretmanager
+            client = secretmanager.SecretManagerServiceClient()
+            project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "headhunter-ai-0088")
+            secret_name = f"projects/{project_id}/secrets/together-ai-credentials/versions/latest"
+            response = client.access_secret_version(request={"name": secret_name})
+            return response.payload.data.decode("UTF-8")
+        except Exception as e:
+            # If all fails, check for fallback env var
+            fallback = os.getenv("TOGETHER_AI_API_KEY") 
+            if fallback:
+                return fallback
+            raise ValueError(f"Could not retrieve Together AI API key from environment or Secret Manager: {e}")
     
     def validate(self):
         """Validate configuration"""

@@ -11,8 +11,8 @@ from datetime import datetime
 from google.cloud import pubsub_v1
 from google.cloud.pubsub_v1 import PublisherClient
 
-from .config import Config
-from .models import PubSubMessage, DeadLetterMessage
+from config import Config
+from models import PubSubMessage, DeadLetterMessage
 
 logger = logging.getLogger(__name__)
 
