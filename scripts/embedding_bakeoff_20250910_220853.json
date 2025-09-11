@@ -1,0 +1,1038 @@
+{
+  "summary": {
+    "providers_tested": [
+      "vertex_ai",
+      "deterministic"
+    ],
+    "total_tests": 22,
+    "embedding_results": {
+      "vertex_ai": 11,
+      "deterministic": 11
+    },
+    "similarity_results": {
+      "vertex_ai": 30,
+      "deterministic": 30
+    },
+    "performance_comparison": {
+      "vertex_ai": {
+        "avg_processing_time": 0.00020978667519309303,
+        "median_processing_time": 0.0002040863037109375,
+        "success_rate": 1.0,
+        "throughput_per_second": 4766.746977993595,
+        "total_tests": 11,
+        "successful_tests": 11
+      },
+      "deterministic": {
+        "avg_processing_time": 0.00017114119096235797,
+        "median_processing_time": 0.00016808509826660156,
+        "success_rate": 1.0,
+        "throughput_per_second": 5843.128672745694,
+        "total_tests": 11,
+        "successful_tests": 11
+      }
+    },
+    "cost_comparison": {
+      "vertex_ai": {
+        "total_test_cost": 2.403125e-05,
+        "avg_cost_per_embedding": 2.1846590909090913e-06,
+        "estimated_cost_29k_candidates": 0.06335511363636365,
+        "cost_efficiency_score": 82070.41268360923
+      },
+      "deterministic": {
+        "total_test_cost": 0,
+        "avg_cost_per_embedding": 0,
+        "estimated_cost_29k_candidates": 0,
+        "cost_efficiency_score": 0
+      }
+    },
+    "quality_comparison": {
+      "vertex_ai": {
+        "avg_relevance_error": 0.5235226859107753,
+        "median_relevance_error": 0.5518629098347501,
+        "similarity_correlation": 0.3047489354144132,
+        "quality_score": 0.1452059542178102,
+        "total_comparisons": 30
+      },
+      "deterministic": {
+        "avg_relevance_error": 0.5235226859107753,
+        "median_relevance_error": 0.5518629098347501,
+        "similarity_correlation": 0.3047489354144132,
+        "quality_score": 0.1452059542178102,
+        "total_comparisons": 30
+      }
+    },
+    "recommendations": {
+      "best_overall": "vertex_ai",
+      "best_performance": "deterministic",
+      "best_cost": "deterministic",
+      "best_quality": "vertex_ai",
+      "production_recommendation": "vertex_ai",
+      "reasoning": [
+        "Quality: vertex_ai provides best search relevance (score: 0.145)",
+        "Performance: deterministic offers highest throughput (5843.1 embeddings/sec)",
+        "Cost: deterministic is most cost-effective ($0.000000 per embedding)",
+        "Production: vertex_ai recommended for balanced performance, cost, and quality"
+      ]
+    },
+    "timestamp": "2025-09-10T22:08:53.121894"
+  },
+  "detailed_embedding_results": {
+    "vertex_ai": [
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "text_id": "job_001",
+        "success": true,
+        "processing_time": 0.00029921531677246094,
+        "dimensions": 768,
+        "cost_estimate": 2.3500000000000004e-06,
+        "error_message": null
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "text_id": "job_002",
+        "success": true,
+        "processing_time": 0.00021195411682128906,
+        "dimensions": 768,
+        "cost_estimate": 2.2437500000000003e-06,
+        "error_message": null
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "text_id": "job_003",
+        "success": true,
+        "processing_time": 0.0002040863037109375,
+        "dimensions": 768,
+        "cost_estimate": 1.95625e-06,
+        "error_message": null
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "text_id": "job_004",
+        "success": true,
+        "processing_time": 0.0002040863037109375,
+        "dimensions": 768,
+        "cost_estimate": 1.9125000000000003e-06,
+        "error_message": null
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "text_id": "job_005",
+        "success": true,
+        "processing_time": 0.00020599365234375,
+        "dimensions": 768,
+        "cost_estimate": 1.8687500000000001e-06,
+        "error_message": null
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "text_id": "candidate_001",
+        "success": true,
+        "processing_time": 0.00019407272338867188,
+        "dimensions": 768,
+        "cost_estimate": 2.4875000000000003e-06,
+        "error_message": null
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "text_id": "candidate_002",
+        "success": true,
+        "processing_time": 0.0001971721649169922,
+        "dimensions": 768,
+        "cost_estimate": 2.3125000000000003e-06,
+        "error_message": null
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "text_id": "candidate_003",
+        "success": true,
+        "processing_time": 0.00019311904907226562,
+        "dimensions": 768,
+        "cost_estimate": 2.3625000000000003e-06,
+        "error_message": null
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "text_id": "candidate_004",
+        "success": true,
+        "processing_time": 0.0001957416534423828,
+        "dimensions": 768,
+        "cost_estimate": 2.2937500000000003e-06,
+        "error_message": null
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "text_id": "candidate_005",
+        "success": true,
+        "processing_time": 0.00019407272338867188,
+        "dimensions": 768,
+        "cost_estimate": 2.075e-06,
+        "error_message": null
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "text_id": "candidate_006",
+        "success": true,
+        "processing_time": 0.00020813941955566406,
+        "dimensions": 768,
+        "cost_estimate": 2.16875e-06,
+        "error_message": null
+      }
+    ],
+    "deterministic": [
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "text_id": "job_001",
+        "success": true,
+        "processing_time": 0.00017881393432617188,
+        "dimensions": 768,
+        "cost_estimate": 0.0,
+        "error_message": null
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "text_id": "job_002",
+        "success": true,
+        "processing_time": 0.0001659393310546875,
+        "dimensions": 768,
+        "cost_estimate": 0.0,
+        "error_message": null
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "text_id": "job_003",
+        "success": true,
+        "processing_time": 0.00016999244689941406,
+        "dimensions": 768,
+        "cost_estimate": 0.0,
+        "error_message": null
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "text_id": "job_004",
+        "success": true,
+        "processing_time": 0.0001678466796875,
+        "dimensions": 768,
+        "cost_estimate": 0.0,
+        "error_message": null
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "text_id": "job_005",
+        "success": true,
+        "processing_time": 0.00017189979553222656,
+        "dimensions": 768,
+        "cost_estimate": 0.0,
+        "error_message": null
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "text_id": "candidate_001",
+        "success": true,
+        "processing_time": 0.00018286705017089844,
+        "dimensions": 768,
+        "cost_estimate": 0.0,
+        "error_message": null
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "text_id": "candidate_002",
+        "success": true,
+        "processing_time": 0.00017833709716796875,
+        "dimensions": 768,
+        "cost_estimate": 0.0,
+        "error_message": null
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "text_id": "candidate_003",
+        "success": true,
+        "processing_time": 0.0001671314239501953,
+        "dimensions": 768,
+        "cost_estimate": 0.0,
+        "error_message": null
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "text_id": "candidate_004",
+        "success": true,
+        "processing_time": 0.0001659393310546875,
+        "dimensions": 768,
+        "cost_estimate": 0.0,
+        "error_message": null
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "text_id": "candidate_005",
+        "success": true,
+        "processing_time": 0.00016570091247558594,
+        "dimensions": 768,
+        "cost_estimate": 0.0,
+        "error_message": null
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "text_id": "candidate_006",
+        "success": true,
+        "processing_time": 0.00016808509826660156,
+        "dimensions": 768,
+        "cost_estimate": 0.0,
+        "error_message": null
+      }
+    ]
+  },
+  "detailed_similarity_results": {
+    "vertex_ai": [
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_001",
+        "document_id": "candidate_001",
+        "similarity_score": 0.06782525554595986,
+        "expected_relevance": 1.0,
+        "relevance_error": 0.9321747444540401
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_001",
+        "document_id": "candidate_002",
+        "similarity_score": -0.20632819724614027,
+        "expected_relevance": 0.36000000000000004,
+        "relevance_error": 0.5663281972461403
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_001",
+        "document_id": "candidate_003",
+        "similarity_score": -0.04062624123433084,
+        "expected_relevance": 0.5333333333333334,
+        "relevance_error": 0.5739595745676642
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_001",
+        "document_id": "candidate_004",
+        "similarity_score": -0.17795734835816418,
+        "expected_relevance": 0.38666666666666666,
+        "relevance_error": 0.5646240150248308
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_001",
+        "document_id": "candidate_005",
+        "similarity_score": -0.08541215279315181,
+        "expected_relevance": 0.47333333333333333,
+        "relevance_error": 0.5587454861264851
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_001",
+        "document_id": "candidate_006",
+        "similarity_score": -0.009065739082772445,
+        "expected_relevance": 0.36000000000000004,
+        "relevance_error": 0.3690657390827725
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_002",
+        "document_id": "candidate_001",
+        "similarity_score": -0.16498033354301486,
+        "expected_relevance": 0.38,
+        "relevance_error": 0.5449803335430149
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_002",
+        "document_id": "candidate_002",
+        "similarity_score": 0.17516969095763346,
+        "expected_relevance": 0.8600000000000001,
+        "relevance_error": 0.6848303090423666
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_002",
+        "document_id": "candidate_003",
+        "similarity_score": 0.23463903146551568,
+        "expected_relevance": 0.46,
+        "relevance_error": 0.22536096853448434
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_002",
+        "document_id": "candidate_004",
+        "similarity_score": -0.2746757844081995,
+        "expected_relevance": 0.32,
+        "relevance_error": 0.5946757844081996
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_002",
+        "document_id": "candidate_005",
+        "similarity_score": -0.5038637792297964,
+        "expected_relevance": 0.22000000000000003,
+        "relevance_error": 0.7238637792297964
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_002",
+        "document_id": "candidate_006",
+        "similarity_score": 0.10744137799447945,
+        "expected_relevance": 0.42000000000000004,
+        "relevance_error": 0.3125586220055206
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_003",
+        "document_id": "candidate_001",
+        "similarity_score": -0.0006051981318026187,
+        "expected_relevance": 0.54,
+        "relevance_error": 0.5406051981318026
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_003",
+        "document_id": "candidate_002",
+        "similarity_score": -0.02975966191921009,
+        "expected_relevance": 0.42000000000000004,
+        "relevance_error": 0.44975966191921013
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_003",
+        "document_id": "candidate_003",
+        "similarity_score": -0.13595912028504303,
+        "expected_relevance": 0.9000000000000001,
+        "relevance_error": 1.0359591202850431
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_003",
+        "document_id": "candidate_004",
+        "similarity_score": -0.14368004851592142,
+        "expected_relevance": 0.32,
+        "relevance_error": 0.46368004851592143
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_003",
+        "document_id": "candidate_005",
+        "similarity_score": -0.019392150925775675,
+        "expected_relevance": 0.30000000000000004,
+        "relevance_error": 0.3193921509257757
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_003",
+        "document_id": "candidate_006",
+        "similarity_score": 0.2551453696990189,
+        "expected_relevance": 0.6200000000000001,
+        "relevance_error": 0.3648546303009812
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_004",
+        "document_id": "candidate_001",
+        "similarity_score": 0.19985219338843258,
+        "expected_relevance": 0.48000000000000004,
+        "relevance_error": 0.28014780661156746
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_004",
+        "document_id": "candidate_002",
+        "similarity_score": -0.07787343304844228,
+        "expected_relevance": 0.3400000000000001,
+        "relevance_error": 0.4178734330484424
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_004",
+        "document_id": "candidate_003",
+        "similarity_score": -0.1865206839899983,
+        "expected_relevance": 0.38,
+        "relevance_error": 0.5665206839899983
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_004",
+        "document_id": "candidate_004",
+        "similarity_score": 0.08424235646343844,
+        "expected_relevance": 0.8200000000000001,
+        "relevance_error": 0.7357576435365616
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_004",
+        "document_id": "candidate_005",
+        "similarity_score": -0.1538905587684983,
+        "expected_relevance": 0.32,
+        "relevance_error": 0.4738905587684983
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_004",
+        "document_id": "candidate_006",
+        "similarity_score": 0.2520213881375095,
+        "expected_relevance": 0.3400000000000001,
+        "relevance_error": 0.08797861186249056
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_005",
+        "document_id": "candidate_001",
+        "similarity_score": -0.16395318463059905,
+        "expected_relevance": 0.66,
+        "relevance_error": 0.8239531846305991
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_005",
+        "document_id": "candidate_002",
+        "similarity_score": 0.06385994575533877,
+        "expected_relevance": 0.42000000000000004,
+        "relevance_error": 0.3561400542446613
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_005",
+        "document_id": "candidate_003",
+        "similarity_score": -0.005362269681058504,
+        "expected_relevance": 0.66,
+        "relevance_error": 0.6653622696810585
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_005",
+        "document_id": "candidate_004",
+        "similarity_score": 0.22522691068735806,
+        "expected_relevance": 0.32,
+        "relevance_error": 0.09477308931264194
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_005",
+        "document_id": "candidate_005",
+        "similarity_score": -0.07997873909004331,
+        "expected_relevance": 0.5,
+        "relevance_error": 0.5799787390900433
+      },
+      {
+        "provider": "vertex_ai",
+        "model": "vertex_ai",
+        "query_id": "job_005",
+        "document_id": "candidate_006",
+        "similarity_score": -0.01788613920264627,
+        "expected_relevance": 0.78,
+        "relevance_error": 0.7978861392026463
+      }
+    ],
+    "deterministic": [
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_001",
+        "document_id": "candidate_001",
+        "similarity_score": 0.06782525554595986,
+        "expected_relevance": 1.0,
+        "relevance_error": 0.9321747444540401
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_001",
+        "document_id": "candidate_002",
+        "similarity_score": -0.20632819724614027,
+        "expected_relevance": 0.36000000000000004,
+        "relevance_error": 0.5663281972461403
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_001",
+        "document_id": "candidate_003",
+        "similarity_score": -0.04062624123433084,
+        "expected_relevance": 0.5333333333333334,
+        "relevance_error": 0.5739595745676642
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_001",
+        "document_id": "candidate_004",
+        "similarity_score": -0.17795734835816418,
+        "expected_relevance": 0.38666666666666666,
+        "relevance_error": 0.5646240150248308
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_001",
+        "document_id": "candidate_005",
+        "similarity_score": -0.08541215279315181,
+        "expected_relevance": 0.47333333333333333,
+        "relevance_error": 0.5587454861264851
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_001",
+        "document_id": "candidate_006",
+        "similarity_score": -0.009065739082772445,
+        "expected_relevance": 0.36000000000000004,
+        "relevance_error": 0.3690657390827725
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_002",
+        "document_id": "candidate_001",
+        "similarity_score": -0.16498033354301486,
+        "expected_relevance": 0.38,
+        "relevance_error": 0.5449803335430149
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_002",
+        "document_id": "candidate_002",
+        "similarity_score": 0.17516969095763346,
+        "expected_relevance": 0.8600000000000001,
+        "relevance_error": 0.6848303090423666
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_002",
+        "document_id": "candidate_003",
+        "similarity_score": 0.23463903146551568,
+        "expected_relevance": 0.46,
+        "relevance_error": 0.22536096853448434
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_002",
+        "document_id": "candidate_004",
+        "similarity_score": -0.2746757844081995,
+        "expected_relevance": 0.32,
+        "relevance_error": 0.5946757844081996
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_002",
+        "document_id": "candidate_005",
+        "similarity_score": -0.5038637792297964,
+        "expected_relevance": 0.22000000000000003,
+        "relevance_error": 0.7238637792297964
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_002",
+        "document_id": "candidate_006",
+        "similarity_score": 0.10744137799447945,
+        "expected_relevance": 0.42000000000000004,
+        "relevance_error": 0.3125586220055206
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_003",
+        "document_id": "candidate_001",
+        "similarity_score": -0.0006051981318026187,
+        "expected_relevance": 0.54,
+        "relevance_error": 0.5406051981318026
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_003",
+        "document_id": "candidate_002",
+        "similarity_score": -0.02975966191921009,
+        "expected_relevance": 0.42000000000000004,
+        "relevance_error": 0.44975966191921013
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_003",
+        "document_id": "candidate_003",
+        "similarity_score": -0.13595912028504303,
+        "expected_relevance": 0.9000000000000001,
+        "relevance_error": 1.0359591202850431
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_003",
+        "document_id": "candidate_004",
+        "similarity_score": -0.14368004851592142,
+        "expected_relevance": 0.32,
+        "relevance_error": 0.46368004851592143
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_003",
+        "document_id": "candidate_005",
+        "similarity_score": -0.019392150925775675,
+        "expected_relevance": 0.30000000000000004,
+        "relevance_error": 0.3193921509257757
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_003",
+        "document_id": "candidate_006",
+        "similarity_score": 0.2551453696990189,
+        "expected_relevance": 0.6200000000000001,
+        "relevance_error": 0.3648546303009812
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_004",
+        "document_id": "candidate_001",
+        "similarity_score": 0.19985219338843258,
+        "expected_relevance": 0.48000000000000004,
+        "relevance_error": 0.28014780661156746
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_004",
+        "document_id": "candidate_002",
+        "similarity_score": -0.07787343304844228,
+        "expected_relevance": 0.3400000000000001,
+        "relevance_error": 0.4178734330484424
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_004",
+        "document_id": "candidate_003",
+        "similarity_score": -0.1865206839899983,
+        "expected_relevance": 0.38,
+        "relevance_error": 0.5665206839899983
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_004",
+        "document_id": "candidate_004",
+        "similarity_score": 0.08424235646343844,
+        "expected_relevance": 0.8200000000000001,
+        "relevance_error": 0.7357576435365616
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_004",
+        "document_id": "candidate_005",
+        "similarity_score": -0.1538905587684983,
+        "expected_relevance": 0.32,
+        "relevance_error": 0.4738905587684983
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_004",
+        "document_id": "candidate_006",
+        "similarity_score": 0.2520213881375095,
+        "expected_relevance": 0.3400000000000001,
+        "relevance_error": 0.08797861186249056
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_005",
+        "document_id": "candidate_001",
+        "similarity_score": -0.16395318463059905,
+        "expected_relevance": 0.66,
+        "relevance_error": 0.8239531846305991
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_005",
+        "document_id": "candidate_002",
+        "similarity_score": 0.06385994575533877,
+        "expected_relevance": 0.42000000000000004,
+        "relevance_error": 0.3561400542446613
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_005",
+        "document_id": "candidate_003",
+        "similarity_score": -0.005362269681058504,
+        "expected_relevance": 0.66,
+        "relevance_error": 0.6653622696810585
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_005",
+        "document_id": "candidate_004",
+        "similarity_score": 0.22522691068735806,
+        "expected_relevance": 0.32,
+        "relevance_error": 0.09477308931264194
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_005",
+        "document_id": "candidate_005",
+        "similarity_score": -0.07997873909004331,
+        "expected_relevance": 0.5,
+        "relevance_error": 0.5799787390900433
+      },
+      {
+        "provider": "deterministic",
+        "model": "deterministic",
+        "query_id": "job_005",
+        "document_id": "candidate_006",
+        "similarity_score": -0.01788613920264627,
+        "expected_relevance": 0.78,
+        "relevance_error": 0.7978861392026463
+      }
+    ]
+  },
+  "test_dataset": {
+    "jobs": [
+      {
+        "id": "job_001",
+        "title": "Senior Full Stack Engineer",
+        "text": "Senior Full Stack Engineer - React/Node.js\nWe're seeking a senior full stack engineer with 5+ years of experience in React, Node.js, and cloud technologies. \nYou'll lead our frontend development team, architect scalable web applications, and mentor junior developers.\nRequired: React, TypeScript, Node.js, AWS, Docker, GraphQL\nPreferred: Next.js, PostgreSQL, Redis, Kubernetes",
+        "key_skills": [
+          "React",
+          "Node.js",
+          "TypeScript",
+          "AWS",
+          "Docker",
+          "GraphQL"
+        ],
+        "seniority": "Senior"
+      },
+      {
+        "id": "job_002",
+        "title": "Data Scientist - ML/AI",
+        "text": "Data Scientist - Machine Learning & AI\nJoin our AI team to build next-generation recommendation systems and predictive models.\nYou'll work with large datasets, deploy ML models to production, and collaborate with engineering teams.\nRequired: Python, TensorFlow/PyTorch, SQL, Statistics, Machine Learning\nPreferred: MLOps, Kubernetes, Spark, Deep Learning, NLP",
+        "key_skills": [
+          "Python",
+          "Machine Learning",
+          "TensorFlow",
+          "SQL",
+          "Statistics"
+        ],
+        "seniority": "Mid-Senior"
+      },
+      {
+        "id": "job_003",
+        "title": "DevOps Engineer",
+        "text": "DevOps Engineer - Cloud Infrastructure\nManage and scale our cloud infrastructure across AWS and GCP. Build CI/CD pipelines,\nimplement monitoring solutions, and ensure system reliability and security.\nRequired: AWS/GCP, Kubernetes, Docker, Terraform, CI/CD\nPreferred: Helm, Prometheus, Grafana, Python/Go scripting",
+        "key_skills": [
+          "AWS",
+          "Kubernetes",
+          "Docker",
+          "Terraform",
+          "CI/CD"
+        ],
+        "seniority": "Mid"
+      },
+      {
+        "id": "job_004",
+        "title": "Mobile Developer - React Native",
+        "text": "React Native Developer - iOS/Android\nBuild cross-platform mobile applications for our growing user base.\nWork closely with design and backend teams to deliver exceptional user experiences.\nRequired: React Native, JavaScript/TypeScript, Mobile UI/UX\nPreferred: iOS/Android native experience, Redux, Firebase",
+        "key_skills": [
+          "React Native",
+          "JavaScript",
+          "TypeScript",
+          "Mobile Development"
+        ],
+        "seniority": "Mid"
+      },
+      {
+        "id": "job_005",
+        "title": "Backend Engineer - Go/Python",
+        "text": "Backend Engineer - Microservices Architecture\nDesign and implement scalable backend services using Go and Python.\nBuild APIs, work with databases, and ensure high performance and reliability.\nRequired: Go/Python, REST APIs, PostgreSQL, Microservices\nPreferred: gRPC, Redis, Kafka, Docker, Kubernetes",
+        "key_skills": [
+          "Go",
+          "Python",
+          "REST APIs",
+          "PostgreSQL",
+          "Microservices"
+        ],
+        "seniority": "Mid-Senior"
+      }
+    ],
+    "candidates": [
+      {
+        "id": "candidate_001",
+        "name": "Sarah Chen",
+        "text": "Senior Software Engineer with 6 years of experience building scalable web applications.\nExpert in React, TypeScript, and Node.js with strong AWS cloud experience.\nLed development of microservices architecture serving 1M+ users.\nTechnical Skills: React, TypeScript, Node.js, AWS, Docker, GraphQL, PostgreSQL\nRecent projects: E-commerce platform migration to microservices, real-time chat application",
+        "skills": [
+          "React",
+          "TypeScript",
+          "Node.js",
+          "AWS",
+          "Docker",
+          "GraphQL",
+          "PostgreSQL"
+        ],
+        "seniority": "Senior",
+        "years_experience": 6,
+        "matching_jobs": [
+          "job_001",
+          "job_005"
+        ]
+      },
+      {
+        "id": "candidate_002",
+        "name": "Marcus Rodriguez",
+        "text": "Data Scientist with PhD in Machine Learning and 4 years of industry experience.\nSpecialized in deep learning, NLP, and recommendation systems.\nPublished 12 research papers and deployed ML models serving millions of users.\nTechnical Skills: Python, TensorFlow, PyTorch, SQL, Spark, Kubernetes, MLOps\nRecent work: Recommendation engine optimization, fraud detection models",
+        "skills": [
+          "Python",
+          "TensorFlow",
+          "PyTorch",
+          "SQL",
+          "Spark",
+          "Kubernetes",
+          "Machine Learning"
+        ],
+        "seniority": "Senior",
+        "years_experience": 4,
+        "matching_jobs": [
+          "job_002"
+        ]
+      },
+      {
+        "id": "candidate_003",
+        "name": "Emily Watson",
+        "text": "DevOps Engineer with 5 years of experience in cloud infrastructure and automation.\nExpert in AWS, Kubernetes, and infrastructure as code with Terraform.\nBuilt CI/CD pipelines reducing deployment time by 80%.\nTechnical Skills: AWS, GCP, Kubernetes, Docker, Terraform, Python, Helm, Prometheus\nRecent achievements: Zero-downtime migration to Kubernetes, automated monitoring setup",
+        "skills": [
+          "AWS",
+          "GCP",
+          "Kubernetes",
+          "Docker",
+          "Terraform",
+          "Python",
+          "Helm"
+        ],
+        "seniority": "Senior",
+        "years_experience": 5,
+        "matching_jobs": [
+          "job_003",
+          "job_005"
+        ]
+      },
+      {
+        "id": "candidate_004",
+        "name": "Alex Kim",
+        "text": "Mobile Developer with 3 years of React Native experience building iOS and Android apps.\nStrong in cross-platform development with focus on performance and user experience.\nPublished 3 apps with 500K+ downloads combined.\nTechnical Skills: React Native, JavaScript, TypeScript, Redux, Firebase, iOS, Android\nRecent projects: Social media app, e-commerce mobile platform",
+        "skills": [
+          "React Native",
+          "JavaScript",
+          "TypeScript",
+          "Redux",
+          "Firebase",
+          "iOS",
+          "Android"
+        ],
+        "seniority": "Mid",
+        "years_experience": 3,
+        "matching_jobs": [
+          "job_004"
+        ]
+      },
+      {
+        "id": "candidate_005",
+        "name": "David Park",
+        "text": "Full Stack Engineer with 2 years of experience in web development.\nProficient in React frontend and Python backend development.\nRecent bootcamp graduate with strong fundamentals and eagerness to learn.\nTechnical Skills: React, Python, JavaScript, PostgreSQL, Docker, Git\nRecent projects: Personal finance app, task management system",
+        "skills": [
+          "React",
+          "Python",
+          "JavaScript",
+          "PostgreSQL",
+          "Docker"
+        ],
+        "seniority": "Junior",
+        "years_experience": 2,
+        "matching_jobs": [
+          "job_001",
+          "job_005"
+        ]
+      },
+      {
+        "id": "candidate_006",
+        "name": "Lisa Zhang",
+        "text": "Backend Engineer with 4 years of Go and Python experience.\nSpecialized in microservices architecture and high-performance systems.\nBuilt trading systems processing 100K+ transactions per second.\nTechnical Skills: Go, Python, gRPC, Kafka, Redis, PostgreSQL, Kubernetes, Docker\nRecent work: Payment processing microservices, real-time data streaming",
+        "skills": [
+          "Go",
+          "Python",
+          "gRPC",
+          "Kafka",
+          "Redis",
+          "PostgreSQL",
+          "Kubernetes"
+        ],
+        "seniority": "Mid-Senior",
+        "years_experience": 4,
+        "matching_jobs": [
+          "job_005",
+          "job_003"
+        ]
+      }
+    ]
+  }
+}
