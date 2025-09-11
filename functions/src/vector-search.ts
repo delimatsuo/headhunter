@@ -6,6 +6,7 @@
 // import { Storage } from "@google-cloud/storage";
 import * as admin from "firebase-admin";
 import { getEmbeddingProvider } from "./embedding-provider";
+import { getPgVectorClient, PgVectorClient } from "./pgvector-client";
 
 // Types for vector search
 interface EmbeddingData {
@@ -46,6 +47,8 @@ export class VectorSearchService {
   // private matchClient: MatchServiceClient;
   // private storage: Storage;
   private firestore: admin.firestore.Firestore;
+  private pgVectorClient: PgVectorClient | null = null;
+  private usePgVector: boolean;
   // private indexEndpoint: string;
   // private deployedIndexId: string;
 
@@ -55,11 +58,24 @@ export class VectorSearchService {
     // });
     // this.storage = new Storage();
     this.firestore = admin.firestore();
+    
+    // Feature flag for gradual migration to pgvector
+    this.usePgVector = process.env.USE_PGVECTOR === 'true';
+    
     // Project and region can be provided via environment to the provider if needed
     
     // These will need to be configured after Vector Search setup
     // this.indexEndpoint = `projects/${this.projectId}/locations/${this.region}/indexEndpoints/ENDPOINT_ID`;
     // this.deployedIndexId = "DEPLOYED_INDEX_ID";
+  }
+
+  /**
+   * Initialize pgvector client if needed
+   */
+  private async initializePgVectorClient(): Promise<void> {
+    if (this.usePgVector && !this.pgVectorClient) {
+      this.pgVectorClient = await getPgVectorClient();
+    }
   }
 
   /**
@@ -180,13 +196,28 @@ export class VectorSearchService {
       },
     };
     
-    // Store in Firestore for fast access
-    await this.firestore
-      .collection("candidate_embeddings")
-      .doc(profile.candidate_id)
-      .set(embeddingData);
+    if (this.usePgVector) {
+      // Use pgvector for storage
+      await this.initializePgVectorClient();
+      if (this.pgVectorClient) {
+        await this.pgVectorClient.storeEmbedding(
+          profile.candidate_id,
+          embeddingVector,
+          'vertex-ai-textembedding-004',
+          'full_profile',
+          embeddingData.metadata
+        );
+        console.log(`Stored embedding in pgvector for candidate: ${profile.candidate_id}`);
+      }
+    } else {
+      // Store in Firestore for fast access (legacy behavior)
+      await this.firestore
+        .collection("candidate_embeddings")
+        .doc(profile.candidate_id)
+        .set(embeddingData);
+      console.log(`Stored embedding in Firestore for candidate: ${profile.candidate_id}`);
+    }
     
-    console.log(`Stored embedding for candidate: ${profile.candidate_id}`);
     return embeddingData;
   }
 
@@ -198,84 +229,173 @@ export class VectorSearchService {
       // Generate embedding for query text
       const queryEmbedding = await this.generateEmbedding(query.query_text);
       
-      // Get all embeddings from Firestore with organization filter
-      let embeddingsQuery = this.firestore.collection("candidate_embeddings");
-      
-      if (query.org_id) {
-        // We need to join with candidates collection to filter by org_id
-        // For now, get all embeddings and filter in memory
-      }
-      
-      const snapshot = await embeddingsQuery.get();
-      const embeddings: EmbeddingData[] = [];
-      
-      for (const doc of snapshot.docs) {
-        const data = doc.data() as EmbeddingData;
-        
-        // If org_id filter is provided, check candidate's organization
-        if (query.org_id) {
-          const candidateDoc = await this.firestore
-            .collection('candidates')
-            .doc(data.candidate_id)
-            .get();
+      if (this.usePgVector) {
+        // Use pgvector for optimized similarity search
+        await this.initializePgVectorClient();
+        if (this.pgVectorClient) {
+          const similarityThreshold = 0.7; // Default threshold
+          const limit = query.limit || 20;
           
-          if (!candidateDoc.exists || candidateDoc.data()?.org_id !== query.org_id) {
-            continue;
+          const pgResults = await this.pgVectorClient.searchSimilar(
+            queryEmbedding,
+            similarityThreshold,
+            limit,
+            'vertex-ai-textembedding-004',
+            'full_profile'
+          );
+          
+          // Convert pgvector results to VectorSearchResult format
+          const results: VectorSearchResult[] = [];
+          
+          for (const pgResult of pgResults) {
+            // Apply additional filters
+            if (query.filters?.min_years_experience && 
+                pgResult.metadata.years_experience < query.filters.min_years_experience) {
+              continue;
+            }
+            
+            if (query.filters?.current_level && 
+                pgResult.metadata.current_level !== query.filters.current_level) {
+              continue;
+            }
+            
+            if (query.filters?.company_tier && 
+                pgResult.metadata.company_tier !== query.filters.company_tier) {
+              continue;
+            }
+            
+            if (query.filters?.min_score && 
+                pgResult.metadata.overall_score < query.filters.min_score) {
+              continue;
+            }
+            
+            // Organization filter - check if candidate belongs to the requested org
+            if (query.org_id) {
+              const candidateDoc = await this.firestore
+                .collection('candidates')
+                .doc(pgResult.candidate_id)
+                .get();
+              
+              if (!candidateDoc.exists || candidateDoc.data()?.org_id !== query.org_id) {
+                continue;
+              }
+            }
+            
+            // Generate match reasons based on metadata
+            const embeddingData: EmbeddingData = {
+              candidate_id: pgResult.candidate_id,
+              embedding_vector: [], // Not needed for match reasons
+              embedding_text: '',   // Not needed for match reasons
+              metadata: {
+                years_experience: pgResult.metadata.years_experience || 0,
+                current_level: pgResult.metadata.current_level || "Unknown",
+                company_tier: pgResult.metadata.company_tier || "Unknown",
+                overall_score: pgResult.metadata.overall_score || 0,
+                technical_skills: pgResult.metadata.technical_skills || [],
+                leadership_level: pgResult.metadata.leadership_level,
+                updated_at: pgResult.metadata.updated_at || new Date().toISOString(),
+              }
+            };
+            const matchReasons = this.generateMatchReasons(embeddingData, pgResult.similarity);
+            
+            results.push({
+              candidate_id: pgResult.candidate_id,
+              similarity_score: pgResult.similarity,
+              metadata: embeddingData.metadata,
+              match_reasons: matchReasons
+            });
           }
+          
+          return results.slice(0, limit);
         }
-        
-        embeddings.push(data);
       }
       
-      // Calculate similarity scores
-      const results: VectorSearchResult[] = [];
-      
-      for (const embedding of embeddings) {
-        // Apply filters
-        if (query.filters?.min_years_experience && 
-            embedding.metadata.years_experience < query.filters.min_years_experience) {
-          continue;
-        }
-        
-        if (query.filters?.current_level && 
-            embedding.metadata.current_level !== query.filters.current_level) {
-          continue;
-        }
-        
-        if (query.filters?.company_tier && 
-            embedding.metadata.company_tier !== query.filters.company_tier) {
-          continue;
-        }
-        
-        if (query.filters?.min_score && 
-            embedding.metadata.overall_score < query.filters.min_score) {
-          continue;
-        }
-        
-        // Calculate cosine similarity
-        const similarity = this.calculateCosineSimilarity(queryEmbedding, embedding.embedding_vector);
-        
-        // Generate match reasons
-        const matchReasons = this.generateMatchReasons(embedding, similarity);
-        
-        results.push({
-          candidate_id: embedding.candidate_id,
-          similarity_score: similarity,
-          metadata: embedding.metadata,
-          match_reasons: matchReasons
-        });
-      }
-      
-      // Sort by similarity score and apply limit
-      results.sort((a, b) => b.similarity_score - a.similarity_score);
-      
-      const limit = query.limit || 20;
-      return results.slice(0, limit);
+      // Fallback to Firestore-based search (legacy behavior)
+      return this.searchCandidatesFirestore(query, queryEmbedding);
       
     } catch (error) {
       console.error("Error in searchCandidates:", error);
       throw error;
     }
+  }
+
+  /**
+   * Legacy Firestore-based search for backward compatibility
+   */
+  private async searchCandidatesFirestore(query: SearchQuery, queryEmbedding: number[]): Promise<VectorSearchResult[]> {
+    // Get all embeddings from Firestore with organization filter
+    let embeddingsQuery = this.firestore.collection("candidate_embeddings");
+    
+    if (query.org_id) {
+      // We need to join with candidates collection to filter by org_id
+      // For now, get all embeddings and filter in memory
+    }
+    
+    const snapshot = await embeddingsQuery.get();
+    const embeddings: EmbeddingData[] = [];
+    
+    for (const doc of snapshot.docs) {
+      const data = doc.data() as EmbeddingData;
+      
+      // If org_id filter is provided, check candidate's organization
+      if (query.org_id) {
+        const candidateDoc = await this.firestore
+          .collection('candidates')
+          .doc(data.candidate_id)
+          .get();
+        
+        if (!candidateDoc.exists || candidateDoc.data()?.org_id !== query.org_id) {
+          continue;
+        }
+      }
+      
+      embeddings.push(data);
+    }
+    
+    // Calculate similarity scores
+    const results: VectorSearchResult[] = [];
+    
+    for (const embedding of embeddings) {
+      // Apply filters
+      if (query.filters?.min_years_experience && 
+          embedding.metadata.years_experience < query.filters.min_years_experience) {
+        continue;
+      }
+      
+      if (query.filters?.current_level && 
+          embedding.metadata.current_level !== query.filters.current_level) {
+        continue;
+      }
+      
+      if (query.filters?.company_tier && 
+          embedding.metadata.company_tier !== query.filters.company_tier) {
+        continue;
+      }
+      
+      if (query.filters?.min_score && 
+          embedding.metadata.overall_score < query.filters.min_score) {
+        continue;
+      }
+      
+      // Calculate cosine similarity
+      const similarity = this.calculateCosineSimilarity(queryEmbedding, embedding.embedding_vector);
+      
+      // Generate match reasons
+      const matchReasons = this.generateMatchReasons(embedding, similarity);
+      
+      results.push({
+        candidate_id: embedding.candidate_id,
+        similarity_score: similarity,
+        metadata: embedding.metadata,
+        match_reasons: matchReasons
+      });
+    }
+    
+    // Sort by similarity score and apply limit
+    results.sort((a, b) => b.similarity_score - a.similarity_score);
+    
+    const limit = query.limit || 20;
+    return results.slice(0, limit);
   }
 
   /**
@@ -432,26 +552,48 @@ export class VectorSearchService {
     embedding_service: string;
     storage_connection: string;
     firestore_connection: string;
+    pgvector_connection?: string;
+    pgvector_enabled: boolean;
     total_embeddings: number;
   }> {
     try {
-      // Test Firestore connection
-      await this.firestore
-        .collection("health")
-        .doc("vector_search_test")
-        .set({ timestamp: new Date().toISOString() });
+      let pgvectorStatus = "not_enabled";
+      let totalEmbeddings = 0;
       
-      // Get embedding count
-      const embeddingsSnapshot = await this.firestore
-        .collection("candidate_embeddings")
-        .get();
+      if (this.usePgVector) {
+        // Test pgvector connection
+        try {
+          await this.initializePgVectorClient();
+          if (this.pgVectorClient) {
+            const pgHealth = await this.pgVectorClient.healthCheck();
+            pgvectorStatus = pgHealth.status === "healthy" ? "connected" : "error";
+            totalEmbeddings = pgHealth.total_embeddings || 0;
+          }
+        } catch (error) {
+          pgvectorStatus = "error";
+        }
+      } else {
+        // Test Firestore connection for legacy mode
+        await this.firestore
+          .collection("health")
+          .doc("vector_search_test")
+          .set({ timestamp: new Date().toISOString() });
+        
+        // Get embedding count from Firestore
+        const embeddingsSnapshot = await this.firestore
+          .collection("candidate_embeddings")
+          .get();
+        totalEmbeddings = embeddingsSnapshot.docs.length;
+      }
       
       return {
         status: "healthy",
         embedding_service: "operational",
         storage_connection: "connected",
         firestore_connection: "connected",
-        total_embeddings: embeddingsSnapshot.docs.length,
+        pgvector_connection: this.usePgVector ? pgvectorStatus : undefined,
+        pgvector_enabled: this.usePgVector,
+        total_embeddings: totalEmbeddings,
       };
     } catch (error) {
       return {
@@ -459,6 +601,8 @@ export class VectorSearchService {
         embedding_service: "error",
         storage_connection: "unknown",
         firestore_connection: "error",
+        pgvector_connection: this.usePgVector ? "error" : undefined,
+        pgvector_enabled: this.usePgVector,
         total_embeddings: 0,
       };
     }

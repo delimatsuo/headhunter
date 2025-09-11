@@ -560,3 +560,342 @@ describe('Error Handling', () => {
     expect(true).toBe(false); // TDD - test fails first
   });
 });
+
+describe('PgVector Integration', () => {
+  beforeEach(() => {
+    // Reset environment variables
+    process.env.USE_PGVECTOR = 'false';
+    jest.clearAllMocks();
+  });
+
+  describe('VectorSearchService with pgvector', () => {
+    test('should initialize pgvector client when feature flag is enabled', async () => {
+      process.env.USE_PGVECTOR = 'true';
+      
+      // Mock the pgvector client initialization
+      const mockPgVectorClient = {
+        storeEmbedding: jest.fn().mockResolvedValue('embedding-id-123'),
+        searchSimilar: jest.fn().mockResolvedValue([]),
+        healthCheck: jest.fn().mockResolvedValue({ status: 'healthy', total_embeddings: 100 })
+      };
+
+      // Test that VectorSearchService initializes pgvector client
+      expect(true).toBe(false); // TDD - test fails first
+    });
+
+    test('should store embeddings in pgvector when enabled', async () => {
+      process.env.USE_PGVECTOR = 'true';
+      
+      const mockProfile = {
+        candidate_id: 'candidate-123',
+        resume_analysis: {
+          years_experience: 5,
+          career_trajectory: { current_level: 'Senior' },
+          company_pedigree: { tier_level: 'enterprise' },
+          technical_skills: ['Python', 'React']
+        },
+        overall_score: 85
+      };
+
+      const expectedPgVectorCall = {
+        candidateId: 'candidate-123',
+        embedding: expect.any(Array),
+        modelVersion: 'vertex-ai-textembedding-004',
+        chunkType: 'full_profile',
+        metadata: expect.objectContaining({
+          years_experience: 5,
+          current_level: 'Senior',
+          company_tier: 'enterprise',
+          overall_score: 85
+        })
+      };
+
+      expect(true).toBe(false); // TDD - test fails first
+    });
+
+    test('should search using pgvector similarity when enabled', async () => {
+      process.env.USE_PGVECTOR = 'true';
+      
+      const mockQuery = {
+        query_text: 'Senior Python developer with React experience',
+        filters: {
+          min_years_experience: 3,
+          current_level: 'Senior'
+        },
+        limit: 10
+      };
+
+      const expectedPgVectorResults = [
+        {
+          candidate_id: 'candidate-123',
+          similarity: 0.85,
+          metadata: {
+            years_experience: 5,
+            current_level: 'Senior',
+            company_tier: 'enterprise',
+            overall_score: 85,
+            technical_skills: ['Python', 'React']
+          }
+        }
+      ];
+
+      const expectedResponse = {
+        data: expect.arrayContaining([
+          expect.objectContaining({
+            candidate_id: 'candidate-123',
+            similarity_score: 0.85,
+            match_reasons: expect.arrayContaining([expect.any(String)])
+          })
+        ])
+      };
+
+      expect(true).toBe(false); // TDD - test fails first
+    });
+
+    test('should fallback to Firestore when pgvector fails', async () => {
+      process.env.USE_PGVECTOR = 'true';
+      
+      // Mock pgvector failure
+      const mockPgVectorError = new Error('Database connection failed');
+      
+      const mockQuery = {
+        query_text: 'Senior developer',
+        limit: 5
+      };
+
+      // Should gracefully fallback to Firestore search
+      const expectedFirestoreResults = expect.arrayContaining([
+        expect.objectContaining({
+          candidate_id: expect.any(String),
+          similarity_score: expect.any(Number)
+        })
+      ]);
+
+      expect(true).toBe(false); // TDD - test fails first
+    });
+  });
+
+  describe('Feature Flag Behavior', () => {
+    test('should use Firestore when USE_PGVECTOR=false', async () => {
+      process.env.USE_PGVECTOR = 'false';
+      
+      const mockProfile = {
+        candidate_id: 'candidate-123',
+        resume_analysis: { technical_skills: ['Python'] }
+      };
+
+      // Should store in Firestore collection 'candidate_embeddings'
+      const expectedFirestoreDoc = expect.objectContaining({
+        candidate_id: 'candidate-123',
+        embedding_vector: expect.any(Array),
+        embedding_text: expect.any(String),
+        metadata: expect.any(Object)
+      });
+
+      expect(true).toBe(false); // TDD - test fails first
+    });
+
+    test('should use pgvector when USE_PGVECTOR=true', async () => {
+      process.env.USE_PGVECTOR = 'true';
+      
+      const mockProfile = {
+        candidate_id: 'candidate-456',
+        resume_analysis: { technical_skills: ['JavaScript'] }
+      };
+
+      // Should call pgvector storeEmbedding method
+      expect(true).toBe(false); // TDD - test fails first
+    });
+  });
+
+  describe('Health Check Integration', () => {
+    test('should include pgvector status when enabled', async () => {
+      process.env.USE_PGVECTOR = 'true';
+      
+      const expectedHealthResponse = {
+        status: 'healthy',
+        embedding_service: 'operational',
+        storage_connection: 'connected',
+        firestore_connection: 'connected',
+        pgvector_connection: 'connected',
+        pgvector_enabled: true,
+        total_embeddings: expect.any(Number)
+      };
+
+      expect(true).toBe(false); // TDD - test fails first
+    });
+
+    test('should not include pgvector status when disabled', async () => {
+      process.env.USE_PGVECTOR = 'false';
+      
+      const expectedHealthResponse = {
+        status: 'healthy',
+        embedding_service: 'operational',
+        storage_connection: 'connected',
+        firestore_connection: 'connected',
+        pgvector_connection: undefined,
+        pgvector_enabled: false,
+        total_embeddings: expect.any(Number)
+      };
+
+      expect(true).toBe(false); // TDD - test fails first
+    });
+  });
+
+  describe('API Compatibility', () => {
+    test('should maintain identical response format with pgvector', async () => {
+      // Test both Firestore and pgvector modes return identical structure
+      const mockQuery = {
+        query_text: 'Full stack developer',
+        limit: 5
+      };
+
+      process.env.USE_PGVECTOR = 'false';
+      // Get Firestore response structure
+      const firestoreResponse = {
+        data: expect.arrayContaining([
+          expect.objectContaining({
+            candidate_id: expect.any(String),
+            similarity_score: expect.any(Number),
+            metadata: expect.any(Object),
+            match_reasons: expect.any(Array)
+          })
+        ])
+      };
+
+      process.env.USE_PGVECTOR = 'true';
+      // Get pgvector response structure
+      const pgvectorResponse = {
+        data: expect.arrayContaining([
+          expect.objectContaining({
+            candidate_id: expect.any(String),
+            similarity_score: expect.any(Number),
+            metadata: expect.any(Object),
+            match_reasons: expect.any(Array)
+          })
+        ])
+      };
+
+      // Response structures should be identical
+      expect(true).toBe(false); // TDD - test fails first
+    });
+
+    test('should handle organization filtering in both modes', async () => {
+      const mockQuery = {
+        query_text: 'DevOps engineer',
+        org_id: 'org-123',
+        limit: 10
+      };
+
+      // Both Firestore and pgvector should filter by org_id
+      expect(true).toBe(false); // TDD - test fails first
+    });
+  });
+
+  describe('Performance Tests', () => {
+    test('should complete similarity search within acceptable time', async () => {
+      process.env.USE_PGVECTOR = 'true';
+      
+      const startTime = Date.now();
+      
+      const mockQuery = {
+        query_text: 'Machine learning engineer with 5+ years experience',
+        limit: 20
+      };
+
+      // Search should complete within 2 seconds
+      const maxResponseTime = 2000;
+      
+      expect(true).toBe(false); // TDD - test fails first
+    });
+
+    test('should handle large batch embedding storage', async () => {
+      process.env.USE_PGVECTOR = 'true';
+      
+      const mockProfiles = Array.from({ length: 100 }, (_, i) => ({
+        candidate_id: `candidate-${i}`,
+        resume_analysis: {
+          technical_skills: ['Python', 'JavaScript'],
+          years_experience: Math.floor(Math.random() * 10) + 1
+        }
+      }));
+
+      // Should store 100 embeddings efficiently
+      expect(true).toBe(false); // TDD - test fails first
+    });
+  });
+});
+
+describe('PgVector Client Unit Tests', () => {
+  describe('Connection Management', () => {
+    test('should initialize with proper connection pool settings', async () => {
+      const mockConfig = {
+        host: 'localhost',
+        port: 5432,
+        database: 'test_db',
+        user: 'test_user',
+        password: 'test_pass',
+        maxConnections: 10
+      };
+
+      expect(true).toBe(false); // TDD - test fails first
+    });
+
+    test('should handle connection failures gracefully', async () => {
+      // Mock connection failure
+      const expectedError = new Error('Connection failed');
+      
+      expect(true).toBe(false); // TDD - test fails first
+    });
+  });
+
+  describe('Embedding Validation', () => {
+    test('should validate embedding dimensions', async () => {
+      const invalidEmbedding = new Array(512).fill(0.1); // Wrong dimension
+      
+      const expectedError = {
+        type: 'VALIDATION_ERROR',
+        message: 'Embedding must be 768-dimensional, got 512'
+      };
+
+      expect(true).toBe(false); // TDD - test fails first
+    });
+
+    test('should validate embedding values are numbers', async () => {
+      const invalidEmbedding = new Array(768).fill('invalid');
+      
+      const expectedError = {
+        type: 'VALIDATION_ERROR',
+        message: 'All embedding values must be valid numbers'
+      };
+
+      expect(true).toBe(false); // TDD - test fails first
+    });
+  });
+
+  describe('Batch Operations', () => {
+    test('should handle batch storage with transaction rollback', async () => {
+      const mockEmbeddings = [
+        { candidate_id: 'valid-1', embedding: new Array(768).fill(0.1) },
+        { candidate_id: 'invalid', embedding: new Array(512).fill(0.1) } // Invalid
+      ];
+
+      // Should rollback entire batch if any embedding fails
+      expect(true).toBe(false); // TDD - test fails first
+    });
+
+    test('should respect batch size limits', async () => {
+      const mockEmbeddings = Array.from({ length: 250 }, (_, i) => ({
+        candidate_id: `candidate-${i}`,
+        embedding: new Array(768).fill(0.1),
+        model_version: 'test-model',
+        chunk_type: 'full_profile'
+      }));
+
+      const batchSize = 100;
+      // Should process in batches of 100
+      
+      expect(true).toBe(false); // TDD - test fails first
+    });
+  });
+});
