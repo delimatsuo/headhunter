@@ -1,19 +1,26 @@
-from typing import List, Optional
+from typing import List, Optional, Literal
 from pydantic import BaseModel, Field
 
 
+class SkillWithEvidence(BaseModel):
+    skill: str
+    confidence: int = Field(default=100, ge=0, le=100)
+    evidence: List[str] = Field(default_factory=list)
+
+
 class ExplicitSkills(BaseModel):
-    technical_skills: List[str] = Field(default_factory=list)
-    tools_technologies: List[str] = Field(default_factory=list)
-    soft_skills: List[str] = Field(default_factory=list)
-    certifications: List[str] = Field(default_factory=list)
-    confidence: str = "100%"
+    technical_skills: List[SkillWithEvidence] = Field(default_factory=list)
+    tools_technologies: List[SkillWithEvidence] = Field(default_factory=list)
+    soft_skills: List[SkillWithEvidence] = Field(default_factory=list)
+    certifications: List[SkillWithEvidence] = Field(default_factory=list)
+    languages: List[SkillWithEvidence] = Field(default_factory=list)
 
 
 class InferredSkillItem(BaseModel):
     skill: str
     confidence: int = Field(ge=0, le=100)
     reasoning: str
+    skill_category: str = Field(default="technical")
 
 
 class InferredSkills(BaseModel):
@@ -47,20 +54,53 @@ class CompanyContextSkills(BaseModel):
     industry_skills: List[str] = Field(default_factory=list)
 
 
+class SkillTimelineItem(BaseModel):
+    skill: str
+    first_used: str = Field(default="unknown")
+    last_used: str = Field(default="current")
+    frequency: str = Field(default="medium")
+    recency_score: int = Field(default=50, ge=0, le=100)
+
+class SkillDepthAnalysis(BaseModel):
+    beginner_skills: List[str] = Field(default_factory=list)
+    intermediate_skills: List[str] = Field(default_factory=list)
+    advanced_skills: List[str] = Field(default_factory=list)
+    expert_skills: List[str] = Field(default_factory=list)
+
 class SkillEvolutionAnalysis(BaseModel):
     skill_trajectory: str
     emerging_skills: List[str] = Field(default_factory=list)
     skill_gaps: List[str] = Field(default_factory=list)
     learning_velocity: str
     skill_currency: str
+    skill_timeline: List[SkillTimelineItem] = Field(default_factory=list)
+    skill_depth_analysis: SkillDepthAnalysis
 
+
+class SkillWithMarketDemand(BaseModel):
+    skill: str
+    confidence: int = Field(ge=0, le=100)
+    market_demand: str = Field(default="medium")
+
+class SkillCategories(BaseModel):
+    technical_skills: List[str] = Field(default_factory=list)
+    soft_skills: List[str] = Field(default_factory=list)
+    domain_skills: List[str] = Field(default_factory=list)
+    leadership_skills: List[str] = Field(default_factory=list)
+
+class TransferableSkill(BaseModel):
+    skill: str
+    transferability: str = Field(default="medium")
+    target_industries: List[str] = Field(default_factory=list)
 
 class CompositeSkillProfile(BaseModel):
-    primary_expertise: List[str] = Field(default_factory=list)
-    secondary_expertise: List[str] = Field(default_factory=list)
+    primary_expertise: List[SkillWithMarketDemand] = Field(default_factory=list)
+    secondary_expertise: List[SkillWithMarketDemand] = Field(default_factory=list)
     domain_specialization: str
     skill_breadth: str
     unique_combination: List[str] = Field(default_factory=list)
+    skill_categories: SkillCategories
+    transferable_skills: List[TransferableSkill] = Field(default_factory=list)
 
 
 class CareerTrajectory(BaseModel):
@@ -120,6 +160,59 @@ class RecruiterInsights(BaseModel):
     selling_points: List[str] = Field(default_factory=list)
     interview_focus: List[str] = Field(default_factory=list)
     one_line_pitch: Optional[str] = None
+
+
+class SkillAssessmentMetadata(BaseModel):
+    total_skills: int = 0
+    average_confidence: float = 0.0
+    skills_by_category: dict = Field(default_factory=dict)
+    confidence_distribution: dict = Field(default_factory=dict)
+    assessment_quality_score: int = Field(default=0, ge=0, le=100)
+    processing_timestamp: str = ""
+    processor_version: str = "v1.0"
+
+
+class SkillAssessment(BaseModel):
+    """Comprehensive skill assessment with confidence scoring"""
+    candidate_id: str
+    explicit_skills: ExplicitSkills
+    inferred_skills: InferredSkills
+    role_based_competencies: RoleBasedCompetencies
+    company_context_skills: CompanyContextSkills
+    skill_evolution_analysis: SkillEvolutionAnalysis
+    composite_skill_profile: CompositeSkillProfile
+    metadata: SkillAssessmentMetadata
+    
+    def get_all_skills_with_confidence(self) -> List[dict]:
+        """Get all skills from all sources with confidence scores"""
+        all_skills = []
+        
+        # Add explicit skills (100% confidence)
+        for category, skills in self.explicit_skills.dict().items():
+            for skill_item in skills:
+                if isinstance(skill_item, dict):
+                    all_skills.append({
+                        'skill': skill_item['skill'],
+                        'confidence': skill_item.get('confidence', 100),
+                        'source': 'explicit',
+                        'category': category,
+                        'evidence': skill_item.get('evidence', [])
+                    })
+        
+        # Add inferred skills with their confidence scores
+        for confidence_level, skills in self.inferred_skills.dict().items():
+            for skill_item in skills:
+                if isinstance(skill_item, dict):
+                    all_skills.append({
+                        'skill': skill_item['skill'],
+                        'confidence': skill_item.get('confidence', 50),
+                        'source': 'inferred',
+                        'category': skill_item.get('skill_category', 'technical'),
+                        'confidence_level': confidence_level,
+                        'reasoning': skill_item.get('reasoning', '')
+                    })
+        
+        return all_skills
 
 
 class IntelligentAnalysis(BaseModel):
