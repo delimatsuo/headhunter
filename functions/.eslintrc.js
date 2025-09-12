@@ -27,5 +27,22 @@ module.exports = {
     "indent": ["error", 2],
     "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     "max-len": ["error", { "code": 120 }],
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "@google-cloud/aiplatform",
+            "message": "Gemini enrichment is disabled in Functions. Use Together AI Python processors for enrichment."
+          }
+        ],
+        "patterns": [
+          {
+            "group": ["**/*gemini*", "**/*Gemini*"],
+            "message": "Do not add Gemini enrichment code to Functions."
+          }
+        ]
+      }
+    ],
   },
 };

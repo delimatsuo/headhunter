@@ -2065,7 +2065,7 @@
         "description": "Remove all Gemini-based enrichment code paths from Cloud Functions and ensure all enrichment/orchestration exclusively uses Together AI processors while maintaining Vertex AI for vector embeddings.",
         "details": "1. **Code Cleanup in functions/src**:\n   - Remove or guard all Gemini API calls and imports from enrichment modules\n   - Delete gemini-enrichment.ts or similar files if they exist\n   - Remove Gemini-specific environment variables and configurations\n   - Update any orchestration logic to only reference Together AI processors\n   - Preserve Vertex AI embeddings functionality for vector search (per PRD requirements)\n\n2. **Configuration Updates**:\n   - Remove GEMINI_API_KEY and related environment variables from .env files\n   - Update firebase.json and package.json to remove Gemini dependencies\n   - Clean up any Gemini-related IAM roles or service account permissions\n   - Update deployment scripts to exclude Gemini configurations\n\n3. **Documentation Updates**:\n   - Update README files to reflect Together AI as the sole enrichment provider\n   - Remove Gemini references from API documentation\n   - Update architecture diagrams and flow charts\n   - Add migration notes explaining the transition to Together AI\n\n4. **Prevention Measures**:\n   - Add ESLint rules or code analysis to prevent Gemini imports\n   - Create pre-commit hooks to scan for Gemini references\n   - Add CI/CD pipeline checks to validate Together AI-only usage\n   - Document coding standards requiring Together AI for enrichment",
         "testStrategy": "1. **Code Analysis Tests**:\n   - Run grep/ripgrep searches for \"gemini\", \"Gemini\", \"GEMINI\" across functions/src\n   - Verify no imports from @google-cloud/aiplatform Gemini modules\n   - Test that all enrichment endpoints only call Together AI processors\n   - Validate that vector search still uses Vertex AI embeddings\n\n2. **Integration Tests**:\n   - Test complete enrichment flow to ensure it uses Together AI exclusively\n   - Verify vector search functionality remains intact with Vertex embeddings\n   - Test error handling when Gemini code paths are removed\n   - Validate environment variable cleanup doesn't break existing functionality\n\n3. **Prevention Tests**:\n   - Test ESLint rules catch attempted Gemini imports\n   - Verify pre-commit hooks reject Gemini references\n   - Test CI/CD pipeline fails on Gemini code introduction\n   - Validate documentation accurately reflects Together AI-only architecture",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [],
         "priority": "high",
         "subtasks": [
@@ -2075,7 +2075,7 @@
             "description": "Scan and remove all Gemini-related imports, API calls, and references from Cloud Functions source code in functions/src directory",
             "dependencies": [],
             "details": "Use grep/ripgrep to find all occurrences of 'gemini', 'Gemini', 'GEMINI' in functions/src. Remove imports from @google-cloud/aiplatform Gemini modules. Delete gemini-enrichment.ts and similar files. Remove all Gemini API initialization and call code. Update import statements to only reference Together AI modules.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Run automated searches for Gemini references, verify no Gemini imports remain, test that enrichment functions compile without Gemini dependencies"
           },
           {
@@ -2086,7 +2086,7 @@
               "50.1"
             ],
             "details": "Update orchestration functions to only call Together AI endpoints for text processing and enrichment. Ensure all enrichment workflows route through Together AI processors. Preserve existing Vertex AI embedding functionality for vector search operations. Update function routing logic and processor selection code.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test enrichment workflows end-to-end, verify Together AI processors are called exclusively, confirm Vertex AI embeddings still function for vector search"
           },
           {
@@ -2097,7 +2097,7 @@
               "50.1"
             ],
             "details": "Remove GEMINI_API_KEY and related environment variables from .env files and Firebase configuration. Update firebase.json to remove Gemini-specific settings. Clean package.json dependencies of Gemini-related packages. Remove Gemini IAM roles and service account permissions from deployment configurations.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify environment variables are removed from all configuration files, test deployment without Gemini configurations, confirm no Gemini-related permissions remain"
           },
           {
@@ -2119,7 +2119,7 @@
               "50.3"
             ],
             "details": "Update README files to document Together AI as sole enrichment provider. Remove Gemini references from API documentation and replace with Together AI examples. Update architecture diagrams and flow charts to show Together AI integration. Add migration notes explaining the transition from Gemini to Together AI. Document new coding standards requiring Together AI for enrichment.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Review all documentation for Gemini references, verify architecture diagrams reflect current state, test that documentation examples work with Together AI"
           }
         ]
@@ -2333,7 +2333,7 @@
     ],
     "metadata": {
       "created": "2025-09-05T18:18:48.859Z",
-      "updated": "2025-09-12T20:15:04.975Z",
+      "updated": "2025-09-12T20:23:55.521Z",
       "description": "Tasks for master context"
     }
   }

@@ -13,6 +13,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint src/**/*.ts",
+    "ci:forbid-gemini": "! rg -n 'Gemini|gemini-' src || (echo 'Gemini references detected in Functions code. Enrichment is handled by Together processors.' && exit 1)",
     "lint:fix": "eslint src/**/*.ts --fix"
   },
   "engines": {
