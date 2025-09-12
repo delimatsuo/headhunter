@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { NavItem } from '../../types';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
+import Avatar from '@mui/material/Avatar';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 
 interface NavbarProps {
   currentPage: string;
@@ -39,183 +48,52 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <nav className="navbar">
-      <div className="nav-container">
-        <div className="nav-brand">
-          <div className="brand-logo" onClick={() => handleNavClick('dashboard')}>
-            <img src="/ella-logo.png" alt="Ella Executive Search" className="logo-img" />
-            <span className="logo-text">Ella Executive Search</span>
-          </div>
-        </div>
+    <AppBar position="sticky" color="inherit" elevation={1}>
+      <Toolbar sx={{ maxWidth: 1200, mx: 'auto', width: '100%' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+          <Box component="img" src="/ella-logo.png" alt="Ella Executive Search" sx={{ height: 28, mr: 1, cursor: 'pointer' }} onClick={() => handleNavClick('dashboard')} />
+          <Typography variant="h6" sx={{ fontWeight: 600, cursor: 'pointer' }} onClick={() => handleNavClick('dashboard')}>
+            Ella Executive Search
+          </Typography>
+        </Box>
 
-        {/* Desktop Navigation */}
-        <div className="nav-menu desktop">
-          {user ? (
-            <>
-              {navItems.map((item) => (
-                <button
-                  key={item.path}
-                  onClick={() => handleNavClick(item.path)}
-                  className={`nav-link ${
-                    currentPage === item.path ? 'active' : ''
-                  }`}
-                >
-                  <span className="nav-icon">{item.icon}</span>
-                  <span className="nav-text">{item.name}</span>
-                </button>
-              ))}
-            </>
-          ) : (
-            <div className="nav-guest">
-              <span className="nav-welcome">Welcome to Ella Executive Search</span>
-            </div>
-          )}
-        </div>
+        {user ? (
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1, mr: 2 }}>
+            {navItems.map((item) => (
+              <Button key={item.path} color={currentPage === item.path ? 'primary' : 'inherit'} onClick={() => handleNavClick(item.path)} startIcon={<span>{item.icon}</span>}>
+                {item.name}
+              </Button>
+            ))}
+          </Box>
+        ) : (
+          <Typography variant="body2" sx={{ color: 'text.secondary', mr: 2, display: { xs: 'none', md: 'block' } }}>
+            Welcome to Ella Executive Search
+          </Typography>
+        )}
 
         {/* User Menu */}
-        <div className="nav-user">
-          {user ? (
-            <div className="user-menu">
-              <button
-                className="user-button"
-                onClick={() => setShowUserMenu(!showUserMenu)}
-              >
-                {user.photoURL ? (
-                  <img 
-                    src={user.photoURL} 
-                    alt={user.displayName || user.email || 'User'}
-                    className="user-avatar"
-                  />
-                ) : (
-                  <div className="user-avatar default">
-                    {(user.displayName || user.email || 'U')[0].toUpperCase()}
-                  </div>
-                )}
-                <span className="user-name">
-                  {user.displayName || user.email}
-                </span>
-                <span className="dropdown-arrow">▼</span>
-              </button>
-
-              {showUserMenu && (
-                <div className="user-dropdown">
-                  <div className="user-info">
-                    <div className="user-details">
-                      <span className="user-display-name">
-                        {user.displayName || 'User'}
-                      </span>
-                      <span className="user-email">{user.email}</span>
-                    </div>
-                  </div>
-                  <div className="dropdown-divider"></div>
-                  <button 
-                    className="dropdown-item"
-                    onClick={() => {
-                      handleNavClick('profile');
-                      setShowUserMenu(false);
-                    }}
-                  >
-                    <span className="item-icon">👤</span>
-                    Profile
-                  </button>
-                  <button 
-                    className="dropdown-item"
-                    onClick={() => {
-                      handleNavClick('settings');
-                      setShowUserMenu(false);
-                    }}
-                  >
-                    <span className="item-icon">⚙️</span>
-                    Settings
-                  </button>
-                  <div className="dropdown-divider"></div>
-                  <button className="dropdown-item danger" onClick={handleSignOut}>
-                    <span className="item-icon">🚪</span>
-                    Sign Out
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <button 
-              className="btn btn-primary"
-              onClick={onShowAuth}
+        {user ? (
+          <Box>
+            <IconButton onClick={() => setShowUserMenu(!showUserMenu)} size="small">
+              <Avatar src={user.photoURL || undefined} alt={user.displayName || user.email || 'User'}>
+                {(user.displayName || user.email || 'U')[0].toUpperCase()}
+              </Avatar>
+            </IconButton>
+            <Menu
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              open={showUserMenu}
+              onClose={() => setShowUserMenu(false)}
             >
-              Sign In
-            </button>
-          )}
-        </div>
-
-        {/* Mobile Menu Button */}
-        <button 
-          className="mobile-menu-button"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        >
-          <span className="hamburger"></span>
-          <span className="hamburger"></span>
-          <span className="hamburger"></span>
-        </button>
-      </div>
-
-      {/* Mobile Navigation */}
-      {mobileMenuOpen && (
-        <div className="nav-menu mobile">
-          {user ? (
-            <>
-              {navItems.map((item) => (
-                <button
-                  key={item.path}
-                  onClick={() => handleNavClick(item.path)}
-                  className={`nav-link mobile ${
-                    currentPage === item.path ? 'active' : ''
-                  }`}
-                >
-                  <span className="nav-icon">{item.icon}</span>
-                  <span className="nav-text">{item.name}</span>
-                </button>
-              ))}
-              <div className="mobile-divider"></div>
-              <button 
-                className="nav-link mobile"
-                onClick={() => handleNavClick('profile')}
-              >
-                <span className="nav-icon">👤</span>
-                <span className="nav-text">Profile</span>
-              </button>
-              <button 
-                className="nav-link mobile"
-                onClick={() => handleNavClick('settings')}
-              >
-                <span className="nav-icon">⚙️</span>
-                <span className="nav-text">Settings</span>
-              </button>
-              <button className="nav-link mobile danger" onClick={handleSignOut}>
-                <span className="nav-icon">🚪</span>
-                <span className="nav-text">Sign Out</span>
-              </button>
-            </>
-          ) : (
-            <button 
-              className="nav-link mobile"
-              onClick={() => {
-                onShowAuth?.();
-                setMobileMenuOpen(false);
-              }}
-            >
-              <span className="nav-icon">🔐</span>
-              <span className="nav-text">Sign In</span>
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Overlay to close mobile menu */}
-      {mobileMenuOpen && (
-        <div 
-          className="mobile-overlay"
-          onClick={() => setMobileMenuOpen(false)}
-        ></div>
-      )}
-    </nav>
+              <MenuItem onClick={() => { handleNavClick('profile'); setShowUserMenu(false); }}>Profile</MenuItem>
+              <MenuItem onClick={() => { handleNavClick('settings'); setShowUserMenu(false); }}>Settings</MenuItem>
+              <MenuItem onClick={() => { handleSignOut(); setShowUserMenu(false); }}>Sign Out</MenuItem>
+            </Menu>
+          </Box>
+        ) : (
+          <Button variant="contained" color="primary" onClick={onShowAuth}>Sign In</Button>
+        )}
+      </Toolbar>
+    </AppBar>
   );
 };
