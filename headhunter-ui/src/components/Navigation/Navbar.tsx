@@ -42,9 +42,9 @@ export const Navbar: React.FC<NavbarProps> = ({
     <nav className="navbar">
       <div className="nav-container">
         <div className="nav-brand">
-          <div className="brand-logo">
-            <span className="logo-icon">🎯</span>
-            <span className="logo-text">Headhunter AI</span>
+          <div className="brand-logo" onClick={() => handleNavClick('dashboard')}>
+            <img src="/ella-logo.png" alt="Ella Executive Search" className="logo-img" />
+            <span className="logo-text">Ella Executive Search</span>
           </div>
         </div>
 
@@ -67,7 +67,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </>
           ) : (
             <div className="nav-guest">
-              <span className="nav-welcome">Welcome to Headhunter AI</span>
+              <span className="nav-welcome">Welcome to Ella Executive Search</span>
             </div>
           )}
         </div>
