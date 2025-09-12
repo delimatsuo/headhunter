@@ -1,5 +1,7 @@
 # Headhunter v2.0 - AI-Powered Recruitment Analytics Platform
 
+Note: This document contains legacy content from earlier iterations. The authoritative PRD is maintained at `.taskmaster/docs/prd.txt` and reflects the current single-pass Qwen 2.5 32B architecture, unified search pipeline, and the “no mock fallbacks” policy.
+
 ## Overview  
 Headhunter v2.0 transforms Ella Executive Search's candidate database into an intelligent, semantic search engine powered by **cloud-based AI processing and vector embeddings**. It solves the inefficiency of keyword-based ATS queries by deeply analyzing 20,000+ candidates using Together AI's Llama 3.2 3B model, creating comprehensive profiles with 15+ detailed fields, and enabling semantic similarity search for recruiter workflows.
 
