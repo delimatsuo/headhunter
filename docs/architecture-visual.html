@@ -64,7 +64,7 @@
 </head>
 <body>
   <h1>Headhunter System Architecture – Visual Map</h1>
-  <p class="sub">A high‑level view of data flow and components with build status.</p>
+  <p class="sub">A high‑level view of data flow and components with build status (updated to single‑pass Qwen, unified search, and no‑mock policy).</p>
 
   <div class="legend">
     <span class="badge"><span class="dot work"></span> Built & Working</span>
@@ -94,13 +94,13 @@
       <h2>AI Processing</h2>
       <div class="box work">
         <div class="status">working</div>
-        <div class="title">Stage 1 – Together AI</div>
-        <div class="desc">Llama 3.1 8B enrichment (skill inference with confidence, trajectory, insights). Python async processors stream to Firestore.</div>
+        <div class="title">Stage 1 – Together AI (Qwen 2.5 32B)</div>
+        <div class="desc">Single‑pass enrichment (skills with confidence + evidence, trajectory, insights, <code>analysis_confidence</code>). Python async processors stream to Firestore. Model via <code>TOGETHER_MODEL_STAGE1</code>.</div>
       </div>
-      <div class="box mis">
-        <div class="status">misaligned</div>
+      <div class="box plan">
+        <div class="status">in progress</div>
         <div class="title">JSON Repair + Schemas</div>
-        <div class="desc">Planned under TDD; parse errors seen in smoke test (4/50). Needs repair + validation integration.</div>
+        <div class="desc">Validator + repair integrated; stabilizing targets (&lt;1% repair/quarantine). TDD modules in place; expanding coverage.</div>
       </div>
       <div class="box nb">
         <div class="status">not built</div>
@@ -117,15 +117,15 @@
         <div class="title">Firestore – Enhanced Profiles</div>
         <div class="desc">Structured candidate profiles stored for UI and APIs.</div>
       </div>
-      <div class="box mis">
-        <div class="status">misaligned</div>
-        <div class="title">Embeddings Collections</div>
-        <div class="desc">`candidate_embeddings` vs `embeddings` both used; standardize to one collection.</div>
+      <div class="box work">
+        <div class="status">working</div>
+        <div class="title">Embeddings Collection</div>
+        <div class="desc"><code>candidate_embeddings</code> standardized; embedding text built from enriched profile; Vertex <code>text-embedding-004</code> baseline.</div>
       </div>
       <div class="box plan">
         <div class="status">planned</div>
         <div class="title">Cloud SQL + pgvector</div>
-        <div class="desc">Target vector store for ANN search at 29k+ scale; service integration pending.</div>
+        <div class="desc">Target vector store for ANN search at 29k+ scale; service + index integration pending.</div>
       </div>
     </div>
 
@@ -135,12 +135,17 @@
       <div class="box work">
         <div class="status">working</div>
         <div class="title">Firebase Functions</div>
-        <div class="desc">CRUD, upload pipeline, semantic search (brute‑force over Firestore embeddings).</div>
+        <div class="desc">CRUD, upload pipeline, unified skill‑aware search (composite ranking + <code>analysis_confidence</code> demotion). No mock fallbacks.</div>
       </div>
       <div class="box mis">
-        <div class="status">misaligned</div>
-        <div class="title">Gemini Enrichment in Functions</div>
-        <div class="desc">Legacy references remain; enrichment should be in Together processors only.</div>
+        <div class="status">guarded</div>
+        <div class="title">Gemini Enrichment (Functions)</div>
+        <div class="desc">Disabled by default; returns explicit error if called. Enrichment lives in Python/Together.</div>
+      </div>
+      <div class="box plan">
+        <div class="status">in progress</div>
+        <div class="title">Search Pipeline (Unified)</div>
+        <div class="desc">ANN recall (pgvector planned) ∪ deterministic title/company recall → composite re‑rank (skill/conf/vec/exp) → optional low‑depth bucket for sparse profiles.</div>
       </div>
       <div class="box plan">
         <div class="status">planned</div>
@@ -148,9 +153,9 @@
         <div class="desc">Containerized Python worker with Pub/Sub orchestration for high throughput.</div>
       </div>
       <div class="box plan">
-        <div class="status">planned</div>
+        <div class="status">in progress</div>
         <div class="title">Cloud Run – Vector Search API</div>
-        <div class="desc">Service that queries pgvector for top‑K semantic matches with filters.</div>
+        <div class="desc">ANN service skeleton present; will query pgvector and re‑rank with structured signals. No mock embeddings; errors if not configured.</div>
       </div>
     </div>
 
@@ -160,12 +165,32 @@
       <div class="box work">
         <div class="status">working</div>
         <div class="title">React SPA (Firebase Auth)</div>
-        <div class="desc">JD search, candidates, upload, dashboard stubs. Deployed to Firebase Hosting.</div>
+        <div class="desc">Deployed to Firebase Hosting. Clean list for Job Search; deep Candidate Page for full details.</div>
       </div>
-      <div class="box mis">
-        <div class="status">misaligned</div>
-        <div class="title">UI Callable Wiring</div>
-        <div class="desc">Missing exports for `skillAwareSearch` & `getCandidateSkillAssessment` in `firebase.ts`.</div>
+      <div class="box work">
+        <div class="status">working</div>
+        <div class="title">Job Search (Minimal List)</div>
+        <div class="desc">Top 50 (expandable). Row: name, current role @ company, years/level, score, freshness badge, LinkedIn. Low‑depth badge when applicable.</div>
+      </div>
+      <div class="box plan">
+        <div class="status">planned</div>
+        <div class="title">People Search (Direct)</div>
+        <div class="desc">Search by name or LinkedIn URL; opens Candidate Page directly.</div>
+      </div>
+      <div class="box work">
+        <div class="status">working</div>
+        <div class="title">Candidate Page (Detail)</div>
+        <div class="desc">Full Skill Map (explicit + inferred with confidence + verification tags), compact timeline, resume freshness, LinkedIn link, evidence snippets.</div>
+      </div>
+      <div class="box plan">
+        <div class="status">planned</div>
+        <div class="title">Pre‑Interview Analysis (On‑Demand)</div>
+        <div class="desc">Qwen‑generated summary, strengths, red flags, and signal chips; cached per candidate/version; generated on click.</div>
+      </div>
+      <div class="box work">
+        <div class="status">working</div>
+        <div class="title">LinkedIn + Freshness</div>
+        <div class="desc">Show LinkedIn profile link and “Resume updated” date with freshness badge (Recent/Stale/Very stale). CTA to re‑upload when stale.</div>
       </div>
       <div class="box plan">
         <div class="status">planned</div>
@@ -175,26 +200,57 @@
     </div>
   </div>
 
-  <div class="flow">End‑to‑end flow: Inputs <span class="arrow">→</span> Together AI (Stage 1) <span class="arrow">→</span> Firestore + Embeddings <span class="arrow">→</span> APIs/Search <span class="arrow">→</span> UI</div>
+  <div class="flow">End‑to‑end flow: Inputs <span class="arrow">→</span> Qwen (Stage 1 single‑pass) <span class="arrow">→</span> Firestore + Embeddings <span class="arrow">→</span> APIs/Search <span class="arrow">→</span> UI</div>
 
   <div class="notes">
     <div class="panel">
-      <h3>Immediate Fixes (Do Next)</h3>
+      <h3>Recently Completed</h3>
       <ul>
-        <li>UI: Export <code>skillAwareSearch</code> and <code>getCandidateSkillAssessment</code> in <code>src/config/firebase.ts</code>.</li>
-        <li>Enrichment: Add JSON repair + schema validation to processors (reduce parse failures).</li>
-        <li>Functions: Remove stray entrypoints (<code>index-fixed.ts</code>, <code>index 2.ts</code>), guard/remove Gemini enrichment.</li>
-        <li>Embeddings: Standardize to <code>candidate_embeddings</code> across code; update rules/indexes.</li>
-        <li>Config: Centralize bucket/collection names; remove any hardcoded Together API keys.</li>
+        <li>Single‑pass Qwen (Stage 1) + <code>analysis_confidence</code> demotion in ranking.</li>
+        <li>UI callable wiring fixed; richer search results returned to SPA.</li>
+        <li>Functions cleanup; Gemini enrichment guarded/disabled by default.</li>
+        <li>Embeddings standardized to <code>candidate_embeddings</code>; config centralization.</li>
+        <li>No‑mock policy enforced (errors surfaced when services unavailable).</li>
+        <li>JSON repair/schema modules added; integrated validator path.</li>
       </ul>
     </div>
     <div class="panel">
-      <h3>Planned Enhancements</h3>
+      <h3>Next Actions</h3>
       <ul>
-        <li>pgvector search service on Cloud Run; SPA calls this for scalable ANN search.</li>
-        <li>Cloud Run Python worker for high‑throughput enrichment via Pub/Sub.</li>
-        <li>Optional Stage 2 contextual intelligence (e.g., Qwen 32B) with cost guardrails.</li>
-        <li>Docs: Update README, PRD, Handover with deployment steps and validation checklist.</li>
+        <li>Implement real Vertex client in Vector ANN service; add Dockerfile + deploy.</li>
+        <li>Wire ANN service to pgvector; fetch profiles and re‑rank with structured signals.</li>
+        <li>Harden JSON repair/validation (target &lt;1% repair/quarantine on 50‑candidate batch).</li>
+        <li>SPA integration with ANN service; graceful error handling for service downtime.</li>
+        <li>Docs: finalize deploy/runbooks and update diagrams for pgvector path.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="notes" style="margin-top:0;">
+    <div class="panel">
+      <h3>Scoring Model (Unified Search)</h3>
+      <ul>
+        <li>Composite: <code>0.40×skill_match + 0.25×confidence + 0.25×vector_similarity + 0.10×experience</code>.</li>
+        <li>Demotion: <code>overall_score *= (0.6 + 0.4 × analysis_confidence)</code> when available.</li>
+        <li>Explainability: return top skills with confidence, rationale bullets, and summary.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>Policies & Env Flags</h3>
+      <ul>
+        <li>No mock fallbacks in prod/staging; errors are surfaced to clients.</li>
+        <li><code>TOGETHER_MODEL_STAGE1</code>: default <code>Qwen2.5-32B-Instruct</code>.</li>
+        <li><code>EMBEDDING_PROVIDER</code>: <code>vertex</code> (prod) or <code>local</code> (dev‑only deterministic).</li>
+        <li><code>ENABLE_GEMINI</code>: default <code>false</code>; enrichment path errors when disabled.</li>
+        <li><code>USE_PGVECTOR</code>: toggles pgvector path for embeddings and ANN.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>Recall Safeguards (Thin Profiles)</h3>
+      <ul>
+        <li>Dual recall: union ANN top‑K with deterministic title/company matches; then re‑rank.</li>
+        <li>Deterministic boost: small score boost for exact title/company matches; raise low‑content floor.</li>
+        <li>Optional bucket: “Potential matches (low profile depth)” to avoid losing sparse profiles.</li>
       </ul>
     </div>
   </div>
@@ -204,13 +260,12 @@
     <ul>
       <li>PRD: <code>.taskmaster/docs/prd.txt</code></li>
       <li>Handover: <code>docs/HANDOVER.md</code></li>
-      <li>Architecture: <code>docs/CLOUD_ARCHITECTURE.md</code></li>
-      <li>Vector Store: <code>docs/VECTOR_STORE.md</code></li>
-      <li>Functions (APIs/Search): <code>functions/src/*.ts</code></li>
+      <li>Architecture: <code>docs/CLOUD_ARCHITECTURE.md</code>, <code>ARCHITECTURE.md</code></li>
+      <li>Vector ANN Spec: <code>docs/VECTOR_SEARCH_SERVICE.md</code></li>
+      <li>Functions (APIs/Search): <code>functions/src/*.ts</code> (see <code>config.ts</code>, <code>vector-search.ts</code>)</li>
       <li>Processors (Together AI): <code>scripts/*together*</code>, <code>scripts/intelligent_skill_processor.py</code></li>
       <li>UI (SPA): <code>headhunter-ui/src/*</code></li>
     </ul>
   </div>
 </body>
 </html>
-
