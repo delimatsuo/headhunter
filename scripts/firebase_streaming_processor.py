@@ -56,12 +56,13 @@ class FirebaseStreamingProcessor:
     """Processes candidates via Together AI and streams to Firestore"""
     
     def __init__(self, api_key: str = None):
-        # Get API key from env or parameter
-        self.api_key = api_key or os.getenv('TOGETHER_API_KEY', '6d9eb8b102a05bae51baa97445cff83aff1eaf38ee7c09528bee54efe4ca4824')
+        # Get API key from env or parameter (no hardcoded fallback)
+        self.api_key = api_key or os.getenv('TOGETHER_API_KEY')
         if not self.api_key:
             raise ValueError("Together API key not provided")
-            
-        self.model = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
+
+        # Configurable Stage 1 model (default to Qwen2.5 32B Instruct)
+        self.model = os.getenv('TOGETHER_MODEL_STAGE1', 'Qwen2.5-32B-Instruct')
         self.base_url = "https://api.together.xyz/v1/chat/completions"
         self.session = None
         

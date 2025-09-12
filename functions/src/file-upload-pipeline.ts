@@ -9,6 +9,7 @@ import { onObjectFinalized } from "firebase-functions/v2/storage";
 import * as admin from "firebase-admin";
 import { z } from "zod";
 import { Storage } from "@google-cloud/storage";
+import { BUCKET_FILES } from "./config";
 import * as path from "path";
 
 // Initialize services
@@ -143,7 +144,7 @@ export const generateUploadUrl = onCall(
       const filePath = `organizations/${orgId}/candidates/${candidate_id}/resumes/${timestamp}_${sanitizedFileName}`;
 
       // Generate signed URL for upload
-      const bucket = storage.bucket("headhunter-ai-0088-files");
+      const bucket = storage.bucket(BUCKET_FILES);
       const file = bucket.file(filePath);
 
       const [signedUrl] = await file.getSignedUrl({
@@ -224,7 +225,7 @@ export const confirmUpload = onCall(
       }
 
       // Check if file exists in storage
-      const bucket = storage.bucket("headhunter-ai-0088-files");
+      const bucket = storage.bucket(BUCKET_FILES);
       const file = bucket.file(sessionData.file_path);
       const [exists] = await file.exists();
 
@@ -490,7 +491,7 @@ export const processFile = onCall(
       }
 
       // Download file
-      const bucket = storage.bucket("headhunter-ai-0088-files");
+      const bucket = storage.bucket(BUCKET_FILES);
       const file = bucket.file(file_path);
       
       const [exists] = await file.exists();
@@ -607,7 +608,7 @@ export const deleteFile = onCall(
       }
 
       // Delete file from storage
-      const bucket = storage.bucket("headhunter-ai-0088-files");
+      const bucket = storage.bucket(BUCKET_FILES);
       const file = bucket.file(file_path);
       
       const [exists] = await file.exists();

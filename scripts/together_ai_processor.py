@@ -32,10 +32,12 @@ class ProcessingStats:
 class TogetherAIProcessor:
     """Batch processor using Together AI API for candidate analysis"""
     
-    def __init__(self, api_key: str, model: str = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo", 
-                 use_firestore: bool = True):
-        self.api_key = api_key
-        self.model = model
+    def __init__(self, api_key: str, model: str = None, use_firestore: bool = True):
+        self.api_key = api_key or os.getenv('TOGETHER_API_KEY')
+        if not self.api_key:
+            raise ValueError("Together API key not provided")
+        # Default Stage 1 model to Qwen2.5 32B Instruct if not provided
+        self.model = model or os.getenv('TOGETHER_MODEL_STAGE1', 'Qwen2.5-32B-Instruct')
         self.base_url = "https://api.together.xyz/v1/chat/completions"
         self.session = None
         self.use_firestore = use_firestore

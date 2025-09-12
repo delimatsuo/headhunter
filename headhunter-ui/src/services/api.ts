@@ -3,14 +3,18 @@ import {
   getCandidates,
   createCandidate,
   generateUploadUrl,
-  healthCheck
+  healthCheck,
+  skillAwareSearch,
+  getCandidateSkillAssessment
 } from '../config/firebase';
 import {
   JobDescription,
   SearchResponse,
   CandidateProfile,
   ApiResponse,
-  DashboardStats
+  DashboardStats,
+  SkillAssessment,
+  SkillMatchData
 } from '../types';
 
 export class ApiError extends Error {
@@ -159,4 +163,137 @@ export const apiService = {
       throw new ApiError('Failed to get dashboard statistics');
     }
   },
+
+  // Skill-aware search with confidence scoring
+  async skillAwareSearch(searchQuery: {
+    text_query: string;
+    required_skills?: Array<{
+      skill: string;
+      minimum_confidence?: number;
+      weight?: number;
+      category?: string;
+    }>;
+    preferred_skills?: Array<{
+      skill: string;
+      minimum_confidence?: number;
+      weight?: number;
+      category?: string;
+    }>;
+    experience_level?: 'entry' | 'mid' | 'senior' | 'executive';
+    minimum_overall_confidence?: number;
+    filters?: {
+      min_years_experience?: number;
+      current_level?: string;
+      company_tier?: string;
+      min_score?: number;
+      location?: string;
+    };
+    limit?: number;
+    ranking_weights?: {
+      skill_match?: number;
+      confidence?: number;
+      vector_similarity?: number;
+      experience_match?: number;
+    };
+  }): Promise<ApiResponse<{
+    candidates: Array<{
+      candidate_id: string;
+      overall_score: number;
+      skill_match_score: number;
+      confidence_score: number;
+      vector_similarity_score: number;
+      experience_match_score: number;
+      skill_breakdown: Record<string, number>;
+      ranking_factors: any;
+    }>;
+    query_analysis: any;
+    search_metadata: any;
+  }>> {
+    try {
+      const result = await skillAwareSearch(searchQuery);
+      return result.data as ApiResponse<any>;
+    } catch (error) {
+      console.error('Skill-aware search error:', error);
+      throw new ApiError('Failed to perform skill-aware search');
+    }
+  },
+
+  // Get detailed skill assessment for a candidate
+  async getCandidateSkillAssessment(candidateId: string): Promise<ApiResponse<{
+    candidate_id: string;
+    skill_assessment: SkillAssessment;
+  }>> {
+    try {
+      const result = await getCandidateSkillAssessment({ candidate_id: candidateId });
+      return result.data as ApiResponse<any>;
+    } catch (error) {
+      console.error('Get candidate skill assessment error:', error);
+      throw new ApiError('Failed to get candidate skill assessment');
+    }
+  },
+
+  // Analyze skill matches between candidate and job requirements
+  async analyzeSkillMatches(candidateId: string, requiredSkills: string[]): Promise<SkillMatchData[]> {
+    try {
+      // This combines skill assessment with job requirements
+      const skillAssessmentResult = await this.getCandidateSkillAssessment(candidateId);
+      
+      if (!skillAssessmentResult.success || !skillAssessmentResult.data) {
+        throw new ApiError('Failed to get skill assessment');
+      }
+
+      const { skill_assessment } = skillAssessmentResult.data;
+      const skillMatches: SkillMatchData[] = [];
+
+      requiredSkills.forEach(requiredSkill => {
+        const candidateSkill = skill_assessment.skills[requiredSkill.toLowerCase()];
+        
+        if (candidateSkill) {
+          skillMatches.push({
+            skill: requiredSkill,
+            candidate_confidence: candidateSkill.confidence,
+            required_confidence: 70, // Default minimum
+            match_score: candidateSkill.confidence >= 70 ? candidateSkill.confidence : candidateSkill.confidence * 0.5,
+            evidence: candidateSkill.evidence,
+            category: candidateSkill.category || 'technical'
+          });
+        } else {
+          // Check for partial matches
+          const partialMatch = Object.entries(skill_assessment.skills).find(([skill, _]) =>
+            skill.includes(requiredSkill.toLowerCase()) || 
+            requiredSkill.toLowerCase().includes(skill)
+          );
+
+          if (partialMatch) {
+            const [_, skillData] = partialMatch;
+            skillMatches.push({
+              skill: requiredSkill,
+              candidate_confidence: skillData.confidence,
+              required_confidence: 70,
+              match_score: skillData.confidence * 0.7, // Partial match penalty
+              evidence: [...skillData.evidence, 'Partial skill match'],
+              category: skillData.category || 'technical'
+            });
+          } else {
+            skillMatches.push({
+              skill: requiredSkill,
+              candidate_confidence: 0,
+              required_confidence: 70,
+              match_score: 0,
+              evidence: ['Skill not found in candidate profile'],
+              category: 'technical'
+            });
+          }
+        }
+      });
+
+      return skillMatches;
+    } catch (error) {
+      console.error('Analyze skill matches error:', error);
+      throw new ApiError('Failed to analyze skill matches');
+    }
+  },
 };
+
+// Export the api object for backwards compatibility
+export const api = apiService;

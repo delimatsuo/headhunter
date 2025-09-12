@@ -1,5 +1,21 @@
 # Headhunter System Architecture
 
+> Update (2025‑09‑11): The authoritative architecture uses a single‑pass Together AI model (Qwen 2.5 32B Instruct) to produce the full structured profile including explicit skills and inferred skills with confidence/evidence. Low‑confidence profiles are flagged and demoted in ranking but remain searchable. Embeddings are generated from enriched profile text; one unified search pipeline blends ANN recall with structured signals (skills/experience/analysis_confidence). Any multi‑stage references below (Llama 3.2 3B → Qwen Coder 32B → Vertex) are legacy and retained for context only.
+
+## Updated Architecture Summary
+
+- Stage 1 Enrichment (Single Pass): Qwen 2.5 32B Instruct on Together AI (env: `TOGETHER_MODEL_STAGE1`, default `Qwen2.5-32B-Instruct`).
+- Outputs: structured profile JSON; explicit vs inferred skills with confidence and evidence; `analysis_confidence` and `quality_flags`.
+- Storage: Firestore (`candidates/`, `enriched_profiles/`); embeddings in `candidate_embeddings` (standardized).
+- Search: Unified pipeline — ANN recall (Cloud SQL + pgvector planned) + re‑rank with structured signals → one ranked list with explainability.
+- UI: React SPA on Firebase Hosting calling callable Functions; ensure callable exports for `skillAwareSearch` and `getCandidateSkillAssessment`.
+- Functions: CRUD/search/upload; remove/guard Gemini enrichment; enrichment lives in Python processors.
+
+### No Mock Fallbacks
+- External services (Vertex embeddings, Gemini enrichment) do not fall back to mock/deterministic responses.
+- When disabled or unavailable, errors are surfaced to clients; development can opt in to deterministic vectors only via `EMBEDDING_PROVIDER=local`.
+
+
 ## 🎯 Core Design Principle
 
 **Multi-Stage AI Processing with Contextual Intelligence** - The system processes candidates through 3 distinct AI stages: (1) Basic enhancement using Llama 3.2 3B, (2) Contextual intelligence using Qwen2.5 Coder 32B for trajectory-based skill inference, and (3) Vector generation using VertexAI embeddings for semantic search. This architecture provides sophisticated recruiter-grade analysis with company/industry pattern recognition.

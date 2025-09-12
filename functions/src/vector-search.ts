@@ -95,6 +95,16 @@ interface SkillAwareSearchResult {
   };
   metadata: EmbeddingData["metadata"];
   match_reasons: string[];
+  profile?: {
+    name?: string;
+    current_role?: string;
+    current_company?: string;
+    years_experience?: number;
+    current_level?: string;
+    analysis_confidence?: number;
+    top_skills?: Array<{ skill: string; confidence: number }>;
+    summary?: string;
+  };
 }
 
 export class VectorSearchService {
@@ -541,12 +551,28 @@ export class VectorSearchService {
           continue;
         }
         
-        // Calculate composite ranking score
-        const overallScore = this.calculateCompositeRankingScore(
-          skillScores, 
-          vectorResult.similarity_score, 
-          query.ranking_weights || {}
-        );
+      // Calculate composite ranking score
+      let overallScore = this.calculateCompositeRankingScore(
+        skillScores, 
+        vectorResult.similarity_score, 
+        query.ranking_weights || {}
+      );
+
+      // Apply analysis_confidence demotion for low-content profiles (if available)
+      const analysisConfidence = typeof candidateData.analysis_confidence === 'number'
+        ? Math.max(0, Math.min(1, candidateData.analysis_confidence))
+        : null;
+      if (analysisConfidence !== null) {
+        // Scale overall score by a factor between 0.6 and 1.0 based on confidence
+        const factor = 0.6 + 0.4 * analysisConfidence;
+        overallScore = Math.round(overallScore * factor * 100) / 100;
+        // Record the applied factor in ranking factors
+        skillScores.ranking_factors = {
+          ...skillScores.ranking_factors,
+          analysis_confidence: analysisConfidence,
+          analysis_confidence_factor: Number(factor.toFixed(2))
+        };
+      }
         
         // Generate enhanced match reasons
         const matchReasons = this.generateSkillAwareMatchReasons(
@@ -556,6 +582,17 @@ export class VectorSearchService {
           query
         );
         
+        // Build profile snippet for recruiter context
+        const candidateSkillsList = this.extractCandidateSkills(candidateData)
+          .sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+        const topSkills = candidateSkillsList.slice(0, 5).map(s => ({ skill: s.skill, confidence: s.confidence }));
+        const years = candidateData.intelligent_analysis?.career_trajectory_analysis?.years_experience 
+          ?? candidateData.resume_analysis?.years_experience;
+        const level = (candidateData.intelligent_analysis?.career_trajectory_analysis?.current_level 
+          ?? candidateData.resume_analysis?.career_trajectory?.current_level) as string | undefined;
+        const summary = candidateData.intelligent_analysis?.executive_summary?.one_line_pitch 
+          ?? candidateData.executive_summary?.one_line_pitch;
+
         enrichedResults.push({
           candidate_id: vectorResult.candidate_id,
           overall_score: overallScore,
@@ -566,7 +603,17 @@ export class VectorSearchService {
           skill_breakdown: skillScores.skill_breakdown,
           ranking_factors: skillScores.ranking_factors,
           metadata: vectorResult.metadata,
-          match_reasons: matchReasons
+          match_reasons: matchReasons,
+          profile: {
+            name: candidateData.name,
+            current_role: candidateData.current_role || candidateData.resume_analysis?.current_role,
+            current_company: candidateData.current_company || candidateData.resume_analysis?.current_company,
+            years_experience: typeof years === 'number' ? years : undefined,
+            current_level: level,
+            analysis_confidence: typeof candidateData.analysis_confidence === 'number' ? candidateData.analysis_confidence : undefined,
+            top_skills: topSkills,
+            summary: summary
+          }
         });
       }
       

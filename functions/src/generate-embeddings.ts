@@ -52,11 +52,11 @@ export const generateAllEmbeddings = functions.https.onRequest(
           // Generate embedding
           const embedding = await vectorService.generateEmbedding(textContent);
           
-          // Store embedding in separate collection for efficient vector search
-          await db.collection('embeddings').doc(candidateId).set({
+          // Store embedding in standardized collection for efficient vector search
+          await db.collection('candidate_embeddings').doc(candidateId).set({
             candidate_id: candidateId,
-            embedding: embedding,
-            content_hash: textContent.substring(0, 100), // First 100 chars for reference
+            embedding_vector: embedding,
+            embedding_text: textContent,
             updated_at: new Date().toISOString(),
             metadata: {
               technical_skills_count: candidateData.resume_analysis?.technical_skills?.length || 0,
@@ -144,11 +144,11 @@ export const generateEmbeddingForCandidate = functions.https.onCall(
       // Generate embedding
       const embedding = await vectorService.generateEmbedding(textContent);
       
-      // Store embedding
-      await db.collection('embeddings').doc(candidateId).set({
+      // Store embedding in standardized collection
+      await db.collection('candidate_embeddings').doc(candidateId).set({
         candidate_id: candidateId,
-        embedding: embedding,
-        content_hash: textContent.substring(0, 100),
+        embedding_vector: embedding,
+        embedding_text: textContent,
         updated_at: new Date().toISOString(),
         metadata: {
           technical_skills_count: candidateData.resume_analysis?.technical_skills?.length || 0,

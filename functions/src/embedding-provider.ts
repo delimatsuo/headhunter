@@ -20,14 +20,6 @@ class LocalDeterministicProvider implements EmbeddingProvider {
   }
 }
 
-class TogetherStubProvider implements EmbeddingProvider {
-  name = "together";
-  async generateEmbedding(text: string): Promise<number[]> {
-    // For unit tests, mirror local deterministic behavior to avoid network
-    return new LocalDeterministicProvider().generateEmbedding(text + "|together");
-  }
-}
-
 class VertexProvider implements EmbeddingProvider {
   name = "vertex";
   async generateEmbedding(text: string): Promise<number[]> {
@@ -54,9 +46,11 @@ class VertexProvider implements EmbeddingProvider {
         (v: any) => v.numberValue || 0
       );
       if (Array.isArray(embed) && embed.length === 768) return embed;
-    } catch (_) {}
-    // Fallback to local deterministic
-    return new LocalDeterministicProvider().generateEmbedding(text);
+      throw new Error("Vertex embeddings response missing or invalid");
+    } catch (err) {
+      // Do not return mock/deterministic data in production paths
+      throw err instanceof Error ? err : new Error("Vertex embeddings unavailable");
+    }
   }
 }
 
@@ -65,11 +59,8 @@ export function getEmbeddingProvider(): EmbeddingProvider {
   switch (provider) {
     case "local":
       return new LocalDeterministicProvider();
-    case "together":
-      return new TogetherStubProvider();
     case "vertex":
     default:
       return new VertexProvider();
   }
 }
-

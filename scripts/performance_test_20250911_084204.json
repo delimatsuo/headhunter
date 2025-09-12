@@ -1,0 +1,1136 @@
+{
+  "summary": {
+    "total_candidates": 85,
+    "successful_candidates": 81,
+    "failed_candidates": 4,
+    "total_processing_time": 473.8729095420489,
+    "average_processing_time": 5.574975406377046,
+    "median_processing_time": 6.9382247673449235,
+    "min_processing_time": 0.1,
+    "max_processing_time": 10.928721762974433,
+    "throughput_per_minute": 10.255914406874847,
+    "total_cost_estimate": 0.14217237253166476,
+    "average_cost_per_candidate": 0.0019746162851620105,
+    "success_rate": 0.9529411764705882,
+    "quality_metrics": {
+      "average_quality": 0.8263778564310619,
+      "median_quality": 0.8245131851473817,
+      "min_quality": 0.7151261199570983,
+      "max_quality": 0.9465845659121066
+    },
+    "performance_breakdown": {
+      "together_ai": {
+        "total_candidates": 50,
+        "successful": 48,
+        "success_rate": 0.96,
+        "avg_time": 8.912879754775428,
+        "total_time": 445.64398773877144
+      },
+      "embeddings": {
+        "total_candidates": 25,
+        "successful": 24,
+        "success_rate": 0.96,
+        "avg_time": 1.0798192752377884,
+        "total_time": 26.99548188094471
+      },
+      "end_to_end": {
+        "total_candidates": 10,
+        "successful": 9,
+        "success_rate": 0.9,
+        "avg_time": 0.12334399223327637,
+        "total_time": 1.2334399223327637
+      }
+    },
+    "timestamp": "2025-09-11T08:42:04.383556"
+  },
+  "detailed_metrics": {
+    "together_ai": [
+      {
+        "candidate_id": "perf_test_001",
+        "processing_time": 10.137673439755865,
+        "success": true,
+        "tokens_used": 4257,
+        "cost_estimate": 0.0017451371439503012,
+        "quality_score": 0.8795692610276613,
+        "error_message": null,
+        "enrichment_fields": 11
+      },
+      {
+        "candidate_id": "perf_test_002",
+        "processing_time": 6.150317279264719,
+        "success": true,
+        "tokens_used": 5009,
+        "cost_estimate": 0.0020457661295367486,
+        "quality_score": 0.7151261199570983,
+        "error_message": null,
+        "enrichment_fields": 11
+      },
+      {
+        "candidate_id": "perf_test_003",
+        "processing_time": 7.114054281525698,
+        "success": true,
+        "tokens_used": 5884,
+        "cost_estimate": 0.0018176606191043674,
+        "quality_score": 0.8613469580316838,
+        "error_message": null,
+        "enrichment_fields": 9
+      },
+      {
+        "candidate_id": "perf_test_004",
+        "processing_time": 6.9382247673449235,
+        "success": true,
+        "tokens_used": 5562,
+        "cost_estimate": 0.0013500167203271468,
+        "quality_score": 0.7996363665044453,
+        "error_message": null,
+        "enrichment_fields": 11
+      },
+      {
+        "candidate_id": "perf_test_005",
+        "processing_time": 9.365463620185007,
+        "success": true,
+        "tokens_used": 6068,
+        "cost_estimate": 0.0020251980558447322,
+        "quality_score": 0.7284344534556706,
+        "error_message": null,
+        "enrichment_fields": 9
+      },
+      {
+        "candidate_id": "perf_test_006",
+        "processing_time": 9.480323977226249,
+        "success": true,
+        "tokens_used": 3820,
+        "cost_estimate": 0.0029618330948915925,
+        "quality_score": 0.7592703779272812,
+        "error_message": null,
+        "enrichment_fields": 12
+      },
+      {
+        "candidate_id": "perf_test_007",
+        "processing_time": 7.152868531546254,
+        "success": true,
+        "tokens_used": 5553,
+        "cost_estimate": 0.0015402616405626045,
+        "quality_score": 0.8111984302945052,
+        "error_message": null,
+        "enrichment_fields": 8
+      },
+      {
+        "candidate_id": "perf_test_008",
+        "processing_time": 10.835221544548745,
+        "success": true,
+        "tokens_used": 6970,
+        "cost_estimate": 0.0021203778445686664,
+        "quality_score": 0.8713124393852509,
+        "error_message": null,
+        "enrichment_fields": 11
+      },
+      {
+        "candidate_id": "perf_test_009",
+        "processing_time": 8.126342528105152,
+        "success": true,
+        "tokens_used": 4617,
+        "cost_estimate": 0.0013800108945647425,
+        "quality_score": 0.9085327011650264,
+        "error_message": null,
+        "enrichment_fields": 11
+      },
+      {
+        "candidate_id": "perf_test_010",
+        "processing_time": 8.94117922260359,
+        "success": true,
+        "tokens_used": 4714,
+        "cost_estimate": 0.0016769915255536413,
+        "quality_score": 0.8838123864432101,
+        "error_message": null,
+        "enrichment_fields": 10
+      },
+      {
+        "candidate_id": "perf_test_011",
+        "processing_time": 7.836883478613981,
+        "success": true,
+        "tokens_used": 6878,
+        "cost_estimate": 0.0025196080951314388,
+        "quality_score": 0.8975073173700662,
+        "error_message": null,
+        "enrichment_fields": 8
+      },
+      {
+        "candidate_id": "perf_test_012",
+        "processing_time": 10.604730651913412,
+        "success": true,
+        "tokens_used": 5855,
+        "cost_estimate": 0.0026983805022522565,
+        "quality_score": 0.9312570218350562,
+        "error_message": null,
+        "enrichment_fields": 12
+      },
+      {
+        "candidate_id": "perf_test_013",
+        "processing_time": 10.2810523419872,
+        "success": true,
+        "tokens_used": 5116,
+        "cost_estimate": 0.0020915867799712446,
+        "quality_score": 0.9465845659121066,
+        "error_message": null,
+        "enrichment_fields": 11
+      },
+      {
+        "candidate_id": "perf_test_014",
+        "processing_time": 10.916928874362233,
+        "success": true,
+        "tokens_used": 4469,
+        "cost_estimate": 0.0019512775706590048,
+        "quality_score": 0.8534405822015385,
+        "error_message": null,
+        "enrichment_fields": 9
+      },
+      {
+        "candidate_id": "perf_test_015",
+        "processing_time": 6.8190082919784984,
+        "success": true,
+        "tokens_used": 5374,
+        "cost_estimate": 0.0014772680756615939,
+        "quality_score": 0.9347113312035249,
+        "error_message": null,
+        "enrichment_fields": 8
+      },
+      {
+        "candidate_id": "perf_test_016",
+        "processing_time": 7.275247989130591,
+        "success": false,
+        "tokens_used": null,
+        "cost_estimate": null,
+        "quality_score": null,
+        "error_message": "Mock processing error",
+        "enrichment_fields": null
+      },
+      {
+        "candidate_id": "perf_test_017",
+        "processing_time": 7.303521387145574,
+        "success": true,
+        "tokens_used": 3114,
+        "cost_estimate": 0.0015857559986351554,
+        "quality_score": 0.8245131851473817,
+        "error_message": null,
+        "enrichment_fields": 11
+      },
+      {
+        "candidate_id": "perf_test_018",
+        "processing_time": 10.632254175275428,
+        "success": true,
+        "tokens_used": 3321,
+        "cost_estimate": 0.0019394224517422314,
+        "quality_score": 0.9408973357374579,
+        "error_message": null,
+        "enrichment_fields": 11
+      },
+      {
+        "candidate_id": "perf_test_019",
+        "processing_time": 8.88631565884636,
+        "success": true,
+        "tokens_used": 6645,
+        "cost_estimate": 0.0025031858778812744,
+        "quality_score": 0.7747008916143131,
+        "error_message": null,
+        "enrichment_fields": 10
+      },
+      {
+        "candidate_id": "perf_test_020",
+        "processing_time": 8.725167616370898,
+        "success": true,
+        "tokens_used": 6973,
+        "cost_estimate": 0.0012852206907682253,
+        "quality_score": 0.7637777163264766,
+        "error_message": null,
+        "enrichment_fields": 9
+      },
+      {
+        "candidate_id": "perf_test_021",
+        "processing_time": 8.952636869724172,
+        "success": true,
+        "tokens_used": 6365,
+        "cost_estimate": 0.00243897573055007,
+        "quality_score": 0.8428345539579175,
+        "error_message": null,
+        "enrichment_fields": 11
+      },
+      {
+        "candidate_id": "perf_test_022",
+        "processing_time": 6.628454692732941,
+        "success": true,
+        "tokens_used": 3571,
+        "cost_estimate": 0.001601808538507157,
+        "quality_score": 0.8278277554671968,
+        "error_message": null,
+        "enrichment_fields": 11
+      },
+      {
+        "candidate_id": "perf_test_023",
+        "processing_time": 8.82817238022918,
+        "success": true,
+        "tokens_used": 4431,
+        "cost_estimate": 0.0016797033367046458,
+        "quality_score": 0.7532950419043652,
+        "error_message": null,
+        "enrichment_fields": 11
+      },
+      {
+        "candidate_id": "perf_test_024",
+        "processing_time": 8.652702789256821,
+        "success": true,
+        "tokens_used": 5600,
+        "cost_estimate": 0.0015436271889062217,
+        "quality_score": 0.8859897802066682,
+        "error_message": null,
+        "enrichment_fields": 9
+      },
+      {
+        "candidate_id": "perf_test_025",
+        "processing_time": 9.471521753919228,
+        "success": true,
+        "tokens_used": 5795,
+        "cost_estimate": 0.001554437177385713,
+        "quality_score": 0.786175435698039,
+        "error_message": null,
+        "enrichment_fields": 9
+      },
+      {
+        "candidate_id": "perf_test_026",
+        "processing_time": 8.281218241008744,
+        "success": true,
+        "tokens_used": 4855,
+        "cost_estimate": 0.001515255869627622,
+        "quality_score": 0.8035254155977827,
+        "error_message": null,
+        "enrichment_fields": 9
+      },
+      {
+        "candidate_id": "perf_test_027",
+        "processing_time": 10.696680984658173,
+        "success": true,
+        "tokens_used": 6628,
+        "cost_estimate": 0.0010894937500095265,
+        "quality_score": 0.9459530004565166,
+        "error_message": null,
+        "enrichment_fields": 9
+      },
+      {
+        "candidate_id": "perf_test_028",
+        "processing_time": 10.475142588702187,
+        "success": true,
+        "tokens_used": 4595,
+        "cost_estimate": 0.0025648037039689583,
+        "quality_score": 0.937816476685851,
+        "error_message": null,
+        "enrichment_fields": 12
+      },
+      {
+        "candidate_id": "perf_test_029",
+        "processing_time": 9.106090662760138,
+        "success": true,
+        "tokens_used": 4898,
+        "cost_estimate": 0.0017864125310704429,
+        "quality_score": 0.8937492916712295,
+        "error_message": null,
+        "enrichment_fields": 12
+      },
+      {
+        "candidate_id": "perf_test_030",
+        "processing_time": 9.44515995361103,
+        "success": true,
+        "tokens_used": 6746,
+        "cost_estimate": 0.002367322066419059,
+        "quality_score": 0.8965895205849197,
+        "error_message": null,
+        "enrichment_fields": 11
+      },
+      {
+        "candidate_id": "perf_test_031",
+        "processing_time": 10.45536256893596,
+        "success": true,
+        "tokens_used": 3297,
+        "cost_estimate": 0.0018324943816122282,
+        "quality_score": 0.9100296722666802,
+        "error_message": null,
+        "enrichment_fields": 12
+      },
+      {
+        "candidate_id": "perf_test_032",
+        "processing_time": 6.3245162586177415,
+        "success": true,
+        "tokens_used": 3006,
+        "cost_estimate": 0.002062953163115026,
+        "quality_score": 0.7977740556102171,
+        "error_message": null,
+        "enrichment_fields": 9
+      },
+      {
+        "candidate_id": "perf_test_033",
+        "processing_time": 8.425426963977117,
+        "success": true,
+        "tokens_used": 3591,
+        "cost_estimate": 0.0023805656401821246,
+        "quality_score": 0.8565672438619535,
+        "error_message": null,
+        "enrichment_fields": 8
+      },
+      {
+        "candidate_id": "perf_test_034",
+        "processing_time": 9.973160038386693,
+        "success": true,
+        "tokens_used": 6148,
+        "cost_estimate": 0.002446415401851476,
+        "quality_score": 0.8422850762750547,
+        "error_message": null,
+        "enrichment_fields": 8
+      },
+      {
+        "candidate_id": "perf_test_035",
+        "processing_time": 8.757135596130812,
+        "success": false,
+        "tokens_used": null,
+        "cost_estimate": null,
+        "quality_score": null,
+        "error_message": "Mock processing error",
+        "enrichment_fields": null
+      },
+      {
+        "candidate_id": "perf_test_036",
+        "processing_time": 9.09641795585037,
+        "success": true,
+        "tokens_used": 5629,
+        "cost_estimate": 0.002411769061080828,
+        "quality_score": 0.7368969810654002,
+        "error_message": null,
+        "enrichment_fields": 10
+      },
+      {
+        "candidate_id": "perf_test_037",
+        "processing_time": 10.326753897560664,
+        "success": true,
+        "tokens_used": 4490,
+        "cost_estimate": 0.0016320911314074518,
+        "quality_score": 0.846927854034525,
+        "error_message": null,
+        "enrichment_fields": 10
+      },
+      {
+        "candidate_id": "perf_test_038",
+        "processing_time": 6.530084420569317,
+        "success": true,
+        "tokens_used": 3144,
+        "cost_estimate": 0.0028247810178774874,
+        "quality_score": 0.7820110021522968,
+        "error_message": null,
+        "enrichment_fields": 12
+      },
+      {
+        "candidate_id": "perf_test_039",
+        "processing_time": 10.574967766827072,
+        "success": true,
+        "tokens_used": 5885,
+        "cost_estimate": 0.0015923333099199266,
+        "quality_score": 0.8356986335867085,
+        "error_message": null,
+        "enrichment_fields": 8
+      },
+      {
+        "candidate_id": "perf_test_040",
+        "processing_time": 9.564024659532095,
+        "success": true,
+        "tokens_used": 5488,
+        "cost_estimate": 0.0020704029160647616,
+        "quality_score": 0.7526903879827596,
+        "error_message": null,
+        "enrichment_fields": 9
+      },
+      {
+        "candidate_id": "perf_test_041",
+        "processing_time": 9.960693323634025,
+        "success": true,
+        "tokens_used": 5956,
+        "cost_estimate": 0.002013164912508281,
+        "quality_score": 0.7274399473209151,
+        "error_message": null,
+        "enrichment_fields": 11
+      },
+      {
+        "candidate_id": "perf_test_042",
+        "processing_time": 10.3266723188848,
+        "success": true,
+        "tokens_used": 3089,
+        "cost_estimate": 0.0027659457200704647,
+        "quality_score": 0.7210618671266695,
+        "error_message": null,
+        "enrichment_fields": 9
+      },
+      {
+        "candidate_id": "perf_test_043",
+        "processing_time": 10.850030605588415,
+        "success": true,
+        "tokens_used": 6636,
+        "cost_estimate": 0.0018373566125384063,
+        "quality_score": 0.8787830258828646,
+        "error_message": null,
+        "enrichment_fields": 12
+      },
+      {
+        "candidate_id": "perf_test_044",
+        "processing_time": 9.705031713383827,
+        "success": true,
+        "tokens_used": 4263,
+        "cost_estimate": 0.0025258016325921803,
+        "quality_score": 0.9055197329915186,
+        "error_message": null,
+        "enrichment_fields": 12
+      },
+      {
+        "candidate_id": "perf_test_045",
+        "processing_time": 10.865440978570444,
+        "success": true,
+        "tokens_used": 5852,
+        "cost_estimate": 0.0011920729547308555,
+        "quality_score": 0.8359409327398404,
+        "error_message": null,
+        "enrichment_fields": 12
+      },
+      {
+        "candidate_id": "perf_test_046",
+        "processing_time": 6.529914372180679,
+        "success": true,
+        "tokens_used": 6171,
+        "cost_estimate": 0.0021608205523809057,
+        "quality_score": 0.7859692185155552,
+        "error_message": null,
+        "enrichment_fields": 11
+      },
+      {
+        "candidate_id": "perf_test_047",
+        "processing_time": 7.2235493853348185,
+        "success": true,
+        "tokens_used": 3323,
+        "cost_estimate": 0.0018313168179881051,
+        "quality_score": 0.8074323909758578,
+        "error_message": null,
+        "enrichment_fields": 12
+      },
+      {
+        "candidate_id": "perf_test_048",
+        "processing_time": 6.343884396860519,
+        "success": true,
+        "tokens_used": 6659,
+        "cost_estimate": 0.0024370753589859706,
+        "quality_score": 0.7155660275271051,
+        "error_message": null,
+        "enrichment_fields": 12
+      },
+      {
+        "candidate_id": "perf_test_049",
+        "processing_time": 8.821638180638619,
+        "success": true,
+        "tokens_used": 4682,
+        "cost_estimate": 0.0025492345579159158,
+        "quality_score": 0.806270606666486,
+        "error_message": null,
+        "enrichment_fields": 11
+      },
+      {
+        "candidate_id": "perf_test_050",
+        "processing_time": 10.928721762974433,
+        "success": true,
+        "tokens_used": 4076,
+        "cost_estimate": 0.0017132730772084423,
+        "quality_score": 0.7867482276325518,
+        "error_message": null,
+        "enrichment_fields": 8
+      }
+    ],
+    "embeddings": [
+      {
+        "candidate_id": "perf_test_001",
+        "processing_time": 1.1754246878802102,
+        "success": true,
+        "tokens_used": 5841,
+        "cost_estimate": 0.0024789820369929467,
+        "quality_score": 0.8501160190634034,
+        "error_message": null,
+        "enrichment_fields": 12
+      },
+      {
+        "candidate_id": "perf_test_002",
+        "processing_time": 2.1737945666495557,
+        "success": false,
+        "tokens_used": null,
+        "cost_estimate": null,
+        "quality_score": null,
+        "error_message": "Mock processing error",
+        "enrichment_fields": null
+      },
+      {
+        "candidate_id": "perf_test_003",
+        "processing_time": 2.4856826265884893,
+        "success": true,
+        "tokens_used": 3964,
+        "cost_estimate": 0.0010082018954225547,
+        "quality_score": 0.9065823349575513,
+        "error_message": null,
+        "enrichment_fields": 8
+      },
+      {
+        "candidate_id": "perf_test_004",
+        "processing_time": 0.1,
+        "success": true,
+        "tokens_used": 3694,
+        "cost_estimate": 0.0019817800453080254,
+        "quality_score": 0.8373331069995325,
+        "error_message": null,
+        "enrichment_fields": 9
+      },
+      {
+        "candidate_id": "perf_test_005",
+        "processing_time": 0.1,
+        "success": true,
+        "tokens_used": 3099,
+        "cost_estimate": 0.0024080368293957887,
+        "quality_score": 0.7672346105557459,
+        "error_message": null,
+        "enrichment_fields": 9
+      },
+      {
+        "candidate_id": "perf_test_006",
+        "processing_time": 0.1,
+        "success": true,
+        "tokens_used": 5773,
+        "cost_estimate": 0.0023168416654813333,
+        "quality_score": 0.7811904759279743,
+        "error_message": null,
+        "enrichment_fields": 9
+      },
+      {
+        "candidate_id": "perf_test_007",
+        "processing_time": 1.844869250813629,
+        "success": true,
+        "tokens_used": 4212,
+        "cost_estimate": 0.0015900980735874153,
+        "quality_score": 0.8336339552512253,
+        "error_message": null,
+        "enrichment_fields": 8
+      },
+      {
+        "candidate_id": "perf_test_008",
+        "processing_time": 1.2276898717264846,
+        "success": true,
+        "tokens_used": 4200,
+        "cost_estimate": 0.0010241300914704474,
+        "quality_score": 0.7158968757650004,
+        "error_message": null,
+        "enrichment_fields": 10
+      },
+      {
+        "candidate_id": "perf_test_009",
+        "processing_time": 0.9436747808111177,
+        "success": true,
+        "tokens_used": 3028,
+        "cost_estimate": 0.0010565956435509528,
+        "quality_score": 0.8193201547039113,
+        "error_message": null,
+        "enrichment_fields": 11
+      },
+      {
+        "candidate_id": "perf_test_010",
+        "processing_time": 0.1,
+        "success": true,
+        "tokens_used": 4581,
+        "cost_estimate": 0.0024036950193108315,
+        "quality_score": 0.8664710344806339,
+        "error_message": null,
+        "enrichment_fields": 8
+      },
+      {
+        "candidate_id": "perf_test_011",
+        "processing_time": 0.1,
+        "success": true,
+        "tokens_used": 3730,
+        "cost_estimate": 0.00282598607189626,
+        "quality_score": 0.7997665377772023,
+        "error_message": null,
+        "enrichment_fields": 11
+      },
+      {
+        "candidate_id": "perf_test_012",
+        "processing_time": 2.3563862279466514,
+        "success": true,
+        "tokens_used": 3622,
+        "cost_estimate": 0.0015470472297689076,
+        "quality_score": 0.8092449478916816,
+        "error_message": null,
+        "enrichment_fields": 9
+      },
+      {
+        "candidate_id": "perf_test_013",
+        "processing_time": 3.3691011964963327,
+        "success": true,
+        "tokens_used": 6659,
+        "cost_estimate": 0.001735729787491814,
+        "quality_score": 0.7781892294192474,
+        "error_message": null,
+        "enrichment_fields": 12
+      },
+      {
+        "candidate_id": "perf_test_014",
+        "processing_time": 0.1,
+        "success": true,
+        "tokens_used": 3093,
+        "cost_estimate": 0.0018842452349047028,
+        "quality_score": 0.7570460530393879,
+        "error_message": null,
+        "enrichment_fields": 10
+      },
+      {
+        "candidate_id": "perf_test_015",
+        "processing_time": 1.1904684172450648,
+        "success": true,
+        "tokens_used": 4029,
+        "cost_estimate": 0.0016418964118884876,
+        "quality_score": 0.8892891814858395,
+        "error_message": null,
+        "enrichment_fields": 11
+      },
+      {
+        "candidate_id": "perf_test_016",
+        "processing_time": 2.4268088389364255,
+        "success": true,
+        "tokens_used": 4951,
+        "cost_estimate": 0.002252372714649939,
+        "quality_score": 0.7504389473003978,
+        "error_message": null,
+        "enrichment_fields": 12
+      },
+      {
+        "candidate_id": "perf_test_017",
+        "processing_time": 2.2349099548836633,
+        "success": true,
+        "tokens_used": 5469,
+        "cost_estimate": 0.002670027268706516,
+        "quality_score": 0.7222603317938323,
+        "error_message": null,
+        "enrichment_fields": 8
+      },
+      {
+        "candidate_id": "perf_test_018",
+        "processing_time": 0.1,
+        "success": true,
+        "tokens_used": 5765,
+        "cost_estimate": 0.001969264038750028,
+        "quality_score": 0.8157298459003411,
+        "error_message": null,
+        "enrichment_fields": 9
+      },
+      {
+        "candidate_id": "perf_test_019",
+        "processing_time": 1.221485450475872,
+        "success": true,
+        "tokens_used": 4760,
+        "cost_estimate": 0.0018467113229486795,
+        "quality_score": 0.8106404209690672,
+        "error_message": null,
+        "enrichment_fields": 8
+      },
+      {
+        "candidate_id": "perf_test_020",
+        "processing_time": 1.8699328320710404,
+        "success": true,
+        "tokens_used": 4488,
+        "cost_estimate": 0.002863468196956551,
+        "quality_score": 0.8498656768867355,
+        "error_message": null,
+        "enrichment_fields": 12
+      },
+      {
+        "candidate_id": "perf_test_021",
+        "processing_time": 0.17730388842458833,
+        "success": true,
+        "tokens_used": 6920,
+        "cost_estimate": 0.0018549981379080566,
+        "quality_score": 0.7537211245705386,
+        "error_message": null,
+        "enrichment_fields": 8
+      },
+      {
+        "candidate_id": "perf_test_022",
+        "processing_time": 1.0906735295347505,
+        "success": true,
+        "tokens_used": 5726,
+        "cost_estimate": 0.0010914691826431956,
+        "quality_score": 0.7911067057375164,
+        "error_message": null,
+        "enrichment_fields": 11
+      },
+      {
+        "candidate_id": "perf_test_023",
+        "processing_time": 0.1,
+        "success": true,
+        "tokens_used": 5439,
+        "cost_estimate": 0.002934510160046017,
+        "quality_score": 0.7904477176174898,
+        "error_message": null,
+        "enrichment_fields": 9
+      },
+      {
+        "candidate_id": "perf_test_024",
+        "processing_time": 0.1,
+        "success": true,
+        "tokens_used": 3682,
+        "cost_estimate": 0.0012948557039708477,
+        "quality_score": 0.8920305938634725,
+        "error_message": null,
+        "enrichment_fields": 9
+      },
+      {
+        "candidate_id": "perf_test_025",
+        "processing_time": 0.3072757604608336,
+        "success": true,
+        "tokens_used": 6298,
+        "cost_estimate": 0.0023547619438272363,
+        "quality_score": 0.777706010369873,
+        "error_message": null,
+        "enrichment_fields": 12
+      }
+    ],
+    "end_to_end": [
+      {
+        "candidate_id": "perf_test_001_e2e",
+        "processing_time": 0.1234128475189209,
+        "success": true,
+        "tokens_used": null,
+        "cost_estimate": null,
+        "quality_score": 0.883115122692828,
+        "error_message": null,
+        "enrichment_fields": null
+      },
+      {
+        "candidate_id": "perf_test_002_e2e",
+        "processing_time": 0.12377500534057617,
+        "success": true,
+        "tokens_used": null,
+        "cost_estimate": null,
+        "quality_score": 0.7683826380670964,
+        "error_message": null,
+        "enrichment_fields": null
+      },
+      {
+        "candidate_id": "perf_test_003_e2e",
+        "processing_time": 0.12342286109924316,
+        "success": true,
+        "tokens_used": null,
+        "cost_estimate": null,
+        "quality_score": 0.723385143925509,
+        "error_message": null,
+        "enrichment_fields": null
+      },
+      {
+        "candidate_id": "perf_test_004_e2e",
+        "processing_time": 0.1229240894317627,
+        "success": true,
+        "tokens_used": null,
+        "cost_estimate": null,
+        "quality_score": 0.8610539972414428,
+        "error_message": null,
+        "enrichment_fields": null
+      },
+      {
+        "candidate_id": "perf_test_005_e2e",
+        "processing_time": 0.12308526039123535,
+        "success": false,
+        "tokens_used": null,
+        "cost_estimate": null,
+        "quality_score": 0,
+        "error_message": null,
+        "enrichment_fields": null
+      },
+      {
+        "candidate_id": "perf_test_006_e2e",
+        "processing_time": 0.1226499080657959,
+        "success": true,
+        "tokens_used": null,
+        "cost_estimate": null,
+        "quality_score": 0.8452898055047865,
+        "error_message": null,
+        "enrichment_fields": null
+      },
+      {
+        "candidate_id": "perf_test_007_e2e",
+        "processing_time": 0.1236259937286377,
+        "success": true,
+        "tokens_used": null,
+        "cost_estimate": null,
+        "quality_score": 0.9385521193712956,
+        "error_message": null,
+        "enrichment_fields": null
+      },
+      {
+        "candidate_id": "perf_test_008_e2e",
+        "processing_time": 0.12372207641601562,
+        "success": true,
+        "tokens_used": null,
+        "cost_estimate": null,
+        "quality_score": 0.8796713150322589,
+        "error_message": null,
+        "enrichment_fields": null
+      },
+      {
+        "candidate_id": "perf_test_009_e2e",
+        "processing_time": 0.12358403205871582,
+        "success": true,
+        "tokens_used": null,
+        "cost_estimate": null,
+        "quality_score": 0.8768675618406344,
+        "error_message": null,
+        "enrichment_fields": null
+      },
+      {
+        "candidate_id": "perf_test_010_e2e",
+        "processing_time": 0.12323784828186035,
+        "success": true,
+        "tokens_used": null,
+        "cost_estimate": null,
+        "quality_score": 0.8040281769273561,
+        "error_message": null,
+        "enrichment_fields": null
+      }
+    ]
+  },
+  "test_candidates": [
+    {
+      "candidate_id": "perf_test_001",
+      "name": "Test Candidate 1",
+      "current_role": "Tech Lead",
+      "current_company": "Apple",
+      "years_experience": 4,
+      "resume_text": "Tech Lead with 4 years of experience at Apple.\n            \n            Technical Skills: Swift, Docker, MongoDB, GraphQL\n            \n            Experience:\n            - Led cross-functional teams of 6 engineers\n            - Architected and implemented scalable systems handling 5794K+ requests/day\n            - Contributed to open source projects with 477+ GitHub stars\n            - Expertise in GraphQL and GraphQL\n            \n            Education:\n            - BS/MS Computer Science from top university\n            - Relevant certifications in cloud technologies\n            \n            Achievements:\n            - Reduced system latency by 46%\n            - Improved deployment frequency by 6x\n            - Mentored 11 junior engineers",
+      "recruiter_comments": [
+        "Great cultural fit for fast-paced environments",
+        "Excellent technical depth in Docker"
+      ],
+      "technical_skills": [
+        "Swift",
+        "Docker",
+        "MongoDB",
+        "GraphQL"
+      ],
+      "education": "BS Computer Science",
+      "location": "Austin"
+    },
+    {
+      "candidate_id": "perf_test_002",
+      "name": "Test Candidate 2",
+      "current_role": "QA Engineer",
+      "current_company": "Shopify",
+      "years_experience": 7,
+      "resume_text": "QA Engineer with 7 years of experience at Shopify.\n            \n            Technical Skills: Docker, Redis, MongoDB, React, Rust, Kubernetes, GraphQL, Node.js\n            \n            Experience:\n            - Led cross-functional teams of 8 engineers\n            - Architected and implemented scalable systems handling 814K+ requests/day\n            - Contributed to open source projects with 200+ GitHub stars\n            - Expertise in Kubernetes and Docker\n            \n            Education:\n            - BS/MS Computer Science from top university\n            - Relevant certifications in cloud technologies\n            \n            Achievements:\n            - Reduced system latency by 49%\n            - Improved deployment frequency by 8x\n            - Mentored 14 junior engineers",
+      "recruiter_comments": [
+        "Great cultural fit for fast-paced environments",
+        "Strong leadership experience at Shopify",
+        "Proven track record of delivering complex projects",
+        "Excellent technical depth in Node.js"
+      ],
+      "technical_skills": [
+        "Docker",
+        "Redis",
+        "MongoDB",
+        "React",
+        "Rust",
+        "Kubernetes",
+        "GraphQL",
+        "Node.js"
+      ],
+      "education": "BS Computer Science",
+      "location": "Seattle"
+    },
+    {
+      "candidate_id": "perf_test_003",
+      "name": "Test Candidate 3",
+      "current_role": "Mobile Developer",
+      "current_company": "Google",
+      "years_experience": 13,
+      "resume_text": "Mobile Developer with 13 years of experience at Google.\n            \n            Technical Skills: React, JavaScript, Data Analysis, GraphQL, Swift, Rust\n            \n            Experience:\n            - Led cross-functional teams of 6 engineers\n            - Architected and implemented scalable systems handling 2559K+ requests/day\n            - Contributed to open source projects with 406+ GitHub stars\n            - Expertise in JavaScript and Swift\n            \n            Education:\n            - BS/MS Computer Science from top university\n            - Relevant certifications in cloud technologies\n            \n            Achievements:\n            - Reduced system latency by 71%\n            - Improved deployment frequency by 3x\n            - Mentored 13 junior engineers",
+      "recruiter_comments": [
+        "Strong leadership experience at Google",
+        "Great cultural fit for fast-paced environments",
+        "Excellent technical depth in React",
+        "Proven track record of delivering complex projects"
+      ],
+      "technical_skills": [
+        "React",
+        "JavaScript",
+        "Data Analysis",
+        "GraphQL",
+        "Swift",
+        "Rust"
+      ],
+      "education": "BS Computer Science",
+      "location": "New York"
+    },
+    {
+      "candidate_id": "perf_test_004",
+      "name": "Test Candidate 4",
+      "current_role": "Full Stack Developer",
+      "current_company": "Shopify",
+      "years_experience": 7,
+      "resume_text": "Full Stack Developer with 7 years of experience at Shopify.\n            \n            Technical Skills: Rust, Go, Kotlin, Swift, AWS, MongoDB, Kubernetes\n            \n            Experience:\n            - Led cross-functional teams of 7 engineers\n            - Architected and implemented scalable systems handling 5008K+ requests/day\n            - Contributed to open source projects with 407+ GitHub stars\n            - Expertise in Kotlin and AWS\n            \n            Education:\n            - BS/MS Computer Science from top university\n            - Relevant certifications in cloud technologies\n            \n            Achievements:\n            - Reduced system latency by 29%\n            - Improved deployment frequency by 4x\n            - Mentored 12 junior engineers",
+      "recruiter_comments": [
+        "Strong leadership experience at Shopify",
+        "Proven track record of delivering complex projects",
+        "Excellent technical depth in AWS",
+        "Great cultural fit for fast-paced environments"
+      ],
+      "technical_skills": [
+        "Rust",
+        "Go",
+        "Kotlin",
+        "Swift",
+        "AWS",
+        "MongoDB",
+        "Kubernetes"
+      ],
+      "education": "BS Computer Science",
+      "location": "Boston"
+    },
+    {
+      "candidate_id": "perf_test_005",
+      "name": "Test Candidate 5",
+      "current_role": "Full Stack Developer",
+      "current_company": "Netflix",
+      "years_experience": 2,
+      "resume_text": "Full Stack Developer with 2 years of experience at Netflix.\n            \n            Technical Skills: Redis, Kotlin, SQL, JavaScript, Machine Learning\n            \n            Experience:\n            - Led cross-functional teams of 11 engineers\n            - Architected and implemented scalable systems handling 7319K+ requests/day\n            - Contributed to open source projects with 58+ GitHub stars\n            - Expertise in SQL and Kotlin\n            \n            Education:\n            - BS/MS Computer Science from top university\n            - Relevant certifications in cloud technologies\n            \n            Achievements:\n            - Reduced system latency by 66%\n            - Improved deployment frequency by 2x\n            - Mentored 9 junior engineers",
+      "recruiter_comments": [
+        "Excellent technical depth in Redis",
+        "Strong leadership experience at Netflix",
+        "Great cultural fit for fast-paced environments"
+      ],
+      "technical_skills": [
+        "Redis",
+        "Kotlin",
+        "SQL",
+        "JavaScript",
+        "Machine Learning"
+      ],
+      "education": "BS Computer Science",
+      "location": "Seattle"
+    },
+    {
+      "candidate_id": "perf_test_006",
+      "name": "Test Candidate 6",
+      "current_role": "Tech Lead",
+      "current_company": "LinkedIn",
+      "years_experience": 14,
+      "resume_text": "Tech Lead with 14 years of experience at LinkedIn.\n            \n            Technical Skills: Go, Swift, Rust\n            \n            Experience:\n            - Led cross-functional teams of 5 engineers\n            - Architected and implemented scalable systems handling 4035K+ requests/day\n            - Contributed to open source projects with 463+ GitHub stars\n            - Expertise in Swift and Swift\n            \n            Education:\n            - BS/MS Computer Science from top university\n            - Relevant certifications in cloud technologies\n            \n            Achievements:\n            - Reduced system latency by 32%\n            - Improved deployment frequency by 8x\n            - Mentored 19 junior engineers",
+      "recruiter_comments": [
+        "Strong leadership experience at LinkedIn",
+        "Great cultural fit for fast-paced environments",
+        "Excellent technical depth in Swift",
+        "Proven track record of delivering complex projects"
+      ],
+      "technical_skills": [
+        "Go",
+        "Swift",
+        "Rust"
+      ],
+      "education": "BS Computer Science",
+      "location": "Austin"
+    },
+    {
+      "candidate_id": "perf_test_007",
+      "name": "Test Candidate 7",
+      "current_role": "Backend Developer",
+      "current_company": "Salesforce",
+      "years_experience": 3,
+      "resume_text": "Backend Developer with 3 years of experience at Salesforce.\n            \n            Technical Skills: Data Analysis, TypeScript, Java, JavaScript, Kotlin\n            \n            Experience:\n            - Led cross-functional teams of 7 engineers\n            - Architected and implemented scalable systems handling 2250K+ requests/day\n            - Contributed to open source projects with 362+ GitHub stars\n            - Expertise in TypeScript and Data Analysis\n            \n            Education:\n            - BS/MS Computer Science from top university\n            - Relevant certifications in cloud technologies\n            \n            Achievements:\n            - Reduced system latency by 30%\n            - Improved deployment frequency by 4x\n            - Mentored 20 junior engineers",
+      "recruiter_comments": [
+        "Strong leadership experience at Salesforce",
+        "Proven track record of delivering complex projects"
+      ],
+      "technical_skills": [
+        "Data Analysis",
+        "TypeScript",
+        "Java",
+        "JavaScript",
+        "Kotlin"
+      ],
+      "education": "BS Computer Science",
+      "location": "Boston"
+    },
+    {
+      "candidate_id": "perf_test_008",
+      "name": "Test Candidate 8",
+      "current_role": "Engineering Manager",
+      "current_company": "Twitter",
+      "years_experience": 5,
+      "resume_text": "Engineering Manager with 5 years of experience at Twitter.\n            \n            Technical Skills: Docker, Rust, Kotlin, Kubernetes, Data Analysis, TypeScript, Node.js, React\n            \n            Experience:\n            - Led cross-functional teams of 10 engineers\n            - Architected and implemented scalable systems handling 1472K+ requests/day\n            - Contributed to open source projects with 124+ GitHub stars\n            - Expertise in Rust and React\n            \n            Education:\n            - BS/MS Computer Science from top university\n            - Relevant certifications in cloud technologies\n            \n            Achievements:\n            - Reduced system latency by 54%\n            - Improved deployment frequency by 9x\n            - Mentored 20 junior engineers",
+      "recruiter_comments": [
+        "Great cultural fit for fast-paced environments",
+        "Proven track record of delivering complex projects",
+        "Excellent technical depth in Kotlin"
+      ],
+      "technical_skills": [
+        "Docker",
+        "Rust",
+        "Kotlin",
+        "Kubernetes",
+        "Data Analysis",
+        "TypeScript",
+        "Node.js",
+        "React"
+      ],
+      "education": "BS Computer Science",
+      "location": "Boston"
+    },
+    {
+      "candidate_id": "perf_test_009",
+      "name": "Test Candidate 9",
+      "current_role": "Full Stack Developer",
+      "current_company": "Netflix",
+      "years_experience": 3,
+      "resume_text": "Full Stack Developer with 3 years of experience at Netflix.\n            \n            Technical Skills: Node.js, Machine Learning, JavaScript\n            \n            Experience:\n            - Led cross-functional teams of 5 engineers\n            - Architected and implemented scalable systems handling 8039K+ requests/day\n            - Contributed to open source projects with 141+ GitHub stars\n            - Expertise in Node.js and Node.js\n            \n            Education:\n            - BS/MS Computer Science from top university\n            - Relevant certifications in cloud technologies\n            \n            Achievements:\n            - Reduced system latency by 39%\n            - Improved deployment frequency by 9x\n            - Mentored 19 junior engineers",
+      "recruiter_comments": [
+        "Great cultural fit for fast-paced environments",
+        "Proven track record of delivering complex projects",
+        "Excellent technical depth in Machine Learning",
+        "Strong leadership experience at Netflix"
+      ],
+      "technical_skills": [
+        "Node.js",
+        "Machine Learning",
+        "JavaScript"
+      ],
+      "education": "BS Computer Science",
+      "location": "San Francisco"
+    },
+    {
+      "candidate_id": "perf_test_010",
+      "name": "Test Candidate 10",
+      "current_role": "Frontend Developer",
+      "current_company": "Slack",
+      "years_experience": 7,
+      "resume_text": "Frontend Developer with 7 years of experience at Slack.\n            \n            Technical Skills: Rust, Kotlin, GraphQL, Redis, Swift, JavaScript, Machine Learning\n            \n            Experience:\n            - Led cross-functional teams of 3 engineers\n            - Architected and implemented scalable systems handling 1275K+ requests/day\n            - Contributed to open source projects with 339+ GitHub stars\n            - Expertise in JavaScript and Kotlin\n            \n            Education:\n            - BS/MS Computer Science from top university\n            - Relevant certifications in cloud technologies\n            \n            Achievements:\n            - Reduced system latency by 37%\n            - Improved deployment frequency by 4x\n            - Mentored 14 junior engineers",
+      "recruiter_comments": [
+        "Excellent technical depth in Rust",
+        "Great cultural fit for fast-paced environments",
+        "Strong leadership experience at Slack",
+        "Proven track record of delivering complex projects"
+      ],
+      "technical_skills": [
+        "Rust",
+        "Kotlin",
+        "GraphQL",
+        "Redis",
+        "Swift",
+        "JavaScript",
+        "Machine Learning"
+      ],
+      "education": "BS Computer Science",
+      "location": "Seattle"
+    }
+  ]
+}

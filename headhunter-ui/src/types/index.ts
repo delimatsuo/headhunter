@@ -151,3 +151,37 @@ export interface NavItem {
   path: string;
   icon: string;
 }
+
+// Skill Assessment types
+export interface SkillWithEvidence {
+  skill: string;
+  confidence: number;
+  evidence: string[];
+  category?: string;
+}
+
+export interface InferredSkill {
+  skill: string;
+  confidence: number;
+  reasoning: string;
+  skill_category: string;
+}
+
+export interface SkillAssessment {
+  total_skills: number;
+  average_confidence: number;
+  skill_categories: Record<string, number>;
+  skills: Record<string, SkillWithEvidence>;
+  high_confidence_skills: string[];
+  medium_confidence_skills: string[];
+  low_confidence_skills: string[];
+}
+
+export interface SkillMatchData {
+  skill: string;
+  candidate_confidence: number;
+  required_confidence: number;
+  match_score: number;
+  evidence: string[];
+  category: string;
+}

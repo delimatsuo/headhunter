@@ -23,11 +23,12 @@ Key change: AI analysis and enrichment run via Together AI’s hosted models (e.
 
 ## Technical Architecture
 **System components**
-- **Cloud LLM Processing (Together AI)**: Python 3.10+ async processors (aiohttp) call Together AI chat completions (model: `meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo`) to produce enriched candidate JSON. Entrypoints include:
+- **Cloud LLM Processing (Together AI)**: Single-pass enrichment with Qwen 2.5 32B Instruct (configurable). Python 3.10+ async processors (aiohttp) call Together AI chat completions to produce enriched candidate JSON that includes explicit skills and inferred skills with confidence and evidence. Entrypoints include:
   - `scripts/together_ai_processor.py`
   - `scripts/enhanced_together_ai_processor.py`
   - `scripts/firebase_streaming_processor.py`
   - `scripts/together_ai_firestore_processor.py`
+  - `scripts/intelligent_skill_processor.py` (preferred path; adds analysis_confidence and quality_flags)
 - **Data Ingestion**: Two supported paths:
   - Direct Firestore streaming from processors (primary at scale).
   - Cloud Storage upload of profile JSON to `profiles/*.json`, triggering Cloud Functions (`processUploadedProfile`).
@@ -36,11 +37,11 @@ Key change: AI analysis and enrichment run via Together AI’s hosted models (e.
   - File upload pipeline (`file-upload-pipeline.ts`)
   - Enrichment orchestration and Firestore writes (`index.ts`)
   - Semantic search + embeddings (`vector-search.ts`, `generate-embeddings.ts`)
-- **Embeddings**: `VectorSearchService` currently generates embeddings via Vertex AI `text-embedding-004`; includes deterministic fallback to support dev/offline. Embeddings stored in `embeddings/` collection for similarity search.
+- **Embeddings**: `VectorSearchService` currently generates embeddings via Vertex AI `text-embedding-004`. No implicit mock/deterministic fallback is used in production; for development only, you may explicitly set `EMBEDDING_PROVIDER=local`. Canonical collection is `candidate_embeddings` for similarity search. Unify any writers previously using `embeddings/`.
 - **Frontend**: React app on Firebase Hosting calling secure Cloud Functions.
 
 **Data models**
-- **AI-Generated Candidate Profiles** (via Together AI):
+- **AI-Generated Candidate Profiles** (via Together AI, single-pass):
   - personal_details: name, seniority_level, years_of_experience, location
   - education_analysis: degrees, quality_score, relevance
   - experience_analysis: companies, current_role, career_progression, industry_focus
@@ -48,11 +49,13 @@ Key change: AI analysis and enrichment run via Together AI’s hosted models (e.
   - market_insights: salary_range, market_demand, placement_difficulty
   - cultural_assessment / recruiter_recommendations: strengths, red_flags, ideal_roles, target_companies
   - executive_summary: one_line_pitch, overall_rating, recommendation
+  - skill_inference: explicit_skills (100%), inferred_skills with confidence (0–100) and evidence/reasoning
+  - analysis_confidence: overall signal confidence [0,1] (low_content demotion)
   - processing_metadata: timestamp, processor, model, version
 - **Search-Ready Profiles**: Flattened fields for querying (years_experience, current_role, primary_skills, overall_rating, search_keywords, etc.) plus embedding vectors.
 
 **APIs & integrations**
-- Together AI Inference API (`https://api.together.xyz/v1/chat/completions`)
+- Together AI Inference API (`https://api.together.xyz/v1/chat/completions`) – default Stage 1 model: Qwen 2.5 32B Instruct (env: `TOGETHER_MODEL_STAGE1`)
 - Firebase Admin/Client SDKs (Firestore, Storage, Auth)
 - Cloud Functions v2 (HTTP/callable + Storage triggers)
 - Vertex AI embeddings (current implementation) with plan to evaluate Together AI embeddings
@@ -66,9 +69,9 @@ Key change: AI analysis and enrichment run via Together AI’s hosted models (e.
 ## Development Roadmap
 
 ### MVP requirements
-- **Together AI Processing**: Run batch processors to analyze candidates via Together AI and produce structured JSON analysis.
+- **Together AI Processing (Single Pass)**: Analyze candidates via Qwen 2.5 32B Instruct and produce structured JSON including skill probabilities and evidence. Configure via env (`TOGETHER_MODEL_STAGE1`).
 - **Firestore Streaming**: Stream processed profiles to `candidates/` with flattened fields for search; optionally store full enriched profiles in `enriched_profiles/`.
-- **Embeddings & Search**: Generate embeddings for profiles and expose a semantic search endpoint. Keep Vertex AI embedding service initially; evaluate Together AI embeddings for parity/cost.
+- **Embeddings & Search**: Generate embeddings for profiles and expose a unified semantic search endpoint that blends vector similarity with structured skill signals and experience. Keep Vertex AI embedding service initially; evaluate Together AI embeddings for parity/cost.
 - **Quality Validation**: Add schema validation and JSON parsing guards; retry on malformed outputs.
 - **Secure Web UI**: JD input → ranked results with rationale, authenticated via Firebase.
 
@@ -82,9 +85,9 @@ Key change: AI analysis and enrichment run via Together AI’s hosted models (e.
 - Prioritize stable, scalable batch processing + search relevance; avoid regressions in parsing/validation.
 
 ## Logical Dependency Chain
-- **Foundation**: Configure Together AI API access; enable Firestore/Storage; set up Firebase Hosting/Functions.
-- **Data path**: Together AI analysis → Structured profile JSON → Firestore (and/or GCS → Cloud Function) → Embeddings.
-- **Search path**: Embedding generation → Vector similarity search → Ranked results with rationale in UI.
+- **Foundation**: Configure Together AI API access (env keys, model); enable Firestore/Storage; set up Firebase Hosting/Functions.
+- **Data path**: Single-pass Together AI analysis → Structured profile JSON (with skills + confidence) → Firestore (and/or GCS → Cloud Function) → Embeddings.
+- **Search path**: Embedding generation → ANN recall (pgvector planned) → Re-rank with structured skill probabilities and experience → Ranked results with rationale in UI.
 - **Fast-path to usable demo**: Process a sample set via Together AI → Stream to Firestore → Generate embeddings → Minimal UI search.
 
 ## Risks and Mitigations
@@ -94,6 +97,7 @@ Key change: AI analysis and enrichment run via Together AI’s hosted models (e.
 - **Data privacy**: Minimize PII in prompts; store only required fields; enforce Firebase security rules; audit logging for access.
 - **Embedding consistency**: Until Together embeddings are adopted, keep stable Vertex AI embeddings with deterministic fallback for dev.
 - **Scalability**: Horizontal scale by increasing concurrent requests and batching; streaming writes to Firestore in batches.
+ - **Low-certainty cases**: Tag low-content profiles with low `analysis_confidence` and demote in ranking rather than running a second pass.
 
 ## Goals & Success Metrics
 - Time-to-Longlist < 30 minutes
@@ -101,6 +105,8 @@ Key change: AI analysis and enrichment run via Together AI’s hosted models (e.
 - Satisfaction > 4.5/5
 - Predictable cost per processed candidate with guardrails
 - > 95% valid JSON parse rate from Together AI responses
+ - ≤ 1% JSON repair/quarantine rate for production pipelines
+ - < 0.5s re-rank latency for top‑K ANN results (when pgvector is enabled)
 
 ## Access Control & CRUD (Phase after Processing)
 
@@ -128,6 +134,23 @@ Key change: AI analysis and enrichment run via Together AI’s hosted models (e.
 - Outcome: Standardize on best performer; keep provider pluggable via env
 
 ## Development Process (TDD Required)
+
+## Model & Ranking Policy (Decisions)
+
+- Stage 1 Model: Qwen 2.5 32B Instruct on Together AI (single pass). Env: `TOGETHER_MODEL_STAGE1`.
+- Optional Escalation: Llama 3.1 70B Instruct only for ambiguous cases (future; off by default).
+- Low-Certainty Policy: Compute `analysis_confidence` and demote low-content profiles; still searchable by deterministic fields (name/company).
+- Unified Search: One endpoint blends vector similarity (ANN) + skill probabilities + experience into a single rank; UI never uses “two engines”.
+
+## Implementation Tasks (Updated)
+
+1. UI callable wiring: add `skillAwareSearch` & `getCandidateSkillAssessment` exports.
+2. JSON repair + schema validation (TDD) integrated in processors; target <1% repair/quarantine.
+3. Functions cleanup: remove stray entrypoints, guard/remove Gemini enrichment.
+4. Embeddings: standardize collection to `candidate_embeddings`; align rules/indexes.
+5. Vector search: implement pgvector service on Cloud Run; re-rank with structured features; SPA integration.
+6. Cloud Run worker (optional): containerized Python Pub/Sub worker for throughput scaling.
+7. Documentation: update README, Handover (web steps), and Architecture to match decisions.
 
 - All tasks follow Test-Driven Development (see `docs/TDD_PROTOCOL.md`).
 - Each task includes: write tests first → implement → tests green → docs update → commit/push → next task.

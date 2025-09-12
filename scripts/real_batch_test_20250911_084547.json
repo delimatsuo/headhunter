@@ -1,0 +1,422 @@
+{
+  "test_info": {
+    "timestamp": "2025-09-11T08:45:47.921094",
+    "total_candidates": 50,
+    "model": "meta-llama/Llama-3.2-3B-Instruct-Turbo"
+  },
+  "performance": {
+    "success_rate": 100.0,
+    "successful_candidates": 50,
+    "failed_candidates": 0,
+    "avg_processing_time": 2.3033349657058717,
+    "total_processing_time": 120.24041604995728,
+    "throughput_per_minute": 24.950013469294426
+  },
+  "cost": {
+    "total_tokens": 23358,
+    "estimated_cost": 0.23358,
+    "cost_per_candidate": 0.004671600000000001
+  },
+  "detailed_results": [
+    {
+      "candidate_id": "candidate_001",
+      "success": true,
+      "processing_time": 2.4379029273986816,
+      "response": "```json\n{\n  \"career_level\": \"junior\",\n  \"leadership_potential\": \"low\",\n  \"technical_depth\": \"basic\",\n  \"cultural_fit_score\": 0.5,\n  \"key_strengths\": [\"Python programming skills\", \"Experience in softwa...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_002",
+      "success": true,
+      "processing_time": 2.2595620155334473,
+      "response": "```json\n{\n  \"career_level\": \"mid\",\n  \"leadership_potential\": \"medium\",\n  \"technical_depth\": \"intermediate\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"C++\", \"React\", \"Node.js\"],\n  \"overall_rati...",
+      "status_code": 200,
+      "tokens_used": 470
+    },
+    {
+      "candidate_id": "candidate_003",
+      "success": true,
+      "processing_time": 2.102978229522705,
+      "response": "```json\n{\n  \"career_level\": \"mid\",\n  \"leadership_potential\": \"medium\",\n  \"technical_depth\": \"intermediate\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"AWS expertise\", \"Docker and Kubernetes exp...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_004",
+      "success": true,
+      "processing_time": 2.1309099197387695,
+      "response": "```json\n{\n  \"career_level\": \"mid\",\n  \"leadership_potential\": \"medium\",\n  \"technical_depth\": \"intermediate\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Machine Learning\", \"Data Science\"],\n  \"ove...",
+      "status_code": 200,
+      "tokens_used": 471
+    },
+    {
+      "candidate_id": "candidate_005",
+      "success": true,
+      "processing_time": 1.9976656436920166,
+      "response": "```json\n{\n  \"career_level\": \"mid\",\n  \"leadership_potential\": \"medium\",\n  \"technical_depth\": \"intermediate\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"MongoDB expertise\", \"GraphQL knowledge\"],\n...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_006",
+      "success": true,
+      "processing_time": 2.060051918029785,
+      "response": "```json\n{\n  \"career_level\": \"mid\",\n  \"leadership_potential\": \"medium\",\n  \"technical_depth\": \"intermediate\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"TypeScript\", \"Vue.js\"],\n  \"overall_rating\"...",
+      "status_code": 200,
+      "tokens_used": 470
+    },
+    {
+      "candidate_id": "candidate_007",
+      "success": true,
+      "processing_time": 2.10770583152771,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Spring Boot expertise\", \"Django proficiency\"]...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_008",
+      "success": true,
+      "processing_time": 2.144279956817627,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_009",
+      "success": true,
+      "processing_time": 2.166722059249878,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_010",
+      "success": true,
+      "processing_time": 3.813412666320801,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_011",
+      "success": true,
+      "processing_time": 2.0539231300354004,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_012",
+      "success": true,
+      "processing_time": 2.0215659141540527,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_013",
+      "success": true,
+      "processing_time": 2.454777240753174,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_014",
+      "success": true,
+      "processing_time": 2.230653762817383,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_015",
+      "success": true,
+      "processing_time": 2.305727958679199,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 463
+    },
+    {
+      "candidate_id": "candidate_016",
+      "success": true,
+      "processing_time": 1.9451980590820312,
+      "response": "```json\n{\n  \"career_level\": \"junior\",\n  \"leadership_potential\": \"low\",\n  \"technical_depth\": \"basic\",\n  \"cultural_fit_score\": 0.5,\n  \"key_strengths\": [\"Python programming skills\", \"Experience in softwa...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_017",
+      "success": true,
+      "processing_time": 2.292720079421997,
+      "response": "```json\n{\n  \"career_level\": \"junior\",\n  \"leadership_potential\": \"low\",\n  \"technical_depth\": \"intermediate\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Python programming skills\", \"Experience in...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_018",
+      "success": true,
+      "processing_time": 2.106724262237549,
+      "response": "```json\n{\n  \"career_level\": \"mid\",\n  \"leadership_potential\": \"medium\",\n  \"technical_depth\": \"intermediate\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Python programming skills\", \"Experience in...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_019",
+      "success": true,
+      "processing_time": 1.9560539722442627,
+      "response": "```json\n{\n  \"career_level\": \"mid\",\n  \"leadership_potential\": \"medium\",\n  \"technical_depth\": \"intermediate\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Python programming skills\", \"Experience in...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_020",
+      "success": true,
+      "processing_time": 2.481963872909546,
+      "response": "```json\n{\n  \"career_level\": \"mid\",\n  \"leadership_potential\": \"medium\",\n  \"technical_depth\": \"intermediate\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Python programming skills\", \"Experience in...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_021",
+      "success": true,
+      "processing_time": 2.507390022277832,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Python programming skills\", \"Leadership exper...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_022",
+      "success": true,
+      "processing_time": 4.159494876861572,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership skills\"],\n ...",
+      "status_code": 200,
+      "tokens_used": 425
+    },
+    {
+      "candidate_id": "candidate_023",
+      "success": true,
+      "processing_time": 2.118520975112915,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership skills\"],\n ...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_024",
+      "success": true,
+      "processing_time": 2.12711501121521,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_025",
+      "success": true,
+      "processing_time": 2.0114030838012695,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_026",
+      "success": true,
+      "processing_time": 2.2335848808288574,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_027",
+      "success": true,
+      "processing_time": 1.962057113647461,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_028",
+      "success": true,
+      "processing_time": 3.103484869003296,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_029",
+      "success": true,
+      "processing_time": 2.118095874786377,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_030",
+      "success": true,
+      "processing_time": 1.9204769134521484,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_031",
+      "success": true,
+      "processing_time": 2.2739500999450684,
+      "response": "```json\n{\n  \"career_level\": \"junior\",\n  \"leadership_potential\": \"low\",\n  \"technical_depth\": \"basic\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Python programming skills\", \"Experience in softwa...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_032",
+      "success": true,
+      "processing_time": 2.068819999694824,
+      "response": "```json\n{\n  \"career_level\": \"junior\",\n  \"leadership_potential\": \"low\",\n  \"technical_depth\": \"intermediate\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Python programming skills\", \"Experience in...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_033",
+      "success": true,
+      "processing_time": 2.408266305923462,
+      "response": "```json\n{\n  \"career_level\": \"mid\",\n  \"leadership_potential\": \"medium\",\n  \"technical_depth\": \"intermediate\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Python programming skills\", \"Experience in...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_034",
+      "success": true,
+      "processing_time": 2.856559991836548,
+      "response": "```json\n{\n  \"career_level\": \"mid\",\n  \"leadership_potential\": \"medium\",\n  \"technical_depth\": \"intermediate\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Python programming skills\", \"Experience in...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_035",
+      "success": true,
+      "processing_time": 2.212164878845215,
+      "response": "```json\n{\n  \"career_level\": \"mid\",\n  \"leadership_potential\": \"medium\",\n  \"technical_depth\": \"intermediate\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Python programming skills\", \"Experience in...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_036",
+      "success": true,
+      "processing_time": 2.0354201793670654,
+      "response": "```json\n{\n  \"career_level\": \"mid\",\n  \"leadership_potential\": \"medium\",\n  \"technical_depth\": \"intermediate\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Python programming skills\", \"Experience in...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_037",
+      "success": true,
+      "processing_time": 2.2704660892486572,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership skills\"],\n ...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_038",
+      "success": true,
+      "processing_time": 2.0817999839782715,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Python programming skills\", \"Leadership exper...",
+      "status_code": 200,
+      "tokens_used": 457
+    },
+    {
+      "candidate_id": "candidate_039",
+      "success": true,
+      "processing_time": 1.9321181774139404,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_040",
+      "success": true,
+      "processing_time": 2.329911947250366,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_041",
+      "success": true,
+      "processing_time": 2.302288055419922,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 459
+    },
+    {
+      "candidate_id": "candidate_042",
+      "success": true,
+      "processing_time": 1.9955363273620605,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 460
+    },
+    {
+      "candidate_id": "candidate_043",
+      "success": true,
+      "processing_time": 2.055885076522827,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_044",
+      "success": true,
+      "processing_time": 2.3204238414764404,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 454
+    },
+    {
+      "candidate_id": "candidate_045",
+      "success": true,
+      "processing_time": 2.369943141937256,
+      "response": "```json\n{\n  \"career_level\": \"senior\",\n  \"leadership_potential\": \"high\",\n  \"technical_depth\": \"advanced\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Technical expertise\", \"Leadership experience\"...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_046",
+      "success": true,
+      "processing_time": 2.4151389598846436,
+      "response": "```json\n{\n  \"career_level\": \"junior\",\n  \"leadership_potential\": \"low\",\n  \"technical_depth\": \"intermediate\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Python programming skills\", \"Experience in...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_047",
+      "success": true,
+      "processing_time": 2.8155813217163086,
+      "response": "```json\n{\n  \"career_level\": \"mid\",\n  \"leadership_potential\": \"medium\",\n  \"technical_depth\": \"intermediate\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Python programming skills\", \"Experience in...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_048",
+      "success": true,
+      "processing_time": 2.8645827770233154,
+      "response": "```json\n{\n  \"career_level\": \"mid\",\n  \"leadership_potential\": \"medium\",\n  \"technical_depth\": \"intermediate\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Python programming skills\", \"Experience in...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_049",
+      "success": true,
+      "processing_time": 2.180117130279541,
+      "response": "```json\n{\n  \"career_level\": \"mid\",\n  \"leadership_potential\": \"medium\",\n  \"technical_depth\": \"intermediate\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Python programming skills\", \"Experience in...",
+      "status_code": 200,
+      "tokens_used": 469
+    },
+    {
+      "candidate_id": "candidate_050",
+      "success": true,
+      "processing_time": 2.0456509590148926,
+      "response": "```json\n{\n  \"career_level\": \"mid\",\n  \"leadership_potential\": \"medium\",\n  \"technical_depth\": \"intermediate\",\n  \"cultural_fit_score\": 0.8,\n  \"key_strengths\": [\"Python programming skills\", \"Experience in...",
+      "status_code": 200,
+      "tokens_used": 469
+    }
+  ]
+}

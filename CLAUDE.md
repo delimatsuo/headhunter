@@ -2,6 +2,44 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🚨 MANDATORY PRE-WORK PROTOCOL (NEVER SKIP)
+
+**THESE RULES ARE ENFORCED ON EVERY TASK. VIOLATION = SESSION TERMINATION.**
+
+### Before ANY implementation work, Claude MUST:
+
+1. **Run `task-master next`** - Check what task should be worked on
+2. **Run `task-master show <id>`** - Read the full task details  
+3. **Read PRD section** relevant to the task (cite specific line numbers from `.taskmaster/docs/prd.txt`)
+4. **Ask confirmation**: "I'm about to work on [task] which involves [summary]. This aligns with PRD section [line X-Y]. Should I proceed?"
+
+### VIOLATION DETECTION RULES
+- If user requests work that's NOT in the current task: **STOP immediately**
+- Ask: "This seems outside the current task [ID]. Should we add this as a new task first?"
+- **Don't implement** until task is updated in TaskMaster
+
+### SCOPE CHANGE PROTOCOL  
+- If request seems outside PRD scope: **Reference PRD line numbers** showing what's planned
+- Ask: "This appears to be a scope change from PRD line [X]. Should we update the PRD first?"
+- **Don't proceed** without explicit approval
+
+### ARCHITECTURE COMPLIANCE
+- **Firestore**: For operational data (profiles, CRUD, real-time updates)
+- **Cloud SQL + pgvector**: For search and embeddings (PRD lines 74, 79, 143)
+- **Together AI**: For production AI processing (PRD lines 77, 139-141)
+- **Never suggest architectural changes** without referencing PRD and getting approval
+
+### MANDATORY SESSION START TEMPLATE
+```
+🚨 WORK SESSION COMPLIANCE CHECK
+Current Task: [from task-master next]
+PRD Reference: [specific line numbers from prd.txt]
+Alignment Status: [request matches PRD + task? yes/no]
+Scope Status: [in scope / needs approval / scope change]
+Architecture: [follows PRD design? yes/no]
+Proceeding with: [only if all above are YES]
+```
+
 ## Project Overview
 
 Headhunter is an AI-powered recruitment analytics system that processes candidate data using **Together AI** (cloud chat completions) to generate enhanced profiles, with results stored in Firebase and vectors in **Cloud SQL + pgvector** for fast semantic search. The system extracts deep insights from resumes and recruiter comments and performs intelligent skill inference with confidence levels.

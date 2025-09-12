@@ -46,4 +46,8 @@ export const generateUploadUrl = httpsCallable(functions, 'generateUploadUrl');
 export const healthCheck = httpsCallable(functions, 'healthCheck');
 export const completeOnboarding = httpsCallable(functions, 'completeOnboarding');
 
+// Skill-aware search and assessment (ensure backend functions are deployed)
+export const skillAwareSearch = httpsCallable(functions, 'skillAwareSearch');
+export const getCandidateSkillAssessment = httpsCallable(functions, 'getCandidateSkillAssessment');
+
 export default app;

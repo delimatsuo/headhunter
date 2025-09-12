@@ -100,9 +100,13 @@ def find_all_candidate_ids():
     # 4. Check ALL comment files for candidate IDs
     comment_files = [
         "Ella_Executive_Search_comments-1.csv",
+        "Ella_Executive_Search_comments-2.csv",
         "Ella_Executive_Search_comments-3.csv",
-        "Ella_Executive_Search_comments-4.csv",
-        "Ella_Executive_Search_comments-7.csv"
+        "Ella_Executive_Search_comments-4.csv", 
+        "Ella_Executive_Search_comments-5.csv",
+        "Ella_Executive_Search_comments-6.csv",
+        "Ella_Executive_Search_comments-7.csv",
+        "Ella_Executive_Search_comments-8.csv"
     ]
     
     comment_only_ids = set()
@@ -286,9 +290,13 @@ def load_all_comments(candidates: Dict):
     
     comment_files = [
         "Ella_Executive_Search_comments-1.csv",
+        "Ella_Executive_Search_comments-2.csv",
         "Ella_Executive_Search_comments-3.csv",
-        "Ella_Executive_Search_comments-4.csv",
-        "Ella_Executive_Search_comments-7.csv"
+        "Ella_Executive_Search_comments-4.csv", 
+        "Ella_Executive_Search_comments-5.csv",
+        "Ella_Executive_Search_comments-6.csv",
+        "Ella_Executive_Search_comments-7.csv",
+        "Ella_Executive_Search_comments-8.csv"
     ]
     
     total_comments = 0

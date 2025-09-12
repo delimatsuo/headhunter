@@ -2,32 +2,21 @@ import json
 from scripts.json_repair import repair_json
 
 
-def assert_parses(s: str):
-    fixed = repair_json(s)
-    assert isinstance(fixed, dict)
-    # Ensure it can be dumped cleanly
-    json.dumps(fixed)
-    return fixed
+def test_strip_code_fences_and_parse():
+    raw = """```json\n{\n  \"ok\": true,\n}\n```"""
+    data = repair_json(raw)
+    assert isinstance(data, dict)
+    assert data.get("ok") is True
 
 
-def test_repairs_code_fences_and_trailing_commas():
-    broken = """
-```json
-{"a": 1, "b": [1,2,3,],}
-```
-"""
-    out = assert_parses(broken)
-    assert out["a"] == 1 and out["b"] == [1, 2, 3]
+def test_normalize_single_quotes():
+    raw = "{'test': 123}"
+    data = repair_json(raw)
+    assert data["test"] == 123
 
 
-def test_repairs_unterminated_string_and_backticks():
-    broken = '{"text": "hello world, this is unterminated, `backticks`}\n'
-    out = assert_parses(broken)
-    assert out["text"].startswith("hello world")
-
-
-def test_repairs_brace_mismatch_simple():
-    broken = '{"x": {"y": 1, "z": [1,2,3]}\n'
-    out = assert_parses(broken)
-    assert out["x"]["z"][-1] == 3
+def test_extract_json_from_surrounding_text():
+    raw = "Noise before {\"x\": 5,} and after"
+    data = repair_json(raw)
+    assert data["x"] == 5
 

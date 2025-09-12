@@ -1,17 +1,21 @@
 # Headhunter - AI-Powered Recruitment Analytics
 
-**Cloud-First Architecture** powered by Together AI with Firebase storage and Cloud SQL vector search.
+**Cloud-First Architecture** powered by Together AI (single‑pass Qwen 2.5 32B) with Firebase storage and Cloud SQL (pgvector) for vector search.
 
 ## 🎯 Core Architecture
 
-**Cloud-Triggered AI Processing** - Cloud Run workers process candidate data using Together AI (Meta Llama 3.2 3B Instruct Turbo). Results stored in Firebase, vectors in Cloud SQL + pgvector for semantic search.
+**Cloud-Triggered AI Processing**
+- Single pass enrichment via Together AI using Qwen 2.5 32B Instruct (config via `TOGETHER_MODEL_STAGE1`).
+- Processors (Python async) stream structured profiles to Firestore and add `analysis_confidence` + `quality_flags`.
+- Embeddings generated for enriched text; vectors normalized in `candidate_embeddings`.
+- Unified search blends ANN recall (pgvector planned) with structured skill/experience signals (one ranked list).
 
 ## Features
 
 ### Cloud AI Processing
-- **Together AI API** with Meta Llama 3.2 3B Instruct Turbo
-- **Cloud Run workers** for scalable processing via Pub/Sub
-- **Secure API key management** via Google Cloud Secret Manager
+- **Together AI API** with Qwen 2.5 32B Instruct (single pass)
+- **Optional Cloud Run worker** for scalable processing via Pub/Sub (future)
+- **Secure API key management** via environment/Secret Manager
 - **Deep candidate analysis** including:
   - Career trajectory and progression patterns
   - Leadership scope and management experience
@@ -29,21 +33,29 @@ Multi-format support for extracting text from:
 - Plain text files (.txt)
 - Images with OCR (PNG, JPG using Tesseract)
 
-### Production-Ready Pipeline
-- **Cloud Run Pub/Sub workers** for async processing
-- **JSON schema validation** with automated repair
-- **Batch processing** with performance monitoring
-- **Quality validation** with 99.1% success rate
-- **Cost optimization**: $54.28 for 29,000 candidates
+### Processing Pipeline
+- **JSON repair + schema validation** with quarantine metrics
+- **Batch processing** with streaming to Firestore
+- **Low‑certainty policy**: de‑rank low‑content profiles, keep searchable
+- **Cost controls** via token caps, retries, and caching
 
 ### Data Storage & Search
-- **Firebase Firestore** for structured profile storage
-- **Cloud SQL + pgvector** for semantic vector search
-- **VertexAI embeddings** for high-quality search
-- **Skill-aware search** with confidence-weighted ranking
-- **Composite scoring**: skill_match (40%) + confidence (25%) + vector_similarity (25%) + experience_match (10%)
-- **React web interface** with interactive skill visualization
+- **Firebase Firestore** for structured profiles
+- **Cloud SQL + pgvector** (planned) for scalable ANN search (Functions provides a basic fallback path for dev only)
+- **VertexAI embeddings** baseline (no implicit mock fallbacks; use `EMBEDDING_PROVIDER=local` explicitly for dev-only deterministic vectors)
+- **Unified search** with confidence‑weighted skill match, vector similarity, and experience (e.g., 40/25/25/10 default)
+- **React SPA** (Firebase Hosting) with interactive rationale and top‑skills
 - **Firebase Authentication** for secure access
+
+### Documentation
+- PRD (authoritative): `.taskmaster/docs/prd.txt`
+- Handover (crash‑safe runbook): `docs/HANDOVER.md`
+- Architecture visual: `docs/architecture-visual.html`
+
+### No Mock Fallbacks
+- Production and staging do not serve mock or deterministic data when external services are unavailable.
+- If an embedding or enrichment provider is disabled or unreachable, the API returns an explicit error.
+- For development only, you may opt-in to deterministic vectors via `EMBEDDING_PROVIDER=local`.
 
 ## Prerequisites
 

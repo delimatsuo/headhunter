@@ -54,11 +54,14 @@ class IntelligentSkillProcessor:
     """Processes candidates with intelligent skill inference and probabilistic analysis"""
     
     def __init__(self, api_key: str = None):
-        self.api_key = api_key or os.getenv('TOGETHER_API_KEY', '6d9eb8b102a05bae51baa97445cff83aff1eaf38ee7c09528bee54efe4ca4824')
+        # Require API key via env or parameter (no hardcoded defaults)
+        self.api_key = api_key or os.getenv('TOGETHER_API_KEY')
         if not self.api_key:
             raise ValueError("Together API key not provided")
-            
-        self.model = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
+
+        # Stage 1 model configurable via env; default to Qwen2.5 32B Instruct
+        # Adjust to the exact Together model ID during deployment if needed
+        self.model = os.getenv('TOGETHER_MODEL_STAGE1', 'Qwen2.5-32B-Instruct')
         self.base_url = "https://api.together.xyz/v1/chat/completions"
         self.session = None
         
@@ -183,6 +186,10 @@ class IntelligentSkillProcessor:
                                 "primary_expertise": analysis.get("composite_skill_profile", {}).get("primary_expertise", []),
                                 "search_keywords": self._generate_search_keywords(candidate_data, analysis)
                             }
+
+                            # Add analysis confidence and quality flags for downstream ranking/UX
+                            enhanced_data["analysis_confidence"] = self._estimate_analysis_confidence(analysis)
+                            enhanced_data["quality_flags"] = self._quality_flags(analysis, enhanced_data["analysis_confidence"]) 
                             
                             return enhanced_data
                             
@@ -239,6 +246,52 @@ class IntelligentSkillProcessor:
             keywords.append(company.get("company", ""))
         
         return " ".join(filter(None, keywords)).lower()
+
+    def _estimate_analysis_confidence(self, analysis: Dict[str, Any]) -> float:
+        """Estimate overall analysis confidence in [0,1] from signal density.
+        Combines counts of explicit & inferred skills, average inferred confidence,
+        and presence of evidence/reasoning fields.
+        """
+        try:
+            explicit = analysis.get("explicit_skills", {}).get("technical_skills", [])
+            inferred = analysis.get("inferred_skills", {})
+            hp = inferred.get("highly_probable_skills", [])
+            p = inferred.get("probable_skills", [])
+
+            # Average confidence across inferred skills
+            confs = []
+            for bucket in (hp, p):
+                for item in bucket:
+                    c = item.get("confidence")
+                    if isinstance(c, (int, float)):
+                        confs.append(max(0.0, min(1.0, float(c) / 100.0)))
+            avg_conf = sum(confs) / len(confs) if confs else 0.0
+
+            # Evidence density proxy
+            evidence_hits = 0
+            for bucket in (hp, p):
+                for item in bucket:
+                    if item.get("reasoning") or item.get("evidence"):
+                        evidence_hits += 1
+
+            score = 0.0
+            score += min(len(explicit), 8) / 8.0 * 0.35
+            score += min(len(hp), 8) / 8.0 * 0.25
+            score += min(len(p), 12) / 12.0 * 0.15
+            score += avg_conf * 0.20
+            score += min(evidence_hits, 8) / 8.0 * 0.05
+            return round(max(0.0, min(1.0, score)), 3)
+        except Exception:
+            return 0.4
+
+    def _quality_flags(self, analysis: Dict[str, Any], conf: float) -> List[str]:
+        flags: List[str] = []
+        if conf < 0.45:
+            flags.append("low_content")
+        # basic missing experience structure
+        if not analysis.get("experience_analysis") and not analysis.get("companies"):
+            flags.append("missing_experience_structure")
+        return flags
     
     async def upload_batch_to_firestore(self, candidates: List[Dict[str, Any]]) -> int:
         """Upload batch to Firestore using enhanced streaming system"""

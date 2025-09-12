@@ -11,6 +11,7 @@ import { Storage } from "@google-cloud/storage";
 // Local processing - no external AI dependencies
 import { z } from "zod";
 import { VectorSearchService } from "./vector-search";
+import { BUCKET_PROFILES } from "./config";
 import { JobSearchService, JobDescription } from "./job-search";
 // Temporarily comment out until modules are properly exported
 // import { errorHandler } from "./error-handler";
@@ -163,6 +164,10 @@ Provide specific, actionable insights that would be valuable to both recruiters 
  * Process profile enrichment using locally processed data
  */
 async function enrichProfileWithGemini(profile: CandidateProfile): Promise<EnrichedProfile["enrichment"]> {
+  // Gemini enrichment is disabled by default. Do not return mock data.
+  if (process.env.ENABLE_GEMINI !== 'true') {
+    throw new Error("Gemini enrichment is disabled");
+  }
   // const projectId = process.env.GOOGLE_CLOUD_PROJECT || "headhunter-ai-0088";
   // const location = "us-central1";
   // const model = "gemini-1.5-pro";
@@ -250,37 +255,9 @@ async function enrichProfileWithGemini(profile: CandidateProfile): Promise<Enric
       }
       
     } catch (geminiError: any) {
-      console.warn("Gemini API error, falling back to enhanced mock:", geminiError.message);
-      
-      // Enhanced fallback with more intelligent mock data
-      const mockEnrichment = {
-        career_analysis: {
-          trajectory_insights: `Based on ${profile.resume_analysis?.years_experience || 0} years experience at ${profile.resume_analysis?.career_trajectory.current_level || "professional"} level, showing ${profile.resume_analysis?.career_trajectory.progression_speed || "steady"} progression in ${profile.resume_analysis?.career_trajectory.domain_expertise?.[0] || "their field"}.`,
-          growth_potential: `${profile.resume_analysis?.leadership_scope.has_leadership ? "Strong leadership foundation" : "Individual contributor with leadership potential"} combined with expertise in ${profile.resume_analysis?.technical_skills?.slice(0, 3).join(", ") || "key technologies"}.`,
-          leadership_readiness: profile.resume_analysis?.leadership_scope.has_leadership 
-            ? `Proven leadership managing ${profile.resume_analysis.leadership_scope.team_size || "teams"} with ${profile.resume_analysis.leadership_scope.mentorship_experience ? "mentoring experience" : "hands-on management"}.`
-            : "Ready for leadership opportunities given technical depth and domain expertise.",
-          market_positioning: `Well-positioned in ${profile.resume_analysis?.company_pedigree.tier_level || "market"} with ${profile.resume_analysis?.company_pedigree.brand_recognition || "respected"} company background and ${profile.recruiter_insights?.sentiment || "positive"} market reception.`
-        },
-        strategic_fit: {
-          role_alignment_score: Math.min(95, Math.max(65, Math.round((profile.overall_score || 0.75) * 100))),
-          cultural_match_indicators: [
-            ...(profile.resume_analysis?.cultural_signals?.slice(0, 2) || ["Growth mindset"]),
-            ...(profile.recruiter_insights?.cultural_fit?.values_alignment?.slice(0, 2) || ["Team collaboration"])
-          ],
-          development_recommendations: [
-            ...(profile.recruiter_insights?.development_areas?.slice(0, 2) || ["Technical leadership"]),
-            "Strategic thinking expansion",
-            "Industry expertise deepening"
-          ],
-          competitive_positioning: `Strong market position leveraging ${profile.resume_analysis?.technical_skills?.length || 5}+ technical skills across ${profile.resume_analysis?.company_pedigree.recent_companies?.length || 1} companies with ${profile.recruiter_insights?.recommendation || "positive"} assessment.`
-        },
-        ai_summary: `${profile.resume_analysis?.career_trajectory.current_level || "Experienced"} ${profile.resume_analysis?.career_trajectory.domain_expertise?.[0] || "technology"} professional with ${profile.resume_analysis?.years_experience || 0}+ years, ${profile.resume_analysis?.leadership_scope.has_leadership ? "proven leadership" : "strong technical"} capabilities, and ${profile.recruiter_insights?.cultural_fit?.cultural_alignment || "strong"} cultural fit indicators.`,
-        enrichment_timestamp: new Date().toISOString(),
-        enrichment_version: "1.0-fallback"
-      };
-      
-      return mockEnrichment;
+      console.warn("Gemini API error:", geminiError?.message || geminiError);
+      // Do not return mock data; surface an error
+      throw new Error("Gemini enrichment failed");
     }
 
     // TODO: Replace with actual Vertex AI call when ready
@@ -314,7 +291,7 @@ async function enrichProfileWithGemini(profile: CandidateProfile): Promise<Enric
  */
 export const processUploadedProfile = onObjectFinalized(
   {
-    bucket: "headhunter-ai-0088-profiles",
+    bucket: BUCKET_PROFILES,
     memory: "1GiB",
     timeoutSeconds: 540, // 9 minutes
     retry: true,
@@ -422,8 +399,7 @@ export const healthCheck = onCall(
       });
 
       // Test Storage connection
-      const bucketName = "headhunter-ai-0088-profiles";
-      const bucket = storage.bucket(bucketName);
+      const bucket = storage.bucket(BUCKET_PROFILES);
       const [exists] = await bucket.exists();
 
       return {
@@ -909,6 +885,12 @@ export {
   completeOnboarding,
   getOnboardingStatus,
 } from './user-onboarding';
+
+// Export skill-aware search functions
+export {
+  skillAwareSearch,
+  getCandidateSkillAssessment,
+} from './skill-aware-search';
 
 // Export REST API
 export { api } from './rest-api';

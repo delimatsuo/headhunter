@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Headhunter System Architecture – Visual Map</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #121a2a;
+      --text: #e6eefc;
+      --muted: #9fb3d1;
+      --work: #22c55e;      /* working */
+      --mis:  #f59e0b;      /* built but misaligned/not connected */
+      --plan: #3b82f6;      /* planned */
+      --nb:   #ef4444;      /* not built */
+      --border: #1f2a44;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 24px; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
+      color: var(--text); background: radial-gradient(1200px 800px at 10% -10%, #0f1730, #0b1220);
+    }
+    h1 { margin: 0 0 8px; font-size: 22px; }
+    .sub { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
+    .legend { display: flex; gap: 16px; align-items: center; margin: 12px 0 22px; flex-wrap: wrap; }
+    .badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 999px; background: #0f1a33; border: 1px solid var(--border); color: var(--muted); font-size: 12px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot.work { background: var(--work); }
+    .dot.mis  { background: var(--mis); }
+    .dot.plan { background: var(--plan); }
+    .dot.nb   { background: var(--nb); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(220px, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+    .col { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+    .col h2 { font-size: 15px; margin: 0 0 10px; color: #cfe0ff; letter-spacing: .2px; }
+    .box { position: relative; background: #0f1830; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin: 10px 0; }
+    .box .title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+    .box .desc  { font-size: 12px; color: var(--muted); line-height: 1.35; }
+    .box .status { position: absolute; top: 8px; right: 8px; font-size: 10px; padding: 3px 7px; border-radius: 999px; border: 1px solid var(--border); color: #011; }
+    .work .status { background: rgba(34,197,94,.2); color: #caffd5; }
+    .mis  .status { background: rgba(245,158,11,.2); color: #ffe7bd; }
+    .plan .status { background: rgba(59,130,246,.2); color: #d7e7ff; }
+    .nb   .status { background: rgba(239,68,68,.2); color: #ffd6d6; }
+
+    .flow { margin: 22px 0 8px; color: var(--muted); font-size: 12px; }
+    .arrow { color: #6ea8ff; }
+
+    .notes {
+      margin-top: 22px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px;
+    }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+    .panel h3 { margin: 0 0 10px; font-size: 14px; color: #cfe0ff; }
+    ul { margin: 8px 0 0 18px; padding: 0; }
+    li { margin: 6px 0; font-size: 13px; color: var(--muted); }
+    code { background: #0d152b; border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; color: #cfe0ff; }
+    a { color: #9cc2ff; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <h1>Headhunter System Architecture – Visual Map</h1>
+  <p class="sub">A high‑level view of data flow and components with build status.</p>
+
+  <div class="legend">
+    <span class="badge"><span class="dot work"></span> Built & Working</span>
+    <span class="badge"><span class="dot mis"></span> Built but Misaligned / Not Connected</span>
+    <span class="badge"><span class="dot plan"></span> Planned / In Progress</span>
+    <span class="badge"><span class="dot nb"></span> Not Built</span>
+  </div>
+
+  <div class="grid">
+    <!-- Column 1: Inputs -->
+    <div class="col">
+      <h2>Inputs</h2>
+      <div class="box work">
+        <div class="status">working</div>
+        <div class="title">CSV + Resume Files</div>
+        <div class="desc">CSV, PDF/DOCX/TXT/Images (OCR) synced to GCS raw bucket.</div>
+      </div>
+      <div class="box work">
+        <div class="status">working</div>
+        <div class="title">Resume Extraction</div>
+        <div class="desc">Multi‑format text extraction pipelines prepare inputs for AI.</div>
+      </div>
+    </div>
+
+    <!-- Column 2: AI Processing -->
+    <div class="col">
+      <h2>AI Processing</h2>
+      <div class="box work">
+        <div class="status">working</div>
+        <div class="title">Stage 1 – Together AI</div>
+        <div class="desc">Llama 3.1 8B enrichment (skill inference with confidence, trajectory, insights). Python async processors stream to Firestore.</div>
+      </div>
+      <div class="box mis">
+        <div class="status">misaligned</div>
+        <div class="title">JSON Repair + Schemas</div>
+        <div class="desc">Planned under TDD; parse errors seen in smoke test (4/50). Needs repair + validation integration.</div>
+      </div>
+      <div class="box nb">
+        <div class="status">not built</div>
+        <div class="title">Stage 2 – Contextual Intelligence</div>
+        <div class="desc">Optional second pass (e.g., Qwen 32B) for company/industry progression insights.</div>
+      </div>
+    </div>
+
+    <!-- Column 3: Storage & Indexing -->
+    <div class="col">
+      <h2>Storage & Indexing</h2>
+      <div class="box work">
+        <div class="status">working</div>
+        <div class="title">Firestore – Enhanced Profiles</div>
+        <div class="desc">Structured candidate profiles stored for UI and APIs.</div>
+      </div>
+      <div class="box mis">
+        <div class="status">misaligned</div>
+        <div class="title">Embeddings Collections</div>
+        <div class="desc">`candidate_embeddings` vs `embeddings` both used; standardize to one collection.</div>
+      </div>
+      <div class="box plan">
+        <div class="status">planned</div>
+        <div class="title">Cloud SQL + pgvector</div>
+        <div class="desc">Target vector store for ANN search at 29k+ scale; service integration pending.</div>
+      </div>
+    </div>
+
+    <!-- Column 4: APIs & Services -->
+    <div class="col">
+      <h2>APIs & Services</h2>
+      <div class="box work">
+        <div class="status">working</div>
+        <div class="title">Firebase Functions</div>
+        <div class="desc">CRUD, upload pipeline, semantic search (brute‑force over Firestore embeddings).</div>
+      </div>
+      <div class="box mis">
+        <div class="status">misaligned</div>
+        <div class="title">Gemini Enrichment in Functions</div>
+        <div class="desc">Legacy references remain; enrichment should be in Together processors only.</div>
+      </div>
+      <div class="box plan">
+        <div class="status">planned</div>
+        <div class="title">Cloud Run – Enrichment Worker</div>
+        <div class="desc">Containerized Python worker with Pub/Sub orchestration for high throughput.</div>
+      </div>
+      <div class="box plan">
+        <div class="status">planned</div>
+        <div class="title">Cloud Run – Vector Search API</div>
+        <div class="desc">Service that queries pgvector for top‑K semantic matches with filters.</div>
+      </div>
+    </div>
+
+    <!-- Column 5: UI & Access -->
+    <div class="col">
+      <h2>UI & Access</h2>
+      <div class="box work">
+        <div class="status">working</div>
+        <div class="title">React SPA (Firebase Auth)</div>
+        <div class="desc">JD search, candidates, upload, dashboard stubs. Deployed to Firebase Hosting.</div>
+      </div>
+      <div class="box mis">
+        <div class="status">misaligned</div>
+        <div class="title">UI Callable Wiring</div>
+        <div class="desc">Missing exports for `skillAwareSearch` & `getCandidateSkillAssessment` in `firebase.ts`.</div>
+      </div>
+      <div class="box plan">
+        <div class="status">planned</div>
+        <div class="title">Admin & Lists</div>
+        <div class="desc">Allowlist/roles management, shortlist save/export, richer rationale panels.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow">End‑to‑end flow: Inputs <span class="arrow">→</span> Together AI (Stage 1) <span class="arrow">→</span> Firestore + Embeddings <span class="arrow">→</span> APIs/Search <span class="arrow">→</span> UI</div>
+
+  <div class="notes">
+    <div class="panel">
+      <h3>Immediate Fixes (Do Next)</h3>
+      <ul>
+        <li>UI: Export <code>skillAwareSearch</code> and <code>getCandidateSkillAssessment</code> in <code>src/config/firebase.ts</code>.</li>
+        <li>Enrichment: Add JSON repair + schema validation to processors (reduce parse failures).</li>
+        <li>Functions: Remove stray entrypoints (<code>index-fixed.ts</code>, <code>index 2.ts</code>), guard/remove Gemini enrichment.</li>
+        <li>Embeddings: Standardize to <code>candidate_embeddings</code> across code; update rules/indexes.</li>
+        <li>Config: Centralize bucket/collection names; remove any hardcoded Together API keys.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>Planned Enhancements</h3>
+      <ul>
+        <li>pgvector search service on Cloud Run; SPA calls this for scalable ANN search.</li>
+        <li>Cloud Run Python worker for high‑throughput enrichment via Pub/Sub.</li>
+        <li>Optional Stage 2 contextual intelligence (e.g., Qwen 32B) with cost guardrails.</li>
+        <li>Docs: Update README, PRD, Handover with deployment steps and validation checklist.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:16px;">
+    <h3>File Pointers</h3>
+    <ul>
+      <li>PRD: <code>.taskmaster/docs/prd.txt</code></li>
+      <li>Handover: <code>docs/HANDOVER.md</code></li>
+      <li>Architecture: <code>docs/CLOUD_ARCHITECTURE.md</code></li>
+      <li>Vector Store: <code>docs/VECTOR_STORE.md</code></li>
+      <li>Functions (APIs/Search): <code>functions/src/*.ts</code></li>
+      <li>Processors (Together AI): <code>scripts/*together*</code>, <code>scripts/intelligent_skill_processor.py</code></li>
+      <li>UI (SPA): <code>headhunter-ui/src/*</code></li>
+    </ul>
+  </div>
+</body>
+</html>
+

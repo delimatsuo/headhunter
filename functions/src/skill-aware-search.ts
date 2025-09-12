@@ -86,6 +86,17 @@ interface CandidateScore {
     experience_analysis: string;
     vector_similarity: number;
   };
+  profile?: {
+    name?: string;
+    current_role?: string;
+    current_company?: string;
+    years_experience?: number;
+    current_level?: string;
+    analysis_confidence?: number;
+    top_skills?: Array<{ skill: string; confidence: number }>;
+    summary?: string;
+  };
+  rationale?: string[];
 }
 
 interface SearchResult {
@@ -418,7 +429,9 @@ class SkillAwareSearchService {
           },
           experience_analysis: result.ranking_factors.experience_alignment,
           vector_similarity: result.ranking_factors.vector_similarity
-        }
+        },
+        profile: result.profile,
+        rationale: result.match_reasons
       }));
 
       const endTime = Date.now();

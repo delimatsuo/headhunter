@@ -42,7 +42,8 @@ class TogetherFirestoreProcessor:
         if not self.api_key:
             raise ValueError("Together API key not provided")
             
-        self.model = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
+        # Configurable Stage 1 model (default to Qwen2.5 32B Instruct)
+        self.model = os.getenv('TOGETHER_MODEL_STAGE1', 'Qwen2.5-32B-Instruct')
         self.base_url = "https://api.together.xyz/v1/chat/completions"
         self.session = None
         
