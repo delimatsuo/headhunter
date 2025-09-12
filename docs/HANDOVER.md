@@ -85,6 +85,8 @@ Expected:
 
 5) Pre‑Interview Analysis: add callable generate/get; add Candidate Page panel; cache with TTL.
 
+6) Functions cleanup (completed): Gemini enrichment removed/disabled in Cloud Functions. Enrichment is performed exclusively by Together AI Python processors. Functions storage trigger now skips enrichment; the `enrichProfile` callable returns a failed‑precondition error to guide callers.
+
 ## Validation Checklist
 
 - [ ] Together AI connectivity OK; Stage 1 model set via env

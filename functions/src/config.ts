@@ -15,5 +15,3 @@ export const COLLECTION_EMBEDDINGS = process.env.COLLECTION_EMBEDDINGS || "candi
 
 // Feature flags
 export const USE_PGVECTOR = (process.env.USE_PGVECTOR || "false").toLowerCase() === "true";
-export const ENABLE_GEMINI = (process.env.ENABLE_GEMINI || "false").toLowerCase() === "true";
-

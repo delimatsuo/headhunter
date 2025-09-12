@@ -1,14 +1,16 @@
 # 🎯 Vertex AI & Cloud Enrichment Deployment Status Report
 
+Note (current): Cloud Functions Gemini enrichment is deprecated and disabled. Enrichment now happens exclusively via Python Together AI processors (Stage‑1 single‑pass). Vertex AI remains in use for embeddings only.
+
 ## Executive Summary
 
-We have successfully **implemented and configured** the Vertex AI enrichment features for the Headhunter system. The code is **production-ready** with real Gemini API integration, vector embeddings, and comprehensive fallback mechanisms.
+Historical content below refers to a prior experiment with Gemini enrichment in Functions. Current architecture uses Together AI processors for enrichment; keep Vertex for embeddings.
 
 ## ✅ Implementation Status: **COMPLETE**
 
-### 1. **Gemini API Integration** - ✅ IMPLEMENTED
+### 1. **Gemini API Integration** - ❌ Deprecated
 - **Location**: `/functions/src/index.ts` (lines 176-289)
-- **Status**: Real Vertex AI Gemini-1.5-Pro integration with fallback
+- **Status**: Removed/disabled; use Together AI processors for enrichment
 - **Features**:
   - Structured JSON enrichment prompts
   - Error handling with intelligent fallbacks

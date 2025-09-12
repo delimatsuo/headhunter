@@ -91,7 +91,7 @@ interface CandidateVersion {
     };
   };
   
-  // Enrichment (Vertex AI/Gemini)
+  // Enrichment (Produced by Together AI processors; not via Functions)
   enrichment?: {
     aiSummary: string;
     careerInsights: string;

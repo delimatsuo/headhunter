@@ -124,167 +124,7 @@ interface EnrichedProfile extends CandidateProfile {
 /**
  * Enhanced career analysis using local processing results
  */
-const createEnrichmentPrompt = (profile: CandidateProfile): string => {
-  return `
-As an expert executive recruiter and career analyst, provide deep strategic insights for this candidate profile.
-
-CANDIDATE PROFILE:
-${JSON.stringify(profile, null, 2)}
-
-Please analyze this candidate and provide insights in the following JSON structure:
-
-{
-  "career_analysis": {
-    "trajectory_insights": "Deep analysis of career progression patterns, velocity, and strategic decisions. What does their career path tell us about their ambition, decision-making, and growth mindset?",
-    "growth_potential": "Assessment of future growth trajectory based on current level, skills, and experience. What roles could they reasonably target in 2-5 years?",
-    "leadership_readiness": "Evaluation of leadership capabilities, team management experience, and readiness for increased responsibility.",
-    "market_positioning": "How does this candidate stack up in the current market? What makes them competitive or unique?"
-  },
-  "strategic_fit": {
-    "role_alignment_score": 85,
-    "cultural_match_indicators": ["List specific cultural fit indicators based on their background", "Values alignment signals", "Team collaboration style"],
-    "development_recommendations": ["Specific areas for growth", "Skills to develop", "Experience gaps to address"],
-    "competitive_positioning": "What differentiates this candidate from others with similar backgrounds? What's their unique value proposition?"
-  },
-  "ai_summary": "2-3 sentence executive summary of this candidate's profile, highlighting their key strengths and ideal role fit."
-}
-
-Focus on:
-1. Strategic career insights beyond what's already captured
-2. Leadership potential and scalability
-3. Cultural and team fit indicators
-4. Market differentiation and competitive advantages
-5. Specific development opportunities
-
-Provide specific, actionable insights that would be valuable to both recruiters and hiring managers.
-`;
-};
-
-/**
- * Process profile enrichment using locally processed data
- */
-async function enrichProfileWithGemini(profile: CandidateProfile): Promise<EnrichedProfile["enrichment"]> {
-  // Gemini enrichment is disabled by default. Do not return mock data.
-  if (process.env.ENABLE_GEMINI !== 'true') {
-    throw new Error("Gemini enrichment is disabled");
-  }
-  // const projectId = process.env.GOOGLE_CLOUD_PROJECT || "headhunter-ai-0088";
-  // const location = "us-central1";
-  // const model = "gemini-1.5-pro";
-
-  const prompt = createEnrichmentPrompt(profile);
-
-  try {
-    // Call Vertex AI Gemini for real enrichment
-    const { PredictionServiceClient } = require('@google-cloud/aiplatform').v1;
-    
-    const projectId = process.env.GOOGLE_CLOUD_PROJECT || "headhunter-ai-0088";
-    const location = "us-central1";
-    const model = "gemini-2.5-flash";
-    
-    const predictionClient = new PredictionServiceClient({
-      apiEndpoint: `${location}-aiplatform.googleapis.com`,
-    });
-    
-    const endpoint = `projects/${projectId}/locations/${location}/publishers/google/models/${model}`;
-    
-    console.log("Calling Gemini for candidate enrichment:", profile.candidate_id);
-    console.log("Prompt length:", prompt.length);
-    
-    const instances = [{
-      content: prompt
-    }];
-    
-    const parameters = {
-      temperature: 0.3,
-      maxOutputTokens: 2048,
-      topP: 0.8,
-      topK: 40
-    };
-    
-    try {
-      const [response] = await predictionClient.predict({
-        endpoint,
-        instances: instances.map((instance) => 
-          Object.fromEntries(
-            Object.entries(instance).map(([k, v]) => [k, { stringValue: v as string }])
-          )
-        ),
-        parameters: Object.fromEntries(
-          Object.entries(parameters).map(([k, v]) => [k, { numberValue: v as number }])
-        ),
-      });
-      
-      if (response.predictions && response.predictions.length > 0) {
-        const prediction = response.predictions[0];
-        const content = prediction.structValue?.fields?.content?.stringValue || '';
-        
-        try {
-          // Parse the JSON response from Gemini
-          const enrichmentData = JSON.parse(content);
-          
-          return {
-            ...enrichmentData,
-            enrichment_timestamp: new Date().toISOString(),
-            enrichment_version: "1.0-gemini",
-          };
-        } catch (parseError) {
-          console.warn("Failed to parse Gemini response as JSON:", parseError);
-          
-          // Fallback: create structured response from text
-          return {
-            career_analysis: {
-              trajectory_insights: content.substring(0, 500),
-              growth_potential: "Analysis pending - raw response received",
-              leadership_readiness: "Analysis pending - raw response received",
-              market_positioning: "Analysis pending - raw response received"
-            },
-            strategic_fit: {
-              role_alignment_score: 75,
-              cultural_match_indicators: ["AI analysis in progress"],
-              development_recommendations: ["Review AI analysis"],
-              competitive_positioning: "Analysis pending - raw response received"
-            },
-            ai_summary: content.substring(0, 200) + "...",
-            enrichment_timestamp: new Date().toISOString(),
-            enrichment_version: "1.0-gemini-raw"
-          };
-        }
-      } else {
-        throw new Error("No response from Gemini API");
-      }
-      
-    } catch (geminiError: any) {
-      console.warn("Gemini API error:", geminiError?.message || geminiError);
-      // Do not return mock data; surface an error
-      throw new Error("Gemini enrichment failed");
-    }
-
-    // TODO: Replace with actual Vertex AI call when ready
-    /*
-    const endpoint = `projects/${projectId}/locations/${location}/publishers/google/models/${model}`;
-    
-    const request = {
-      endpoint,
-      instances: [{
-        content: prompt
-      }],
-      parameters: {
-        temperature: 0.2,
-        maxOutputTokens: 2048,
-        topP: 0.8,
-        topK: 40,
-      }
-    };
-
-    const [response] = await client.predict(request);
-    // ... process actual API response
-    */
-  } catch (error) {
-    console.error("Error in profile enrichment:", error);
-    throw new HttpsError("internal", "Failed to enrich profile with AI");
-  }
-}
+// Gemini enrichment removed. Enrichment is handled by Python Together processors.
 
 /**
  * Storage trigger: Process uploaded candidate profiles
@@ -330,20 +170,9 @@ export const processUploadedProfile = onObjectFinalized(
         return;
       }
 
-      // Enrich the profile with Vertex AI Gemini
-      const enrichment = await enrichProfileWithGemini(profile);
-
-      // Create enriched profile
-      const enrichedProfile: EnrichedProfile = {
-        ...profile,
-        enrichment,
-      };
-
-      // Store in Firestore
-      await firestore
-        .collection("enriched_profiles")
-        .doc(profile.candidate_id)
-        .set(enrichedProfile);
+      // Enrichment is disabled in Functions; Together processors should write enriched profiles.
+      console.log("Enrichment via Functions is disabled. Skipping and waiting for Together processors.");
+      return;
 
       // Also store in a searchable collection with flattened data for querying
       await firestore
@@ -436,27 +265,14 @@ export const enrichProfile = onCall(
     }
 
     try {
-      // Validate the profile data
-      const validatedProfile = CandidateProfileSchema.parse(profile);
-
-      // Enrich the profile
-      const enrichment = await enrichProfileWithGemini(validatedProfile);
-
-      const enrichedProfile: EnrichedProfile = {
-        ...validatedProfile,
-        enrichment,
-      };
-
-      return {
-        success: true,
-        enriched_profile: enrichedProfile,
-      };
+      // Disable enrichment endpoint; instruct clients to use Together processors
+      throw new HttpsError(
+        "failed-precondition",
+        "Cloud Functions enrichment is disabled. Use Together AI Python processors to produce enriched profiles."
+      );
     } catch (error) {
       console.error("Error enriching profile:", error);
-      if (error instanceof z.ZodError) {
-        throw new HttpsError("invalid-argument", `Invalid profile data: ${error.message}`);
-      }
-      throw new HttpsError("internal", "Failed to enrich profile");
+      throw error instanceof HttpsError ? error : new HttpsError("internal", "Enrichment unavailable in Functions");
     }
   }
 );

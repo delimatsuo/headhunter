@@ -33,7 +33,7 @@ The Cloud Functions system provides AI-powered enrichment of candidate profiles 
 ```
 1. Profile Upload → Cloud Storage (gs://headhunter-ai-0088-profiles/profiles/)
 2. Storage Trigger → processUploadedProfile Function
-3. AI Enrichment → Vertex AI Gemini (mock implementation)
+3. AI Enrichment → Disabled in Functions (handled by Together AI Python processors)
 4. Data Storage → Firestore Collections:
    - enriched_profiles/ (full enriched data)
    - candidates/ (searchable flattened data)

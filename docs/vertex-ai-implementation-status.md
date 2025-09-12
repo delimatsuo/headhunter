@@ -10,7 +10,7 @@ The Headhunter codebase has **partial implementation** of Vertex AI and vector s
 |-----------|--------|----------|--------|
 | **Vertex AI Embeddings** | ✅ Implemented | `vector-search.ts:69-126` | Working with text-embedding-004 |
 | **Vector Database** | ⚠️ Partial | `vector-search.ts` | Uses Firestore, not Vertex AI Vector Search |
-| **Gemini Enrichment** | ❌ Mocked | `index.ts:176-200` | Returns static mock data |
+| **Gemini Enrichment** | ❌ Deprecated | n/a | Enrichment now handled by Together AI processors |
 | **Job Search Matching** | ⚠️ Basic | `job-search.ts` | Rule-based scoring, no semantic search |
 | **Infrastructure Setup** | 📝 Documented | `setup_vector_search.py` | Scripts exist but not deployed |
 
@@ -61,11 +61,11 @@ const [response] = await predictionClient.predict({
 - No scalable vector database integration
 - Performance limited by local computation
 
-### 3. ❌ NOT IMPLEMENTED: Gemini Enrichment
+### 3. ❌ Deprecated: Gemini Enrichment in Functions
 
 **Location**: `/functions/src/index.ts` (lines 176-200)
 
-**Current State**: Returns mock/static enrichment data
+**Current State**: Cloud Functions enrichment removed/disabled. Enrichment pipeline runs in Python using Together AI (Stage‑1 single‑pass). Vertex is retained for embeddings only.
 
 ```typescript
 // Mock implementation found:
