@@ -73,7 +73,6 @@ Key change: AI analysis and enrichment run via Together AI’s hosted models (si
 - **Firestore Streaming**: Stream processed profiles to `candidates/` with flattened fields for search; optionally store full enriched profiles in `enriched_profiles/`.
 - **Embeddings & Search**: Generate embeddings for profiles and expose a unified semantic search endpoint that blends vector similarity with structured skill signals and experience. Keep Vertex AI embedding service initially; evaluate Together AI embeddings for parity/cost.
 - **Quality Validation**: Add schema validation and JSON parsing guards; retry on malformed outputs.
-- **Parsing Complexity Analyzer (MVP)**: Run deterministic analyzer pre‑enrichment to set chunk size, guarded prompt selection, and retry/repair policy; log risk_level and recommendations.
 - **Secure Web UI**: JD input → ranked results with rationale, authenticated via Firebase.
 
 ### Future enhancements
@@ -95,7 +94,6 @@ Key change: AI analysis and enrichment run via Together AI’s hosted models (si
 ## Risks and Mitigations
 - **API reliability/latency**: Add retries, backoff, and circuit breakers around Together AI requests; batch and rate-limit.
 - **JSON parsing robustness**: Strip code fences, validate against schema, retry with repair prompts; quarantine malformed results.
- - **Parsing variability**: Use complexity analyzer to adjust prompt and chunking for noisy/tabular/ocr inputs.
 - **Cost control**: Batch sizes, concurrency caps, and MAX_ESTIMATED_COST safeguards (see `scripts/.env.template`); per-run confirmation flags.
 - **Data privacy**: Minimize PII in prompts; store only required fields; enforce Firebase security rules; audit logging for access.
 - **Embedding consistency**: Until Together embeddings are adopted, keep stable Vertex AI embeddings with deterministic fallback for dev.
