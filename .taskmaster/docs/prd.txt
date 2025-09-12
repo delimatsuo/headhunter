@@ -118,6 +118,60 @@ Key change: AI analysis and enrichment run via Together AI’s hosted models (e.
   - viewer (future): read-only search and view results
 - CRUD scope:
   - Candidates: view enhanced profiles, edit recruiter notes/tags, bookmark
+
+## Product UX
+
+- People Search (specific person): Search by name or LinkedIn URL; opens Candidate Page.
+- Job Search: Paste JD → up to 50 results (expandable by 50). Rows are minimal; click row to open Candidate Page.
+- Candidate Page: Full Skill Map (explicit + inferred with confidence and “Needs verification” tags), Pre‑Interview Analysis (on‑demand), compact career Timeline, resume Freshness, LinkedIn link.
+
+List row content (minimal): name, current role @ company, years/level, composite score, freshness badge, LinkedIn link, and a small “Low profile depth” badge when applicable.
+
+## Search & Ranking (Unified)
+
+- ANN recall (pgvector planned) unioned with deterministic title/company matches; then composite re‑rank combining skill_match, confidence, vector_similarity, and experience. Apply analysis_confidence demotion with a higher floor when deterministic matches exist. Optional small quota for a “Potential matches (low profile depth)” section to avoid losing sparse profiles.
+
+## LLM Usage
+
+- Stage 1 enrichment (single pass, ingestion/update): Qwen 2.5 32B produces structured profile including skills with confidence/evidence and `analysis_confidence`. Embeddings generated from enriched text.
+- Search time: no LLM calls.
+- Pre‑Interview Analysis (on‑demand): Generate summary, strengths, potential red flags, and signal chips; cache per candidate/version with TTL; invalidate on profile change.
+
+### Pre‑Interview Analysis (Feature spec)
+
+User stories:
+- Recruiters get a concise, structured analysis highlighting promotion velocity, company pedigree, stability pattern, promotion pattern, and academics strength with evidence.
+
+Input context:
+- Structured profile (experience timeline, summary), education, recruiter notes (optional).
+
+Output schema stored under `candidates/{id}.pre_interview_analysis`:
+- `summary`: string (2–3 sentences)
+- `strengths`: string[]
+- `potential_red_flags`: string[]
+- `signals`: { promotion_velocity, company_pedigree, stability_pattern, promotion_pattern, academics_strength }
+- `evidence`: array of { source, ref, snippet }
+- `model_version`, `generated_at`
+
+API (planned):
+- `preInterviewAnalysis.generate` (callable) → runs, stores, returns analysis
+- `preInterviewAnalysis.get` (callable) → returns last stored analysis
+
+Caching:
+- TTL ~14 days; invalidate on profile fingerprint/model/prompt version change.
+
+Acceptance criteria:
+- ≥99% valid JSON; clear error when disabled/unavailable; no mock outputs.
+
+## Candidate Essentials
+
+- Inferred skills: shown on Candidate Page with confidence; “Needs verification” tags below threshold (default 0.75); evidence tooltips.
+- LinkedIn: `linkedin_url` extracted from CSV or regex from resume text; shown in list/detail.
+- Freshness: show `resume_updated_at` with badges (Recent/Stale/Very stale); “Re‑upload latest resume” CTA.
+
+## Out of Scope (Now)
+
+- Automated LinkedIn downloads/scraping. Future “Stale Profile Queue” with manual actions only; ToS‑safe.
   - Jobs: create/search job descriptions, attach JD text, view suggested matches
   - Lists: save and share candidate lists per job (internal only for now)
   - Activity log: basic audit trail for edits/exports

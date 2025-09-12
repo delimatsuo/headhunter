@@ -15,6 +15,36 @@
 - External services (Vertex embeddings, Gemini enrichment) do not fall back to mock/deterministic responses.
 - When disabled or unavailable, errors are surfaced to clients; development can opt in to deterministic vectors only via `EMBEDDING_PROVIDER=local`.
 
+## UX & IA (Information Architecture)
+
+- People Search: search by name or LinkedIn URL → opens the Candidate Page.
+- Job Search: paste a JD → up to 50 results (expandable). Rows are minimal; click opens Candidate Page.
+- Candidate Page: full Skill Map (explicit + inferred with confidence and verification tags), Pre‑Interview Analysis (on‑demand), compact timeline, resume freshness badges, LinkedIn link.
+
+Row content (minimal): name, current role @ company, years/level, composite score, freshness badge, LinkedIn link, and a small “Low profile depth” badge when applicable.
+
+## Search Pipeline & Recall Safeguards
+
+- ANN recall via embeddings (pgvector planned) unioned with deterministic recall (exact/phrase matches on title/company; name for people search), then composite re‑rank.
+- Deterministic boost for exact title/company matches; keep analysis_confidence demotion but raise the floor when deterministic signals present.
+- Optional quota (e.g., 10–20%) for a “Potential matches (low profile depth)” bucket.
+
+## LLM Usage
+
+- Single pass (ingestion/update): Qwen 2.5 32B generates structured profile with explicit/inferred skills, evidence, and `analysis_confidence`. Embeddings are generated from enriched text.
+- Search time: no LLM calls; ANN + deterministic re‑rank only.
+- Pre‑Interview Analysis (on‑demand): Qwen generates summary/strengths/red flags and signal chips with evidence; cached with TTL and invalidated on profile change.
+
+## Candidate Data: LinkedIn & Freshness
+
+- `linkedin_url` extracted from CSV when present; otherwise regex from resume text (linkedin.com/in/…).
+- `resume_updated_at` from file metadata if available; else parsed “Last updated” line; else `processed_at` labeled as analysis date.
+- Freshness badges: Recent (<6m), Stale (6–18m), Very stale (>18m).
+
+## Future (not in current scope)
+
+- Stale Profile Queue: nightly list of profiles with `resume_updated_at` > 18 months; admin console actions to open LinkedIn, request update, or upload a new resume to reprocess. No automated scraping.
+
 
 ## 🎯 Core Design Principle
 

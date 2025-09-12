@@ -13,6 +13,14 @@ This document is the single source of truth to restart work quickly. It reflects
 
 Authoritative PRD: `.taskmaster/docs/prd.txt`
 
+## UX Quick Reference
+
+- People Search → Candidate Page (deep view).
+- Job Search → minimal list (50; expandable) → Candidate Page on click.
+- Candidate Page → Skill Map (explicit + inferred with verification tags), Pre‑Interview Analysis (on‑demand), compact timeline, resume freshness, LinkedIn link.
+
+List row content: name, current role @ company, years/level, composite score, freshness badge, LinkedIn link, optional low‑depth badge.
+
 ## No Mock Fallbacks
 
 - Production/staging do not return mock data when dependencies are unavailable.
@@ -43,6 +51,11 @@ Authoritative PRD: `.taskmaster/docs/prd.txt`
 - Canonical collection: `candidate_embeddings`.
 - Planned: Cloud SQL + pgvector service for ANN; SPA calls this service.
 
+### Recall Safeguards (thin profiles)
+- ANN recall unioned with deterministic title/company matches; then composite re‑rank.
+- Deterministic boost + higher demotion floor when deterministic matches exist.
+- Optional small quota for a “Potential matches (low profile depth)” section.
+
 ## Smoke Test (50 Candidates)
 
 ```bash
@@ -70,12 +83,15 @@ Expected:
 
 4) Vector search (pgvector): implement ANN service on Cloud Run; SPA integration.
 
+5) Pre‑Interview Analysis: add callable generate/get; add Candidate Page panel; cache with TTL.
+
 ## Validation Checklist
 
 - [ ] Together AI connectivity OK; Stage 1 model set via env
 - [ ] Firestore writes visible; profiles include skills/confidence/evidence
 - [ ] Embeddings generated and stored in `candidate_embeddings`
 - [ ] UI search + skill assessment callable work; results include rationales
+- [ ] Pre‑Interview Analysis callable enabled; Candidate Page renders summary/strengths/flags; caching effective
 - [ ] Functions tests/build pass; no Gemini enrichment paths used
 
 ## Task Master Usage

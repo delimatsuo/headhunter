@@ -10,6 +10,14 @@
 - Embeddings generated for enriched text; vectors normalized in `candidate_embeddings`.
 - Unified search blends ANN recall (pgvector planned) with structured skill/experience signals (one ranked list).
 
+## Product UX Overview
+
+- People Search (specific person): Search by name or LinkedIn URL; opens the Candidate Page directly.
+- Job Search: Paste a JD; returns up to 50 top matches (expandable by 50). Rows stay minimal; click a row to open the Candidate Page.
+- Candidate Page (deep view): Full Skill Map (explicit + inferred with confidence and “Needs verification” tags), Pre‑Interview Analysis (on‑demand), compact career Timeline, Resume Freshness, and LinkedIn link.
+
+List row content (minimal): Name — Current role @ Company, years/level, composite score, freshness badge, LinkedIn link, and (if applicable) a small “Low profile depth” badge.
+
 ## Features
 
 ### Cloud AI Processing
@@ -47,6 +55,11 @@ Multi-format support for extracting text from:
 - **React SPA** (Firebase Hosting) with interactive rationale and top‑skills
 - **Firebase Authentication** for secure access
 
+### Recall Safeguards (thin profiles)
+- Dual recall: ANN top‑K unioned with deterministic title/company matches, then re‑rank.
+- Deterministic boost: modest boost when exact title or company matches; keep `analysis_confidence` demotion but raise the floor when deterministic signals are present.
+- Optional small quota (e.g., 10–20%) for “Potential matches (low profile depth)” to avoid losing sparse but promising candidates.
+
 ### Documentation
 - PRD (authoritative): `.taskmaster/docs/prd.txt`
 - Handover (crash‑safe runbook): `docs/HANDOVER.md`
@@ -56,6 +69,25 @@ Multi-format support for extracting text from:
 - Production and staging do not serve mock or deterministic data when external services are unavailable.
 - If an embedding or enrichment provider is disabled or unreachable, the API returns an explicit error.
 - For development only, you may opt-in to deterministic vectors via `EMBEDDING_PROVIDER=local`.
+
+## LLM Usage Philosophy
+
+- Stage 1 enrichment (ingestion/update, single pass): Qwen 2.5 32B generates the structured profile used for embeddings and deterministic re‑rank. No “second pass” needed for search.
+- Search time: no LLM calls; perform ANN recall + deterministic re‑rank only.
+- Pre‑Interview Analysis: on‑demand LLM call for the Candidate Page; cached with TTL and invalidated on profile change.
+
+## Candidate Essentials
+
+- Inferred skills: Shown only on the Candidate Page, with confidence values and “Needs verification” tags below a threshold (default 0.75). Evidence tooltips present.
+- LinkedIn: `linkedin_url` displayed in list and detail when available; extracted from CSV or resume text via regex.
+- Freshness: Show `resume_updated_at` date with freshness badges — Recent (<6m), Stale (6–18m), Very stale (>18m). Provide a “Re‑upload latest resume” CTA in the Candidate Page.
+
+## API Notes (planned)
+
+- Pre‑Interview Analysis callables (backend):
+  - `preInterviewAnalysis.generate` → generates and stores `pre_interview_analysis` under `candidates/{id}`
+  - `preInterviewAnalysis.get` → returns latest stored analysis
+- Search payload includes: `linkedin_url`, `resume_updated_at` (or `processed_at`), `analysis_confidence`, and a boolean `low_profile_depth` when applicable.
 
 ## Prerequisites
 
