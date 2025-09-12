@@ -61,7 +61,7 @@ class IntelligentSkillProcessor:
 
         # Stage 1 model configurable via env; default to Qwen2.5 32B Instruct
         # Adjust to the exact Together model ID during deployment if needed
-        self.model = os.getenv('TOGETHER_MODEL_STAGE1', 'Qwen2.5-32B-Instruct')
+        self.model = os.getenv('TOGETHER_MODEL_STAGE1', 'Qwen/Qwen2.5-32B-Instruct')
         self.base_url = "https://api.together.xyz/v1/chat/completions"
         self.session = None
         

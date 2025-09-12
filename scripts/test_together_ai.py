@@ -13,11 +13,15 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-API_KEY = os.getenv('TOGETHER_API_KEY', '6d9eb8b102a05bae51baa97445cff83aff1eaf38ee7c09528bee54efe4ca4824')
+API_KEY = os.getenv('TOGETHER_API_KEY')
 
 async def test_together_ai():
     """Test basic Together AI API connectivity"""
     
+    if not API_KEY:
+        print("⚠️ TOGETHER_API_KEY not set; skipping live API test.")
+        return True
+
     url = "https://api.together.xyz/v1/chat/completions"
     
     headers = {

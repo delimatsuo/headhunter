@@ -50,11 +50,11 @@ class EnhancedTogetherAIProcessor:
     """Processes candidates with deep recruiter-level analysis"""
     
     def __init__(self, api_key: str = None):
-        self.api_key = api_key or os.getenv('TOGETHER_API_KEY', '6d9eb8b102a05bae51baa97445cff83aff1eaf38ee7c09528bee54efe4ca4824')
+        self.api_key = api_key or os.getenv('TOGETHER_API_KEY')
         if not self.api_key:
             raise ValueError("Together API key not provided")
             
-        self.model = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
+        self.model = os.getenv('TOGETHER_MODEL_STAGE1', 'Qwen/Qwen2.5-32B-Instruct')
         self.base_url = "https://api.together.xyz/v1/chat/completions"
         self.session = None
         

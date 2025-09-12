@@ -498,11 +498,1842 @@
         ],
         "priority": "medium",
         "subtasks": []
+      },
+      {
+        "id": 27,
+        "title": "Configure Together AI Integration and Environment",
+        "description": "Set up Together AI API integration with proper environment configuration for Qwen 2.5 32B Instruct model and establish development/production environment variables",
+        "details": "1. Create .env files for development and production with TOGETHER_API_KEY\n2. Configure TOGETHER_MODEL_STAGE1='qwen/Qwen2.5-32B-Instruct-Turbo' in environment\n3. Set up aiohttp client with proper headers, timeout (30s), and retry logic with exponential backoff\n4. Implement rate limiting (100 req/min) and circuit breaker pattern\n5. Add MAX_ESTIMATED_COST safeguards and per-run confirmation flags\n6. Create together_client.py module with async context manager for connection pooling\n7. Implement cost tracking and logging for API calls",
+        "testStrategy": "Unit tests for API client initialization, mock Together AI responses for retry logic testing, integration test with actual API using small test dataset, verify rate limiting and circuit breaker behavior, test cost estimation calculations",
+        "priority": "high",
+        "dependencies": [],
+        "status": "in-progress",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up environment configuration files",
+            "description": "Create and configure .env files for development and production environments with Together AI API keys and model configuration",
+            "dependencies": [],
+            "details": "Create .env.development and .env.production files with TOGETHER_API_KEY variable. Add TOGETHER_MODEL_STAGE1='qwen/Qwen2.5-32B-Instruct-Turbo' configuration. Include MAX_ESTIMATED_COST limits and other environment-specific settings. Ensure proper .gitignore entries to prevent accidental commits of sensitive data.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Together AI client base module",
+            "description": "Create together_client.py module with async context manager for connection pooling and basic API communication",
+            "dependencies": [
+              "27.1"
+            ],
+            "details": "Implement TogetherAIClient class using aiohttp with async context manager pattern. Configure connection pooling with appropriate limits. Set up proper headers including API key authentication. Implement base request methods with 30-second timeout. Create methods for chat completions endpoint specific to Qwen 2.5 32B model.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Add retry logic with exponential backoff",
+            "description": "Implement robust retry mechanism with exponential backoff for handling transient API failures",
+            "dependencies": [
+              "27.2"
+            ],
+            "details": "Create retry decorator with configurable attempts (default 3). Implement exponential backoff with base delay of 2 seconds (2-4-8 pattern). Add jitter to prevent thundering herd problem. Handle specific HTTP status codes (429, 503, 504) for retries. Log retry attempts with appropriate detail levels.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement rate limiting mechanism",
+            "description": "Create rate limiter to enforce 100 requests per minute limit and prevent API quota exhaustion",
+            "dependencies": [
+              "27.2"
+            ],
+            "details": "Implement token bucket or sliding window rate limiter for 100 req/min limit. Create async-safe rate limiting using asyncio locks. Add queue mechanism for pending requests when rate limit is reached. Implement request batching optimization where applicable. Add metrics for rate limit hits and queue depth.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Build circuit breaker pattern",
+            "description": "Implement circuit breaker to prevent cascading failures and protect the API from overload",
+            "dependencies": [
+              "27.3",
+              "27.4"
+            ],
+            "details": "Create circuit breaker with three states: closed, open, half-open. Configure failure threshold (e.g., 5 failures in 60 seconds). Implement automatic recovery with half-open state testing. Add configurable timeout for open state (default 30 seconds). Include metrics for circuit breaker state transitions and failure rates.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Create cost tracking and estimation system",
+            "description": "Implement comprehensive cost tracking for API calls with estimation and safeguards",
+            "dependencies": [
+              "27.2"
+            ],
+            "details": "Calculate cost based on token usage for Qwen 2.5 32B model pricing. Implement per-request and cumulative cost tracking. Add MAX_ESTIMATED_COST safeguards with automatic cutoff. Create cost confirmation prompts for operations exceeding thresholds. Generate cost reports and analytics. Store historical cost data for analysis.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Set up monitoring and logging infrastructure",
+            "description": "Implement comprehensive logging and monitoring for API interactions and system health",
+            "dependencies": [
+              "27.2",
+              "27.5",
+              "27.6"
+            ],
+            "details": "Configure structured logging with appropriate log levels. Track API response times, success rates, and error patterns. Implement performance metrics collection (latency, throughput). Set up alerting for circuit breaker trips and rate limit violations. Create dashboard for cost tracking and API usage visualization.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Create integration tests and documentation",
+            "description": "Develop comprehensive test suite and documentation for the Together AI integration",
+            "dependencies": [
+              "27.1",
+              "27.2",
+              "27.3",
+              "27.4",
+              "27.5",
+              "27.6",
+              "27.7"
+            ],
+            "details": "Write unit tests for all components (client, rate limiter, circuit breaker, retry logic). Create integration tests with mocked Together AI responses. Add end-to-end test with actual API using minimal test data. Document API client usage patterns and configuration options. Create troubleshooting guide for common issues. Verify all resilience patterns work correctly under load.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 28,
+        "title": "Implement Parsing Complexity Analyzer",
+        "description": "Build deterministic pre-processing analyzer to assess document complexity and set appropriate chunk sizes, prompt selection, and retry policies before AI enrichment",
+        "details": "1. Create ParsingComplexityAnalyzer class in scripts/parsing_complexity_analyzer.py\n2. Implement document analysis: detect tables, OCR quality, format (PDF/DOCX/TXT), page count\n3. Calculate complexity score based on: noise level, formatting complexity, content density\n4. Define risk levels (low/medium/high) with corresponding chunk sizes (1-3 pages)\n5. Select appropriate prompts based on document type (standard/tabular/noisy)\n6. Set retry and repair policies per risk level\n7. Log analysis results with risk_level, recommendations, and metadata",
+        "testStrategy": "Test with diverse document types (clean PDFs, scanned images, complex tables), verify chunk size recommendations match document complexity, validate prompt selection logic, test edge cases with corrupted or empty documents",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create base ParsingComplexityAnalyzer class structure",
+            "description": "Set up the foundational class with configuration, initialization, and core interfaces for document analysis",
+            "dependencies": [],
+            "details": "Create scripts/parsing_complexity_analyzer.py with ParsingComplexityAnalyzer class, define configuration dataclasses for analysis settings, implement initialization with configurable thresholds, create abstract methods for each analysis component, set up logging infrastructure",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement document format detection system",
+            "description": "Build module to accurately detect and validate document formats (PDF, DOCX, TXT, images) with MIME type verification",
+            "dependencies": [
+              "28.1"
+            ],
+            "details": "Implement format detection using python-magic for MIME types, add file extension validation, detect encrypted or password-protected documents, identify scanned vs native PDFs, implement format-specific metadata extraction, handle edge cases like corrupted headers",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Build OCR quality assessment module",
+            "description": "Create system to evaluate OCR quality metrics including confidence scores, noise levels, and text readability",
+            "dependencies": [
+              "28.2"
+            ],
+            "details": "Integrate Tesseract OCR with confidence scoring, implement noise detection algorithms, calculate text density and readability metrics, detect orientation and skew issues, assess image resolution and contrast quality, create OCR confidence thresholds for different risk levels",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Develop table detection and parsing logic",
+            "description": "Implement algorithms to detect, extract, and analyze tabular data within documents",
+            "dependencies": [
+              "28.2"
+            ],
+            "details": "Use libraries like Camelot or Tabula for PDF table extraction, implement table structure detection using computer vision, create table complexity scoring based on rows/columns/nested structures, handle multi-page tables and merged cells, develop fallback strategies for poorly formatted tables",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement complexity scoring algorithm",
+            "description": "Create weighted scoring system that combines multiple document characteristics into a single complexity metric",
+            "dependencies": [
+              "28.3",
+              "28.4"
+            ],
+            "details": "Define weight factors for each complexity dimension, implement normalized scoring (0-100 scale), create composite score calculation combining OCR quality, formatting complexity, table presence, content density, develop score calibration based on document samples, add configurable weight adjustments",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Build risk level classification system",
+            "description": "Develop classifier to categorize documents into low/medium/high risk levels based on complexity scores",
+            "dependencies": [
+              "28.5"
+            ],
+            "details": "Define risk level thresholds and boundaries, implement classification logic with hysteresis to prevent flapping, create risk level dataclasses with associated metadata, add override mechanisms for manual risk assignment, implement risk level explanation generation for transparency",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Create dynamic chunk size calculator",
+            "description": "Build adaptive chunking system that determines optimal page/section splits based on document complexity",
+            "dependencies": [
+              "28.6"
+            ],
+            "details": "Implement base chunk sizes per risk level (1-3 pages), add dynamic adjustment based on content density, create smart splitting at logical boundaries (sections, paragraphs), handle special cases like single-page documents, implement chunk overlap strategies for context preservation",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Develop prompt selection engine",
+            "description": "Create intelligent prompt selection system that matches document characteristics to appropriate AI prompts",
+            "dependencies": [
+              "28.6"
+            ],
+            "details": "Build prompt template library for different document types (standard, tabular, noisy, mixed), implement prompt selection logic based on detected features, create prompt parameterization for dynamic customization, add prompt chaining for complex documents, implement A/B testing framework for prompt effectiveness",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Configure retry and repair policies",
+            "description": "Implement adaptive retry strategies and repair mechanisms based on risk levels and failure patterns",
+            "dependencies": [
+              "28.6",
+              "28.8"
+            ],
+            "details": "Define retry counts per risk level (low: 1, medium: 2, high: 3), implement exponential backoff strategies, create repair policies for common parsing failures, add circuit breaker patterns for persistent failures, implement fallback processing strategies, configure timeout policies based on document complexity",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Create comprehensive testing and logging system",
+            "description": "Build extensive test suite and detailed logging framework for analysis results and recommendations",
+            "dependencies": [
+              "28.1",
+              "28.2",
+              "28.3",
+              "28.4",
+              "28.5",
+              "28.6",
+              "28.7",
+              "28.8",
+              "28.9"
+            ],
+            "details": "Implement structured logging with risk_level, recommendations, and metadata, create test suite with diverse document types (clean PDFs, scanned images, complex tables, corrupted files), add performance benchmarking and metrics collection, implement analysis result persistence and retrieval, create visualization tools for complexity analysis results",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 29,
+        "title": "Build Enhanced Together AI Processor with Skill Inference",
+        "description": "Implement the core Together AI processing pipeline with single-pass enrichment including explicit and inferred skills with confidence scoring and evidence tracking",
+        "details": "1. Enhance scripts/intelligent_skill_processor.py with Together AI integration\n2. Implement recruiter-grade prompts for comprehensive candidate analysis\n3. Add skill inference logic: explicit_skills (100% confidence) vs inferred_skills (0-100% with evidence)\n4. Calculate analysis_confidence score [0,1] for overall signal quality\n5. Add quality_flags for low_content profiles\n6. Implement streaming response processing with async generators\n7. Add structured output parsing with Pydantic models\n8. Include processing_metadata: timestamp, processor version, model used",
+        "testStrategy": "Test with 50 sample resumes of varying quality, verify skill extraction accuracy, validate confidence scores correlate with evidence strength, test low-content detection, measure processing time per candidate",
+        "priority": "high",
+        "dependencies": [
+          27,
+          28
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up Together AI client integration module",
+            "description": "Create a robust Together AI client wrapper with connection pooling, authentication, and base configuration for the Llama 3.1 8B Instruct Turbo model",
+            "dependencies": [],
+            "details": "Build TogetherAIClient class in scripts/together_ai_client.py with async context manager support, proper header configuration with API key from environment, connection pooling using aiohttp.ClientSession, timeout handling (30s default), and base URL configuration for Together AI endpoints",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Design recruiter-grade prompt templates",
+            "description": "Create comprehensive prompt templates that extract career trajectory, skills, leadership scope, and placement likelihood from resumes with structured JSON output",
+            "dependencies": [],
+            "details": "Develop prompt templates in scripts/recruiter_prompts_together.py that include instructions for extracting explicit skills, inferring implicit skills with evidence, analyzing career progression patterns, identifying leadership indicators, and formatting output as structured JSON with confidence scores",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement skill extraction algorithm",
+            "description": "Build the core algorithm to differentiate between explicit skills (directly stated) and inferred skills (derived from context) with proper categorization",
+            "dependencies": [
+              "29.2"
+            ],
+            "details": "Create skill_extractor.py module with methods to parse explicit skills from resume text (100% confidence), identify skill indicators and context clues for inference, categorize skills by type (technical, soft, domain-specific), and maintain skill taxonomy mapping for consistency",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Develop confidence scoring system",
+            "description": "Implement a multi-factor confidence scoring mechanism that evaluates the strength of skill evidence and overall profile quality",
+            "dependencies": [
+              "29.3"
+            ],
+            "details": "Build confidence_scorer.py with algorithms to calculate individual skill confidence (0-100%), evaluate evidence strength based on context proximity and frequency, compute overall analysis_confidence score [0,1], and implement weighted scoring based on evidence types (direct mention, project context, role responsibility)",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Build evidence tracking mechanism",
+            "description": "Create a system to capture and store specific text snippets and context that support each inferred skill for transparency and validation",
+            "dependencies": [
+              "29.3",
+              "29.4"
+            ],
+            "details": "Implement evidence_tracker.py to extract relevant text snippets for each skill inference, map evidence to source sections (experience, projects, education), maintain evidence chains for complex inferences, and format evidence for inclusion in final output with line references",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement quality flag detection",
+            "description": "Develop logic to identify and flag low-content profiles, missing critical information, and data quality issues",
+            "dependencies": [
+              "29.4"
+            ],
+            "details": "Create quality_validator.py with rules to detect sparse resumes (word count thresholds), identify missing key sections (no experience, no skills listed), flag formatting issues that impact parsing, calculate content richness scores, and generate quality_flags array with specific issues identified",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Create async streaming response handler",
+            "description": "Build an asynchronous generator system to process Together AI streaming responses in real-time for improved performance and user feedback",
+            "dependencies": [
+              "29.1"
+            ],
+            "details": "Implement streaming_handler.py with async generator functions to process SSE (Server-Sent Events) streams, accumulate partial JSON responses, yield progress updates during processing, handle stream interruptions gracefully, and implement buffering for optimal chunk processing",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Define Pydantic models for structured output",
+            "description": "Create comprehensive Pydantic models to validate and structure the enriched candidate profiles with type safety and schema enforcement",
+            "dependencies": [],
+            "details": "Build models.py with Pydantic BaseModel classes for CandidateProfile, SkillAssessment (explicit and inferred), CareerTrajectory, LeadershipScope, ProcessingMetadata, implement custom validators for confidence scores and evidence, add JSON schema generation for API documentation, and include serialization methods for Firestore compatibility",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Implement processing metadata tracking",
+            "description": "Create a system to capture and store processing metadata including timestamps, model versions, and processing statistics",
+            "dependencies": [
+              "29.8"
+            ],
+            "details": "Build metadata_tracker.py to record processing start/end timestamps, track Together AI model version used, capture token usage and cost estimates, log processor version and configuration, store retry attempts and error recovery actions, and include performance metrics (latency, throughput)",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Develop comprehensive error handling",
+            "description": "Implement robust error handling with retry logic, graceful degradation, and detailed error reporting for all failure scenarios",
+            "dependencies": [
+              "29.1",
+              "29.7"
+            ],
+            "details": "Create error_handler.py with exponential backoff retry logic (3 attempts), circuit breaker pattern for API failures, graceful degradation for partial processing failures, detailed error logging with context preservation, fallback strategies for timeout scenarios, and error aggregation for batch processing",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 11,
+            "title": "Optimize batch processing performance",
+            "description": "Implement performance optimizations for processing multiple candidates concurrently with resource management and throughput optimization",
+            "dependencies": [
+              "29.1",
+              "29.7",
+              "29.10"
+            ],
+            "details": "Enhance intelligent_skill_processor.py with configurable concurrency limits (semaphore-based), implement batching strategies for API calls, add memory-efficient streaming for large batches, optimize prompt caching for repeated patterns, implement progress tracking with ETA calculations, and add resource monitoring to prevent overload",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 12,
+            "title": "Create end-to-end integration tests",
+            "description": "Develop comprehensive test suite using real resume samples to validate the entire processing pipeline from input to enriched output",
+            "dependencies": [
+              "29.1",
+              "29.2",
+              "29.3",
+              "29.4",
+              "29.5",
+              "29.6",
+              "29.7",
+              "29.8",
+              "29.9",
+              "29.10",
+              "29.11"
+            ],
+            "details": "Build test_intelligent_skill_processor.py with 50 diverse resume samples, test skill extraction accuracy against ground truth, validate confidence score correlation with evidence quality, verify low-content detection thresholds, measure processing time benchmarks, test error recovery scenarios, and validate Pydantic model compliance for all outputs",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 30,
+        "title": "Implement JSON Validation and Repair System",
+        "description": "Create robust JSON parsing, validation, and repair system to handle malformed LLM outputs with schema enforcement and quarantine logic",
+        "details": "1. Define Pydantic schemas for all profile components (personal_details, education_analysis, etc.)\n2. Implement JSON repair logic: strip code fences, fix common formatting issues\n3. Add schema validation with detailed error messages\n4. Create repair prompt templates for malformed responses\n5. Implement retry mechanism with repair prompts (max 3 attempts)\n6. Add quarantine system for persistently malformed results\n7. Track repair/quarantine metrics for monitoring\n8. Target <1% repair rate and <0.1% quarantine rate",
+        "testStrategy": "Test with intentionally malformed JSON (missing brackets, embedded markdown, truncated), verify repair success rate >99%, test schema validation catches all required fields, validate quarantine triggers appropriately",
+        "priority": "high",
+        "dependencies": [
+          29
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Pydantic Schemas for Profile Components",
+            "description": "Create comprehensive Pydantic models for all profile components including personal_details, education_analysis, work_experience, skills_assessment, and other structured data elements with proper field validation and type hints",
+            "dependencies": [],
+            "details": "Implement BaseModel classes for PersonalDetails, EducationAnalysis, WorkExperience, SkillsAssessment, and ProfileSummary with required/optional fields, validation rules, and nested model relationships. Include field descriptions and examples for schema documentation.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement JSON Repair Logic Engine",
+            "description": "Build deterministic JSON repair system to handle common LLM output issues like code fences, missing brackets, trailing commas, and malformed strings before schema validation",
+            "dependencies": [],
+            "details": "Create JSONRepairEngine class with methods to strip markdown code fences, fix bracket mismatches, remove trailing commas, escape unescaped quotes, and handle truncated JSON. Include regex patterns and parsing logic for common malformation patterns.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Build Schema Validation Engine",
+            "description": "Implement comprehensive validation system using Pydantic schemas with detailed error reporting and field-level validation feedback for debugging malformed responses",
+            "dependencies": [
+              "30.1"
+            ],
+            "details": "Create SchemaValidator class that validates JSON against Pydantic models, generates detailed error messages with field paths and validation failures, and provides structured feedback for repair attempts. Include validation result objects with success/failure status.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Create Repair Prompt Templates",
+            "description": "Design LLM prompt templates for repairing malformed JSON responses with context-aware instructions and examples of common fixes to guide the repair process",
+            "dependencies": [
+              "30.2"
+            ],
+            "details": "Build RepairPromptBuilder with templates for different malformation types, include original malformed JSON, validation errors, expected schema format, and repair examples. Create progressive repair strategies from simple fixes to complete reconstruction.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement Retry Mechanism with Progressive Repair",
+            "description": "Build retry system with escalating repair strategies: deterministic fixes first, then LLM-assisted repair, with maximum 3 attempts and progressive timeout handling",
+            "dependencies": [
+              "30.2",
+              "30.3",
+              "30.4"
+            ],
+            "details": "Create RetryManager class with attempt tracking, progressive repair strategy selection, timeout handling, and success/failure logging. Implement exponential backoff for LLM calls and circuit breaker pattern for persistent failures.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Build Quarantine System",
+            "description": "Implement quarantine mechanism for persistently malformed responses that cannot be repaired after maximum retry attempts, with storage and analysis capabilities",
+            "dependencies": [
+              "30.5"
+            ],
+            "details": "Create QuarantineManager with database storage for failed responses, metadata tracking (original input, repair attempts, error types), and analysis tools for identifying patterns in quarantined data. Include quarantine retrieval and manual review interfaces.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Implement Metrics Tracking and Monitoring",
+            "description": "Build comprehensive metrics system to track repair rates, quarantine rates, validation success, and performance statistics with alerting for threshold breaches",
+            "dependencies": [
+              "30.5",
+              "30.6"
+            ],
+            "details": "Create MetricsCollector with counters for repair attempts, success rates, quarantine events, and processing times. Implement dashboard integration, threshold monitoring (target <1% repair rate, <0.1% quarantine rate), and alerting system for anomalies.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Optimize Performance for Batch Processing",
+            "description": "Implement performance optimizations for handling large batches of JSON validation and repair operations with parallel processing and resource management",
+            "dependencies": [
+              "30.3",
+              "30.5"
+            ],
+            "details": "Create BatchProcessor with concurrent validation, connection pooling for LLM calls, memory-efficient streaming for large datasets, and progress tracking. Implement rate limiting, resource throttling, and batch size optimization based on system capacity.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Develop Comprehensive Test Suite",
+            "description": "Create extensive test coverage for all validation and repair scenarios including unit tests, integration tests, and stress tests with malformed JSON edge cases",
+            "dependencies": [
+              "30.1",
+              "30.2",
+              "30.3",
+              "30.4",
+              "30.5",
+              "30.6",
+              "30.7"
+            ],
+            "details": "Build test suite with malformed JSON generators, schema validation tests, repair logic verification, quarantine system testing, metrics validation, and performance benchmarks. Include edge cases like deeply nested objects, large payloads, and concurrent processing scenarios.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 31,
+        "title": "Build Firestore Streaming Pipeline",
+        "description": "Implement direct streaming of processed profiles to Firestore with proper collection structure, flattened search fields, and batch write optimization",
+        "details": "1. Enhance scripts/firebase_streaming_processor.py for production use\n2. Implement batch writes (500 docs per batch) with error handling\n3. Create flattened fields for search: years_experience, current_role, primary_skills\n4. Store full profiles in enriched_profiles/ collection\n5. Store search-optimized data in candidates/ collection\n6. Add upsert logic based on candidate_id\n7. Implement progress tracking and resumable processing\n8. Add transaction support for atomic updates",
+        "testStrategy": "Test batch write performance with 1000 profiles, verify upsert behavior with duplicate IDs, test transaction rollback on errors, validate data consistency between collections",
+        "priority": "high",
+        "dependencies": [
+          29,
+          30
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Setup Firestore client with authentication",
+            "description": "Initialize Firebase Admin SDK with service account credentials and configure Firestore client with proper authentication and project settings",
+            "dependencies": [],
+            "details": "Load service account credentials from environment or JSON file, initialize Firebase Admin app with proper project ID, configure Firestore client settings including retry policies and timeouts, validate connection to Firestore, implement connection pooling for optimal performance",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Design collection structure and document schemas",
+            "description": "Define the data structure for candidates/ and enriched_profiles/ collections with proper field types and indexing strategy",
+            "dependencies": [
+              "31.1"
+            ],
+            "details": "Create schema for enriched_profiles/ with full nested structure, design flattened schema for candidates/ collection optimized for search, define composite indexes for common query patterns, document field naming conventions and data types, plan for future schema evolution and versioning",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement field flattening logic for search optimization",
+            "description": "Create functions to extract and flatten nested data into search-optimized fields like years_experience, current_role, and primary_skills",
+            "dependencies": [
+              "31.2"
+            ],
+            "details": "Extract years_experience from career_trajectory object, flatten current_role from nested position data, create primary_skills array from skill_assessment, implement skill normalization and deduplication, add computed fields like seniority_level and experience_band for filtering",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Build batch write implementation with 500-doc optimization",
+            "description": "Implement efficient batch writing system that accumulates documents and writes in optimized batches of 500 documents",
+            "dependencies": [
+              "31.1",
+              "31.3"
+            ],
+            "details": "Create BatchWriter class with configurable batch size, implement document accumulator with memory management, add automatic flush when batch size reached, handle partial batch writes on process termination, optimize write throughput with parallel batch execution",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement upsert mechanism with candidate_id",
+            "description": "Create idempotent upsert logic that updates existing documents or creates new ones based on candidate_id",
+            "dependencies": [
+              "31.4"
+            ],
+            "details": "Implement get-or-create pattern using candidate_id as document ID, add merge strategies for partial updates, handle concurrent update conflicts, implement version tracking for audit trail, add last_updated timestamp management",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Add transaction support for atomic multi-collection updates",
+            "description": "Implement transactional writes to ensure data consistency when updating both candidates/ and enriched_profiles/ collections",
+            "dependencies": [
+              "31.5"
+            ],
+            "details": "Create transaction wrapper for dual-collection writes, implement rollback logic for failed transactions, handle transaction size limits (500 operations), add transaction retry with exponential backoff, ensure ACID properties across collections",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Build progress tracking and resumable processing system",
+            "description": "Implement checkpoint-based progress tracking that allows processing to resume from last successful batch after interruption",
+            "dependencies": [
+              "31.4",
+              "31.6"
+            ],
+            "details": "Create checkpoint file with last processed candidate_id, implement resume logic from checkpoint on restart, add progress bar with ETA calculation, track success/failure statistics per batch, implement graceful shutdown with checkpoint save",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Implement comprehensive error handling and retry logic",
+            "description": "Add robust error handling for network failures, rate limits, and data validation errors with intelligent retry strategies",
+            "dependencies": [
+              "31.6",
+              "31.7"
+            ],
+            "details": "Implement exponential backoff for rate limit errors, add circuit breaker for persistent failures, create dead letter queue for failed documents, implement data validation before write attempts, add detailed error logging with context for debugging",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Performance test with large datasets and optimize",
+            "description": "Conduct thorough performance testing with 10,000+ candidate profiles and optimize batch sizes, parallelization, and resource usage",
+            "dependencies": [
+              "31.7",
+              "31.8"
+            ],
+            "details": "Test with 1,000, 5,000, and 10,000 profile datasets, measure write throughput and latency metrics, optimize batch size based on performance data, test concurrent processing with multiple workers, validate data consistency under high load",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 32,
+        "title": "Implement Cloud Functions CRUD and Search APIs",
+        "description": "Build secure Cloud Functions for candidate CRUD operations, search endpoints, and embedding generation with proper authentication and authorization",
+        "details": "1. Implement candidates-crud.ts with GET/POST/PUT/DELETE operations\n2. Add Firebase Auth middleware for all endpoints\n3. Implement role-based access control using allowed_users collection\n4. Create skillAwareSearch callable function with JD parsing\n5. Add getCandidateSkillAssessment for detailed skill views\n6. Implement pagination (50 results default, expandable)\n7. Add request validation and sanitization\n8. Include audit logging for all operations",
+        "testStrategy": "Test CRUD operations with valid/invalid auth tokens, verify RBAC enforcement, test search with various JD formats, validate pagination logic, test audit log generation",
+        "priority": "medium",
+        "dependencies": [
+          31
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design API architecture and endpoint structure",
+            "description": "Define the overall API architecture, endpoint naming conventions, request/response schemas, and HTTP methods for all CRUD and search operations",
+            "dependencies": [],
+            "details": "Create detailed API specification including endpoint paths (/api/candidates, /api/search, etc.), HTTP methods mapping, request/response formats, status codes, and error response structures. Define TypeScript interfaces for all data models.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Firebase Auth middleware",
+            "description": "Create authentication middleware that validates Firebase ID tokens and extracts user information for all protected endpoints",
+            "dependencies": [
+              "32.1"
+            ],
+            "details": "Build middleware function that verifies Firebase ID tokens using firebase-admin SDK, extracts user claims, handles token expiration, and attaches user context to requests. Include token refresh logic and proper error handling for invalid/expired tokens.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Build role-based access control system",
+            "description": "Implement RBAC using allowed_users Firestore collection to enforce permissions for different user roles and operations",
+            "dependencies": [
+              "32.2"
+            ],
+            "details": "Create authorization middleware that checks user roles against allowed_users collection, implement role hierarchy (admin, recruiter, viewer), define permission matrices for each endpoint, and cache user permissions for performance.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Create CRUD endpoints for candidates",
+            "description": "Implement GET, POST, PUT, and DELETE operations in candidates-crud.ts with proper data validation and Firestore integration",
+            "dependencies": [
+              "32.1",
+              "32.2",
+              "32.3"
+            ],
+            "details": "Build Express/Cloud Functions handlers for: GET /candidates/:id, GET /candidates (list), POST /candidates (create), PUT /candidates/:id (update), DELETE /candidates/:id. Include field-level validation, sanitization, and Firestore transaction handling.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement skillAwareSearch callable function",
+            "description": "Build the main search function that parses job descriptions and matches candidates based on skills and requirements",
+            "dependencies": [
+              "32.1",
+              "32.2",
+              "32.3"
+            ],
+            "details": "Create Cloud Function that accepts JD text, parses it using Together AI to extract required skills, queries Firestore/Cloud SQL for matching candidates, ranks results by skill match scores, and returns paginated results with relevance scores.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Build getCandidateSkillAssessment endpoint",
+            "description": "Create endpoint that returns detailed skill assessment for a specific candidate including confidence scores and skill categories",
+            "dependencies": [
+              "32.4"
+            ],
+            "details": "Implement endpoint that fetches candidate data, retrieves skill assessments with confidence levels, categorizes skills (technical, soft, domain), includes explicit vs inferred classification, and formats response with skill hierarchy and proficiency levels.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Implement pagination system",
+            "description": "Add cursor-based pagination for all list endpoints with configurable page sizes and efficient query optimization",
+            "dependencies": [
+              "32.4",
+              "32.5"
+            ],
+            "details": "Build pagination utilities supporting cursor-based navigation, implement default 50 results with expandable limits (max 200), add page metadata (total count, hasNext, cursor tokens), optimize Firestore queries with proper indexing, and handle edge cases.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Create request validation and sanitization layer",
+            "description": "Implement comprehensive input validation and sanitization for all API endpoints to prevent injection attacks and ensure data integrity",
+            "dependencies": [
+              "32.4",
+              "32.5",
+              "32.6"
+            ],
+            "details": "Use express-validator or Joi for request validation, implement input sanitization for XSS prevention, validate data types and formats, enforce field length limits, sanitize file uploads, and create reusable validation middleware.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Build audit logging system",
+            "description": "Implement comprehensive audit logging for all CRUD operations and searches with user tracking and operation details",
+            "dependencies": [
+              "32.4",
+              "32.5",
+              "32.6"
+            ],
+            "details": "Create audit log collection in Firestore, log all operations with timestamp, user ID, action type, affected resources, request metadata, and changes made. Implement log retention policies and query capabilities for compliance.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Implement error handling and response formatting",
+            "description": "Create consistent error handling across all endpoints with proper status codes, error messages, and response formatting",
+            "dependencies": [
+              "32.4",
+              "32.5",
+              "32.6",
+              "32.7",
+              "32.8",
+              "32.9"
+            ],
+            "details": "Build centralized error handler middleware, implement error types (ValidationError, AuthError, NotFoundError), create consistent error response format, add request ID tracking, implement retry logic for transient errors, and format success responses consistently.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 11,
+            "title": "Create API documentation and security testing",
+            "description": "Document all API endpoints with OpenAPI/Swagger and implement comprehensive security testing suite",
+            "dependencies": [
+              "32.1",
+              "32.2",
+              "32.3",
+              "32.4",
+              "32.5",
+              "32.6",
+              "32.7",
+              "32.8",
+              "32.9",
+              "32.10"
+            ],
+            "details": "Generate OpenAPI 3.0 specification, document authentication requirements, create example requests/responses, implement security tests for auth bypass attempts, SQL/NoSQL injection, XSS, rate limiting, and RBAC enforcement. Include integration tests for all endpoints.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 34,
+        "title": "Build Unified Search and Ranking System",
+        "description": "Implement composite ranking algorithm that combines vector similarity, skill probabilities, experience signals, and confidence scores with proper demotion for low-content profiles",
+        "details": "1. Implement unified search endpoint blending multiple signals\n2. Create ranking formula: 0.4*vector_sim + 0.3*skill_match + 0.2*experience + 0.1*confidence\n3. Add deterministic fallbacks for name/company exact matches\n4. Implement analysis_confidence demotion with floor for sparse profiles\n5. Add 'Potential matches (low profile depth)' section quota\n6. Implement re-ranking with structured features\n7. Cache search results with 5-minute TTL\n8. Add search analytics tracking",
+        "testStrategy": "Test ranking with diverse JDs and candidate pools, verify low-confidence demotion works correctly, test deterministic match boosting, validate cache invalidation, benchmark re-rank latency <500ms",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design Composite Ranking Algorithm Architecture",
+            "description": "Design the overall architecture for the composite ranking system that combines vector similarity, skill matching, experience signals, and confidence scores",
+            "dependencies": [],
+            "details": "Define interfaces for each ranking signal component, establish data flow between components, design the scoring pipeline that processes multiple signals, create abstraction layer for future signal additions, document the mathematical formulation of the ranking formula",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Vector Similarity Signal Component",
+            "description": "Build the vector similarity scoring component that calculates semantic similarity between job descriptions and candidate profiles",
+            "dependencies": [
+              "34.1"
+            ],
+            "details": "Integrate with existing Vertex AI Vector Search, implement cosine similarity calculation, normalize scores to 0-1 range, add fallback for missing embeddings, optimize batch vector operations for multiple candidates",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Build Skill Matching Signal Component",
+            "description": "Create skill matching component that scores candidates based on explicit and inferred skill matches with confidence weighting",
+            "dependencies": [
+              "34.1"
+            ],
+            "details": "Parse required skills from job descriptions, match against candidate skill_probabilities, weight by confidence levels, handle both explicit and inferred skills, implement fuzzy matching for skill variations",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Develop Experience Signal Component",
+            "description": "Implement experience scoring that evaluates years of experience, role progression, and industry relevance",
+            "dependencies": [
+              "34.1"
+            ],
+            "details": "Extract experience requirements from JD, calculate experience match score, factor in career trajectory and progression speed, weight by industry and company tier relevance, handle edge cases like career transitions",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Create Confidence-Based Demotion Logic",
+            "description": "Implement the analysis_confidence demotion system that penalizes low-content profiles while maintaining minimum visibility",
+            "dependencies": [
+              "34.1"
+            ],
+            "details": "Define confidence thresholds for profile quality, implement demotion formula with configurable floor value, ensure sparse profiles aren't completely hidden, create 'Potential matches' quota system, add explanation for why profiles were demoted",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Build Deterministic Fallback System",
+            "description": "Implement exact match boosting for name and company searches to ensure deterministic results for known queries",
+            "dependencies": [
+              "34.1"
+            ],
+            "details": "Create exact match detection for candidate names, implement company name matching with variations, add configurable boost scores for exact matches, ensure exact matches always appear first, handle case-insensitive and partial matches",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Implement Unified Ranking Engine",
+            "description": "Build the core ranking engine that combines all signals using the weighted formula and produces final candidate rankings",
+            "dependencies": [
+              "34.2",
+              "34.3",
+              "34.4",
+              "34.5",
+              "34.6"
+            ],
+            "details": "Implement weighted scoring formula (0.4*vector + 0.3*skill + 0.2*experience + 0.1*confidence), add configurable weight parameters, handle missing signal gracefully, implement score normalization and calibration, add debug mode to expose individual signal scores",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Create Re-ranking Engine with Structured Features",
+            "description": "Build re-ranking system that applies structured business rules and filters after initial scoring",
+            "dependencies": [
+              "34.7"
+            ],
+            "details": "Implement location-based re-ranking, add visa status filtering, apply salary expectation matching, incorporate recruiter feedback signals, support custom business rules injection, maintain audit trail of re-ranking decisions",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Implement Search Result Caching",
+            "description": "Build Redis-based caching system with 5-minute TTL for search results to improve performance",
+            "dependencies": [
+              "34.7",
+              "34.8"
+            ],
+            "details": "Set up Redis connection for Cloud Functions, implement cache key generation from search parameters, add 5-minute TTL configuration, build cache invalidation on profile updates, add cache hit rate monitoring and metrics",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Build Search Analytics and A/B Testing Framework",
+            "description": "Implement comprehensive analytics tracking and A/B testing infrastructure for ranking improvements",
+            "dependencies": [
+              "34.7"
+            ],
+            "details": "Track search queries and click-through rates, log ranking positions and user selections, implement A/B test variant assignment, create metrics for ranking quality (MRR, NDCG), build dashboard for search performance monitoring, add experimental weight configurations",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 11,
+            "title": "Create Comprehensive Ranking Validation Tests",
+            "description": "Develop extensive test suite to validate ranking quality, performance, and edge cases",
+            "dependencies": [
+              "34.7",
+              "34.8",
+              "34.9",
+              "34.10"
+            ],
+            "details": "Write unit tests for each signal component, create integration tests for full ranking pipeline, add performance benchmarks (<500ms requirement), test with diverse JD and candidate pools, validate cache behavior and invalidation, test re-ranking rules application, verify low-confidence demotion logic",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 35,
+        "title": "Develop React Search UI with Authentication",
+        "description": "Build secure React web application with Firebase Authentication, JD search interface, ranked results display, and candidate detail views",
+        "details": "1. Set up React app with TypeScript and Material-UI\n2. Implement Firebase Auth with Google Sign-In (Ella domain restriction)\n3. Create JD input component with textarea and submit\n4. Build results list with minimal row display (name, role, company, score)\n5. Implement candidate detail page with full skill map\n6. Add 'Why they match' rationale display\n7. Include freshness badges and LinkedIn links\n8. Add loading states and error handling\n9. Implement responsive design for mobile",
+        "testStrategy": "Test auth flow with valid/invalid domains, test search submission and result rendering, verify responsive layout on multiple devices, test error states, validate accessibility standards",
+        "priority": "medium",
+        "dependencies": [
+          32,
+          34
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Initialize React App with TypeScript and Material-UI",
+            "description": "Set up new React application with TypeScript configuration, Material-UI theming, and project structure",
+            "dependencies": [],
+            "details": "Create React app using Create React App with TypeScript template, install Material-UI dependencies (@mui/material, @mui/icons-material, @emotion/react, @emotion/styled), configure MUI theme provider with Ella brand colors, set up folder structure (components, pages, services, utils, types), configure absolute imports in tsconfig.json, add ESLint and Prettier configurations",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Firebase Authentication with Domain Restrictions",
+            "description": "Set up Firebase Auth with Google Sign-In and enforce Ella domain email restrictions",
+            "dependencies": [
+              "35.1"
+            ],
+            "details": "Install Firebase SDK and configure Firebase project settings, implement AuthContext with useAuth hook for state management, create Google Sign-In provider with domain restriction logic (ella.com emails only), build login page with Google Sign-In button and error messaging, implement protected route wrapper component, add logout functionality in app header, handle auth persistence and session management",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Create Job Description Input Component",
+            "description": "Build JD input interface with textarea, validation, and submit functionality",
+            "dependencies": [
+              "35.1"
+            ],
+            "details": "Design JDInput component with Material-UI TextField (multiline), implement character count and minimum/maximum length validation, add placeholder text with example job description format, create submit button with loading state handling, implement form validation with error messages, add clear/reset functionality, store JD in component state with debouncing",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Build Search Results List Component",
+            "description": "Implement candidate results display with minimal row format and pagination",
+            "dependencies": [
+              "35.1",
+              "35.3"
+            ],
+            "details": "Create CandidateList component with Material-UI List/ListItem, display minimal info per row (name, current role, company, match score), implement match score visual indicator (progress bar or badge), add pagination with Material-UI Pagination component, implement sorting options (score, freshness, name), create empty state and no results messaging, add click handler to navigate to detail view",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement Candidate Detail View Component",
+            "description": "Build comprehensive candidate profile page with full skill mapping and experience details",
+            "dependencies": [
+              "35.1",
+              "35.4"
+            ],
+            "details": "Create CandidateDetail component with Material-UI Card layouts, display full profile information (experience, education, skills), implement skill map visualization using chips or radar chart, show career trajectory and progression timeline, display company pedigree and role history, add back navigation to results list, implement data loading from Firestore by candidate ID",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Add Match Rationale Display System",
+            "description": "Implement 'Why they match' explanation cards with key matching factors",
+            "dependencies": [
+              "35.5"
+            ],
+            "details": "Create MatchRationale component with Material-UI Cards, display top 3-5 matching factors with explanations, implement skill match percentage visualization, show experience alignment highlights, add keyword matches from JD to profile, use color coding for match strength indicators, integrate rationale data from search API response",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Integrate Freshness Badges and LinkedIn Links",
+            "description": "Add profile freshness indicators and external LinkedIn profile links",
+            "dependencies": [
+              "35.4",
+              "35.5"
+            ],
+            "details": "Create FreshnessBadge component with date calculations, implement color-coded badges (green: <30 days, yellow: 30-90 days, red: >90 days), add LinkedIn icon button with external link handling, implement URL validation for LinkedIn profiles, add tooltip explanations for freshness indicators, handle missing LinkedIn URLs gracefully, ensure links open in new tabs with security attributes",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Implement Loading States and Error Handling",
+            "description": "Add comprehensive loading indicators and error boundary components",
+            "dependencies": [
+              "35.2",
+              "35.3",
+              "35.4",
+              "35.5"
+            ],
+            "details": "Create reusable Loading component with Material-UI Skeleton, implement error boundary for React error catching, add try-catch blocks for API calls with user-friendly messages, create toast notifications for success/error states, implement retry logic for failed API requests, add loading states for search, pagination, and detail views, handle network timeout scenarios",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Develop Responsive Design Implementation",
+            "description": "Ensure all components work seamlessly across mobile, tablet, and desktop viewports",
+            "dependencies": [
+              "35.3",
+              "35.4",
+              "35.5",
+              "35.6"
+            ],
+            "details": "Implement Material-UI responsive breakpoints (xs, sm, md, lg, xl), create mobile-first CSS with media queries, adjust component layouts for different screen sizes, implement collapsible navigation for mobile, ensure touch-friendly button sizes (minimum 44px), test on various devices using Chrome DevTools, optimize font sizes and spacing for readability",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Ensure Accessibility Compliance",
+            "description": "Implement WCAG 2.1 AA accessibility standards across all components",
+            "dependencies": [
+              "35.2",
+              "35.3",
+              "35.4",
+              "35.5",
+              "35.6",
+              "35.7",
+              "35.8",
+              "35.9"
+            ],
+            "details": "Add proper ARIA labels and roles to all components, ensure keyboard navigation support throughout app, implement focus management and tab order, add screen reader announcements for dynamic content, ensure color contrast ratios meet WCAG standards, add alt text for all images and icons, test with accessibility tools (axe DevTools, WAVE), implement skip navigation links",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 42,
+        "title": "Implement Embedding Generation Service",
+        "description": "Build embedding generation service using Vertex AI text-embedding-004 with plans for Together AI migration, including batch processing and storage",
+        "details": "1. Create VectorSearchService class in functions/src/vector-search.ts\n2. Implement Vertex AI text-embedding-004 integration\n3. Build batch embedding generation for efficiency\n4. Store embeddings in candidate_embeddings collection\n5. Create embedding provider abstraction for future Together AI migration\n6. Implement embedding caching and update logic\n7. Add embedding generation triggers for new/updated profiles",
+        "testStrategy": "Test embedding generation with sample texts, verify vector dimensionality (768), test batch processing performance, validate storage in Firestore, test cache invalidation logic",
+        "priority": "medium",
+        "dependencies": [
+          "31",
+          "32"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create VectorSearchService class structure",
+            "description": "Design and implement the base VectorSearchService class in functions/src/vector-search.ts with TypeScript interfaces for embedding operations",
+            "dependencies": [],
+            "details": "Create the VectorSearchService class with methods for generateEmbedding(), generateBatchEmbeddings(), searchSimilar(), and updateEmbedding(). Define TypeScript interfaces for EmbeddingRequest, EmbeddingResponse, SearchRequest, and SearchResult. Set up error handling and logging infrastructure.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Vertex AI text-embedding-004 integration",
+            "description": "Integrate Vertex AI text-embedding-004 model for generating 768-dimensional embeddings with proper authentication and error handling",
+            "dependencies": [
+              "42.1"
+            ],
+            "details": "Set up Vertex AI client initialization with proper credentials, implement the generateEmbedding() method to call text-embedding-004 API, handle API rate limits and quotas, add retry logic with exponential backoff, validate embedding dimensions (768), and implement proper error handling for API failures.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Build batch embedding generation system",
+            "description": "Implement efficient batch processing for generating embeddings for multiple texts simultaneously to optimize API usage and performance",
+            "dependencies": [
+              "42.2"
+            ],
+            "details": "Implement generateBatchEmbeddings() method with configurable batch sizes (default 100), add queue management for large batch requests, implement parallel processing with concurrency limits, add progress tracking and reporting, handle partial failures in batch processing, and optimize for Vertex AI's batch API limits.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement Firestore storage for embeddings",
+            "description": "Create storage layer for embeddings in Firestore candidate_embeddings collection with proper indexing and retrieval methods",
+            "dependencies": [
+              "42.1"
+            ],
+            "details": "Design candidate_embeddings collection schema with fields for candidateId, embedding vector, model version, timestamp, and metadata. Implement storeEmbedding() and retrieveEmbedding() methods, add batch storage operations for efficiency, create composite indexes for search optimization, and implement data compression for large vectors.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Create embedding provider abstraction layer",
+            "description": "Build provider-agnostic abstraction layer to support future migration from Vertex AI to Together AI or other embedding services",
+            "dependencies": [
+              "42.2"
+            ],
+            "details": "Create EmbeddingProvider interface with standard methods, implement VertexAIProvider class as first implementation, design configuration system for provider switching, add provider-specific parameter mapping, create factory pattern for provider instantiation, and document migration path to Together AI embeddings.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement embedding caching mechanism",
+            "description": "Build caching system to avoid regenerating embeddings for unchanged content and improve performance",
+            "dependencies": [
+              "42.4"
+            ],
+            "details": "Implement content-based cache key generation using SHA-256 hashing, create in-memory cache with LRU eviction policy, add Firestore-based persistent cache layer, implement cache invalidation logic for updated profiles, add cache metrics and monitoring, and configure TTL settings for different content types.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Add embedding generation triggers",
+            "description": "Create Cloud Functions triggers to automatically generate embeddings when candidate profiles are created or updated",
+            "dependencies": [
+              "42.3",
+              "42.6"
+            ],
+            "details": "Implement onCreate trigger for new enriched_profiles documents, add onUpdate trigger with change detection logic, create dead letter queue for failed embedding generations, implement debouncing for rapid updates, add bulk trigger for migration scenarios, and ensure idempotent operations to prevent duplicate embeddings.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Implement performance testing and optimization",
+            "description": "Create comprehensive performance tests for embedding generation service and optimize for production workloads",
+            "dependencies": [
+              "42.7"
+            ],
+            "details": "Write unit tests for all VectorSearchService methods, create integration tests with real Vertex AI API, implement load tests for batch processing scenarios, measure and optimize embedding generation latency, test cache hit rates and performance gains, validate vector similarity search accuracy, and document performance benchmarks and limits.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 45,
+        "title": "Implement Pre-Interview Analysis Feature",
+        "description": "Build on-demand pre-interview analysis generation with caching, providing structured insights on candidates including signals and evidence",
+        "details": "1. Create preInterviewAnalysis Cloud Function\n2. Design analysis prompt for comprehensive candidate evaluation\n3. Implement output schema with summary, strengths, red_flags, signals\n4. Build caching system with 14-day TTL\n5. Add cache invalidation on profile updates\n6. Create evidence extraction with source references\n7. Implement API endpoints for generate and get operations",
+        "testStrategy": "Test analysis generation with various candidate profiles, verify caching behavior, test cache invalidation triggers, validate output schema compliance, test evidence extraction accuracy",
+        "priority": "low",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create preInterviewAnalysis Cloud Function",
+            "description": "Set up the core Cloud Function infrastructure for generating pre-interview analysis on-demand with proper error handling and logging",
+            "dependencies": [],
+            "details": "Create a new Cloud Function in functions/src/preInterviewAnalysis.ts that accepts candidate ID as input, validates request parameters, implements error handling and retry logic, sets up structured logging for monitoring, and returns analysis results or cached data. Include proper TypeScript types and interfaces for request/response objects.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Design comprehensive analysis prompt",
+            "description": "Create and optimize the Together AI prompt for generating structured pre-interview candidate evaluations with evidence extraction",
+            "dependencies": [],
+            "details": "Design a prompt template that analyzes candidate profiles to generate: executive summary, key strengths with evidence, potential red flags with context, behavioral signals and patterns, cultural fit indicators, and technical competency assessment. Include instructions for evidence extraction with source references from resume and comments. Test prompt with various candidate profiles to ensure consistent quality output.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement analysis output schema",
+            "description": "Define and implement the TypeScript/Zod schema for pre-interview analysis output with validation",
+            "dependencies": [
+              "45.2"
+            ],
+            "details": "Create Zod schema defining: summary (string, 200-500 chars), strengths (array of objects with strength, evidence, confidence), red_flags (array of objects with flag, context, severity), signals (object with leadership, technical, cultural sub-objects), evidence_map (object mapping claims to source references), and metadata (generation timestamp, model version, cache TTL). Implement schema validation and type exports for use across the system.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Build caching system with TTL",
+            "description": "Implement Redis or Firestore-based caching for analysis results with 14-day TTL and efficient retrieval",
+            "dependencies": [
+              "45.1",
+              "45.3"
+            ],
+            "details": "Set up caching layer using Firestore subcollection (candidates/{id}/analysisCache) or Redis if available. Implement cache key generation based on candidate ID and profile version hash. Add 14-day TTL with automatic expiration. Create cache hit/miss tracking for monitoring. Implement cache warming strategies for high-priority candidates. Include cache compression for large analysis objects.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement cache invalidation logic",
+            "description": "Create automatic cache invalidation system triggered by candidate profile updates",
+            "dependencies": [
+              "45.4"
+            ],
+            "details": "Set up Firestore triggers or Cloud Function hooks to detect profile updates (resume changes, new comments, skill updates). Implement cache invalidation logic that removes or marks stale cached analyses. Add version tracking to detect meaningful changes vs minor updates. Create audit log for cache invalidation events. Implement selective invalidation for partial profile updates to optimize performance.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Create API endpoints for analysis operations",
+            "description": "Build REST API endpoints for generating and retrieving pre-interview analysis with proper authentication",
+            "dependencies": [
+              "45.1",
+              "45.3",
+              "45.4",
+              "45.5"
+            ],
+            "details": "Implement POST /api/candidates/{id}/analysis/generate endpoint to trigger new analysis generation with force-refresh option. Create GET /api/candidates/{id}/analysis endpoint to retrieve cached or generate new analysis. Add authentication middleware using Firebase Auth tokens. Implement rate limiting to prevent abuse. Add response headers for cache status (hit/miss/stale). Include OpenAPI documentation for the endpoints.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 46,
+        "title": "Set Up Cloud Run Worker for Scalable Processing",
+        "description": "Containerize Python processing pipeline and deploy as Cloud Run service with Pub/Sub integration for scalable candidate enrichment",
+        "details": "1. Create Dockerfile for Python processor with all dependencies\n2. Implement Pub/Sub message handler for candidate processing requests\n3. Configure Cloud Run service with appropriate CPU/memory limits\n4. Set up Cloud Scheduler for batch processing triggers\n5. Implement idempotent message processing\n6. Add monitoring and logging with Cloud Logging\n7. Configure auto-scaling parameters based on queue depth",
+        "testStrategy": "Test container build and local execution, verify Pub/Sub message handling, test auto-scaling behavior under load, validate idempotency with duplicate messages, test error handling and dead letter queues",
+        "priority": "low",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Multi-Stage Dockerfile for Python Processor",
+            "description": "Build optimized Docker container with all Python dependencies, Together AI SDK, and Cloud Run requirements using multi-stage build pattern",
+            "dependencies": [],
+            "details": "Create Dockerfile with: 1) Builder stage for compiling dependencies, 2) Runtime stage with minimal Python 3.11 image, 3) Install requirements including together-ai, google-cloud-pubsub, google-cloud-firestore, fastapi, uvicorn, 4) Configure non-root user for security, 5) Set appropriate environment variables for Cloud Run, 6) Optimize layer caching for faster builds, 7) Add health check endpoint configuration",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Pub/Sub Message Handler with Retry Logic",
+            "description": "Create robust message handler that processes candidate enrichment requests from Pub/Sub with automatic retries and error handling",
+            "dependencies": [
+              "46.1"
+            ],
+            "details": "Implement handler with: 1) Parse Pub/Sub message attributes and payload for candidate IDs/batch requests, 2) Validate message schema and format, 3) Implement exponential backoff retry logic (3 attempts), 4) Handle Together AI API rate limits gracefully, 5) Support both single candidate and batch processing modes, 6) Add message acknowledgment/negative acknowledgment logic, 7) Implement circuit breaker pattern for API failures",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Configure Cloud Run Service with Resource Limits",
+            "description": "Deploy and configure Cloud Run service with appropriate CPU, memory, and concurrency settings for optimal performance",
+            "dependencies": [
+              "46.1",
+              "46.2"
+            ],
+            "details": "Configure service with: 1) Set CPU allocation (2 vCPUs minimum for async processing), 2) Configure memory limits (4GB for model processing), 3) Set max instances (100) and min instances (1), 4) Configure request timeout (540 seconds for batch processing), 5) Set concurrency limit (80 requests per container), 6) Enable CPU always allocated for background processing, 7) Configure service account with necessary permissions, 8) Set up environment variables for API keys",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Set Up Cloud Scheduler for Batch Processing Triggers",
+            "description": "Create Cloud Scheduler jobs to trigger batch processing at optimal times with configurable schedules",
+            "dependencies": [
+              "46.3"
+            ],
+            "details": "Implement scheduler with: 1) Create daily batch job for new candidates (2 AM UTC), 2) Set up hourly incremental processing job, 3) Configure Pub/Sub message payloads for different batch types, 4) Implement job monitoring and alerting, 5) Add configurable batch size limits in scheduler payload, 6) Create manual trigger endpoints for on-demand processing, 7) Set up timezone-aware scheduling for global operations",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement Idempotent Processing with Deduplication",
+            "description": "Build idempotency layer to handle duplicate messages and ensure exactly-once processing semantics",
+            "dependencies": [
+              "46.2"
+            ],
+            "details": "Create idempotency system: 1) Generate deterministic message IDs from candidate data, 2) Implement Firestore-based processing ledger, 3) Check for existing processing records before starting, 4) Use transactions for atomic status updates, 5) Handle partial failures with checkpointing, 6) Implement message deduplication window (24 hours), 7) Add metrics for duplicate detection rate",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Integrate Cloud Logging and Monitoring",
+            "description": "Set up comprehensive logging, monitoring, and alerting using Cloud Logging and Cloud Monitoring",
+            "dependencies": [
+              "46.3"
+            ],
+            "details": "Configure monitoring: 1) Structure logs with severity levels and correlation IDs, 2) Create custom metrics for processing rate, latency, and errors, 3) Set up log-based metrics for Together AI API usage, 4) Configure alerts for error rates > 5%, 5) Implement distributed tracing with OpenTelemetry, 6) Create dashboard for processing pipeline health, 7) Add cost tracking metrics for API usage",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Configure Auto-scaling Based on Queue Depth",
+            "description": "Implement intelligent auto-scaling that responds to Pub/Sub queue depth and processing latency",
+            "dependencies": [
+              "46.3",
+              "46.6"
+            ],
+            "details": "Set up auto-scaling: 1) Configure Cloud Run CPU utilization scaling (target 60%), 2) Implement custom metrics from Pub/Sub queue depth, 3) Set scaling thresholds (scale up at 100+ messages), 4) Configure gradual scale-down to avoid thrashing, 5) Add predictive scaling based on historical patterns, 6) Set max surge limits to control costs, 7) Implement scaling notifications and cost alerts",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Set Up Dead Letter Queue with Recovery",
+            "description": "Configure dead letter queue for failed messages with manual recovery mechanisms and monitoring",
+            "dependencies": [
+              "46.2",
+              "46.5"
+            ],
+            "details": "Implement DLQ system: 1) Create dead letter topic and subscription, 2) Configure max delivery attempts (5), 3) Build DLQ inspector Cloud Function, 4) Implement manual retry mechanism from DLQ, 5) Add categorization of failure reasons, 6) Create alerting for DLQ message accumulation, 7) Build admin UI for DLQ management and recovery",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Perform Load Testing and Optimization",
+            "description": "Conduct comprehensive load testing to validate scaling behavior and optimize performance under various load patterns",
+            "dependencies": [
+              "46.7",
+              "46.8"
+            ],
+            "details": "Execute load testing: 1) Create load test scenarios with Apache JMeter or Locust, 2) Test burst traffic (1000 messages in 1 minute), 3) Test sustained load (100 messages/minute for 1 hour), 4) Measure end-to-end latency and throughput, 5) Test failure scenarios and recovery, 6) Optimize container startup time, 7) Document performance benchmarks and limits, 8) Create runbook for production incidents",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 47,
+        "title": "Create Pub/Sub topic and Cloud Scheduler jobs for batch/nightly processing",
+        "description": "Provision Pub/Sub infrastructure with Cloud Scheduler jobs for automated batch candidate processing and nightly incremental updates.",
+        "details": "1. **Pub/Sub Topic Provisioning**:\n   - Create 'candidate-process-requests' topic with 7-day message retention\n   - Configure dead letter queue (DLQ) for failed message handling\n   - Set up IAM bindings for Cloud Run worker service account\n   - Configure topic-level encryption and monitoring\n\n2. **Cloud Scheduler Jobs**:\n   - Create initial batch enqueue job with cron schedule (e.g., daily at 2 AM)\n   - Create nightly incremental update job (e.g., every 4 hours)\n   - Configure HTTP endpoints targeting Cloud Run service\n   - Set up retry policies and failure handling\n\n3. **Authentication & Security**:\n   - Create dedicated service account for scheduler jobs\n   - Configure OIDC authentication headers for Cloud Run invocation\n   - Implement least-privilege IAM roles (pubsub.publisher, run.invoker)\n   - Set up VPC connector if needed for private networking\n\n4. **Configuration Management**:\n   - Define environment variables for topic names and schedules\n   - Create Terraform/deployment scripts for infrastructure\n   - Set up monitoring and alerting for job failures\n   - Configure payload templates for different processing types\n\n5. **Documentation Updates**:\n   - Document topic naming conventions and message schemas\n   - Update deployment guides with scheduler configuration\n   - Add troubleshooting guide for common issues",
+        "testStrategy": "1. **Smoke Tests**:\n   - Publish sample message to topic and verify Cloud Run worker receives it\n   - Test DLQ functionality with intentionally failing messages\n   - Verify IAM permissions by testing service account access\n\n2. **Scheduler Validation**:\n   - Manually trigger scheduler jobs and verify HTTP endpoint calls\n   - Test OIDC authentication headers and token validation\n   - Verify cron schedule accuracy with test runs\n\n3. **Integration Testing**:\n   - End-to-end test: scheduler → Pub/Sub → Cloud Run → processing\n   - Test message retention and expiration policies\n   - Validate monitoring alerts and error notifications\n\n4. **Load Testing**:\n   - Test topic throughput with high message volume\n   - Verify autoscaling behavior under load\n   - Test concurrent scheduler job execution",
+        "status": "pending",
+        "dependencies": [
+          22
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Pub/Sub topic with DLQ and IAM configuration",
+            "description": "Provision the candidate-process-requests Pub/Sub topic with dead letter queue, message retention, and IAM bindings for Cloud Run service account access",
+            "dependencies": [],
+            "details": "Create Pub/Sub topic 'candidate-process-requests' with 7-day message retention policy. Set up dead letter queue topic 'candidate-process-requests-dlq' with appropriate subscription. Configure IAM bindings to grant pubsub.subscriber role to Cloud Run worker service account. Enable topic-level encryption using Google-managed keys and configure monitoring alerts for message processing failures.",
+            "status": "pending",
+            "testStrategy": "Publish test messages to verify topic creation, test DLQ functionality by sending malformed messages, and validate IAM permissions by attempting to pull messages with the service account"
+          },
+          {
+            "id": 2,
+            "title": "Create dedicated service account for Cloud Scheduler",
+            "description": "Provision service account with minimal required permissions for Cloud Scheduler to publish messages and invoke Cloud Run services",
+            "dependencies": [
+              "47.1"
+            ],
+            "details": "Create service account 'scheduler-pubsub-sa' with roles: pubsub.publisher for topic access and run.invoker for Cloud Run invocation. Generate and securely store service account key if needed. Configure OIDC authentication headers for secure Cloud Run invocation. Set up least-privilege IAM policies and document security considerations.",
+            "status": "pending",
+            "testStrategy": "Test service account permissions by manually publishing messages and invoking Cloud Run endpoints using the service account credentials"
+          },
+          {
+            "id": 3,
+            "title": "Create Cloud Scheduler job for daily batch processing",
+            "description": "Configure Cloud Scheduler job to trigger daily batch candidate processing at 2 AM with retry policies and failure handling",
+            "dependencies": [
+              "47.1",
+              "47.2"
+            ],
+            "details": "Create Cloud Scheduler job 'daily-batch-process' with cron schedule '0 2 * * *' (daily at 2 AM UTC). Configure HTTP target pointing to Cloud Run service endpoint '/batch-process'. Set up retry policy with exponential backoff (max 3 retries, 60s initial delay). Include payload template with processing type 'BATCH_FULL' and configure timeout settings (30 minutes).",
+            "status": "pending",
+            "testStrategy": "Manually trigger the scheduler job and verify Cloud Run service receives the request with correct payload and authentication headers"
+          },
+          {
+            "id": 4,
+            "title": "Create Cloud Scheduler job for incremental updates",
+            "description": "Configure Cloud Scheduler job for nightly incremental candidate updates every 4 hours with appropriate payload and retry configuration",
+            "dependencies": [
+              "47.1",
+              "47.2"
+            ],
+            "details": "Create Cloud Scheduler job 'incremental-updates' with cron schedule '0 */4 * * *' (every 4 hours). Configure HTTP target to Cloud Run endpoint '/incremental-process'. Set up retry policy with 2 max retries and 30s initial delay. Include payload template with processing type 'INCREMENTAL' and timestamp parameters for delta processing.",
+            "status": "pending",
+            "testStrategy": "Test incremental job triggering and verify Cloud Run processes only candidates modified since last run timestamp"
+          },
+          {
+            "id": 5,
+            "title": "Create infrastructure deployment scripts and monitoring",
+            "description": "Develop Terraform scripts for infrastructure provisioning and set up comprehensive monitoring and alerting for the Pub/Sub and scheduler infrastructure",
+            "dependencies": [
+              "47.1",
+              "47.2",
+              "47.3",
+              "47.4"
+            ],
+            "details": "Create Terraform modules for Pub/Sub topics, subscriptions, IAM bindings, service accounts, and Cloud Scheduler jobs. Define environment variables for topic names, schedules, and endpoints in terraform.tfvars. Set up Cloud Monitoring alerts for job failures, message processing delays, and DLQ message accumulation. Create documentation for deployment process, troubleshooting common issues, and operational runbooks.",
+            "status": "pending",
+            "testStrategy": "Deploy infrastructure using Terraform in test environment, verify all resources are created correctly, and test monitoring alerts by simulating failure scenarios"
+          }
+        ]
+      },
+      {
+        "id": 48,
+        "title": "Embedding Bake-off Harness and Provider Selection Report",
+        "description": "Build comprehensive evaluation harness to compare embedding providers (Vertex text-embedding-004, Together embeddings, optional local) using standardized metrics and generate recommendation report for provider selection.",
+        "details": "1. **Harness Implementation**:\n   - Create EmbeddingBakeoffHarness class in scripts/embedding_bakeoff.py\n   - Support multiple providers: Vertex AI text-embedding-004, Together embeddings, local models (optional)\n   - Generate embeddings for ~2k candidates × 30-50 job descriptions dataset\n   - Implement async batch processing with configurable concurrency per provider\n   - Add progress tracking and intermediate result caching\n\n2. **Evaluation Metrics**:\n   - Implement NDCG@10 (Normalized Discounted Cumulative Gain) for ranking quality\n   - Calculate MRR@10 (Mean Reciprocal Rank) for first relevant result position\n   - Compute Hit@10 (recall at top 10) for coverage assessment\n   - Measure latency per embedding and cost per 10k embeddings\n   - Track embedding dimensionality and storage requirements\n\n3. **Configuration and Output**:\n   - Parameterize via environment variables (BAKEOFF_PROVIDERS, DATASET_SIZE, etc.)\n   - Export results to CSV (metrics_comparison.csv) and JSON (bakeoff_results.json)\n   - Generate comparison notebook (embedding_bakeoff_analysis.ipynb) with visualizations\n   - Create markdown report (EMBEDDING_PROVIDER_RECOMMENDATION.md) with decision matrix\n\n4. **Integration and Documentation**:\n   - Add optional CI integration for automated provider benchmarking\n   - Document migration toggle mechanism and associated risks\n   - Include cost-benefit analysis and performance trade-offs\n   - Provide migration timeline and rollback procedures",
+        "testStrategy": "Test harness with subset of data (100 candidates × 5 JDs) to verify metric calculations, validate embedding generation across all providers, test async processing and error handling, verify CSV/JSON output format compliance, test notebook execution and report generation, validate cost and latency measurements accuracy, test CI integration if implemented",
+        "status": "pending",
+        "dependencies": [
+          42
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create EmbeddingBakeoffHarness Core Infrastructure",
+            "description": "Implement the foundational EmbeddingBakeoffHarness class with provider abstraction, configuration management, and async batch processing capabilities",
+            "dependencies": [],
+            "details": "Create scripts/embedding_bakeoff.py with EmbeddingBakeoffHarness class. Implement provider interface supporting Vertex AI text-embedding-004, Together embeddings, and optional local models. Add async batch processing with configurable concurrency limits per provider. Implement progress tracking with tqdm and intermediate result caching using pickle/json. Support environment variable configuration for BAKEOFF_PROVIDERS, DATASET_SIZE, CONCURRENCY_LIMIT, and CACHE_DIR.",
+            "status": "pending",
+            "testStrategy": "Unit test provider initialization, async batch processing with mock providers, configuration loading, and cache functionality with small dataset"
+          },
+          {
+            "id": 2,
+            "title": "Implement Dataset Processing and Embedding Generation",
+            "description": "Build dataset loading and embedding generation pipeline for ~2k candidates × 30-50 job descriptions with error handling and retry logic",
+            "dependencies": [
+              "48.1"
+            ],
+            "details": "Implement dataset loading from existing candidate and job description sources. Create embedding generation pipeline that processes all provider combinations asynchronously. Add robust error handling with exponential backoff retry logic for API failures. Implement batch size optimization per provider (e.g., 100 for Vertex, 50 for Together). Store raw embeddings with metadata including provider, timestamp, and processing time.",
+            "status": "pending",
+            "testStrategy": "Test with subset of 100 candidates × 5 job descriptions, verify embedding generation across all providers, test error handling with simulated API failures"
+          },
+          {
+            "id": 3,
+            "title": "Implement Evaluation Metrics Calculation",
+            "description": "Build comprehensive metrics calculation system including NDCG@10, MRR@10, Hit@10, latency, cost, and storage analysis",
+            "dependencies": [
+              "48.2"
+            ],
+            "details": "Implement NDCG@10 calculation using relevance scores from similarity rankings. Add MRR@10 computation for first relevant result position analysis. Calculate Hit@10 for coverage assessment at top-10 results. Measure and track latency per embedding request and cost per 10k embeddings based on provider pricing. Analyze embedding dimensionality and storage requirements. Create MetricsCalculator class with standardized evaluation methods.",
+            "status": "pending",
+            "testStrategy": "Validate metric calculations against known ground truth data, test with synthetic relevance scores, verify cost and latency measurements"
+          },
+          {
+            "id": 4,
+            "title": "Generate Comparison Reports and Visualizations",
+            "description": "Create comprehensive output artifacts including CSV metrics, JSON results, analysis notebook, and markdown recommendation report",
+            "dependencies": [
+              "48.3"
+            ],
+            "details": "Export detailed metrics to metrics_comparison.csv with provider comparisons and statistical significance tests. Generate structured bakeoff_results.json with complete evaluation data. Create embedding_bakeoff_analysis.ipynb with matplotlib/seaborn visualizations showing performance comparisons, cost-benefit analysis, and latency distributions. Build automated markdown report generator for EMBEDDING_PROVIDER_RECOMMENDATION.md with decision matrix and migration recommendations.",
+            "status": "pending",
+            "testStrategy": "Verify CSV/JSON output format compliance, test notebook execution end-to-end, validate report generation with sample data"
+          },
+          {
+            "id": 5,
+            "title": "Add CI Integration and Migration Documentation",
+            "description": "Implement optional CI integration for automated benchmarking and create comprehensive migration documentation with risk assessment",
+            "dependencies": [
+              "48.4"
+            ],
+            "details": "Add GitHub Actions workflow for automated provider benchmarking on dataset changes. Create migration toggle mechanism documentation with feature flags and rollback procedures. Document cost-benefit analysis methodology and performance trade-off considerations. Include migration timeline recommendations and risk mitigation strategies. Add monitoring and alerting setup for production embedding provider performance tracking.",
+            "status": "pending",
+            "testStrategy": "Test CI workflow with mock data, validate documentation completeness, verify migration procedures with staging environment"
+          }
+        ]
+      },
+      {
+        "id": 49,
+        "title": "Migrate NAS to GCS and Execute 50-Candidate Test Run",
+        "description": "Create migration script to transfer selected CSV/JSON files from NAS to GCS buckets and execute a comprehensive 50-candidate enrichment test run through the complete pipeline with metrics collection.",
+        "details": "1. **NAS to GCS Migration Script**:\n   - Create `scripts/migrate_nas_to_gcs.py` with async file transfer capabilities\n   - Implement selective file migration for CSV/JSON data to designated GCS buckets:\n     - `*-raw-csv` bucket for structured candidate data\n     - `*-raw-json` bucket for unstructured resume/profile data  \n     - `*-profiles` bucket for processed candidate profiles\n   - Add progress tracking with file count, size, and transfer rate metrics\n   - Implement checksum validation and retry logic for failed transfers\n   - Create manifest file documenting migrated files and metadata\n\n2. **50-Candidate Test Pipeline**:\n   - Select diverse candidate sample (various experience levels, industries, roles)\n   - Execute complete enrichment workflow: GCS → Together AI processing → Firestore streaming → embedding generation\n   - Implement real-time metrics collection throughout pipeline stages\n   - Configure batch processing with concurrency limits to manage API costs\n   - Add intermediate result caching for pipeline recovery\n\n3. **Metrics Collection Framework**:\n   - Track throughput metrics: candidates/minute, API requests/second, embedding generation rate\n   - Monitor cost metrics: Together AI API costs, GCS storage/transfer costs, Vertex AI embedding costs\n   - Measure quality metrics: JSON parse success rate, schema validation rate, repair/retry rate\n   - Log processing times per pipeline stage with percentile analysis\n   - Generate comprehensive metrics dashboard with charts and summaries\n\n4. **UI Validation and Documentation**:\n   - Test search functionality with processed candidates in React interface\n   - Validate embedding-based similarity search accuracy and ranking\n   - Document rationale quality and relevance for sample searches\n   - Create step-by-step migration and testing documentation\n   - Generate findings report with recommendations for production scaling",
+        "testStrategy": "1. **Migration Validation**:\n   - Verify file integrity with checksum comparison between NAS and GCS\n   - Test selective migration filters and bucket routing logic\n   - Validate manifest file accuracy and completeness\n   - Test migration script error handling and recovery mechanisms\n\n2. **Pipeline Integration Testing**:\n   - Execute end-to-end test with 5-candidate subset first\n   - Verify data flow through all pipeline stages without data loss\n   - Test error handling and retry mechanisms at each stage\n   - Validate Firestore document structure and embedding storage\n\n3. **Metrics Accuracy Verification**:\n   - Cross-validate throughput metrics with external monitoring\n   - Verify cost calculations against actual API billing\n   - Test metrics collection under various load conditions\n   - Validate dashboard accuracy with manual spot checks\n\n4. **UI Search Quality Assessment**:\n   - Test search with 10+ diverse job descriptions against processed candidates\n   - Evaluate ranking relevance with recruiter feedback on sample results\n   - Verify rationale explanations align with candidate-job matches\n   - Test search performance and response times with full candidate set\n\n5. **Documentation Completeness**:\n   - Verify all migration steps are reproducible from documentation\n   - Test pipeline execution following documented procedures\n   - Validate findings report includes actionable recommendations\n   - Confirm metrics interpretation guide is clear and accurate",
+        "status": "pending",
+        "dependencies": [
+          42,
+          20
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create NAS to GCS Migration Script with Async Transfer",
+            "description": "Develop a comprehensive migration script to transfer CSV/JSON files from NAS to designated GCS buckets with progress tracking and validation",
+            "dependencies": [],
+            "details": "Create `scripts/migrate_nas_to_gcs.py` with async file transfer capabilities using asyncio and aiofiles. Implement selective file migration logic to route files to appropriate buckets: `*-raw-csv` for structured data, `*-raw-json` for unstructured data, `*-profiles` for processed profiles. Add progress tracking with file count, size, and transfer rate metrics. Implement MD5 checksum validation for file integrity, retry logic for failed transfers with exponential backoff, and generate manifest file documenting migrated files with metadata including timestamps, sizes, and checksums.",
+            "status": "pending",
+            "testStrategy": "Test file integrity with checksum comparison, validate selective migration filters and bucket routing, verify manifest accuracy, and test error handling with simulated network failures"
+          },
+          {
+            "id": 2,
+            "title": "Select and Prepare 50-Candidate Test Dataset",
+            "description": "Curate a diverse sample of 50 candidates from migrated data representing various experience levels, industries, and roles for comprehensive pipeline testing",
+            "dependencies": [
+              "49.1"
+            ],
+            "details": "Analyze migrated candidate data to select representative sample covering junior/mid/senior experience levels, diverse industries (tech, finance, healthcare, etc.), and various roles (engineering, sales, marketing, etc.). Create candidate selection criteria and filtering logic. Generate test dataset manifest with candidate IDs, source files, and metadata. Validate data quality and completeness for selected candidates. Create backup copies of test data for repeatability.",
+            "status": "pending",
+            "testStrategy": "Verify dataset diversity meets criteria, validate data completeness and quality, test data accessibility from GCS buckets"
+          },
+          {
+            "id": 3,
+            "title": "Implement Comprehensive Metrics Collection Framework",
+            "description": "Build real-time metrics collection system to track throughput, cost, quality, and performance metrics throughout the enrichment pipeline",
+            "dependencies": [],
+            "details": "Create metrics collection framework with structured logging and real-time tracking. Implement throughput metrics (candidates/minute, API requests/second, embedding generation rate), cost metrics (Together AI API costs, GCS storage/transfer costs, Vertex AI embedding costs), quality metrics (JSON parse success rate, schema validation rate, repair/retry rate), and performance metrics (processing times per stage with percentile analysis). Use Cloud Monitoring APIs for metric ingestion and create dashboard configuration for visualization.",
+            "status": "pending",
+            "testStrategy": "Test metric collection accuracy, validate cost calculations, verify real-time metric updates, and test dashboard rendering"
+          },
+          {
+            "id": 4,
+            "title": "Execute 50-Candidate Pipeline Test Run with Monitoring",
+            "description": "Run the complete enrichment pipeline on the test dataset with real-time metrics collection and intermediate result caching",
+            "dependencies": [
+              "49.2",
+              "49.3"
+            ],
+            "details": "Execute end-to-end pipeline: GCS data retrieval → Together AI processing → Firestore streaming → embedding generation. Implement batch processing with configurable concurrency limits (default 5-10 concurrent) to manage API costs. Add intermediate result caching at each stage for pipeline recovery. Configure real-time metrics collection throughout all stages. Implement graceful error handling with detailed logging. Create pipeline state checkpoints for resumability. Monitor API rate limits and implement backoff strategies.",
+            "status": "pending",
+            "testStrategy": "Validate complete pipeline execution, test error recovery mechanisms, verify metrics accuracy, and validate intermediate caching functionality"
+          },
+          {
+            "id": 5,
+            "title": "Validate UI Integration and Generate Comprehensive Report",
+            "description": "Test search functionality with processed candidates in React interface and generate detailed findings report with production scaling recommendations",
+            "dependencies": [
+              "49.4"
+            ],
+            "details": "Test React search interface with processed candidates, validate embedding-based similarity search accuracy and ranking quality. Perform sample searches across different job descriptions and evaluate result relevance. Document rationale quality and match explanations. Generate comprehensive findings report including: pipeline performance metrics, cost analysis, quality assessment, identified bottlenecks, error patterns, and production scaling recommendations. Create step-by-step migration and testing documentation for future reference.",
+            "status": "pending",
+            "testStrategy": "Test search functionality end-to-end, validate search result quality and ranking, verify UI responsiveness, and validate report completeness and accuracy"
+          }
+        ]
+      },
+      {
+        "id": 50,
+        "title": "Functions cleanup: remove Gemini enrichment references and enforce Together path",
+        "description": "Remove all Gemini-based enrichment code paths from Cloud Functions and ensure all enrichment/orchestration exclusively uses Together AI processors while maintaining Vertex AI for vector embeddings.",
+        "details": "1. **Code Cleanup in functions/src**:\n   - Remove or guard all Gemini API calls and imports from enrichment modules\n   - Delete gemini-enrichment.ts or similar files if they exist\n   - Remove Gemini-specific environment variables and configurations\n   - Update any orchestration logic to only reference Together AI processors\n   - Preserve Vertex AI embeddings functionality for vector search (per PRD requirements)\n\n2. **Configuration Updates**:\n   - Remove GEMINI_API_KEY and related environment variables from .env files\n   - Update firebase.json and package.json to remove Gemini dependencies\n   - Clean up any Gemini-related IAM roles or service account permissions\n   - Update deployment scripts to exclude Gemini configurations\n\n3. **Documentation Updates**:\n   - Update README files to reflect Together AI as the sole enrichment provider\n   - Remove Gemini references from API documentation\n   - Update architecture diagrams and flow charts\n   - Add migration notes explaining the transition to Together AI\n\n4. **Prevention Measures**:\n   - Add ESLint rules or code analysis to prevent Gemini imports\n   - Create pre-commit hooks to scan for Gemini references\n   - Add CI/CD pipeline checks to validate Together AI-only usage\n   - Document coding standards requiring Together AI for enrichment",
+        "testStrategy": "1. **Code Analysis Tests**:\n   - Run grep/ripgrep searches for \"gemini\", \"Gemini\", \"GEMINI\" across functions/src\n   - Verify no imports from @google-cloud/aiplatform Gemini modules\n   - Test that all enrichment endpoints only call Together AI processors\n   - Validate that vector search still uses Vertex AI embeddings\n\n2. **Integration Tests**:\n   - Test complete enrichment flow to ensure it uses Together AI exclusively\n   - Verify vector search functionality remains intact with Vertex embeddings\n   - Test error handling when Gemini code paths are removed\n   - Validate environment variable cleanup doesn't break existing functionality\n\n3. **Prevention Tests**:\n   - Test ESLint rules catch attempted Gemini imports\n   - Verify pre-commit hooks reject Gemini references\n   - Test CI/CD pipeline fails on Gemini code introduction\n   - Validate documentation accurately reflects Together AI-only architecture",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Remove Gemini imports and API calls from enrichment modules",
+            "description": "Scan and remove all Gemini-related imports, API calls, and references from Cloud Functions source code in functions/src directory",
+            "dependencies": [],
+            "details": "Use grep/ripgrep to find all occurrences of 'gemini', 'Gemini', 'GEMINI' in functions/src. Remove imports from @google-cloud/aiplatform Gemini modules. Delete gemini-enrichment.ts and similar files. Remove all Gemini API initialization and call code. Update import statements to only reference Together AI modules.",
+            "status": "pending",
+            "testStrategy": "Run automated searches for Gemini references, verify no Gemini imports remain, test that enrichment functions compile without Gemini dependencies"
+          },
+          {
+            "id": 2,
+            "title": "Update orchestration logic to exclusively use Together AI processors",
+            "description": "Modify all enrichment orchestration code to route exclusively through Together AI processors while preserving Vertex AI embeddings",
+            "dependencies": [
+              "50.1"
+            ],
+            "details": "Update orchestration functions to only call Together AI endpoints for text processing and enrichment. Ensure all enrichment workflows route through Together AI processors. Preserve existing Vertex AI embedding functionality for vector search operations. Update function routing logic and processor selection code.",
+            "status": "pending",
+            "testStrategy": "Test enrichment workflows end-to-end, verify Together AI processors are called exclusively, confirm Vertex AI embeddings still function for vector search"
+          },
+          {
+            "id": 3,
+            "title": "Remove Gemini environment variables and configuration files",
+            "description": "Clean up all Gemini-related environment variables, configuration files, and deployment settings",
+            "dependencies": [
+              "50.1"
+            ],
+            "details": "Remove GEMINI_API_KEY and related environment variables from .env files and Firebase configuration. Update firebase.json to remove Gemini-specific settings. Clean package.json dependencies of Gemini-related packages. Remove Gemini IAM roles and service account permissions from deployment configurations.",
+            "status": "pending",
+            "testStrategy": "Verify environment variables are removed from all configuration files, test deployment without Gemini configurations, confirm no Gemini-related permissions remain"
+          },
+          {
+            "id": 4,
+            "title": "Implement prevention measures and code analysis rules",
+            "description": "Add automated checks to prevent future Gemini code introduction through linting rules and CI/CD pipeline validation",
+            "dependencies": [
+              "50.2"
+            ],
+            "details": "Add ESLint rules to detect and prevent Gemini imports. Create pre-commit hooks that scan for Gemini references in code changes. Update CI/CD pipeline with validation steps to ensure Together AI-only usage. Add automated tests that fail if Gemini references are detected in the codebase.",
+            "status": "pending",
+            "testStrategy": "Test ESLint rules catch Gemini imports, verify pre-commit hooks block Gemini references, validate CI/CD pipeline fails with Gemini code"
+          },
+          {
+            "id": 5,
+            "title": "Update documentation and architecture references",
+            "description": "Update all documentation, README files, and architecture diagrams to reflect Together AI as the exclusive enrichment provider",
+            "dependencies": [
+              "50.3"
+            ],
+            "details": "Update README files to document Together AI as sole enrichment provider. Remove Gemini references from API documentation and replace with Together AI examples. Update architecture diagrams and flow charts to show Together AI integration. Add migration notes explaining the transition from Gemini to Together AI. Document new coding standards requiring Together AI for enrichment.",
+            "status": "pending",
+            "testStrategy": "Review all documentation for Gemini references, verify architecture diagrams reflect current state, test that documentation examples work with Together AI"
+          }
+        ]
+      },
+      {
+        "id": 51,
+        "title": "Documentation updates: README, Handover, Architecture to reflect v2.0 decisions",
+        "description": "Comprehensive documentation update to reflect v2.0 architecture decisions including Together AI pipeline, Firestore streaming, pgvector implementation, and bake-off results with security and cost considerations.",
+        "details": "1. **README Updates**:\n   - Update quickstart guide to reflect Together AI as primary LLM provider\n   - Revise environment setup section with TOGETHER_API_KEY configuration\n   - Update workflow documentation to show Firestore streaming and pgvector search paths\n   - Add cost guardrails section with Together AI pricing and usage limits\n   - Include security notes for API key management and data handling\n\n2. **HANDOVER Documentation**:\n   - Update docs/HANDOVER*.md with crash-safe deployment procedures\n   - Document Together AI pipeline architecture and failover mechanisms  \n   - Add Firestore streaming configuration and monitoring steps\n   - Include pgvector setup and maintenance procedures\n   - Document rollback procedures and health check endpoints\n\n3. **Architecture Documentation**:\n   - Update ARCHITECTURE.md with v2.0 system design showing Together AI integration\n   - Document Firestore streaming architecture and data flow patterns\n   - Add pgvector semantic search implementation details\n   - Include system interaction diagrams and component relationships\n   - Document scaling considerations and performance characteristics\n\n4. **WEBHOOK_INTEGRATION.md Updates**:\n   - Update webhook endpoints to reflect Together AI processing pipeline\n   - Document new payload structures and response formats\n   - Add error handling and retry logic documentation\n   - Include webhook security and authentication requirements\n\n5. **Bake-off Results Integration**:\n   - Add embedding provider comparison results and decision rationale\n   - Document cost analysis and performance benchmarks\n   - Include provider selection criteria and evaluation methodology\n   - Add future evaluation and review schedule recommendations",
+        "testStrategy": "1. **Documentation Validation**:\n   - Review all updated documentation for technical accuracy against implemented systems\n   - Verify quickstart guide by following steps in clean environment\n   - Test environment setup instructions with fresh API keys and configurations\n   - Validate workflow documentation against actual system behavior\n\n2. **Handover Process Testing**:\n   - Execute crash-safe handover procedures in staging environment\n   - Test rollback procedures and verify system recovery\n   - Validate health check endpoints and monitoring setup\n   - Confirm deployment procedures work with current infrastructure\n\n3. **Architecture Alignment**:\n   - Cross-reference architecture documentation with actual system implementation\n   - Verify component diagrams match deployed services and data flows\n   - Test documented API endpoints and webhook integrations\n   - Validate security measures and access controls as documented\n\n4. **Content Review**:\n   - Conduct technical review with development team for accuracy\n   - Verify bake-off results and cost analysis reflect actual data\n   - Ensure all v2.0 decisions and rationale are clearly documented\n   - Test external links and references for accessibility",
+        "status": "pending",
+        "dependencies": [
+          42
+        ],
+        "priority": "low",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Update README.md with v2.0 architecture and Together AI integration",
+            "description": "Comprehensive update to README.md to reflect v2.0 decisions including Together AI as primary LLM provider, Firestore streaming, and pgvector implementation",
+            "dependencies": [],
+            "details": "Update README.md sections: 1) Quickstart guide with Together AI setup and TOGETHER_API_KEY configuration, 2) Environment setup with new dependencies and API keys, 3) Workflow documentation showing Firestore streaming and pgvector search paths, 4) Cost guardrails section with Together AI pricing and usage limits, 5) Security notes for API key management and data handling best practices",
+            "status": "pending",
+            "testStrategy": "Validate quickstart guide by following steps in clean environment, test environment setup instructions with fresh configurations, verify all links and code examples work correctly"
+          },
+          {
+            "id": 2,
+            "title": "Update HANDOVER documentation with deployment and operational procedures",
+            "description": "Update all HANDOVER*.md files with crash-safe deployment procedures and operational guidance for v2.0 architecture",
+            "dependencies": [
+              "51.1"
+            ],
+            "details": "Update docs/HANDOVER*.md with: 1) Crash-safe deployment procedures for Together AI pipeline, 2) Architecture documentation for Together AI integration and failover mechanisms, 3) Firestore streaming configuration and monitoring steps, 4) pgvector setup and maintenance procedures, 5) Rollback procedures and health check endpoints for all new components",
+            "status": "pending",
+            "testStrategy": "Review deployment procedures against actual infrastructure, validate monitoring steps and health check endpoints, verify rollback procedures work in staging environment"
+          },
+          {
+            "id": 3,
+            "title": "Update ARCHITECTURE.md with v2.0 system design and component interactions",
+            "description": "Comprehensive update to ARCHITECTURE.md documenting the v2.0 system design with all new components and their interactions",
+            "dependencies": [
+              "51.1"
+            ],
+            "details": "Update ARCHITECTURE.md with: 1) v2.0 system design showing Together AI integration points, 2) Firestore streaming architecture and data flow patterns, 3) pgvector semantic search implementation details and query patterns, 4) System interaction diagrams showing component relationships, 5) Scaling considerations and performance characteristics for each component",
+            "status": "pending",
+            "testStrategy": "Validate architecture diagrams against implemented code, verify component interaction descriptions match actual system behavior, review scaling considerations with performance test results"
+          },
+          {
+            "id": 4,
+            "title": "Update WEBHOOK_INTEGRATION.md with v2.0 pipeline changes",
+            "description": "Update webhook integration documentation to reflect Together AI processing pipeline and new payload structures",
+            "dependencies": [
+              "51.2",
+              "51.3"
+            ],
+            "details": "Update WEBHOOK_INTEGRATION.md with: 1) Webhook endpoints reflecting Together AI processing pipeline, 2) New payload structures and response formats for v2.0, 3) Error handling and retry logic documentation for Together AI failures, 4) Webhook security and authentication requirements, 5) Integration examples and testing procedures",
+            "status": "pending",
+            "testStrategy": "Test webhook endpoints with sample payloads, verify error handling scenarios, validate authentication mechanisms, test integration examples in documentation"
+          },
+          {
+            "id": 5,
+            "title": "Document bake-off results and provider selection rationale",
+            "description": "Create comprehensive documentation of embedding provider bake-off results and decision rationale for v2.0 architecture choices",
+            "dependencies": [
+              "51.1",
+              "51.2",
+              "51.3"
+            ],
+            "details": "Add bake-off results documentation: 1) Embedding provider comparison results with performance metrics, 2) Cost analysis and performance benchmarks for Together AI vs alternatives, 3) Provider selection criteria and evaluation methodology used, 4) Decision rationale for Together AI, Firestore, and pgvector choices, 5) Future evaluation schedule and review recommendations for ongoing optimization",
+            "status": "pending",
+            "testStrategy": "Validate benchmark results against actual test data, verify cost calculations and projections, review decision criteria for completeness and accuracy"
+          }
+        ]
+      },
+      {
+        "id": 52,
+        "title": "Enforce Firestore Security Rules and Admin Allowlist",
+        "description": "Implement comprehensive Firestore security rules enforcing role-based access control with allowed_users collection, create admin management interface, and add audit logging for sensitive operations.",
+        "details": "1. **Firestore Security Rules Implementation**:\n   - Create firestore.rules file with role-based access control\n   - Implement allowed_users collection structure with roles (admin, recruiter, viewer)\n   - Enforce read/write permissions based on user roles for sensitive collections:\n     * candidates/ - recruiter+ read, admin write\n     * enriched_profiles/ - recruiter+ read, admin write\n     * embeddings/ - admin only\n     * allowed_users/ - admin only\n   - Add user authentication validation and email domain restrictions\n   - Implement resource-level permissions with candidate ownership\n\n2. **Admin Management Interface**:\n   - Create admin/user_management.html page with user CRUD operations\n   - Implement backend API endpoints for user management (/api/admin/users)\n   - Add role assignment functionality with validation\n   - Create bulk user import/export capabilities\n   - Implement user deactivation and role modification workflows\n\n3. **Audit Logging System**:\n   - Create audit_logs/ collection with structured logging\n   - Log sensitive operations: user role changes, data access, profile modifications\n   - Implement automatic log retention policies (90 days)\n   - Add log querying interface for compliance reporting\n   - Include user context, timestamps, and operation details\n\n4. **Security Rule Testing**:\n   - Set up Firestore emulator for rule testing\n   - Create comprehensive test suite covering all permission scenarios\n   - Test unauthorized access attempts and privilege escalation\n   - Validate audit log generation for all tracked operations",
+        "testStrategy": "1. **Security Rule Testing**:\n   - Use Firestore emulator to test rules with different user roles\n   - Verify unauthorized users cannot access sensitive collections\n   - Test role-based permissions for each collection (candidates/, enriched_profiles/, embeddings/)\n   - Validate admin-only access to allowed_users/ collection\n   - Test edge cases like missing roles or invalid authentication\n\n2. **Admin Interface Testing**:\n   - Test user creation, modification, and deletion workflows\n   - Verify role assignment and validation logic\n   - Test bulk operations with large user datasets\n   - Validate error handling for duplicate users or invalid roles\n   - Test UI responsiveness and data consistency\n\n3. **Audit Logging Verification**:\n   - Verify all sensitive operations generate audit logs\n   - Test log structure and required fields (user, timestamp, operation, resource)\n   - Validate log retention policies and automatic cleanup\n   - Test audit log querying and filtering functionality\n   - Verify log integrity and tamper-proof storage\n\n4. **Integration Testing**:\n   - Test end-to-end user workflows with security rules active\n   - Verify API endpoints respect Firestore security rules\n   - Test performance impact of security rule evaluation\n   - Validate backup and restore procedures with security rules",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Firestore Security Rules with Role-Based Access Control",
+            "description": "Implement comprehensive firestore.rules file with role-based access control, user authentication validation, and collection-specific permissions for candidates, enriched_profiles, embeddings, and allowed_users collections.",
+            "dependencies": [],
+            "details": "Create firestore.rules file defining security rules for all collections. Implement allowed_users collection structure with roles (admin, recruiter, viewer). Define read/write permissions: candidates/ and enriched_profiles/ (recruiter+ read, admin write), embeddings/ and allowed_users/ (admin only). Add user authentication validation and email domain restrictions. Include resource-level permissions with candidate ownership validation.",
+            "status": "pending",
+            "testStrategy": "Use Firestore emulator to test rules with different user roles, verify unauthorized access is blocked, test each collection's permission matrix, validate authentication requirements"
+          },
+          {
+            "id": 2,
+            "title": "Implement Allowed Users Collection Management",
+            "description": "Create the allowed_users collection structure and implement backend API endpoints for user management operations including CRUD functionality and role assignment validation.",
+            "dependencies": [
+              "52.1"
+            ],
+            "details": "Design allowed_users collection schema with fields: email, role, status, created_at, updated_at. Implement backend API endpoints at /api/admin/users for user CRUD operations. Add role assignment functionality with validation logic. Create user activation/deactivation workflows. Implement email domain validation and duplicate prevention.",
+            "status": "pending",
+            "testStrategy": "Test user creation, modification, and deletion operations. Verify role assignment validation. Test duplicate email prevention and domain restrictions"
+          },
+          {
+            "id": 3,
+            "title": "Build Admin Management Interface",
+            "description": "Create admin/user_management.html page with comprehensive user management interface including user listing, role assignment, bulk operations, and user status management.",
+            "dependencies": [
+              "52.2"
+            ],
+            "details": "Create admin/user_management.html with user listing table, search/filter functionality, and inline editing capabilities. Implement role assignment dropdown with validation. Add bulk user import/export features supporting CSV format. Create user deactivation and role modification workflows with confirmation dialogs. Include pagination and sorting for large user lists.",
+            "status": "pending",
+            "testStrategy": "Test user interface functionality, bulk import/export operations, role assignment workflows, and user status changes. Verify admin-only access restrictions"
+          },
+          {
+            "id": 4,
+            "title": "Implement Audit Logging System",
+            "description": "Create comprehensive audit logging system with audit_logs collection, automatic logging for sensitive operations, and log retention policies.",
+            "dependencies": [
+              "52.1"
+            ],
+            "details": "Create audit_logs collection with structured schema: user_id, action, resource_type, resource_id, timestamp, ip_address, user_agent, details. Implement automatic logging for sensitive operations: user role changes, data access, profile modifications, admin actions. Add log retention policies (90 days) with automatic cleanup. Include user context capture and operation result tracking.",
+            "status": "pending",
+            "testStrategy": "Verify audit logs are created for all tracked operations, test log retention cleanup, validate log data completeness and accuracy"
+          },
+          {
+            "id": 5,
+            "title": "Create Security Testing Suite and Compliance Interface",
+            "description": "Develop comprehensive security rule testing suite and implement audit log querying interface for compliance reporting and security validation.",
+            "dependencies": [
+              "52.1",
+              "52.4"
+            ],
+            "details": "Set up Firestore emulator testing environment with comprehensive test suite covering all permission scenarios. Test unauthorized access attempts and privilege escalation prevention. Create audit log querying interface with filtering by user, action, date range. Implement compliance reporting features with export capabilities. Add automated security rule validation in CI/CD pipeline.",
+            "status": "pending",
+            "testStrategy": "Run complete security test suite covering all user roles and collections, test audit log querying and reporting features, validate compliance export functionality"
+          }
+        ]
+      },
+      {
+        "id": 53,
+        "title": "Implement People Search by Name/LinkedIn URL",
+        "description": "Create deterministic search endpoint and UI for finding candidates by exact name or LinkedIn URL matches with company boosting and normalized matching.",
+        "details": "Build comprehensive people search system:\n\n1. **Backend Implementation**:\n   - Create deterministic search endpoint in Cloud Functions\n   - Implement exact match logic for candidate names (normalize case, whitespace)\n   - Add LinkedIn URL matching with URL normalization (handle variations like linkedin.com/in/, mobile URLs)\n   - Implement company boosting algorithm to prioritize candidates from target companies\n   - Add fuzzy matching fallback for near-exact name matches\n   - Create search indexing for name and LinkedIn URL fields in Firestore\n   - Add validation for LinkedIn URL format and accessibility\n   - Implement caching layer for frequent searches\n\n2. **Frontend Implementation**:\n   - Build simple People Search input component with autocomplete\n   - Add search suggestions based on partial name matches\n   - Implement result display with candidate preview cards\n   - Add direct navigation to Candidate Page on match selection\n   - Include search history and recent searches functionality\n   - Add loading states and error handling for search operations\n\n3. **Indexing and Validation**:\n   - Create composite indexes for name + company searches\n   - Add LinkedIn URL validation and normalization utilities\n   - Implement search analytics and performance monitoring\n   - Update API documentation with search endpoint specifications\n   - Add rate limiting and abuse prevention for search endpoints",
+        "testStrategy": "Comprehensive testing approach:\n\n1. **Backend Testing**:\n   - Test exact name matching with various case combinations\n   - Test LinkedIn URL matching with different URL formats\n   - Verify company boosting algorithm with known candidate sets\n   - Test search performance with large candidate datasets\n   - Validate indexing effectiveness and query optimization\n   - Test rate limiting and error handling scenarios\n\n2. **Frontend Testing**:\n   - Test search input with valid/invalid queries\n   - Verify autocomplete functionality and performance\n   - Test navigation to Candidate Page from search results\n   - Test responsive design across different screen sizes\n   - Validate search history persistence and clearing\n\n3. **Integration Testing**:\n   - Test end-to-end search flow from input to candidate page\n   - Verify search analytics data collection\n   - Test API documentation accuracy with actual endpoints\n   - Validate LinkedIn URL normalization across different formats",
+        "status": "pending",
+        "dependencies": [
+          32
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create search endpoint with name and LinkedIn URL matching",
+            "description": "Implement Cloud Functions endpoint for deterministic people search with exact name matching and LinkedIn URL normalization",
+            "dependencies": [],
+            "details": "Create searchPeople Cloud Function endpoint that accepts name and LinkedIn URL parameters. Implement name normalization (lowercase, trim whitespace, handle special characters). Add LinkedIn URL normalization to handle variations like linkedin.com/in/, mobile URLs, and trailing slashes. Create exact match logic for candidate names and LinkedIn profiles stored in Firestore. Add input validation and sanitization for search parameters.",
+            "status": "pending",
+            "testStrategy": "Test exact name matching with various case combinations and whitespace variations. Test LinkedIn URL matching with different URL formats including mobile and desktop versions. Verify input validation and error handling for malformed URLs."
+          },
+          {
+            "id": 2,
+            "title": "Implement company boosting and fuzzy matching algorithms",
+            "description": "Add company-based result prioritization and fuzzy matching fallback for near-exact name matches",
+            "dependencies": [
+              "53.1"
+            ],
+            "details": "Implement company boosting algorithm that prioritizes candidates from target companies in search results. Add fuzzy matching using string similarity algorithms (Levenshtein distance) for names that don't match exactly but are close. Create scoring system that combines exact match, fuzzy match score, and company boost factor. Implement result ranking and sorting based on combined scores. Add configuration for boost factors and similarity thresholds.",
+            "status": "pending",
+            "testStrategy": "Test company boosting with known candidate sets from target companies. Verify fuzzy matching accuracy with similar names and common misspellings. Test ranking algorithm with mixed result sets containing exact matches, fuzzy matches, and company-boosted results."
+          },
+          {
+            "id": 3,
+            "title": "Create search indexing and caching system",
+            "description": "Implement Firestore composite indexes and caching layer for optimized search performance",
+            "dependencies": [
+              "53.1"
+            ],
+            "details": "Create composite Firestore indexes for name + company searches and LinkedIn URL lookups. Implement Redis-based caching layer for frequent searches with configurable TTL. Add search result caching with cache invalidation on candidate profile updates. Create index management utilities for maintaining search performance. Implement search analytics collection for monitoring query patterns and performance metrics.",
+            "status": "pending",
+            "testStrategy": "Test search performance with large candidate datasets. Verify cache hit rates and invalidation logic. Test composite index effectiveness with various search combinations. Monitor query performance and validate analytics data collection."
+          },
+          {
+            "id": 4,
+            "title": "Build People Search UI component with autocomplete",
+            "description": "Create frontend search interface with autocomplete suggestions and result display",
+            "dependencies": [
+              "53.1",
+              "53.2"
+            ],
+            "details": "Build PeopleSearch React component with search input field and autocomplete functionality. Implement debounced search suggestions based on partial name matches. Create candidate preview cards showing key information (name, company, skills). Add search result pagination and infinite scroll. Implement search history and recent searches using localStorage. Add loading states, empty states, and error handling for search operations.",
+            "status": "pending",
+            "testStrategy": "Test autocomplete functionality with partial name inputs. Verify search result display and pagination. Test search history persistence and recent searches functionality. Validate loading states and error handling scenarios."
+          },
+          {
+            "id": 5,
+            "title": "Add rate limiting and API documentation",
+            "description": "Implement search endpoint protection and comprehensive API documentation",
+            "dependencies": [
+              "53.1",
+              "53.2",
+              "53.3"
+            ],
+            "details": "Add rate limiting to search endpoints using Firebase Functions rate limiting or Redis-based implementation. Implement abuse prevention with IP-based throttling and user-based quotas. Create comprehensive API documentation for search endpoints including request/response schemas, error codes, and usage examples. Add search endpoint monitoring and alerting for performance issues. Implement search result analytics dashboard for tracking usage patterns.",
+            "status": "pending",
+            "testStrategy": "Test rate limiting with high-frequency requests. Verify abuse prevention mechanisms with simulated attack scenarios. Validate API documentation accuracy with real endpoint testing. Test monitoring and alerting systems with various load conditions."
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-09-05T18:18:48.859Z",
-      "updated": "2025-09-11T19:22:23.298Z",
+      "updated": "2025-09-12T19:32:47.947Z",
       "description": "Tasks for master context"
     }
   }

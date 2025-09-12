@@ -105,7 +105,7 @@
       <div class="box nb">
         <div class="status">not built</div>
         <div class="title">Stage 2 – Contextual Intelligence</div>
-        <div class="desc">Optional second pass (e.g., Qwen 32B) for company/industry progression insights.</div>
+        <div class="desc">Optional second pass (future; off by default). No automatic escalation in v2.0.</div>
       </div>
     </div>
 
@@ -194,8 +194,13 @@
       </div>
       <div class="box plan">
         <div class="status">planned</div>
-        <div class="title">Admin & Lists</div>
-        <div class="desc">Allowlist/roles management, shortlist save/export, richer rationale panels.</div>
+        <div class="title">Admin (Allowlist)</div>
+        <div class="desc">Firestore rules + allowed_users; minimal management UI deferred; scripts acceptable.</div>
+      </div>
+      <div class="box nb">
+        <div class="status">out of scope</div>
+        <div class="title">Lists</div>
+        <div class="desc">Save/share candidate lists per job. Deferred per PRD (current scope excludes).</div>
       </div>
     </div>
   </div>
@@ -230,8 +235,8 @@
     <div class="panel">
       <h3>Scoring Model (Unified Search)</h3>
       <ul>
-        <li>Composite: <code>0.40×skill_match + 0.25×confidence + 0.25×vector_similarity + 0.10×experience</code>.</li>
-        <li>Demotion: <code>overall_score *= (0.6 + 0.4 × analysis_confidence)</code> when available.</li>
+        <li>Composite: combine skill_match, analysis_confidence, vector_similarity, and experience; weights tuned via evaluation.</li>
+        <li>Demotion: apply analysis_confidence demotion; raise floor when deterministic matches exist.</li>
         <li>Explainability: return top skills with confidence, rationale bullets, and summary.</li>
       </ul>
     </div>
@@ -239,7 +244,7 @@
       <h3>Policies & Env Flags</h3>
       <ul>
         <li>No mock fallbacks in prod/staging; errors are surfaced to clients.</li>
-        <li><code>TOGETHER_MODEL_STAGE1</code>: default <code>Qwen2.5-32B-Instruct</code>.</li>
+        <li><code>TOGETHER_MODEL_STAGE1</code>: default <code>Qwen/Qwen2.5-32B-Instruct</code>.</li>
         <li><code>EMBEDDING_PROVIDER</code>: <code>vertex</code> (prod) or <code>local</code> (dev‑only deterministic).</li>
         <li><code>ENABLE_GEMINI</code>: default <code>false</code>; enrichment path errors when disabled.</li>
         <li><code>USE_PGVECTOR</code>: toggles pgvector path for embeddings and ANN.</li>

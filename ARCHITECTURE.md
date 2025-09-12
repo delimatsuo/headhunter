@@ -4,7 +4,7 @@
 
 ## Updated Architecture Summary
 
-- Stage 1 Enrichment (Single Pass): Qwen 2.5 32B Instruct on Together AI (env: `TOGETHER_MODEL_STAGE1`, default `Qwen2.5-32B-Instruct`).
+- Stage 1 Enrichment (Single Pass): Qwen 2.5 32B Instruct on Together AI (env: `TOGETHER_MODEL_STAGE1`, default `Qwen/Qwen2.5-32B-Instruct`).
 - Outputs: structured profile JSON; explicit vs inferred skills with confidence and evidence; `analysis_confidence` and `quality_flags`.
 - Storage: Firestore (`candidates/`, `enriched_profiles/`); embeddings in `candidate_embeddings` (standardized).
 - Search: Unified pipeline — ANN recall (Cloud SQL + pgvector planned) + re‑rank with structured signals → one ranked list with explainability.

@@ -30,7 +30,7 @@ List row content: name, current role @ company, years/level, composite score, fr
 ## Environment & Secrets
 
 - `TOGETHER_API_KEY`: Together AI key (required)
-- `TOGETHER_MODEL_STAGE1`: default `Qwen2.5-32B-Instruct`
+- `TOGETHER_MODEL_STAGE1`: default `Qwen/Qwen2.5-32B-Instruct`
 - Firebase Admin creds (local/dev) or ADC in GCP
 - (Future) Secret Manager for production
 
@@ -60,7 +60,7 @@ List row content: name, current role @ company, years/level, composite score, fr
 
 ```bash
 export TOGETHER_API_KEY=... 
-export TOGETHER_MODEL_STAGE1=Qwen2.5-32B-Instruct
+export TOGETHER_MODEL_STAGE1=Qwen/Qwen2.5-32B-Instruct
 python3 scripts/intelligent_skill_processor.py  # capped to 50 in main()
 ```
 

@@ -24,8 +24,8 @@ class Config:
         self.pubsub_subscription = os.getenv("PUBSUB_SUBSCRIPTION", "candidate-worker-sub")
         self.dead_letter_topic = os.getenv("DEAD_LETTER_TOPIC", "candidate-process-dlq")
         
-        # Together AI configuration
-        self.together_ai_model = os.getenv("TOGETHER_AI_MODEL", "meta-llama/Llama-3.2-3B-Instruct-Turbo")
+        # Together AI configuration (align with Stage 1 model env)
+        self.together_ai_model = os.getenv("TOGETHER_MODEL_STAGE1", os.getenv("TOGETHER_AI_MODEL", "Qwen/Qwen2.5-32B-Instruct"))
         self.together_ai_base_url = os.getenv("TOGETHER_AI_BASE_URL", "https://api.together.xyz/v1")
         self.together_ai_timeout = int(os.getenv("TOGETHER_AI_TIMEOUT", "60"))
         self.together_ai_max_retries = int(os.getenv("TOGETHER_AI_MAX_RETRIES", "3"))
@@ -74,10 +74,6 @@ class Config:
             response = client.access_secret_version(request={"name": secret_name})
             return response.payload.data.decode("UTF-8")
         except Exception as e:
-            # If all fails, check for fallback env var
-            fallback = os.getenv("TOGETHER_AI_API_KEY") 
-            if fallback:
-                return fallback
             raise ValueError(f"Could not retrieve Together AI API key from environment or Secret Manager: {e}")
     
     def validate(self):

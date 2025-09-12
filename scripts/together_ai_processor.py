@@ -37,7 +37,7 @@ class TogetherAIProcessor:
         if not self.api_key:
             raise ValueError("Together API key not provided")
         # Default Stage 1 model to Qwen2.5 32B Instruct if not provided
-        self.model = model or os.getenv('TOGETHER_MODEL_STAGE1', 'Qwen2.5-32B-Instruct')
+        self.model = model or os.getenv('TOGETHER_MODEL_STAGE1', 'Qwen/Qwen2.5-32B-Instruct')
         self.base_url = "https://api.together.xyz/v1/chat/completions"
         self.session = None
         self.use_firestore = use_firestore
@@ -356,7 +356,10 @@ async def main():
     """Main processing function"""
     
     # Configuration
-    API_KEY = "6d9eb8b102a05bae51baa97445cff83aff1eaf38ee7c09528bee54efe4ca4824"  # Keep secure
+    API_KEY = os.getenv("TOGETHER_API_KEY")
+    if not API_KEY:
+        logger.error("TOGETHER_API_KEY not set; aborting.")
+        return
     INPUT_FILE = "/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project/comprehensive_merged_candidates.json"
     OUTPUT_FILE = "/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project/together_ai_enhanced_candidates.json"
     

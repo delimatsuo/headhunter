@@ -5,7 +5,7 @@
 ## 🎯 Core Architecture
 
 **Cloud-Triggered AI Processing**
-- Single pass enrichment via Together AI using Qwen 2.5 32B Instruct (config via `TOGETHER_MODEL_STAGE1`).
+- Single pass enrichment via Together AI using Qwen 2.5 32B Instruct (config via `TOGETHER_MODEL_STAGE1`, default `Qwen/Qwen2.5-32B-Instruct`).
 - Processors (Python async) stream structured profiles to Firestore and add `analysis_confidence` + `quality_flags`.
 - Embeddings generated for enriched text; vectors normalized in `candidate_embeddings`.
 - Unified search blends ANN recall (pgvector planned) with structured skill/experience signals (one ranked list).
