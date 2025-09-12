@@ -15,7 +15,7 @@ import { BUCKET_PROFILES } from "./config";
 import { JobSearchService, JobDescription } from "./job-search";
 // Temporarily comment out until modules are properly exported
 // import { errorHandler } from "./error-handler";
-// import { auditLogger, AuditAction } from "./audit-logger";
+import { auditLogger, AuditAction } from "./audit-logger";
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -231,7 +231,7 @@ export const healthCheck = onCall(
       const bucket = storage.bucket(BUCKET_PROFILES);
       const [exists] = await bucket.exists();
 
-      return {
+      const resp = {
         status: "healthy",
         timestamp: new Date().toISOString(),
         services: {
@@ -242,8 +242,12 @@ export const healthCheck = onCall(
         project: process.env.GOOGLE_CLOUD_PROJECT,
         region: "us-central1",
       };
+
+      await auditLogger.logApiCall("healthCheck", request.auth?.uid, {}, "success");
+      return resp;
     } catch (error) {
       console.error("Health check failed:", error);
+      await auditLogger.logApiCall("healthCheck", request.auth?.uid, {}, "error");
       throw new HttpsError("internal", "Health check failed");
     }
   }
@@ -540,6 +544,7 @@ export const searchJobCandidates = onCall(
         }
       }
 
+      const started = Date.now();
       // Perform search
       const searchResults = await jobSearchService.searchCandidates(jobDesc, limit);
 
@@ -559,22 +564,22 @@ export const searchJobCandidates = onCall(
       //   duration
       // );
 
-      return {
+      const out = {
         ...searchResults,
         from_cache: false,
       };
+      await auditLogger.logSearch(request.auth.uid, "job_search", jobDesc, searchResults.matches.length, Date.now() - started);
+      return out;
     } catch (error) {
       // const duration = Date.now() - startTime;
       
       // Log error
-      // await auditLogger.log(AuditAction.ERROR_OCCURRED, {
-      //   userId,
-      //   userEmail,
-      //   resourceType: "job_search",
-      //   errorMessage: (error as any).message,
-      //   durationMs: duration,
-      //   success: false,
-      // });
+      await auditLogger.log(AuditAction.ERROR_OCCURRED, {
+        userId: request.auth?.uid,
+        resourceType: "job_search",
+        errorMessage: (error as any)?.message,
+        success: false,
+      });
       
       // Handle error with error handler
       console.error("Error in job search:", error);

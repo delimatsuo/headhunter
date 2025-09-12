@@ -64,6 +64,8 @@ Multi-format support for extracting text from:
 - PRD (authoritative): `.taskmaster/docs/prd.txt`
 - Handover (crash‑safe runbook): `docs/HANDOVER.md`
 - Architecture visual: `docs/architecture-visual.html`
+- Admin Page: Dedicated admin route in SPA (role‑gated) to manage `allowed_users` via Cloud Functions callables (`addAllowedUser`, `removeAllowedUser`, `listAllowedUsers`, `setAllowedUserRole`).
+- Audit Logging: Backend writes `audit_logs` (admin‑read only) for health checks, job searches, and errors; batching and sanitization enabled. Cleanup via scheduled function recommended (90‑day retention).
 
 ### No Mock Fallbacks
 - Production and staging do not serve mock or deterministic data when external services are unavailable.

@@ -126,6 +126,12 @@ Key change: AI analysis and enrichment run via Together AI’s hosted models (si
 - Job Search: Paste JD → up to 50 results (expandable by 50). Rows are minimal; click row to open Candidate Page.
 - Candidate Page: Full Skill Map (explicit + inferred with confidence and “Needs verification” tags), Pre‑Interview Analysis (on‑demand), compact career Timeline, resume Freshness, LinkedIn link.
 
+### Admin Page (New)
+- Dedicated Admin page (admin-only route) to manage `allowed_users`:
+  - List allowed users, add/remove entries, update role (recruiter/admin)
+  - Guarded by role claim (`admin` or `super_admin`)
+  - Backed by Cloud Functions callables: `addAllowedUser`, `removeAllowedUser`, `listAllowedUsers`, `setAllowedUserRole`
+
 List row content (minimal): name, current role @ company, years/level, composite score, freshness badge, LinkedIn link, and a small “Low profile depth” badge when applicable.
 
 ## Search & Ranking (Unified)

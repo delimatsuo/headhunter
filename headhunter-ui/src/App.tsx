@@ -5,8 +5,9 @@ import { Navbar } from './components/Navigation/Navbar';
 import { AuthModal } from './components/Auth/AuthModal';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { SearchPage } from './components/Search/SearchPage';
+import { AdminPage } from './components/Admin/AdminPage';
 
-type PageType = 'dashboard' | 'search' | 'candidates' | 'analytics' | 'profile' | 'settings';
+type PageType = 'dashboard' | 'search' | 'candidates' | 'analytics' | 'profile' | 'settings' | 'admin';
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -90,6 +91,16 @@ function AppContent() {
       );
     }
 
+    // Decode role claim for admin gating
+    let role: string | undefined;
+    try {
+      const token = (user as any)?.stsTokenManager?.accessToken || undefined;
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        role = payload.role || payload.custom_role;
+      }
+    } catch {}
+
     switch (currentPage) {
       case 'dashboard':
         return <Dashboard />;
@@ -143,6 +154,19 @@ function AppContent() {
               <h2>Application Settings</h2>
               <p>Configure your Headhunter AI experience</p>
               <p className="text-muted">Settings panel coming soon...</p>
+            </div>
+          </div>
+        );
+      case 'admin':
+        if (role === 'admin' || role === 'super_admin') {
+          return <AdminPage />;
+        }
+        return (
+          <div className="page-placeholder">
+            <div className="empty-state">
+              <div className="empty-icon">🔒</div>
+              <h2>Admin Only</h2>
+              <p>You do not have permission to view this page.</p>
             </div>
           </div>
         );

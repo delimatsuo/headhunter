@@ -26,12 +26,26 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navItems: NavItem[] = [
+  const baseItems: NavItem[] = [
     { name: 'Dashboard', path: 'dashboard', icon: '🏠' },
     { name: 'Search', path: 'search', icon: '🔍' },
     { name: 'Candidates', path: 'candidates', icon: '👥' },
     { name: 'Analytics', path: 'analytics', icon: '📊' }
   ];
+
+  let role: string | undefined;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const token = (user as any)?.stsTokenManager?.accessToken || undefined;
+    if (token) {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      role = payload.role || payload.custom_role;
+    }
+  } catch {}
+
+  const navItems: NavItem[] = role === 'admin' || role === 'super_admin'
+    ? [...baseItems, { name: 'Admin', path: 'admin', icon: '🛡️' }]
+    : baseItems;
 
   const handleSignOut = async () => {
     try {

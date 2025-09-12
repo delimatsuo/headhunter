@@ -50,4 +50,10 @@ export const completeOnboarding = httpsCallable(functions, 'completeOnboarding')
 export const skillAwareSearch = httpsCallable(functions, 'skillAwareSearch');
 export const getCandidateSkillAssessment = httpsCallable(functions, 'getCandidateSkillAssessment');
 
+// Admin callables
+export const addAllowedUserFn = httpsCallable(functions, 'addAllowedUser');
+export const removeAllowedUserFn = httpsCallable(functions, 'removeAllowedUser');
+export const listAllowedUsersFn = httpsCallable(functions, 'listAllowedUsers');
+export const setAllowedUserRoleFn = httpsCallable(functions, 'setAllowedUserRole');
+
 export default app;

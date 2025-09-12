@@ -4,6 +4,7 @@ import { firestoreService } from '../../services/firestore-direct';
 import { DashboardStats, CandidateProfile } from '../../types';
 import { SimpleCandidateCard } from '../Candidate/SimpleCandidateCard';
 import { useAuth } from '../../contexts/AuthContext';
+import { AllowedUsersPanel } from '../Admin/AllowedUsersPanel';
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -192,6 +193,9 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Admin Panel */}
+      <AllowedUsersPanel />
     </div>
   );
 };
