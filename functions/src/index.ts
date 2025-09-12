@@ -722,3 +722,6 @@ export {
 
 // Export REST API
 export { api } from './rest-api';
+
+// Compliance and security reporting
+export { getAuditReport, getSecuritySummary } from './compliance';

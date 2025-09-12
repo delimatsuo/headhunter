@@ -66,6 +66,7 @@ Multi-format support for extracting text from:
 - Architecture visual: `docs/architecture-visual.html`
 - Admin Page: Dedicated admin route in SPA (role‑gated) to manage `allowed_users` via Cloud Functions callables (`addAllowedUser`, `removeAllowedUser`, `listAllowedUsers`, `setAllowedUserRole`).
 - Audit Logging: Backend writes `audit_logs` (admin‑read only) for health checks, job searches, and errors; batching and sanitization enabled. Cleanup via scheduled function recommended (90‑day retention).
+ - Compliance: Admin callables `getAuditReport` and `getSecuritySummary` provide audit metrics and a quick security snapshot for compliance.
 
 ### No Mock Fallbacks
 - Production and staging do not serve mock or deterministic data when external services are unavailable.
