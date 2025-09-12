@@ -51,6 +51,13 @@ service cloud.firestore {
                      isOrgMember(resource.data.organization_id);
       allow write: if false; // Only Cloud Functions can write
     }
+
+    // Enriched profiles - organization-scoped access
+    match /enriched_profiles/{profileId} {
+      allow read: if isAuthenticated() &&
+                     isOrgMember(resource.data.organization_id);
+      allow write: if false; // Only Cloud Functions/processors write
+    }
     
     // Jobs - organization-scoped access
     match /jobs/{jobId} {
@@ -59,11 +66,10 @@ service cloud.firestore {
       allow write: if false; // Only Cloud Functions can write
     }
     
-    // Embeddings - organization-scoped access
-    match /embeddings/{embeddingId} {
-      allow read: if isAuthenticated() && 
-                     isOrgMember(resource.data.organization_id);
-      allow write: if false; // Only Cloud Functions can write
+    // Candidate embeddings - admin-only read, no direct writes
+    match /candidate_embeddings/{embeddingId} {
+      allow read: if isAdmin();
+      allow write: if false; // Only backend pipelines write
     }
     
     // Processing queue - organization-scoped access
@@ -85,6 +91,18 @@ service cloud.firestore {
       allow read: if isAuthenticated() && 
                      isOrgMember(resource.data.organization_id);
       allow write: if false; // Only Cloud Functions can write
+    }
+
+    // Audit logs (sensitive) - admin read only, no direct writes
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // Only Cloud Functions write
+    }
+
+    // Allowed users (admin allowlist management)
+    match /allowed_users/{userKey} {
+      allow read: if isAdmin();
+      allow write: if isSuperAdmin() || isAdmin();
     }
     
     // User subcollections - private access only
