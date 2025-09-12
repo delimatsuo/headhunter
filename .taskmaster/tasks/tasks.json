@@ -2200,7 +2200,7 @@
         "description": "Implement comprehensive Firestore security rules enforcing role-based access control with allowed_users collection, create admin management interface, and add audit logging for sensitive operations.",
         "details": "1. **Firestore Security Rules Implementation**:\n   - Create firestore.rules file with role-based access control\n   - Implement allowed_users collection structure with roles (admin, recruiter, viewer)\n   - Enforce read/write permissions based on user roles for sensitive collections:\n     * candidates/ - recruiter+ read, admin write\n     * enriched_profiles/ - recruiter+ read, admin write\n     * embeddings/ - admin only\n     * allowed_users/ - admin only\n   - Add user authentication validation and email domain restrictions\n   - Implement resource-level permissions with candidate ownership\n\n2. **Admin Management Interface**:\n   - Create admin/user_management.html page with user CRUD operations\n   - Implement backend API endpoints for user management (/api/admin/users)\n   - Add role assignment functionality with validation\n   - Create bulk user import/export capabilities\n   - Implement user deactivation and role modification workflows\n\n3. **Audit Logging System**:\n   - Create audit_logs/ collection with structured logging\n   - Log sensitive operations: user role changes, data access, profile modifications\n   - Implement automatic log retention policies (90 days)\n   - Add log querying interface for compliance reporting\n   - Include user context, timestamps, and operation details\n\n4. **Security Rule Testing**:\n   - Set up Firestore emulator for rule testing\n   - Create comprehensive test suite covering all permission scenarios\n   - Test unauthorized access attempts and privilege escalation\n   - Validate audit log generation for all tracked operations",
         "testStrategy": "1. **Security Rule Testing**:\n   - Use Firestore emulator to test rules with different user roles\n   - Verify unauthorized users cannot access sensitive collections\n   - Test role-based permissions for each collection (candidates/, enriched_profiles/, embeddings/)\n   - Validate admin-only access to allowed_users/ collection\n   - Test edge cases like missing roles or invalid authentication\n\n2. **Admin Interface Testing**:\n   - Test user creation, modification, and deletion workflows\n   - Verify role assignment and validation logic\n   - Test bulk operations with large user datasets\n   - Validate error handling for duplicate users or invalid roles\n   - Test UI responsiveness and data consistency\n\n3. **Audit Logging Verification**:\n   - Verify all sensitive operations generate audit logs\n   - Test log structure and required fields (user, timestamp, operation, resource)\n   - Validate log retention policies and automatic cleanup\n   - Test audit log querying and filtering functionality\n   - Verify log integrity and tamper-proof storage\n\n4. **Integration Testing**:\n   - Test end-to-end user workflows with security rules active\n   - Verify API endpoints respect Firestore security rules\n   - Test performance impact of security rule evaluation\n   - Validate backup and restore procedures with security rules",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [],
         "priority": "high",
         "subtasks": [
@@ -2210,7 +2210,7 @@
             "description": "Implement comprehensive firestore.rules file with role-based access control, user authentication validation, and collection-specific permissions for candidates, enriched_profiles, embeddings, and allowed_users collections.",
             "dependencies": [],
             "details": "Create firestore.rules file defining security rules for all collections. Implement allowed_users collection structure with roles (admin, recruiter, viewer). Define read/write permissions: candidates/ and enriched_profiles/ (recruiter+ read, admin write), embeddings/ and allowed_users/ (admin only). Add user authentication validation and email domain restrictions. Include resource-level permissions with candidate ownership validation.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Use Firestore emulator to test rules with different user roles, verify unauthorized access is blocked, test each collection's permission matrix, validate authentication requirements"
           },
           {
@@ -2333,7 +2333,7 @@
     ],
     "metadata": {
       "created": "2025-09-05T18:18:48.859Z",
-      "updated": "2025-09-12T20:37:31.900Z",
+      "updated": "2025-09-12T20:39:40.291Z",
       "description": "Tasks for master context"
     }
   }

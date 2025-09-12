@@ -702,6 +702,13 @@ export {
   getOnboardingStatus,
 } from './user-onboarding';
 
+export {
+  addAllowedUser,
+  removeAllowedUser,
+  listAllowedUsers,
+  setAllowedUserRole,
+} from './admin-users';
+
 // Export skill-aware search functions
 export {
   skillAwareSearch,
