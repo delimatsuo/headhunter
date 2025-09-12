@@ -4,6 +4,8 @@ import time
 from typing import Any, Dict, List, Optional
 
 import aiohttp
+import logging
+from time import perf_counter
 
 
 class TogetherAIError(Exception):
@@ -69,6 +71,7 @@ class TogetherAIClient:
         # Simple 30s open window on breaker trip
         self._breaker_open_flag = True
         self._breaker_open_until = time.time() + 30.0
+        self.breaker_trips += 1
 
     async def chat_completion(
         self,
@@ -122,6 +125,7 @@ class TogetherAIClient:
             while attempt <= self.max_retries:
                 attempt += 1
                 try:
+                    t0 = perf_counter()
                     async with session.post(self.base_url, json=payload) as resp:  # type: ignore[attr-defined]
                         status = resp.status
                         data = await resp.json()
@@ -131,6 +135,15 @@ class TogetherAIClient:
                             self._last_call_failed = False
                             self._request_timestamps.append(time.time())
                             content = data["choices"][0]["message"]["content"]
+                            # Metrics update
+                            self.calls_total += 1
+                            dt_ms = (perf_counter() - t0) * 1000.0
+                            if self.latency_ms_ema is None:
+                                self.latency_ms_ema = dt_ms
+                            else:
+                                self.latency_ms_ema = (1 - self._ema_alpha) * self.latency_ms_ema + self._ema_alpha * dt_ms
+                            if self._logger.isEnabledFor(logging.INFO):
+                                self._logger.info("Together call ok | model=%s status=%s latency_ms=%.1f ema_ms=%.1f", payload["model"], status, dt_ms, self.latency_ms_ema or dt_ms)
                             return content
 
                         # For non-200 responses or malformed payloads, raise to trigger retry logic
@@ -140,12 +153,22 @@ class TogetherAIClient:
                     last_exc = exc
                     self._consecutive_failures += 1
                     self._last_call_failed = True
+                    self.errors_total += 1
+                    if self._logger.isEnabledFor(logging.WARNING):
+                        self._logger.warning("Together call failed | attempt=%s err=%s", attempt, exc)
 
                     if self._consecutive_failures >= self._circuit_breaker_threshold:
                         self._trip_breaker()
 
                     if attempt > self.max_retries:
                         break
+        # Metrics
+        self.calls_total = 0
+        self.errors_total = 0
+        self.breaker_trips = 0
+        self.latency_ms_ema: Optional[float] = None
+        self._ema_alpha = 0.2
+        self._logger = logging.getLogger(__name__)
 
                     # Exponential backoff: 2, 4, 8 seconds...
                     delay = self.backoff_base_seconds ** attempt
@@ -160,3 +183,14 @@ class TogetherAIClient:
     def estimate_cost_usd(input_tokens: int, output_tokens: int, price_per_million_tokens: float = 0.10) -> float:
         total = input_tokens + output_tokens
         return (total / 1_000_000.0) * price_per_million_tokens
+
+    def get_metrics(self) -> Dict[str, Any]:
+        """Return a snapshot of internal metrics for monitoring/logging."""
+        return {
+            "calls_total": self.calls_total,
+            "errors_total": self.errors_total,
+            "breaker_trips": self.breaker_trips,
+            "latency_ms_ema": round(self.latency_ms_ema or 0.0, 1),
+            "rate_limit_per_min": self._rate_limit,
+            "model": self.model,
+        }
