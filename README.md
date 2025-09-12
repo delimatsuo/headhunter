@@ -158,54 +158,44 @@ firebase deploy
 ## 🏗️ System Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    INPUT LAYER                           │
-├─────────────────────────────────────────────────────────┤
-│  CSV Files │ Resume PDFs │ DOCX │ Images │ Comments     │
-└─────────────┬───────────────────────────────────────────┘
-              │
-              ▼
-┌─────────────────────────────────────────────────────────┐
-│              CLOUD RUN PROCESSING                        │
-├─────────────────────────────────────────────────────────┤
-│  • Pub/Sub triggers Cloud Run workers                   │
-│  • resume_extractor.py - Multi-format text extraction   │
-│  • candidate_processor.py - Pipeline orchestration      │
-│  • together_ai_client.py - API integration              │
-└─────────────┬───────────────────────────────────────────┘
-              │
-              ▼
-┌─────────────────────────────────────────────────────────┐
-│            TOGETHER AI + LLAMA 3.2 3B                   │
-├─────────────────────────────────────────────────────────┤
-│  Structured Prompt → Deep Analysis → JSON Output        │
-│  • Career trajectory analysis                           │
-│  • Leadership scope assessment                          │
-│  • Company pedigree evaluation                          │
-│  • Skills extraction and categorization                 │
-│  • Cultural fit and work style analysis                 │
-│  • Recruiter insights synthesis                         │
-└─────────────┬───────────────────────────────────────────┘
-              │
-              ▼
-┌─────────────────────────────────────────────────────────┐
-│              STORAGE & SEARCH LAYER                      │
-├─────────────────────────────────────────────────────────┤
-│  • Firebase Firestore - Structured JSON profiles        │
-│  • Cloud SQL + pgvector - Vector embeddings             │
-│  • VertexAI embeddings - Semantic search                │
-│  • Cloud Functions - API endpoints                      │
-└─────────────┬───────────────────────────────────────────┘
-              │
-              ▼
-┌─────────────────────────────────────────────────────────┐
-│                  WEB INTERFACE                           │
-├─────────────────────────────────────────────────────────┤
-│  • React application                                    │
-│  • Job description input                                │
-│  • Semantic candidate matching                          │
-│  • Ranked results with explanations                     │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│                INPUT LAYER                   │
+├──────────────────────────────────────────────┤
+│ CSVs │ Resumes (PDF/DOCX/TXT/Images) │ Notes │
+└───────────────┬──────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────┐
+│            STAGE 1 (SINGLE‑PASS)             │
+├──────────────────────────────────────────────┤
+│ Together AI – Qwen 2.5 32B Instruct          │
+│ • Structured profile (skills+confidence)     │
+│ • Evidence, executive summary, confidence    │
+└───────────────┬──────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────┐
+│           STORAGE & EMBEDDINGS               │
+├──────────────────────────────────────────────┤
+│ Firestore (profiles)                         │
+│ candidate_embeddings (Vertex text-emb-004)   │
+└───────────────┬──────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────┐
+│                SEARCH PIPELINE               │
+├──────────────────────────────────────────────┤
+│ ANN recall (pgvector planned) ∪ deterministic│
+│ re‑rank: skill/confidence/vector/experience  │
+└───────────────┬──────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────┐
+│                  WEB UI                      │
+├──────────────────────────────────────────────┤
+│ Minimal Job Search list → Candidate Page     │
+│ Candidate Page: Skill Map + on‑demand PIA    │
+└──────────────────────────────────────────────┘
 ```
 
 ## Running the System
@@ -245,162 +235,27 @@ npm run build
 firebase deploy
 ```
 
-## Production Deployment Status
+## Current Status
 
-### ✅ Completed Components
+### ✅ Working
+- Firebase Functions: CRUD, upload pipeline, unified skill‑aware search (composite re‑rank, confidence demotion).
+- React SPA: Minimal Job Search list; deep Candidate Page view.
+- Embeddings: Vertex text‑embedding‑004; stored in `candidate_embeddings`.
 
-1. **Cloud Run Worker**: Deployed and operational
-   - Service: `candidate-enricher`
-   - Region: `us-central1`
-   - API Integration: Together AI working
-   - Secret Management: Google Cloud Secret Manager
-
-2. **Performance Validation**: 110 candidates tested
-   - Success Rate: **99.1%**
-   - Average Processing Time: **3.96s**
-   - Throughput: **15.0 candidates/minute**
-   - Cost: **$54.28 for 29,000 candidates**
-
-3. **API Configuration**:
-   - Model: `meta-llama/Llama-3.2-3B-Instruct-Turbo`
-   - Endpoint: `https://api.together.xyz/v1`
-   - Authentication: Verified working
-
-4. **Embedding Comparison**: VertexAI vs Deterministic
-   - **Recommendation**: VertexAI for production
-   - Quality: Higher semantic accuracy
-   - Performance: 0.2s avg processing time
-
-### 🔄 Ready for 50-Candidate Batch Test
-
-All components are operational for large-scale testing:
-
-```bash
-# Run comprehensive 50-candidate test
-python3 scripts/performance_test_suite.py --candidates=50
-
-# Expected results based on validation:
-# - Success Rate: >99%
-# - Processing Time: <4s avg
-# - Total Cost: <$0.10
-```
-
-## JSON Output Structure
-
-The cloud AI generates comprehensive structured profiles:
-
-```json
-{
-  "candidate_id": "123",
-  "career_trajectory": {
-    "current_level": "Senior",
-    "progression_speed": "fast",
-    "trajectory_type": "technical_leadership",
-    "years_experience": 12
-  },
-  "leadership_scope": {
-    "has_leadership": true,
-    "team_size": 15,
-    "leadership_level": "manager"
-  },
-  "company_pedigree": {
-    "company_tier": "enterprise",
-    "stability_pattern": "stable"
-  },
-  "skill_assessment": {
-    "technical_skills": {
-      "core_competencies": ["Python", "AWS", "ML"],
-      "skill_depth": "expert"
-    }
-  },
-  "recruiter_insights": {
-    "placement_likelihood": "high",
-    "best_fit_roles": ["Tech Lead", "Engineering Manager"]
-  },
-  "search_optimization": {
-    "keywords": ["python", "aws", "leadership"],
-    "search_tags": ["senior", "technical_lead"]
-  },
-  "executive_summary": {
-    "one_line_pitch": "Senior technical leader with fintech expertise",
-    "overall_rating": 92
-  }
-}
-```
-
-## Performance Metrics (Multi-Stage Pipeline)
-
-**Stage 1 (Basic Enhancement)**:
-- Processing Speed: 3.96s average per candidate
-- Cost: $0.0006 per candidate (Llama 3.2 3B)
-- Success Rate: 99.1% validated
-
-**Stage 2 (Contextual Intelligence)**:
-- Model: Qwen2.5 Coder 32B for technical specialization
-- Cost: $0.002 per candidate (4x Stage 1 for superior reasoning)
-- Contextual Analysis: Company patterns, industry intelligence, role progression
-
-**Stage 3 (Vector Generation)**:
-- VertexAI embeddings: 768 dimensions
-- Cost: $0.0002 per candidate
-- **Total Pipeline Cost: $0.0026 per candidate**
-
-## Key Files
-
-### Cloud Run Worker
-- `cloud_run_worker/main.py` - FastAPI application
-- `cloud_run_worker/config.py` - Configuration with Secret Manager
-- `cloud_run_worker/candidate_processor.py` - Processing pipeline
-- `cloud_run_worker/together_ai_client.py` - API integration
-
-### Testing & Validation
-- `scripts/performance_test_suite.py` - Comprehensive testing
-- `scripts/api_key_validation.py` - API connectivity test
-- `scripts/embedding_bakeoff.py` - Embedding model comparison
-- `scripts/prd_compliant_validation.py` - End-to-end validation
-
-### Documentation
-- `docs/PRODUCTION_DEPLOYMENT_GUIDE.md` - Deployment instructions
-- `docs/AI_AGENT_HANDOVER.md` - Technical handover
-- `docs/HANDOVER.md` - Performance results
-- `.taskmaster/docs/prd.txt` - Product requirements
+### 🚧 In Progress / Planned
+- Pgvector ANN service (Cloud Run) and SPA integration.
+- Deterministic recall + low‑depth bucket safeguards.
+- Pre‑Interview Analysis (on‑demand) callables and Candidate Page panel.
+- Optional Cloud Run enrichment worker for throughput (future).
 
 ## Security & Privacy
 
-- **API Key Security**: Stored in Google Cloud Secret Manager
-- **IAM Controls**: Proper service account permissions
-- **Network Security**: VPC-native Cloud Run deployment
-- **Data Encryption**: At rest and in transit
-- **Access Controls**: Firebase Authentication
-
-## Current Status - Ready for Production
-
-### ✅ All Systems Operational
-- **Cloud Run**: Deployed and tested
-- **Together AI API**: Validated and working
-- **Secret Management**: Configured and secure
-- **Performance**: Exceeds requirements (99.1% success)
-- **Cost**: Under budget ($54.28 for 29K candidates)
-
-### 🚀 Next Step: 50-Candidate Batch Test
-
-The system is fully operational and ready for your 50-candidate validation:
-
-```bash
-# Execute the batch test
-python3 scripts/performance_test_suite.py --batch-size=50 --full-validation
-
-# Monitor via Cloud Console
-echo "View logs: https://console.cloud.google.com/run/detail/us-central1/candidate-enricher"
-```
+- API keys via environment/Secret Manager; no mock fallbacks in prod/staging.
+- Access via Firebase Authentication; store only required fields; follow security rules.
 
 ## Support & Documentation
 
-- **Production Guide**: `docs/PRODUCTION_DEPLOYMENT_GUIDE.md`
-- **Performance Results**: `docs/HANDOVER.md`
-- **Technical Details**: `docs/AI_AGENT_HANDOVER.md`
-- **Task Management**: `.taskmaster/docs/` directory
-
----
-
-**System Status**: ✅ Production Ready | **Last Validated**: 2025-09-11 | **Success Rate**: 99.1%
+- PRD: `.taskmaster/docs/prd.txt`
+- Handover: `docs/HANDOVER.md`
+- Architecture Visual: `docs/architecture-visual.html`
+- Architecture: `ARCHITECTURE.md`

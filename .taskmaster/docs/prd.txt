@@ -3,7 +3,7 @@
 ## Overview
 Headhunter transforms Ella Executive Search's historical candidate database into an intelligent, semantic search engine using a cloud processing pipeline powered by Together AI. The system analyzes unstructured candidate data (resumes, recruiter comments, experience text) to produce enriched, structured profiles and semantic search embeddings, then serves ranked results to recruiters.
 
-Key change: AI analysis and enrichment run via Together AI’s hosted models (e.g., Llama 3.1 8B Instruct Turbo) from Python batch processors, with results streamed directly to Firebase Firestore. Cloud Functions provide ingestion, CRUD APIs, search, and embedding generation. Local-only processing is retained as a fallback for development, but production processing uses Together AI.
+Key change: AI analysis and enrichment run via Together AI’s hosted models (single‑pass Qwen 2.5 32B Instruct) from Python processors, with results streamed directly to Firebase Firestore. Cloud Functions provide ingestion, CRUD APIs, search, and embedding generation. Local‑only processing is for development only; production processing uses Together AI.
 
 ## Core Features
 - **Cloud AI Processing (Together AI)**: Python async processors call Together AI chat completion API with recruiter-grade prompts to analyze resumes and recruiter comments, returning structured JSON analysis.
@@ -192,7 +192,7 @@ Acceptance criteria:
 ## Model & Ranking Policy (Decisions)
 
 - Stage 1 Model: Qwen 2.5 32B Instruct on Together AI (single pass). Env: `TOGETHER_MODEL_STAGE1`.
-- Optional Escalation: Llama 3.1 70B Instruct only for ambiguous cases (future; off by default).
+- Optional: larger models for ambiguous cases (future; off by default). No automatic escalation in v2.0.
 - Low-Certainty Policy: Compute `analysis_confidence` and demote low-content profiles; still searchable by deterministic fields (name/company).
 - Unified Search: One endpoint blends vector similarity (ANN) + skill probabilities + experience into a single rank; UI never uses “two engines”.
 

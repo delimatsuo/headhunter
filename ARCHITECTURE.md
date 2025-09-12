@@ -48,56 +48,21 @@ Row content (minimal): name, current role @ company, years/level, composite scor
 
 ## 🎯 Core Design Principle
 
-**Multi-Stage AI Processing with Contextual Intelligence** - The system processes candidates through 3 distinct AI stages: (1) Basic enhancement using Llama 3.2 3B, (2) Contextual intelligence using Qwen2.5 Coder 32B for trajectory-based skill inference, and (3) Vector generation using VertexAI embeddings for semantic search. This architecture provides sophisticated recruiter-grade analysis with company/industry pattern recognition.
+Single‑pass enrichment + unified search. The system produces a complete structured profile in one pass (Qwen 2.5 32B), generates embeddings from the enriched text, and serves a single search pipeline that blends ANN recall with deterministic re‑ranking signals (skill match, confidence, vector similarity, experience). On‑demand pre‑interview analysis is generated only when a recruiter opens a Candidate Page.
 
 ## System Components
 
-### 1. Cloud Processing Layer (Together AI + Google Cloud)
+### Current System Components
 
-The heart of the system - where all AI intelligence and processing resides:
+- Processing: Python processors calling Together AI (Qwen 2.5 32B) for single‑pass enrichment; JSON repair + schema validation.
+- Storage: Firestore for structured profiles; `candidate_embeddings` for vectors (Vertex text‑embedding‑004 baseline).
+- Search: Unified pipeline (ANN recall planned on pgvector) + deterministic re‑rank with analysis_confidence demotion and recall safeguards.
+- UI: React SPA (Firebase Hosting) with minimal list → Candidate Page; callables for search and assessment.
+- Optional: Cloud Run ANN service (planned), Cloud Run enrichment worker (future).
 
-```
-┌──────────────────────────────────────────────────┐
-│         MULTI-STAGE CLOUD PROCESSING            │
-├──────────────────────────────────────────────────┤
-│  Stage 1: Llama 3.2 3B ($0.20/1M) - Basic       │
-│  Stage 2: Qwen2.5 32B ($0.80/1M) - Contextual   │
-│  Stage 3: VertexAI Embeddings - Vector Gen       │
-│  Runtime: Cloud Run (Python 3.11+)              │
-│  Vector DB: Cloud SQL + pgvector                 │
-│  Orchestration: Multi-stage pipeline workers    │
-└──────────────────────────────────────────────────┘
-```
+## Legacy Architecture (Archive)
 
-**Key Components:**
-- `cloud_run_worker/` - FastAPI Cloud Run workers for scalable processing
-- `cloud_run_worker/main.py` - FastAPI application with Pub/Sub endpoints
-- `cloud_run_worker/processor.py` - Enhanced candidate profile processor
-- `cloud_run_worker/config.py` - Configuration with Secret Manager integration
-- `cloud_run_worker/prompts.py` - Comprehensive analysis prompt templates
-- `cloud_run_worker/embeddings.py` - VertexAI embeddings generation
-- `cloud_run_worker/vector_db.py` - Cloud SQL + pgvector operations
-
-**Multi-Stage Processing Flow:**
-1. **Stage 1 - Basic Enhancement**:
-   - Extract resume text and recruiter comments
-   - Call Together AI Llama 3.2 3B with structured prompts
-   - Generate enhanced_analysis with 15+ detailed fields
-   - Store basic enhanced profile in Firestore
-
-2. **Stage 2 - Contextual Intelligence**:
-   - Extract company/role trajectory from enhanced profile
-   - Apply contextual intelligence (Google vs startup patterns)
-   - Call Qwen2.5 Coder 32B for sophisticated skill inference
-   - Add probabilistic skills with confidence scores (0-100%)
-   - Generate evidence arrays supporting each skill assessment
-   - Categorize skills: technical, soft, leadership, domain
-
-3. **Stage 3 - Vector Generation**:
-   - Extract searchable text from enriched profile
-   - Generate VertexAI embeddings (768 dimensions)
-   - Store vectors in Cloud SQL + pgvector
-   - Complete multi-stage processing pipeline
+The following multi‑stage architecture content is retained for historical context and is not the current design.
 
 ### 2. Data Storage Layer (Multi-Database Architecture)
 
