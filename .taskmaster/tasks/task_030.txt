@@ -1,0 +1,74 @@
+# Task ID: 30
+# Title: Implement JSON Validation and Repair System
+# Status: pending
+# Dependencies: 29
+# Priority: high
+# Description: Create robust JSON parsing, validation, and repair system to handle malformed LLM outputs with schema enforcement and quarantine logic
+# Details:
+1. Define Pydantic schemas for all profile components (personal_details, education_analysis, etc.)
+2. Implement JSON repair logic: strip code fences, fix common formatting issues
+3. Add schema validation with detailed error messages
+4. Create repair prompt templates for malformed responses
+5. Implement retry mechanism with repair prompts (max 3 attempts)
+6. Add quarantine system for persistently malformed results
+7. Track repair/quarantine metrics for monitoring
+8. Target <1% repair rate and <0.1% quarantine rate
+
+# Test Strategy:
+Test with intentionally malformed JSON (missing brackets, embedded markdown, truncated), verify repair success rate >99%, test schema validation catches all required fields, validate quarantine triggers appropriately
+
+# Subtasks:
+## 1. Define Pydantic Schemas for Profile Components [pending]
+### Dependencies: None
+### Description: Create comprehensive Pydantic models for all profile components including personal_details, education_analysis, work_experience, skills_assessment, and other structured data elements with proper field validation and type hints
+### Details:
+Implement BaseModel classes for PersonalDetails, EducationAnalysis, WorkExperience, SkillsAssessment, and ProfileSummary with required/optional fields, validation rules, and nested model relationships. Include field descriptions and examples for schema documentation.
+
+## 2. Implement JSON Repair Logic Engine [pending]
+### Dependencies: None
+### Description: Build deterministic JSON repair system to handle common LLM output issues like code fences, missing brackets, trailing commas, and malformed strings before schema validation
+### Details:
+Create JSONRepairEngine class with methods to strip markdown code fences, fix bracket mismatches, remove trailing commas, escape unescaped quotes, and handle truncated JSON. Include regex patterns and parsing logic for common malformation patterns.
+
+## 3. Build Schema Validation Engine [pending]
+### Dependencies: 30.1
+### Description: Implement comprehensive validation system using Pydantic schemas with detailed error reporting and field-level validation feedback for debugging malformed responses
+### Details:
+Create SchemaValidator class that validates JSON against Pydantic models, generates detailed error messages with field paths and validation failures, and provides structured feedback for repair attempts. Include validation result objects with success/failure status.
+
+## 4. Create Repair Prompt Templates [pending]
+### Dependencies: 30.2
+### Description: Design LLM prompt templates for repairing malformed JSON responses with context-aware instructions and examples of common fixes to guide the repair process
+### Details:
+Build RepairPromptBuilder with templates for different malformation types, include original malformed JSON, validation errors, expected schema format, and repair examples. Create progressive repair strategies from simple fixes to complete reconstruction.
+
+## 5. Implement Retry Mechanism with Progressive Repair [pending]
+### Dependencies: 30.2, 30.3, 30.4
+### Description: Build retry system with escalating repair strategies: deterministic fixes first, then LLM-assisted repair, with maximum 3 attempts and progressive timeout handling
+### Details:
+Create RetryManager class with attempt tracking, progressive repair strategy selection, timeout handling, and success/failure logging. Implement exponential backoff for LLM calls and circuit breaker pattern for persistent failures.
+
+## 6. Build Quarantine System [pending]
+### Dependencies: 30.5
+### Description: Implement quarantine mechanism for persistently malformed responses that cannot be repaired after maximum retry attempts, with storage and analysis capabilities
+### Details:
+Create QuarantineManager with database storage for failed responses, metadata tracking (original input, repair attempts, error types), and analysis tools for identifying patterns in quarantined data. Include quarantine retrieval and manual review interfaces.
+
+## 7. Implement Metrics Tracking and Monitoring [pending]
+### Dependencies: 30.5, 30.6
+### Description: Build comprehensive metrics system to track repair rates, quarantine rates, validation success, and performance statistics with alerting for threshold breaches
+### Details:
+Create MetricsCollector with counters for repair attempts, success rates, quarantine events, and processing times. Implement dashboard integration, threshold monitoring (target <1% repair rate, <0.1% quarantine rate), and alerting system for anomalies.
+
+## 8. Optimize Performance for Batch Processing [pending]
+### Dependencies: 30.3, 30.5
+### Description: Implement performance optimizations for handling large batches of JSON validation and repair operations with parallel processing and resource management
+### Details:
+Create BatchProcessor with concurrent validation, connection pooling for LLM calls, memory-efficient streaming for large datasets, and progress tracking. Implement rate limiting, resource throttling, and batch size optimization based on system capacity.
+
+## 9. Develop Comprehensive Test Suite [pending]
+### Dependencies: 30.1, 30.2, 30.3, 30.4, 30.5, 30.6, 30.7
+### Description: Create extensive test coverage for all validation and repair scenarios including unit tests, integration tests, and stress tests with malformed JSON edge cases
+### Details:
+Build test suite with malformed JSON generators, schema validation tests, repair logic verification, quarantine system testing, metrics validation, and performance benchmarks. Include edge cases like deeply nested objects, large payloads, and concurrent processing scenarios.
+

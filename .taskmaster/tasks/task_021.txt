@@ -1,6 +1,6 @@
 # Task ID: 21
 # Title: Implement Authentication and Access Control
-# Status: pending
+# Status: done
 # Dependencies: 20
 # Priority: high
 # Description: Set up Firebase Authentication with role-based access control and admin management interface

@@ -1,0 +1,67 @@
+# Task ID: 27
+# Title: Configure Together AI Integration and Environment
+# Status: done
+# Dependencies: None
+# Priority: high
+# Description: Set up Together AI API integration with proper environment configuration for Qwen 2.5 32B Instruct model and establish development/production environment variables
+# Details:
+1. Create .env files for development and production with TOGETHER_API_KEY
+2. Configure TOGETHER_MODEL_STAGE1='qwen/Qwen2.5-32B-Instruct-Turbo' in environment
+3. Set up aiohttp client with proper headers, timeout (30s), and retry logic with exponential backoff
+4. Implement rate limiting (100 req/min) and circuit breaker pattern
+5. Add MAX_ESTIMATED_COST safeguards and per-run confirmation flags
+6. Create together_client.py module with async context manager for connection pooling
+7. Implement cost tracking and logging for API calls
+
+# Test Strategy:
+Unit tests for API client initialization, mock Together AI responses for retry logic testing, integration test with actual API using small test dataset, verify rate limiting and circuit breaker behavior, test cost estimation calculations
+
+# Subtasks:
+## 1. Set up environment configuration files [done]
+### Dependencies: None
+### Description: Create and configure .env files for development and production environments with Together AI API keys and model configuration
+### Details:
+Create .env.development and .env.production files with TOGETHER_API_KEY variable. Add TOGETHER_MODEL_STAGE1='qwen/Qwen2.5-32B-Instruct-Turbo' configuration. Include MAX_ESTIMATED_COST limits and other environment-specific settings. Ensure proper .gitignore entries to prevent accidental commits of sensitive data.
+
+## 2. Implement Together AI client base module [done]
+### Dependencies: 27.1
+### Description: Create together_client.py module with async context manager for connection pooling and basic API communication
+### Details:
+Implement TogetherAIClient class using aiohttp with async context manager pattern. Configure connection pooling with appropriate limits. Set up proper headers including API key authentication. Implement base request methods with 30-second timeout. Create methods for chat completions endpoint specific to Qwen 2.5 32B model.
+
+## 3. Add retry logic with exponential backoff [done]
+### Dependencies: 27.2
+### Description: Implement robust retry mechanism with exponential backoff for handling transient API failures
+### Details:
+Create retry decorator with configurable attempts (default 3). Implement exponential backoff with base delay of 2 seconds (2-4-8 pattern). Add jitter to prevent thundering herd problem. Handle specific HTTP status codes (429, 503, 504) for retries. Log retry attempts with appropriate detail levels.
+
+## 4. Implement rate limiting mechanism [done]
+### Dependencies: 27.2
+### Description: Create rate limiter to enforce 100 requests per minute limit and prevent API quota exhaustion
+### Details:
+Implement token bucket or sliding window rate limiter for 100 req/min limit. Create async-safe rate limiting using asyncio locks. Add queue mechanism for pending requests when rate limit is reached. Implement request batching optimization where applicable. Add metrics for rate limit hits and queue depth.
+
+## 5. Build circuit breaker pattern [done]
+### Dependencies: 27.3, 27.4
+### Description: Implement circuit breaker to prevent cascading failures and protect the API from overload
+### Details:
+Create circuit breaker with three states: closed, open, half-open. Configure failure threshold (e.g., 5 failures in 60 seconds). Implement automatic recovery with half-open state testing. Add configurable timeout for open state (default 30 seconds). Include metrics for circuit breaker state transitions and failure rates.
+
+## 6. Create cost tracking and estimation system [done]
+### Dependencies: 27.2
+### Description: Implement comprehensive cost tracking for API calls with estimation and safeguards
+### Details:
+Calculate cost based on token usage for Qwen 2.5 32B model pricing. Implement per-request and cumulative cost tracking. Add MAX_ESTIMATED_COST safeguards with automatic cutoff. Create cost confirmation prompts for operations exceeding thresholds. Generate cost reports and analytics. Store historical cost data for analysis.
+
+## 7. Set up monitoring and logging infrastructure [done]
+### Dependencies: 27.2, 27.5, 27.6
+### Description: Implement comprehensive logging and monitoring for API interactions and system health
+### Details:
+Configure structured logging with appropriate log levels. Track API response times, success rates, and error patterns. Implement performance metrics collection (latency, throughput). Set up alerting for circuit breaker trips and rate limit violations. Create dashboard for cost tracking and API usage visualization.
+
+## 8. Create integration tests and documentation [done]
+### Dependencies: 27.1, 27.2, 27.3, 27.4, 27.5, 27.6, 27.7
+### Description: Develop comprehensive test suite and documentation for the Together AI integration
+### Details:
+Write unit tests for all components (client, rate limiter, circuit breaker, retry logic). Create integration tests with mocked Together AI responses. Add end-to-end test with actual API using minimal test data. Document API client usage patterns and configuration options. Create troubleshooting guide for common issues. Verify all resilience patterns work correctly under load.
+

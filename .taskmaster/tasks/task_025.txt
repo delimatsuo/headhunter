@@ -1,0 +1,90 @@
+# Task ID: 25
+# Title: Implement Skill Probability Assessment
+# Status: done
+# Dependencies: 14, 17, 19
+# Priority: medium
+# Description: Enhance Together AI prompts to include skill confidence scoring and explicit vs inferred skill classification, update candidate profile schema with skill probabilities, and implement skill-aware search ranking algorithm with frontend components to display confidence levels
+# Details:
+Implement comprehensive skill probability assessment system:
+
+1. **Prompt Enhancement**:
+   - Extend PromptBuilder class to include skill confidence scoring prompts
+   - Add explicit vs inferred skill classification logic
+   - Create prompts that analyze:
+     * Explicitly stated skills (from resume text)
+     * Inferred skills (from job descriptions and responsibilities)
+     * Contextual skill indicators (projects, achievements)
+     * Skill recency and relevance scoring
+   - Include confidence levels: high (90-100%), medium (70-89%), low (50-69%)
+   - Add industry-specific skill taxonomies
+
+2. **Schema Updates**:
+   - Update Pydantic/TypedDict models for skill probabilities
+   - Add new fields to candidate profile:
+     * skills_explicit: Array of {skill: string, confidence: number, evidence: string[]}
+     * skills_inferred: Array of {skill: string, confidence: number, reasoning: string}
+     * skill_categories: {technical: [], soft: [], domain: []}
+     * skill_timeline: Track skill usage over career
+   - Version schema for backward compatibility
+
+3. **Search Ranking Algorithm**:
+   - Implement weighted skill matching algorithm
+   - Factor in confidence scores for ranking:
+     * Explicit skills weight: 1.0
+     * High confidence inferred: 0.8
+     * Medium confidence inferred: 0.5
+     * Low confidence inferred: 0.3
+   - Create skill similarity matrix using embeddings
+   - Implement fuzzy matching for skill variations
+   - Add skill gap analysis for job requirements
+
+4. **Backend Implementation**:
+   - Create SkillAssessmentService class
+   - Integrate with existing Together AI processor
+   - Update embedding generation to include skill vectors
+   - Modify search API to use skill-aware ranking
+   - Add caching for skill taxonomy lookups
+
+5. **Frontend Components**:
+   - Create SkillConfidenceDisplay component
+   - Implement visual indicators (progress bars, badges)
+   - Add tooltips showing evidence/reasoning
+   - Create skill comparison view for job matches
+   - Implement filter by skill confidence level
+   - Add skill timeline visualization
+
+# Test Strategy:
+Comprehensive testing strategy:
+
+1. **Prompt Testing** (test_skill_prompts.py):
+   - Test skill extraction from various resume formats
+   - Verify confidence scoring accuracy
+   - Test explicit vs inferred classification
+   - Validate skill taxonomy mapping
+   - Test edge cases (ambiguous skills, abbreviations)
+
+2. **Schema Validation** (test_skill_schema.py):
+   - Test Pydantic models with skill probability data
+   - Verify backward compatibility with existing profiles
+   - Test schema migration for existing candidates
+   - Validate confidence score ranges
+
+3. **Ranking Algorithm Tests** (test_skill_ranking.py):
+   - Test weighted matching with known skill sets
+   - Verify confidence-based ranking order
+   - Test fuzzy matching accuracy
+   - Validate skill gap analysis
+   - Performance test with 1000+ candidates
+
+4. **Integration Tests** (test_skill_integration.py):
+   - End-to-end test from resume to skill assessment
+   - Test Together AI prompt responses
+   - Verify Firestore storage of skill data
+   - Test search API with skill-based queries
+
+5. **Frontend Tests** (test_skill_components.tsx):
+   - Test SkillConfidenceDisplay rendering
+   - Verify tooltip content accuracy
+   - Test filter functionality
+   - Validate skill comparison views
+   - Test responsive design on mobile

@@ -1,0 +1,110 @@
+# Task ID: 26
+# Title: End-to-End Integration Testing
+# Status: done
+# Dependencies: 22, 24, 25, 12, 17
+# Priority: medium
+# Description: Validate complete recruiter workflows including Job Description to Candidate Recommendations, Resume Upload to Similar Candidate Search, authentication and CRUD operations. Test embedding generation and search integration.
+# Details:
+Create comprehensive integration testing framework for production readiness:
+
+1. **Test Framework Setup**:
+   - Create `tests/integration/` directory structure
+   - Set up pytest-asyncio for async test support
+   - Configure test fixtures for database seeding and cleanup
+   - Implement test data factory for realistic candidate profiles
+   - Create mock services for external API dependencies
+   - Set up test coverage reporting with pytest-cov
+   - Configure parallel test execution for speed
+
+2. **Workflow Test Suites**:
+   - **Job Description to Recommendations** (test_job_to_candidates.py):
+     * Test job description parsing and skill extraction
+     * Verify embedding generation for job requirements
+     * Test pgvector similarity search for candidate matching
+     * Validate ranking algorithm with skill probabilities
+     * Assert recommendation quality metrics
+   - **Resume Upload to Similar Search** (test_resume_similarity.py):
+     * Test multi-format resume upload (PDF, DOCX, TXT)
+     * Verify Together AI processing pipeline
+     * Test embedding generation and storage
+     * Validate similar candidate retrieval
+     * Assert search result relevance
+
+3. **Authentication & Security Tests** (test_auth_integration.py):
+   - Test Firebase Authentication flow end-to-end
+   - Verify JWT token validation across services
+   - Test role-based access control (RBAC)
+   - Validate API rate limiting
+   - Test CORS configuration
+   - Verify data isolation between tenants
+
+4. **CRUD Operations Testing** (test_crud_operations.py):
+   - Test candidate profile creation with Together AI enrichment
+   - Verify profile update operations and version control
+   - Test bulk operations performance
+   - Validate cascade delete operations
+   - Test transaction rollback scenarios
+   - Verify Firestore and pgvector synchronization
+
+5. **Embedding & Search Integration** (test_vector_search.py):
+   - Test VertexAI embedding generation pipeline
+   - Verify pgvector storage and indexing
+   - Test semantic search accuracy
+   - Validate hybrid search (keyword + vector)
+   - Test search result pagination
+   - Verify search performance under load
+
+6. **Production Readiness Validation**:
+   - **Performance Testing** (test_performance.py):
+     * Load test with 1000+ concurrent users
+     * Stress test API endpoints
+     * Measure response time percentiles (p50, p95, p99)
+     * Test database connection pooling
+   - **Reliability Testing** (test_reliability.py):
+     * Test circuit breaker activation
+     * Verify retry logic with transient failures
+     * Test graceful degradation
+     * Validate error recovery mechanisms
+   - **Data Consistency** (test_consistency.py):
+     * Test eventual consistency between stores
+     * Verify transaction atomicity
+     * Test concurrent update handling
+     * Validate data integrity constraints
+
+7. **Test Automation & CI/CD**:
+   - Create GitHub Actions workflow for integration tests
+   - Set up test environment provisioning scripts
+   - Implement test result reporting to dashboard
+   - Configure automatic rollback on test failure
+   - Create smoke test suite for production deployments
+
+# Test Strategy:
+Comprehensive validation approach:
+
+1. **Environment Setup**:
+   - Provision isolated test GCP project
+   - Deploy test instances of all services
+   - Seed test database with 500+ candidate profiles
+   - Configure test API keys and credentials
+
+2. **Test Execution**:
+   - Run tests in parallel with pytest-xdist
+   - Execute smoke tests first (5 min)
+   - Run full integration suite (30 min)
+   - Perform load testing (15 min)
+   - Generate coverage report (target: >80%)
+
+3. **Validation Criteria**:
+   - All critical paths must pass 100%
+   - API response times < 500ms p95
+   - Search relevance score > 0.85
+   - Zero data consistency errors
+   - No memory leaks over 1-hour run
+   - Error rate < 0.1%
+
+4. **Monitoring & Reporting**:
+   - Real-time test execution dashboard
+   - Automated failure notifications
+   - Performance regression detection
+   - Test flakiness tracking
+   - Historical trend analysis

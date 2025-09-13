@@ -1,0 +1,86 @@
+# Task ID: 34
+# Title: Build Unified Search and Ranking System
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Implement composite ranking algorithm that combines vector similarity, skill probabilities, experience signals, and confidence scores with proper demotion for low-content profiles
+# Details:
+1. Implement unified search endpoint blending multiple signals
+2. Create ranking formula: 0.4*vector_sim + 0.3*skill_match + 0.2*experience + 0.1*confidence
+3. Add deterministic fallbacks for name/company exact matches
+4. Implement analysis_confidence demotion with floor for sparse profiles
+5. Add 'Potential matches (low profile depth)' section quota
+6. Implement re-ranking with structured features
+7. Cache search results with 5-minute TTL
+8. Add search analytics tracking
+
+# Test Strategy:
+Test ranking with diverse JDs and candidate pools, verify low-confidence demotion works correctly, test deterministic match boosting, validate cache invalidation, benchmark re-rank latency <500ms
+
+# Subtasks:
+## 1. Design Composite Ranking Algorithm Architecture [pending]
+### Dependencies: None
+### Description: Design the overall architecture for the composite ranking system that combines vector similarity, skill matching, experience signals, and confidence scores
+### Details:
+Define interfaces for each ranking signal component, establish data flow between components, design the scoring pipeline that processes multiple signals, create abstraction layer for future signal additions, document the mathematical formulation of the ranking formula
+
+## 2. Implement Vector Similarity Signal Component [pending]
+### Dependencies: 34.1
+### Description: Build the vector similarity scoring component that calculates semantic similarity between job descriptions and candidate profiles
+### Details:
+Integrate with existing Vertex AI Vector Search, implement cosine similarity calculation, normalize scores to 0-1 range, add fallback for missing embeddings, optimize batch vector operations for multiple candidates
+
+## 3. Build Skill Matching Signal Component [pending]
+### Dependencies: 34.1
+### Description: Create skill matching component that scores candidates based on explicit and inferred skill matches with confidence weighting
+### Details:
+Parse required skills from job descriptions, match against candidate skill_probabilities, weight by confidence levels, handle both explicit and inferred skills, implement fuzzy matching for skill variations
+
+## 4. Develop Experience Signal Component [pending]
+### Dependencies: 34.1
+### Description: Implement experience scoring that evaluates years of experience, role progression, and industry relevance
+### Details:
+Extract experience requirements from JD, calculate experience match score, factor in career trajectory and progression speed, weight by industry and company tier relevance, handle edge cases like career transitions
+
+## 5. Create Confidence-Based Demotion Logic [pending]
+### Dependencies: 34.1
+### Description: Implement the analysis_confidence demotion system that penalizes low-content profiles while maintaining minimum visibility
+### Details:
+Define confidence thresholds for profile quality, implement demotion formula with configurable floor value, ensure sparse profiles aren't completely hidden, create 'Potential matches' quota system, add explanation for why profiles were demoted
+
+## 6. Build Deterministic Fallback System [pending]
+### Dependencies: 34.1
+### Description: Implement exact match boosting for name and company searches to ensure deterministic results for known queries
+### Details:
+Create exact match detection for candidate names, implement company name matching with variations, add configurable boost scores for exact matches, ensure exact matches always appear first, handle case-insensitive and partial matches
+
+## 7. Implement Unified Ranking Engine [pending]
+### Dependencies: 34.2, 34.3, 34.4, 34.5, 34.6
+### Description: Build the core ranking engine that combines all signals using the weighted formula and produces final candidate rankings
+### Details:
+Implement weighted scoring formula (0.4*vector + 0.3*skill + 0.2*experience + 0.1*confidence), add configurable weight parameters, handle missing signal gracefully, implement score normalization and calibration, add debug mode to expose individual signal scores
+
+## 8. Create Re-ranking Engine with Structured Features [pending]
+### Dependencies: 34.7
+### Description: Build re-ranking system that applies structured business rules and filters after initial scoring
+### Details:
+Implement location-based re-ranking, add visa status filtering, apply salary expectation matching, incorporate recruiter feedback signals, support custom business rules injection, maintain audit trail of re-ranking decisions
+
+## 9. Implement Search Result Caching [pending]
+### Dependencies: 34.7, 34.8
+### Description: Build Redis-based caching system with 5-minute TTL for search results to improve performance
+### Details:
+Set up Redis connection for Cloud Functions, implement cache key generation from search parameters, add 5-minute TTL configuration, build cache invalidation on profile updates, add cache hit rate monitoring and metrics
+
+## 10. Build Search Analytics and A/B Testing Framework [pending]
+### Dependencies: 34.7
+### Description: Implement comprehensive analytics tracking and A/B testing infrastructure for ranking improvements
+### Details:
+Track search queries and click-through rates, log ranking positions and user selections, implement A/B test variant assignment, create metrics for ranking quality (MRR, NDCG), build dashboard for search performance monitoring, add experimental weight configurations
+
+## 11. Create Comprehensive Ranking Validation Tests [pending]
+### Dependencies: 34.7, 34.8, 34.9, 34.10
+### Description: Develop extensive test suite to validate ranking quality, performance, and edge cases
+### Details:
+Write unit tests for each signal component, create integration tests for full ranking pipeline, add performance benchmarks (<500ms requirement), test with diverse JD and candidate pools, validate cache behavior and invalidation, test re-ranking rules application, verify low-confidence demotion logic
+

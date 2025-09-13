@@ -1,0 +1,96 @@
+# Task ID: 51
+# Title: Documentation updates: README, Handover, Architecture to reflect v2.0 decisions
+# Status: pending
+# Dependencies: 42
+# Priority: low
+# Description: Comprehensive documentation update to reflect v2.0 architecture decisions including Together AI pipeline, Firestore streaming, pgvector implementation, and bake-off results with security and cost considerations.
+# Details:
+1. **README Updates**:
+   - Update quickstart guide to reflect Together AI as primary LLM provider
+   - Revise environment setup section with TOGETHER_API_KEY configuration
+   - Update workflow documentation to show Firestore streaming and pgvector search paths
+   - Add cost guardrails section with Together AI pricing and usage limits
+   - Include security notes for API key management and data handling
+
+2. **HANDOVER Documentation**:
+   - Update docs/HANDOVER*.md with crash-safe deployment procedures
+   - Document Together AI pipeline architecture and failover mechanisms  
+   - Add Firestore streaming configuration and monitoring steps
+   - Include pgvector setup and maintenance procedures
+   - Document rollback procedures and health check endpoints
+
+3. **Architecture Documentation**:
+   - Update ARCHITECTURE.md with v2.0 system design showing Together AI integration
+   - Document Firestore streaming architecture and data flow patterns
+   - Add pgvector semantic search implementation details
+   - Include system interaction diagrams and component relationships
+   - Document scaling considerations and performance characteristics
+
+4. **WEBHOOK_INTEGRATION.md Updates**:
+   - Update webhook endpoints to reflect Together AI processing pipeline
+   - Document new payload structures and response formats
+   - Add error handling and retry logic documentation
+   - Include webhook security and authentication requirements
+
+5. **Bake-off Results Integration**:
+   - Add embedding provider comparison results and decision rationale
+   - Document cost analysis and performance benchmarks
+   - Include provider selection criteria and evaluation methodology
+   - Add future evaluation and review schedule recommendations
+
+# Test Strategy:
+1. **Documentation Validation**:
+   - Review all updated documentation for technical accuracy against implemented systems
+   - Verify quickstart guide by following steps in clean environment
+   - Test environment setup instructions with fresh API keys and configurations
+   - Validate workflow documentation against actual system behavior
+
+2. **Handover Process Testing**:
+   - Execute crash-safe handover procedures in staging environment
+   - Test rollback procedures and verify system recovery
+   - Validate health check endpoints and monitoring setup
+   - Confirm deployment procedures work with current infrastructure
+
+3. **Architecture Alignment**:
+   - Cross-reference architecture documentation with actual system implementation
+   - Verify component diagrams match deployed services and data flows
+   - Test documented API endpoints and webhook integrations
+   - Validate security measures and access controls as documented
+
+4. **Content Review**:
+   - Conduct technical review with development team for accuracy
+   - Verify bake-off results and cost analysis reflect actual data
+   - Ensure all v2.0 decisions and rationale are clearly documented
+   - Test external links and references for accessibility
+
+# Subtasks:
+## 1. Update README.md with v2.0 architecture and Together AI integration [pending]
+### Dependencies: None
+### Description: Comprehensive update to README.md to reflect v2.0 decisions including Together AI as primary LLM provider, Firestore streaming, and pgvector implementation
+### Details:
+Update README.md sections: 1) Quickstart guide with Together AI setup and TOGETHER_API_KEY configuration, 2) Environment setup with new dependencies and API keys, 3) Workflow documentation showing Firestore streaming and pgvector search paths, 4) Cost guardrails section with Together AI pricing and usage limits, 5) Security notes for API key management and data handling best practices
+
+## 2. Update HANDOVER documentation with deployment and operational procedures [pending]
+### Dependencies: 51.1
+### Description: Update all HANDOVER*.md files with crash-safe deployment procedures and operational guidance for v2.0 architecture
+### Details:
+Update docs/HANDOVER*.md with: 1) Crash-safe deployment procedures for Together AI pipeline, 2) Architecture documentation for Together AI integration and failover mechanisms, 3) Firestore streaming configuration and monitoring steps, 4) pgvector setup and maintenance procedures, 5) Rollback procedures and health check endpoints for all new components
+
+## 3. Update ARCHITECTURE.md with v2.0 system design and component interactions [pending]
+### Dependencies: 51.1
+### Description: Comprehensive update to ARCHITECTURE.md documenting the v2.0 system design with all new components and their interactions
+### Details:
+Update ARCHITECTURE.md with: 1) v2.0 system design showing Together AI integration points, 2) Firestore streaming architecture and data flow patterns, 3) pgvector semantic search implementation details and query patterns, 4) System interaction diagrams showing component relationships, 5) Scaling considerations and performance characteristics for each component
+
+## 4. Update WEBHOOK_INTEGRATION.md with v2.0 pipeline changes [pending]
+### Dependencies: 51.2, 51.3
+### Description: Update webhook integration documentation to reflect Together AI processing pipeline and new payload structures
+### Details:
+Update WEBHOOK_INTEGRATION.md with: 1) Webhook endpoints reflecting Together AI processing pipeline, 2) New payload structures and response formats for v2.0, 3) Error handling and retry logic documentation for Together AI failures, 4) Webhook security and authentication requirements, 5) Integration examples and testing procedures
+
+## 5. Document bake-off results and provider selection rationale [pending]
+### Dependencies: 51.1, 51.2, 51.3
+### Description: Create comprehensive documentation of embedding provider bake-off results and decision rationale for v2.0 architecture choices
+### Details:
+Add bake-off results documentation: 1) Embedding provider comparison results with performance metrics, 2) Cost analysis and performance benchmarks for Together AI vs alternatives, 3) Provider selection criteria and evaluation methodology used, 4) Decision rationale for Together AI, Firestore, and pgvector choices, 5) Future evaluation schedule and review recommendations for ongoing optimization
+

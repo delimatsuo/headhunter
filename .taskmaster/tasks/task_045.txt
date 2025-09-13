@@ -1,0 +1,55 @@
+# Task ID: 45
+# Title: Implement Pre-Interview Analysis Feature
+# Status: pending
+# Dependencies: None
+# Priority: low
+# Description: Build on-demand pre-interview analysis generation with caching, providing structured insights on candidates including signals and evidence
+# Details:
+1. Create preInterviewAnalysis Cloud Function
+2. Design analysis prompt for comprehensive candidate evaluation
+3. Implement output schema with summary, strengths, red_flags, signals
+4. Build caching system with 14-day TTL
+5. Add cache invalidation on profile updates
+6. Create evidence extraction with source references
+7. Implement API endpoints for generate and get operations
+
+# Test Strategy:
+Test analysis generation with various candidate profiles, verify caching behavior, test cache invalidation triggers, validate output schema compliance, test evidence extraction accuracy
+
+# Subtasks:
+## 1. Create preInterviewAnalysis Cloud Function [pending]
+### Dependencies: None
+### Description: Set up the core Cloud Function infrastructure for generating pre-interview analysis on-demand with proper error handling and logging
+### Details:
+Create a new Cloud Function in functions/src/preInterviewAnalysis.ts that accepts candidate ID as input, validates request parameters, implements error handling and retry logic, sets up structured logging for monitoring, and returns analysis results or cached data. Include proper TypeScript types and interfaces for request/response objects.
+
+## 2. Design comprehensive analysis prompt [pending]
+### Dependencies: None
+### Description: Create and optimize the Together AI prompt for generating structured pre-interview candidate evaluations with evidence extraction
+### Details:
+Design a prompt template that analyzes candidate profiles to generate: executive summary, key strengths with evidence, potential red flags with context, behavioral signals and patterns, cultural fit indicators, and technical competency assessment. Include instructions for evidence extraction with source references from resume and comments. Test prompt with various candidate profiles to ensure consistent quality output.
+
+## 3. Implement analysis output schema [pending]
+### Dependencies: 45.2
+### Description: Define and implement the TypeScript/Zod schema for pre-interview analysis output with validation
+### Details:
+Create Zod schema defining: summary (string, 200-500 chars), strengths (array of objects with strength, evidence, confidence), red_flags (array of objects with flag, context, severity), signals (object with leadership, technical, cultural sub-objects), evidence_map (object mapping claims to source references), and metadata (generation timestamp, model version, cache TTL). Implement schema validation and type exports for use across the system.
+
+## 4. Build caching system with TTL [pending]
+### Dependencies: 45.1, 45.3
+### Description: Implement Redis or Firestore-based caching for analysis results with 14-day TTL and efficient retrieval
+### Details:
+Set up caching layer using Firestore subcollection (candidates/{id}/analysisCache) or Redis if available. Implement cache key generation based on candidate ID and profile version hash. Add 14-day TTL with automatic expiration. Create cache hit/miss tracking for monitoring. Implement cache warming strategies for high-priority candidates. Include cache compression for large analysis objects.
+
+## 5. Implement cache invalidation logic [pending]
+### Dependencies: 45.4
+### Description: Create automatic cache invalidation system triggered by candidate profile updates
+### Details:
+Set up Firestore triggers or Cloud Function hooks to detect profile updates (resume changes, new comments, skill updates). Implement cache invalidation logic that removes or marks stale cached analyses. Add version tracking to detect meaningful changes vs minor updates. Create audit log for cache invalidation events. Implement selective invalidation for partial profile updates to optimize performance.
+
+## 6. Create API endpoints for analysis operations [pending]
+### Dependencies: 45.1, 45.3, 45.4, 45.5
+### Description: Build REST API endpoints for generating and retrieving pre-interview analysis with proper authentication
+### Details:
+Implement POST /api/candidates/{id}/analysis/generate endpoint to trigger new analysis generation with force-refresh option. Create GET /api/candidates/{id}/analysis endpoint to retrieve cached or generate new analysis. Add authentication middleware using Firebase Auth tokens. Implement rate limiting to prevent abuse. Add response headers for cache status (hit/miss/stale). Include OpenAPI documentation for the endpoints.
+

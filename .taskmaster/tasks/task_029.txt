@@ -1,0 +1,92 @@
+# Task ID: 29
+# Title: Build Enhanced Together AI Processor with Skill Inference
+# Status: pending
+# Dependencies: 27
+# Priority: high
+# Description: Implement the core Together AI processing pipeline with single-pass enrichment including explicit and inferred skills with confidence scoring and evidence tracking
+# Details:
+1. Enhance scripts/intelligent_skill_processor.py with Together AI integration
+2. Implement recruiter-grade prompts for comprehensive candidate analysis
+3. Add skill inference logic: explicit_skills (100% confidence) vs inferred_skills (0-100% with evidence)
+4. Calculate analysis_confidence score [0,1] for overall signal quality
+5. Add quality_flags for low_content profiles
+6. Implement streaming response processing with async generators
+7. Add structured output parsing with Pydantic models
+8. Include processing_metadata: timestamp, processor version, model used
+
+# Test Strategy:
+Test with 50 sample resumes of varying quality, verify skill extraction accuracy, validate confidence scores correlate with evidence strength, test low-content detection, measure processing time per candidate
+
+# Subtasks:
+## 1. Set up Together AI client integration module [pending]
+### Dependencies: None
+### Description: Create a robust Together AI client wrapper with connection pooling, authentication, and base configuration for the Llama 3.1 8B Instruct Turbo model
+### Details:
+Build TogetherAIClient class in scripts/together_ai_client.py with async context manager support, proper header configuration with API key from environment, connection pooling using aiohttp.ClientSession, timeout handling (30s default), and base URL configuration for Together AI endpoints
+
+## 2. Design recruiter-grade prompt templates [pending]
+### Dependencies: None
+### Description: Create comprehensive prompt templates that extract career trajectory, skills, leadership scope, and placement likelihood from resumes with structured JSON output
+### Details:
+Develop prompt templates in scripts/recruiter_prompts_together.py that include instructions for extracting explicit skills, inferring implicit skills with evidence, analyzing career progression patterns, identifying leadership indicators, and formatting output as structured JSON with confidence scores
+
+## 3. Implement skill extraction algorithm [pending]
+### Dependencies: 29.2
+### Description: Build the core algorithm to differentiate between explicit skills (directly stated) and inferred skills (derived from context) with proper categorization
+### Details:
+Create skill_extractor.py module with methods to parse explicit skills from resume text (100% confidence), identify skill indicators and context clues for inference, categorize skills by type (technical, soft, domain-specific), and maintain skill taxonomy mapping for consistency
+
+## 4. Develop confidence scoring system [pending]
+### Dependencies: 29.3
+### Description: Implement a multi-factor confidence scoring mechanism that evaluates the strength of skill evidence and overall profile quality
+### Details:
+Build confidence_scorer.py with algorithms to calculate individual skill confidence (0-100%), evaluate evidence strength based on context proximity and frequency, compute overall analysis_confidence score [0,1], and implement weighted scoring based on evidence types (direct mention, project context, role responsibility)
+
+## 5. Build evidence tracking mechanism [pending]
+### Dependencies: 29.3, 29.4
+### Description: Create a system to capture and store specific text snippets and context that support each inferred skill for transparency and validation
+### Details:
+Implement evidence_tracker.py to extract relevant text snippets for each skill inference, map evidence to source sections (experience, projects, education), maintain evidence chains for complex inferences, and format evidence for inclusion in final output with line references
+
+## 6. Implement quality flag detection [pending]
+### Dependencies: 29.4
+### Description: Develop logic to identify and flag low-content profiles, missing critical information, and data quality issues
+### Details:
+Create quality_validator.py with rules to detect sparse resumes (word count thresholds), identify missing key sections (no experience, no skills listed), flag formatting issues that impact parsing, calculate content richness scores, and generate quality_flags array with specific issues identified
+
+## 7. Create async streaming response handler [pending]
+### Dependencies: 29.1
+### Description: Build an asynchronous generator system to process Together AI streaming responses in real-time for improved performance and user feedback
+### Details:
+Implement streaming_handler.py with async generator functions to process SSE (Server-Sent Events) streams, accumulate partial JSON responses, yield progress updates during processing, handle stream interruptions gracefully, and implement buffering for optimal chunk processing
+
+## 8. Define Pydantic models for structured output [pending]
+### Dependencies: None
+### Description: Create comprehensive Pydantic models to validate and structure the enriched candidate profiles with type safety and schema enforcement
+### Details:
+Build models.py with Pydantic BaseModel classes for CandidateProfile, SkillAssessment (explicit and inferred), CareerTrajectory, LeadershipScope, ProcessingMetadata, implement custom validators for confidence scores and evidence, add JSON schema generation for API documentation, and include serialization methods for Firestore compatibility
+
+## 9. Implement processing metadata tracking [pending]
+### Dependencies: 29.8
+### Description: Create a system to capture and store processing metadata including timestamps, model versions, and processing statistics
+### Details:
+Build metadata_tracker.py to record processing start/end timestamps, track Together AI model version used, capture token usage and cost estimates, log processor version and configuration, store retry attempts and error recovery actions, and include performance metrics (latency, throughput)
+
+## 10. Develop comprehensive error handling [pending]
+### Dependencies: 29.1, 29.7
+### Description: Implement robust error handling with retry logic, graceful degradation, and detailed error reporting for all failure scenarios
+### Details:
+Create error_handler.py with exponential backoff retry logic (3 attempts), circuit breaker pattern for API failures, graceful degradation for partial processing failures, detailed error logging with context preservation, fallback strategies for timeout scenarios, and error aggregation for batch processing
+
+## 11. Optimize batch processing performance [pending]
+### Dependencies: 29.1, 29.7, 29.10
+### Description: Implement performance optimizations for processing multiple candidates concurrently with resource management and throughput optimization
+### Details:
+Enhance intelligent_skill_processor.py with configurable concurrency limits (semaphore-based), implement batching strategies for API calls, add memory-efficient streaming for large batches, optimize prompt caching for repeated patterns, implement progress tracking with ETA calculations, and add resource monitoring to prevent overload
+
+## 12. Create end-to-end integration tests [pending]
+### Dependencies: 29.1, 29.2, 29.3, 29.4, 29.5, 29.6, 29.7, 29.8, 29.9, 29.10, 29.11
+### Description: Develop comprehensive test suite using real resume samples to validate the entire processing pipeline from input to enriched output
+### Details:
+Build test_intelligent_skill_processor.py with 50 diverse resume samples, test skill extraction accuracy against ground truth, validate confidence score correlation with evidence quality, verify low-content detection thresholds, measure processing time benchmarks, test error recovery scenarios, and validate Pydantic model compliance for all outputs
+

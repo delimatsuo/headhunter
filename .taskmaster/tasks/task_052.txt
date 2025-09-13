@@ -1,0 +1,97 @@
+# Task ID: 52
+# Title: Enforce Firestore Security Rules and Admin Allowlist
+# Status: in-progress
+# Dependencies: None
+# Priority: high
+# Description: Implement comprehensive Firestore security rules enforcing role-based access control with allowed_users collection, create admin management interface, and add audit logging for sensitive operations.
+# Details:
+1. **Firestore Security Rules Implementation**:
+   - Create firestore.rules file with role-based access control
+   - Implement allowed_users collection structure with roles (admin, recruiter, viewer)
+   - Enforce read/write permissions based on user roles for sensitive collections:
+     * candidates/ - recruiter+ read, admin write
+     * enriched_profiles/ - recruiter+ read, admin write
+     * embeddings/ - admin only
+     * allowed_users/ - admin only
+   - Add user authentication validation and email domain restrictions
+   - Implement resource-level permissions with candidate ownership
+
+2. **Admin Management Interface**:
+   - Create admin/user_management.html page with user CRUD operations
+   - Implement backend API endpoints for user management (/api/admin/users)
+   - Add role assignment functionality with validation
+   - Create bulk user import/export capabilities
+   - Implement user deactivation and role modification workflows
+
+3. **Audit Logging System**:
+   - Create audit_logs/ collection with structured logging
+   - Log sensitive operations: user role changes, data access, profile modifications
+   - Implement automatic log retention policies (90 days)
+   - Add log querying interface for compliance reporting
+   - Include user context, timestamps, and operation details
+
+4. **Security Rule Testing**:
+   - Set up Firestore emulator for rule testing
+   - Create comprehensive test suite covering all permission scenarios
+   - Test unauthorized access attempts and privilege escalation
+   - Validate audit log generation for all tracked operations
+
+# Test Strategy:
+1. **Security Rule Testing**:
+   - Use Firestore emulator to test rules with different user roles
+   - Verify unauthorized users cannot access sensitive collections
+   - Test role-based permissions for each collection (candidates/, enriched_profiles/, embeddings/)
+   - Validate admin-only access to allowed_users/ collection
+   - Test edge cases like missing roles or invalid authentication
+
+2. **Admin Interface Testing**:
+   - Test user creation, modification, and deletion workflows
+   - Verify role assignment and validation logic
+   - Test bulk operations with large user datasets
+   - Validate error handling for duplicate users or invalid roles
+   - Test UI responsiveness and data consistency
+
+3. **Audit Logging Verification**:
+   - Verify all sensitive operations generate audit logs
+   - Test log structure and required fields (user, timestamp, operation, resource)
+   - Validate log retention policies and automatic cleanup
+   - Test audit log querying and filtering functionality
+   - Verify log integrity and tamper-proof storage
+
+4. **Integration Testing**:
+   - Test end-to-end user workflows with security rules active
+   - Verify API endpoints respect Firestore security rules
+   - Test performance impact of security rule evaluation
+   - Validate backup and restore procedures with security rules
+
+# Subtasks:
+## 1. Create Firestore Security Rules with Role-Based Access Control [done]
+### Dependencies: None
+### Description: Implement comprehensive firestore.rules file with role-based access control, user authentication validation, and collection-specific permissions for candidates, enriched_profiles, embeddings, and allowed_users collections.
+### Details:
+Create firestore.rules file defining security rules for all collections. Implement allowed_users collection structure with roles (admin, recruiter, viewer). Define read/write permissions: candidates/ and enriched_profiles/ (recruiter+ read, admin write), embeddings/ and allowed_users/ (admin only). Add user authentication validation and email domain restrictions. Include resource-level permissions with candidate ownership validation.
+
+## 2. Implement Allowed Users Collection Management [done]
+### Dependencies: 52.1
+### Description: Create the allowed_users collection structure and implement backend API endpoints for user management operations including CRUD functionality and role assignment validation.
+### Details:
+Design allowed_users collection schema with fields: email, role, status, created_at, updated_at. Implement backend API endpoints at /api/admin/users for user CRUD operations. Add role assignment functionality with validation logic. Create user activation/deactivation workflows. Implement email domain validation and duplicate prevention.
+
+## 3. Build Admin Management Interface [done]
+### Dependencies: 52.2
+### Description: Create admin/user_management.html page with comprehensive user management interface including user listing, role assignment, bulk operations, and user status management.
+### Details:
+Create admin/user_management.html with user listing table, search/filter functionality, and inline editing capabilities. Implement role assignment dropdown with validation. Add bulk user import/export features supporting CSV format. Create user deactivation and role modification workflows with confirmation dialogs. Include pagination and sorting for large user lists.
+
+## 4. Implement Audit Logging System [done]
+### Dependencies: 52.1
+### Description: Create comprehensive audit logging system with audit_logs collection, automatic logging for sensitive operations, and log retention policies.
+### Details:
+Create audit_logs collection with structured schema: user_id, action, resource_type, resource_id, timestamp, ip_address, user_agent, details. Implement automatic logging for sensitive operations: user role changes, data access, profile modifications, admin actions. Add log retention policies (90 days) with automatic cleanup. Include user context capture and operation result tracking.
+
+## 5. Create Security Testing Suite and Compliance Interface [done]
+### Dependencies: 52.1, 52.4
+### Description: Develop comprehensive security rule testing suite and implement audit log querying interface for compliance reporting and security validation.
+### Details:
+Set up Firestore emulator testing environment with comprehensive test suite covering all permission scenarios. Test unauthorized access attempts and privilege escalation prevention. Create audit log querying interface with filtering by user, action, date range. Implement compliance reporting features with export capabilities. Add automated security rule validation in CI/CD pipeline.
+

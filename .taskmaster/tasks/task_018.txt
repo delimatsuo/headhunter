@@ -1,6 +1,6 @@
 # Task ID: 18
 # Title: Set up Cloud Functions for Search and CRUD APIs
-# Status: pending
+# Status: done
 # Dependencies: 15
 # Priority: medium
 # Description: Deploy Firebase Cloud Functions for candidate CRUD operations, job management, and semantic search endpoints

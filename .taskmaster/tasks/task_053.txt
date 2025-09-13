@@ -1,0 +1,89 @@
+# Task ID: 53
+# Title: Implement People Search by Name/LinkedIn URL
+# Status: pending
+# Dependencies: 32
+# Priority: medium
+# Description: Create deterministic search endpoint and UI for finding candidates by exact name or LinkedIn URL matches with company boosting and normalized matching.
+# Details:
+Build comprehensive people search system:
+
+1. **Backend Implementation**:
+   - Create deterministic search endpoint in Cloud Functions
+   - Implement exact match logic for candidate names (normalize case, whitespace)
+   - Add LinkedIn URL matching with URL normalization (handle variations like linkedin.com/in/, mobile URLs)
+   - Implement company boosting algorithm to prioritize candidates from target companies
+   - Add fuzzy matching fallback for near-exact name matches
+   - Create search indexing for name and LinkedIn URL fields in Firestore
+   - Add validation for LinkedIn URL format and accessibility
+   - Implement caching layer for frequent searches
+
+2. **Frontend Implementation**:
+   - Build simple People Search input component with autocomplete
+   - Add search suggestions based on partial name matches
+   - Implement result display with candidate preview cards
+   - Add direct navigation to Candidate Page on match selection
+   - Include search history and recent searches functionality
+   - Add loading states and error handling for search operations
+
+3. **Indexing and Validation**:
+   - Create composite indexes for name + company searches
+   - Add LinkedIn URL validation and normalization utilities
+   - Implement search analytics and performance monitoring
+   - Update API documentation with search endpoint specifications
+   - Add rate limiting and abuse prevention for search endpoints
+
+# Test Strategy:
+Comprehensive testing approach:
+
+1. **Backend Testing**:
+   - Test exact name matching with various case combinations
+   - Test LinkedIn URL matching with different URL formats
+   - Verify company boosting algorithm with known candidate sets
+   - Test search performance with large candidate datasets
+   - Validate indexing effectiveness and query optimization
+   - Test rate limiting and error handling scenarios
+
+2. **Frontend Testing**:
+   - Test search input with valid/invalid queries
+   - Verify autocomplete functionality and performance
+   - Test navigation to Candidate Page from search results
+   - Test responsive design across different screen sizes
+   - Validate search history persistence and clearing
+
+3. **Integration Testing**:
+   - Test end-to-end search flow from input to candidate page
+   - Verify search analytics data collection
+   - Test API documentation accuracy with actual endpoints
+   - Validate LinkedIn URL normalization across different formats
+
+# Subtasks:
+## 1. Create search endpoint with name and LinkedIn URL matching [pending]
+### Dependencies: None
+### Description: Implement Cloud Functions endpoint for deterministic people search with exact name matching and LinkedIn URL normalization
+### Details:
+Create searchPeople Cloud Function endpoint that accepts name and LinkedIn URL parameters. Implement name normalization (lowercase, trim whitespace, handle special characters). Add LinkedIn URL normalization to handle variations like linkedin.com/in/, mobile URLs, and trailing slashes. Create exact match logic for candidate names and LinkedIn profiles stored in Firestore. Add input validation and sanitization for search parameters.
+
+## 2. Implement company boosting and fuzzy matching algorithms [pending]
+### Dependencies: 53.1
+### Description: Add company-based result prioritization and fuzzy matching fallback for near-exact name matches
+### Details:
+Implement company boosting algorithm that prioritizes candidates from target companies in search results. Add fuzzy matching using string similarity algorithms (Levenshtein distance) for names that don't match exactly but are close. Create scoring system that combines exact match, fuzzy match score, and company boost factor. Implement result ranking and sorting based on combined scores. Add configuration for boost factors and similarity thresholds.
+
+## 3. Create search indexing and caching system [pending]
+### Dependencies: 53.1
+### Description: Implement Firestore composite indexes and caching layer for optimized search performance
+### Details:
+Create composite Firestore indexes for name + company searches and LinkedIn URL lookups. Implement Redis-based caching layer for frequent searches with configurable TTL. Add search result caching with cache invalidation on candidate profile updates. Create index management utilities for maintaining search performance. Implement search analytics collection for monitoring query patterns and performance metrics.
+
+## 4. Build People Search UI component with autocomplete [pending]
+### Dependencies: 53.1, 53.2
+### Description: Create frontend search interface with autocomplete suggestions and result display
+### Details:
+Build PeopleSearch React component with search input field and autocomplete functionality. Implement debounced search suggestions based on partial name matches. Create candidate preview cards showing key information (name, company, skills). Add search result pagination and infinite scroll. Implement search history and recent searches using localStorage. Add loading states, empty states, and error handling for search operations.
+
+## 5. Add rate limiting and API documentation [pending]
+### Dependencies: 53.1, 53.2, 53.3
+### Description: Implement search endpoint protection and comprehensive API documentation
+### Details:
+Add rate limiting to search endpoints using Firebase Functions rate limiting or Redis-based implementation. Implement abuse prevention with IP-based throttling and user-based quotas. Create comprehensive API documentation for search endpoints including request/response schemas, error codes, and usage examples. Add search endpoint monitoring and alerting for performance issues. Implement search result analytics dashboard for tracking usage patterns.
+

@@ -1,0 +1,67 @@
+# Task ID: 42
+# Title: Implement Embedding Generation Service
+# Status: pending
+# Dependencies: 31, 32
+# Priority: medium
+# Description: Build embedding generation service using Vertex AI text-embedding-004 with plans for Together AI migration, including batch processing and storage
+# Details:
+1. Create VectorSearchService class in functions/src/vector-search.ts
+2. Implement Vertex AI text-embedding-004 integration
+3. Build batch embedding generation for efficiency
+4. Store embeddings in candidate_embeddings collection
+5. Create embedding provider abstraction for future Together AI migration
+6. Implement embedding caching and update logic
+7. Add embedding generation triggers for new/updated profiles
+
+# Test Strategy:
+Test embedding generation with sample texts, verify vector dimensionality (768), test batch processing performance, validate storage in Firestore, test cache invalidation logic
+
+# Subtasks:
+## 1. Create VectorSearchService class structure [pending]
+### Dependencies: None
+### Description: Design and implement the base VectorSearchService class in functions/src/vector-search.ts with TypeScript interfaces for embedding operations
+### Details:
+Create the VectorSearchService class with methods for generateEmbedding(), generateBatchEmbeddings(), searchSimilar(), and updateEmbedding(). Define TypeScript interfaces for EmbeddingRequest, EmbeddingResponse, SearchRequest, and SearchResult. Set up error handling and logging infrastructure.
+
+## 2. Implement Vertex AI text-embedding-004 integration [pending]
+### Dependencies: 42.1
+### Description: Integrate Vertex AI text-embedding-004 model for generating 768-dimensional embeddings with proper authentication and error handling
+### Details:
+Set up Vertex AI client initialization with proper credentials, implement the generateEmbedding() method to call text-embedding-004 API, handle API rate limits and quotas, add retry logic with exponential backoff, validate embedding dimensions (768), and implement proper error handling for API failures.
+
+## 3. Build batch embedding generation system [pending]
+### Dependencies: 42.2
+### Description: Implement efficient batch processing for generating embeddings for multiple texts simultaneously to optimize API usage and performance
+### Details:
+Implement generateBatchEmbeddings() method with configurable batch sizes (default 100), add queue management for large batch requests, implement parallel processing with concurrency limits, add progress tracking and reporting, handle partial failures in batch processing, and optimize for Vertex AI's batch API limits.
+
+## 4. Implement Firestore storage for embeddings [pending]
+### Dependencies: 42.1
+### Description: Create storage layer for embeddings in Firestore candidate_embeddings collection with proper indexing and retrieval methods
+### Details:
+Design candidate_embeddings collection schema with fields for candidateId, embedding vector, model version, timestamp, and metadata. Implement storeEmbedding() and retrieveEmbedding() methods, add batch storage operations for efficiency, create composite indexes for search optimization, and implement data compression for large vectors.
+
+## 5. Create embedding provider abstraction layer [pending]
+### Dependencies: 42.2
+### Description: Build provider-agnostic abstraction layer to support future migration from Vertex AI to Together AI or other embedding services
+### Details:
+Create EmbeddingProvider interface with standard methods, implement VertexAIProvider class as first implementation, design configuration system for provider switching, add provider-specific parameter mapping, create factory pattern for provider instantiation, and document migration path to Together AI embeddings.
+
+## 6. Implement embedding caching mechanism [pending]
+### Dependencies: 42.4
+### Description: Build caching system to avoid regenerating embeddings for unchanged content and improve performance
+### Details:
+Implement content-based cache key generation using SHA-256 hashing, create in-memory cache with LRU eviction policy, add Firestore-based persistent cache layer, implement cache invalidation logic for updated profiles, add cache metrics and monitoring, and configure TTL settings for different content types.
+
+## 7. Add embedding generation triggers [pending]
+### Dependencies: 42.3, 42.6
+### Description: Create Cloud Functions triggers to automatically generate embeddings when candidate profiles are created or updated
+### Details:
+Implement onCreate trigger for new enriched_profiles documents, add onUpdate trigger with change detection logic, create dead letter queue for failed embedding generations, implement debouncing for rapid updates, add bulk trigger for migration scenarios, and ensure idempotent operations to prevent duplicate embeddings.
+
+## 8. Implement performance testing and optimization [pending]
+### Dependencies: 42.7
+### Description: Create comprehensive performance tests for embedding generation service and optimize for production workloads
+### Details:
+Write unit tests for all VectorSearchService methods, create integration tests with real Vertex AI API, implement load tests for batch processing scenarios, measure and optimize embedding generation latency, test cache hit rates and performance gains, validate vector similarity search accuracy, and document performance benchmarks and limits.
+

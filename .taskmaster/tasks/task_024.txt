@@ -1,0 +1,118 @@
+# Task ID: 24
+# Title: Integrate pgvector with Vector Search API
+# Status: done
+# Dependencies: 23, 10, 11
+# Priority: medium
+# Description: Replace the Firestore-based vector search implementation in functions/src/vector-search.ts with Cloud SQL pgvector backend, creating a Node.js client bridge while maintaining existing API contracts for frontend compatibility.
+# Details:
+Implement pgvector integration for the Vector Search API:
+
+1. **Create Node.js pgvector client package**:
+   - Install required dependencies: `npm install pg @pgvector/pgvector dotenv`
+   - Create `functions/src/pgvector-client.ts` as a TypeScript wrapper around the Python pgvector_store.py functionality
+   - Implement connection pooling using node-postgres (pg) with SSL and Cloud SQL socket support
+   - Add retry logic and circuit breaker patterns for resilience
+
+2. **Implement PgVectorClient class**:
+   ```typescript
+   class PgVectorClient {
+     private pool: Pool;
+     
+     constructor(config: PgVectorConfig) {
+       // Initialize connection pool with Cloud SQL socket factory
+       // Support both TCP and Unix socket connections
+     }
+     
+     async storeEmbedding(candidateId: string, embedding: number[], metadata: any): Promise<string>
+     async searchSimilar(queryEmbedding: number[], threshold: number, limit: number): Promise<SearchResult[]>
+     async getEmbeddingStats(): Promise<EmbeddingStats>
+     async healthCheck(): Promise<HealthStatus>
+   }
+   ```
+
+3. **Modify VectorSearchService (vector-search.ts)**:
+   - Replace Firestore embedding storage with PgVectorClient calls
+   - Update `storeEmbedding()` to use pgvector's upsert_candidate_embedding function
+   - Replace `searchCandidates()` implementation:
+     - Remove Firestore collection queries
+     - Use pgvector's similarity_search function with cosine distance
+     - Maintain the same response format for API compatibility
+   - Update `findSimilarCandidates()` to use pgvector backend
+   - Keep existing API interfaces unchanged (SearchQuery, VectorSearchResult)
+
+4. **Connection configuration**:
+   - Add environment variables for Cloud SQL connection:
+     ```
+     PGVECTOR_HOST (Cloud SQL instance IP or socket path)
+     PGVECTOR_PORT (5432)
+     PGVECTOR_DATABASE (headhunter)
+     PGVECTOR_USER
+     PGVECTOR_PASSWORD
+     PGVECTOR_SSL_MODE (require for production)
+     PGVECTOR_MAX_CONNECTIONS (20)
+     PGVECTOR_IDLE_TIMEOUT_MILLIS (30000)
+     ```
+   - Support Cloud SQL proxy for local development
+   - Implement IAM authentication for production
+
+5. **Performance optimizations**:
+   - Connection pooling with min/max connections
+   - Prepared statements for frequently used queries
+   - Batch embedding operations for bulk inserts
+   - Implement query result caching with TTL
+   - Add request coalescing for duplicate searches
+
+6. **Error handling and monitoring**:
+   - Implement comprehensive error types (ConnectionError, QueryError, TimeoutError)
+   - Add structured logging with correlation IDs
+   - Export metrics for connection pool usage, query latency, and error rates
+   - Implement health check endpoint that verifies pgvector connectivity
+
+7. **Migration path**:
+   - Create feature flag ENABLE_PGVECTOR_SEARCH (default false)
+   - Implement dual-write pattern during transition:
+     - Write to both Firestore and pgvector
+     - Read from pgvector if flag enabled, fallback to Firestore
+   - Add migration script to backfill existing Firestore embeddings to pgvector
+
+8. **REST API bridge** (optional if direct DB connection not preferred):
+   - Create lightweight Express API wrapper around pgvector_store.py
+   - Deploy as Cloud Run service for better scaling
+   - Implement authentication and rate limiting
+   - Use this if TypeScript pgvector libraries prove unstable
+
+# Test Strategy:
+Comprehensive testing strategy:
+
+1. **Unit Tests** (functions/src/__tests__/pgvector-client.test.ts):
+   - Test connection pool initialization and configuration
+   - Mock pg client for testing query construction
+   - Test error handling for connection failures
+   - Verify retry logic and circuit breaker behavior
+   - Test query parameter validation and sanitization
+
+2. **Integration Tests** (functions/src/__tests__/vector-search-pgvector.test.ts):
+   - Set up test database with pgvector extension
+   - Test end-to-end embedding storage and retrieval
+   - Verify similarity search with various thresholds
+   - Test concurrent operations and connection pool limits
+   - Validate performance under load (response time < 100ms for searches)
+   - Test failover behavior when database is unavailable
+
+3. **API Contract Tests**:
+   - Ensure searchCandidates response format unchanged
+   - Verify all existing API endpoints work with pgvector backend
+   - Test backward compatibility with frontend
+   - Validate that existing tests in api-endpoints.test.ts still pass
+
+4. **Performance Tests**:
+   - Benchmark search performance vs Firestore implementation
+   - Load test with 1000+ concurrent searches
+   - Measure connection pool efficiency
+   - Profile memory usage under sustained load
+
+5. **Migration Tests**:
+   - Test dual-write pattern correctness
+   - Verify data consistency between Firestore and pgvector
+   - Test feature flag toggle behavior
+   - Validate rollback procedures

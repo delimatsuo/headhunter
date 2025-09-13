@@ -1,0 +1,67 @@
+# Task ID: 48
+# Title: Embedding Bake-off Harness and Provider Selection Report
+# Status: pending
+# Dependencies: 42
+# Priority: medium
+# Description: Build comprehensive evaluation harness to compare embedding providers (Vertex text-embedding-004, Together embeddings, optional local) using standardized metrics and generate recommendation report for provider selection.
+# Details:
+1. **Harness Implementation**:
+   - Create EmbeddingBakeoffHarness class in scripts/embedding_bakeoff.py
+   - Support multiple providers: Vertex AI text-embedding-004, Together embeddings, local models (optional)
+   - Generate embeddings for ~2k candidates × 30-50 job descriptions dataset
+   - Implement async batch processing with configurable concurrency per provider
+   - Add progress tracking and intermediate result caching
+
+2. **Evaluation Metrics**:
+   - Implement NDCG@10 (Normalized Discounted Cumulative Gain) for ranking quality
+   - Calculate MRR@10 (Mean Reciprocal Rank) for first relevant result position
+   - Compute Hit@10 (recall at top 10) for coverage assessment
+   - Measure latency per embedding and cost per 10k embeddings
+   - Track embedding dimensionality and storage requirements
+
+3. **Configuration and Output**:
+   - Parameterize via environment variables (BAKEOFF_PROVIDERS, DATASET_SIZE, etc.)
+   - Export results to CSV (metrics_comparison.csv) and JSON (bakeoff_results.json)
+   - Generate comparison notebook (embedding_bakeoff_analysis.ipynb) with visualizations
+   - Create markdown report (EMBEDDING_PROVIDER_RECOMMENDATION.md) with decision matrix
+
+4. **Integration and Documentation**:
+   - Add optional CI integration for automated provider benchmarking
+   - Document migration toggle mechanism and associated risks
+   - Include cost-benefit analysis and performance trade-offs
+   - Provide migration timeline and rollback procedures
+
+# Test Strategy:
+Test harness with subset of data (100 candidates × 5 JDs) to verify metric calculations, validate embedding generation across all providers, test async processing and error handling, verify CSV/JSON output format compliance, test notebook execution and report generation, validate cost and latency measurements accuracy, test CI integration if implemented
+
+# Subtasks:
+## 1. Create EmbeddingBakeoffHarness Core Infrastructure [pending]
+### Dependencies: None
+### Description: Implement the foundational EmbeddingBakeoffHarness class with provider abstraction, configuration management, and async batch processing capabilities
+### Details:
+Create scripts/embedding_bakeoff.py with EmbeddingBakeoffHarness class. Implement provider interface supporting Vertex AI text-embedding-004, Together embeddings, and optional local models. Add async batch processing with configurable concurrency limits per provider. Implement progress tracking with tqdm and intermediate result caching using pickle/json. Support environment variable configuration for BAKEOFF_PROVIDERS, DATASET_SIZE, CONCURRENCY_LIMIT, and CACHE_DIR.
+
+## 2. Implement Dataset Processing and Embedding Generation [pending]
+### Dependencies: 48.1
+### Description: Build dataset loading and embedding generation pipeline for ~2k candidates × 30-50 job descriptions with error handling and retry logic
+### Details:
+Implement dataset loading from existing candidate and job description sources. Create embedding generation pipeline that processes all provider combinations asynchronously. Add robust error handling with exponential backoff retry logic for API failures. Implement batch size optimization per provider (e.g., 100 for Vertex, 50 for Together). Store raw embeddings with metadata including provider, timestamp, and processing time.
+
+## 3. Implement Evaluation Metrics Calculation [pending]
+### Dependencies: 48.2
+### Description: Build comprehensive metrics calculation system including NDCG@10, MRR@10, Hit@10, latency, cost, and storage analysis
+### Details:
+Implement NDCG@10 calculation using relevance scores from similarity rankings. Add MRR@10 computation for first relevant result position analysis. Calculate Hit@10 for coverage assessment at top-10 results. Measure and track latency per embedding request and cost per 10k embeddings based on provider pricing. Analyze embedding dimensionality and storage requirements. Create MetricsCalculator class with standardized evaluation methods.
+
+## 4. Generate Comparison Reports and Visualizations [pending]
+### Dependencies: 48.3
+### Description: Create comprehensive output artifacts including CSV metrics, JSON results, analysis notebook, and markdown recommendation report
+### Details:
+Export detailed metrics to metrics_comparison.csv with provider comparisons and statistical significance tests. Generate structured bakeoff_results.json with complete evaluation data. Create embedding_bakeoff_analysis.ipynb with matplotlib/seaborn visualizations showing performance comparisons, cost-benefit analysis, and latency distributions. Build automated markdown report generator for EMBEDDING_PROVIDER_RECOMMENDATION.md with decision matrix and migration recommendations.
+
+## 5. Add CI Integration and Migration Documentation [pending]
+### Dependencies: 48.4
+### Description: Implement optional CI integration for automated benchmarking and create comprehensive migration documentation with risk assessment
+### Details:
+Add GitHub Actions workflow for automated provider benchmarking on dataset changes. Create migration toggle mechanism documentation with feature flags and rollback procedures. Document cost-benefit analysis methodology and performance trade-off considerations. Include migration timeline recommendations and risk mitigation strategies. Add monitoring and alerting setup for production embedding provider performance tracking.
+

@@ -1,0 +1,90 @@
+# Task ID: 23
+# Title: Cloud SQL pgvector setup for semantic search
+# Status: done
+# Dependencies: 19
+# Priority: medium
+# Description: Configure Cloud SQL with PostgreSQL and pgvector extension for semantic search capabilities as specified in PRD lines 74, 79, and 143
+# Details:
+Set up Cloud SQL with pgvector for vector similarity search:
+
+1. **Cloud SQL Instance Configuration**:
+   - Create Cloud SQL PostgreSQL 15+ instance
+   - Enable pgvector extension: `CREATE EXTENSION vector;`
+   - Configure connection pooling and SSL
+   - Set up private IP for VPC connectivity
+   - Configure automated backups and high availability
+
+2. **Database Schema Design**:
+   ```sql
+   CREATE TABLE candidate_embeddings (
+     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+     candidate_id VARCHAR(255) NOT NULL,
+     embedding vector(768),  -- Dimension matches embedding model
+     model_version VARCHAR(50),
+     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     metadata JSONB,
+     UNIQUE(candidate_id, model_version)
+   );
+   
+   CREATE INDEX ON candidate_embeddings USING ivfflat (embedding vector_cosine_ops)
+   WITH (lists = 100);  -- Tune based on dataset size
+   ```
+
+3. **Python Client Implementation**:
+   ```python
+   from sqlalchemy import create_engine
+   from pgvector.sqlalchemy import Vector
+   import numpy as np
+   
+   class PgVectorStore:
+       def __init__(self, connection_string):
+           self.engine = create_engine(connection_string)
+       
+       def store_embedding(self, candidate_id, embedding):
+           # Store embedding with metadata
+           pass
+       
+       def similarity_search(self, query_embedding, k=10):
+           # Perform cosine similarity search
+           pass
+   ```
+
+4. **Migration from Vertex AI Vector Search**:
+   - Export existing embeddings from Firestore
+   - Batch insert into pgvector tables
+   - Update search API to use Cloud SQL
+   - Implement A/B testing for comparison
+
+5. **Performance Optimization**:
+   - Configure HNSW index for better performance
+   - Implement connection pooling
+   - Add read replicas for scaling
+   - Monitor query performance metrics
+
+# Test Strategy:
+Comprehensive testing approach:
+
+1. **Unit Tests** (test_pgvector_store.py):
+   - Test connection establishment
+   - Test embedding insertion and retrieval
+   - Test similarity search with various thresholds
+   - Test batch operations performance
+   - Test error handling for connection failures
+
+2. **Integration Tests**:
+   - Test with actual candidate embeddings
+   - Verify search results match expected candidates
+   - Test concurrent read/write operations
+   - Validate index performance with 10k+ embeddings
+
+3. **Performance Benchmarks**:
+   - Measure query latency (target <100ms for 10k vectors)
+   - Test throughput for batch insertions
+   - Compare search quality with Vertex AI baseline
+   - Load test with concurrent connections
+
+4. **Migration Validation**:
+   - Compare search results between old and new systems
+   - Verify data integrity after migration
+   - Test rollback procedures

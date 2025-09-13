@@ -1,0 +1,100 @@
+# Task ID: 49
+# Title: Migrate NAS to GCS and Execute 50-Candidate Test Run
+# Status: pending
+# Dependencies: 42, 20
+# Priority: medium
+# Description: Create migration script to transfer selected CSV/JSON files from NAS to GCS buckets and execute a comprehensive 50-candidate enrichment test run through the complete pipeline with metrics collection.
+# Details:
+1. **NAS to GCS Migration Script**:
+   - Create `scripts/migrate_nas_to_gcs.py` with async file transfer capabilities
+   - Implement selective file migration for CSV/JSON data to designated GCS buckets:
+     - `*-raw-csv` bucket for structured candidate data
+     - `*-raw-json` bucket for unstructured resume/profile data  
+     - `*-profiles` bucket for processed candidate profiles
+   - Add progress tracking with file count, size, and transfer rate metrics
+   - Implement checksum validation and retry logic for failed transfers
+   - Create manifest file documenting migrated files and metadata
+
+2. **50-Candidate Test Pipeline**:
+   - Select diverse candidate sample (various experience levels, industries, roles)
+   - Execute complete enrichment workflow: GCS → Together AI processing → Firestore streaming → embedding generation
+   - Implement real-time metrics collection throughout pipeline stages
+   - Configure batch processing with concurrency limits to manage API costs
+   - Add intermediate result caching for pipeline recovery
+
+3. **Metrics Collection Framework**:
+   - Track throughput metrics: candidates/minute, API requests/second, embedding generation rate
+   - Monitor cost metrics: Together AI API costs, GCS storage/transfer costs, Vertex AI embedding costs
+   - Measure quality metrics: JSON parse success rate, schema validation rate, repair/retry rate
+   - Log processing times per pipeline stage with percentile analysis
+   - Generate comprehensive metrics dashboard with charts and summaries
+
+4. **UI Validation and Documentation**:
+   - Test search functionality with processed candidates in React interface
+   - Validate embedding-based similarity search accuracy and ranking
+   - Document rationale quality and relevance for sample searches
+   - Create step-by-step migration and testing documentation
+   - Generate findings report with recommendations for production scaling
+
+# Test Strategy:
+1. **Migration Validation**:
+   - Verify file integrity with checksum comparison between NAS and GCS
+   - Test selective migration filters and bucket routing logic
+   - Validate manifest file accuracy and completeness
+   - Test migration script error handling and recovery mechanisms
+
+2. **Pipeline Integration Testing**:
+   - Execute end-to-end test with 5-candidate subset first
+   - Verify data flow through all pipeline stages without data loss
+   - Test error handling and retry mechanisms at each stage
+   - Validate Firestore document structure and embedding storage
+
+3. **Metrics Accuracy Verification**:
+   - Cross-validate throughput metrics with external monitoring
+   - Verify cost calculations against actual API billing
+   - Test metrics collection under various load conditions
+   - Validate dashboard accuracy with manual spot checks
+
+4. **UI Search Quality Assessment**:
+   - Test search with 10+ diverse job descriptions against processed candidates
+   - Evaluate ranking relevance with recruiter feedback on sample results
+   - Verify rationale explanations align with candidate-job matches
+   - Test search performance and response times with full candidate set
+
+5. **Documentation Completeness**:
+   - Verify all migration steps are reproducible from documentation
+   - Test pipeline execution following documented procedures
+   - Validate findings report includes actionable recommendations
+   - Confirm metrics interpretation guide is clear and accurate
+
+# Subtasks:
+## 1. Create NAS to GCS Migration Script with Async Transfer [pending]
+### Dependencies: None
+### Description: Develop a comprehensive migration script to transfer CSV/JSON files from NAS to designated GCS buckets with progress tracking and validation
+### Details:
+Create `scripts/migrate_nas_to_gcs.py` with async file transfer capabilities using asyncio and aiofiles. Implement selective file migration logic to route files to appropriate buckets: `*-raw-csv` for structured data, `*-raw-json` for unstructured data, `*-profiles` for processed profiles. Add progress tracking with file count, size, and transfer rate metrics. Implement MD5 checksum validation for file integrity, retry logic for failed transfers with exponential backoff, and generate manifest file documenting migrated files with metadata including timestamps, sizes, and checksums.
+
+## 2. Select and Prepare 50-Candidate Test Dataset [pending]
+### Dependencies: 49.1
+### Description: Curate a diverse sample of 50 candidates from migrated data representing various experience levels, industries, and roles for comprehensive pipeline testing
+### Details:
+Analyze migrated candidate data to select representative sample covering junior/mid/senior experience levels, diverse industries (tech, finance, healthcare, etc.), and various roles (engineering, sales, marketing, etc.). Create candidate selection criteria and filtering logic. Generate test dataset manifest with candidate IDs, source files, and metadata. Validate data quality and completeness for selected candidates. Create backup copies of test data for repeatability.
+
+## 3. Implement Comprehensive Metrics Collection Framework [pending]
+### Dependencies: None
+### Description: Build real-time metrics collection system to track throughput, cost, quality, and performance metrics throughout the enrichment pipeline
+### Details:
+Create metrics collection framework with structured logging and real-time tracking. Implement throughput metrics (candidates/minute, API requests/second, embedding generation rate), cost metrics (Together AI API costs, GCS storage/transfer costs, Vertex AI embedding costs), quality metrics (JSON parse success rate, schema validation rate, repair/retry rate), and performance metrics (processing times per stage with percentile analysis). Use Cloud Monitoring APIs for metric ingestion and create dashboard configuration for visualization.
+
+## 4. Execute 50-Candidate Pipeline Test Run with Monitoring [pending]
+### Dependencies: 49.2, 49.3
+### Description: Run the complete enrichment pipeline on the test dataset with real-time metrics collection and intermediate result caching
+### Details:
+Execute end-to-end pipeline: GCS data retrieval → Together AI processing → Firestore streaming → embedding generation. Implement batch processing with configurable concurrency limits (default 5-10 concurrent) to manage API costs. Add intermediate result caching at each stage for pipeline recovery. Configure real-time metrics collection throughout all stages. Implement graceful error handling with detailed logging. Create pipeline state checkpoints for resumability. Monitor API rate limits and implement backoff strategies.
+
+## 5. Validate UI Integration and Generate Comprehensive Report [pending]
+### Dependencies: 49.4
+### Description: Test search functionality with processed candidates in React interface and generate detailed findings report with production scaling recommendations
+### Details:
+Test React search interface with processed candidates, validate embedding-based similarity search accuracy and ranking quality. Perform sample searches across different job descriptions and evaluate result relevance. Document rationale quality and match explanations. Generate comprehensive findings report including: pipeline performance metrics, cost analysis, quality assessment, identified bottlenecks, error patterns, and production scaling recommendations. Create step-by-step migration and testing documentation for future reference.
+

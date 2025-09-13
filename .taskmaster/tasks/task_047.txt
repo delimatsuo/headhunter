@@ -1,0 +1,88 @@
+# Task ID: 47
+# Title: Create Pub/Sub topic and Cloud Scheduler jobs for batch/nightly processing
+# Status: pending
+# Dependencies: 22
+# Priority: medium
+# Description: Provision Pub/Sub infrastructure with Cloud Scheduler jobs for automated batch candidate processing and nightly incremental updates.
+# Details:
+1. **Pub/Sub Topic Provisioning**:
+   - Create 'candidate-process-requests' topic with 7-day message retention
+   - Configure dead letter queue (DLQ) for failed message handling
+   - Set up IAM bindings for Cloud Run worker service account
+   - Configure topic-level encryption and monitoring
+
+2. **Cloud Scheduler Jobs**:
+   - Create initial batch enqueue job with cron schedule (e.g., daily at 2 AM)
+   - Create nightly incremental update job (e.g., every 4 hours)
+   - Configure HTTP endpoints targeting Cloud Run service
+   - Set up retry policies and failure handling
+
+3. **Authentication & Security**:
+   - Create dedicated service account for scheduler jobs
+   - Configure OIDC authentication headers for Cloud Run invocation
+   - Implement least-privilege IAM roles (pubsub.publisher, run.invoker)
+   - Set up VPC connector if needed for private networking
+
+4. **Configuration Management**:
+   - Define environment variables for topic names and schedules
+   - Create Terraform/deployment scripts for infrastructure
+   - Set up monitoring and alerting for job failures
+   - Configure payload templates for different processing types
+
+5. **Documentation Updates**:
+   - Document topic naming conventions and message schemas
+   - Update deployment guides with scheduler configuration
+   - Add troubleshooting guide for common issues
+
+# Test Strategy:
+1. **Smoke Tests**:
+   - Publish sample message to topic and verify Cloud Run worker receives it
+   - Test DLQ functionality with intentionally failing messages
+   - Verify IAM permissions by testing service account access
+
+2. **Scheduler Validation**:
+   - Manually trigger scheduler jobs and verify HTTP endpoint calls
+   - Test OIDC authentication headers and token validation
+   - Verify cron schedule accuracy with test runs
+
+3. **Integration Testing**:
+   - End-to-end test: scheduler → Pub/Sub → Cloud Run → processing
+   - Test message retention and expiration policies
+   - Validate monitoring alerts and error notifications
+
+4. **Load Testing**:
+   - Test topic throughput with high message volume
+   - Verify autoscaling behavior under load
+   - Test concurrent scheduler job execution
+
+# Subtasks:
+## 1. Create Pub/Sub topic with DLQ and IAM configuration [pending]
+### Dependencies: None
+### Description: Provision the candidate-process-requests Pub/Sub topic with dead letter queue, message retention, and IAM bindings for Cloud Run service account access
+### Details:
+Create Pub/Sub topic 'candidate-process-requests' with 7-day message retention policy. Set up dead letter queue topic 'candidate-process-requests-dlq' with appropriate subscription. Configure IAM bindings to grant pubsub.subscriber role to Cloud Run worker service account. Enable topic-level encryption using Google-managed keys and configure monitoring alerts for message processing failures.
+
+## 2. Create dedicated service account for Cloud Scheduler [pending]
+### Dependencies: 47.1
+### Description: Provision service account with minimal required permissions for Cloud Scheduler to publish messages and invoke Cloud Run services
+### Details:
+Create service account 'scheduler-pubsub-sa' with roles: pubsub.publisher for topic access and run.invoker for Cloud Run invocation. Generate and securely store service account key if needed. Configure OIDC authentication headers for secure Cloud Run invocation. Set up least-privilege IAM policies and document security considerations.
+
+## 3. Create Cloud Scheduler job for daily batch processing [pending]
+### Dependencies: 47.1, 47.2
+### Description: Configure Cloud Scheduler job to trigger daily batch candidate processing at 2 AM with retry policies and failure handling
+### Details:
+Create Cloud Scheduler job 'daily-batch-process' with cron schedule '0 2 * * *' (daily at 2 AM UTC). Configure HTTP target pointing to Cloud Run service endpoint '/batch-process'. Set up retry policy with exponential backoff (max 3 retries, 60s initial delay). Include payload template with processing type 'BATCH_FULL' and configure timeout settings (30 minutes).
+
+## 4. Create Cloud Scheduler job for incremental updates [pending]
+### Dependencies: 47.1, 47.2
+### Description: Configure Cloud Scheduler job for nightly incremental candidate updates every 4 hours with appropriate payload and retry configuration
+### Details:
+Create Cloud Scheduler job 'incremental-updates' with cron schedule '0 */4 * * *' (every 4 hours). Configure HTTP target to Cloud Run endpoint '/incremental-process'. Set up retry policy with 2 max retries and 30s initial delay. Include payload template with processing type 'INCREMENTAL' and timestamp parameters for delta processing.
+
+## 5. Create infrastructure deployment scripts and monitoring [pending]
+### Dependencies: 47.1, 47.2, 47.3, 47.4
+### Description: Develop Terraform scripts for infrastructure provisioning and set up comprehensive monitoring and alerting for the Pub/Sub and scheduler infrastructure
+### Details:
+Create Terraform modules for Pub/Sub topics, subscriptions, IAM bindings, service accounts, and Cloud Scheduler jobs. Define environment variables for topic names, schedules, and endpoints in terraform.tfvars. Set up Cloud Monitoring alerts for job failures, message processing delays, and DLQ message accumulation. Create documentation for deployment process, troubleshooting common issues, and operational runbooks.
+

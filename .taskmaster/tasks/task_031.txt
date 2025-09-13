@@ -1,0 +1,74 @@
+# Task ID: 31
+# Title: Build Firestore Streaming Pipeline
+# Status: pending
+# Dependencies: 29, 30
+# Priority: high
+# Description: Implement direct streaming of processed profiles to Firestore with proper collection structure, flattened search fields, and batch write optimization
+# Details:
+1. Enhance scripts/firebase_streaming_processor.py for production use
+2. Implement batch writes (500 docs per batch) with error handling
+3. Create flattened fields for search: years_experience, current_role, primary_skills
+4. Store full profiles in enriched_profiles/ collection
+5. Store search-optimized data in candidates/ collection
+6. Add upsert logic based on candidate_id
+7. Implement progress tracking and resumable processing
+8. Add transaction support for atomic updates
+
+# Test Strategy:
+Test batch write performance with 1000 profiles, verify upsert behavior with duplicate IDs, test transaction rollback on errors, validate data consistency between collections
+
+# Subtasks:
+## 1. Setup Firestore client with authentication [pending]
+### Dependencies: None
+### Description: Initialize Firebase Admin SDK with service account credentials and configure Firestore client with proper authentication and project settings
+### Details:
+Load service account credentials from environment or JSON file, initialize Firebase Admin app with proper project ID, configure Firestore client settings including retry policies and timeouts, validate connection to Firestore, implement connection pooling for optimal performance
+
+## 2. Design collection structure and document schemas [pending]
+### Dependencies: 31.1
+### Description: Define the data structure for candidates/ and enriched_profiles/ collections with proper field types and indexing strategy
+### Details:
+Create schema for enriched_profiles/ with full nested structure, design flattened schema for candidates/ collection optimized for search, define composite indexes for common query patterns, document field naming conventions and data types, plan for future schema evolution and versioning
+
+## 3. Implement field flattening logic for search optimization [pending]
+### Dependencies: 31.2
+### Description: Create functions to extract and flatten nested data into search-optimized fields like years_experience, current_role, and primary_skills
+### Details:
+Extract years_experience from career_trajectory object, flatten current_role from nested position data, create primary_skills array from skill_assessment, implement skill normalization and deduplication, add computed fields like seniority_level and experience_band for filtering
+
+## 4. Build batch write implementation with 500-doc optimization [pending]
+### Dependencies: 31.1, 31.3
+### Description: Implement efficient batch writing system that accumulates documents and writes in optimized batches of 500 documents
+### Details:
+Create BatchWriter class with configurable batch size, implement document accumulator with memory management, add automatic flush when batch size reached, handle partial batch writes on process termination, optimize write throughput with parallel batch execution
+
+## 5. Implement upsert mechanism with candidate_id [pending]
+### Dependencies: 31.4
+### Description: Create idempotent upsert logic that updates existing documents or creates new ones based on candidate_id
+### Details:
+Implement get-or-create pattern using candidate_id as document ID, add merge strategies for partial updates, handle concurrent update conflicts, implement version tracking for audit trail, add last_updated timestamp management
+
+## 6. Add transaction support for atomic multi-collection updates [pending]
+### Dependencies: 31.5
+### Description: Implement transactional writes to ensure data consistency when updating both candidates/ and enriched_profiles/ collections
+### Details:
+Create transaction wrapper for dual-collection writes, implement rollback logic for failed transactions, handle transaction size limits (500 operations), add transaction retry with exponential backoff, ensure ACID properties across collections
+
+## 7. Build progress tracking and resumable processing system [pending]
+### Dependencies: 31.4, 31.6
+### Description: Implement checkpoint-based progress tracking that allows processing to resume from last successful batch after interruption
+### Details:
+Create checkpoint file with last processed candidate_id, implement resume logic from checkpoint on restart, add progress bar with ETA calculation, track success/failure statistics per batch, implement graceful shutdown with checkpoint save
+
+## 8. Implement comprehensive error handling and retry logic [pending]
+### Dependencies: 31.6, 31.7
+### Description: Add robust error handling for network failures, rate limits, and data validation errors with intelligent retry strategies
+### Details:
+Implement exponential backoff for rate limit errors, add circuit breaker for persistent failures, create dead letter queue for failed documents, implement data validation before write attempts, add detailed error logging with context for debugging
+
+## 9. Performance test with large datasets and optimize [pending]
+### Dependencies: 31.7, 31.8
+### Description: Conduct thorough performance testing with 10,000+ candidate profiles and optimize batch sizes, parallelization, and resource usage
+### Details:
+Test with 1,000, 5,000, and 10,000 profile datasets, measure write throughput and latency metrics, optimize batch size based on performance data, test concurrent processing with multiple workers, validate data consistency under high load
+

@@ -1,0 +1,86 @@
+# Task ID: 32
+# Title: Implement Cloud Functions CRUD and Search APIs
+# Status: pending
+# Dependencies: 31
+# Priority: medium
+# Description: Build secure Cloud Functions for candidate CRUD operations, search endpoints, and embedding generation with proper authentication and authorization
+# Details:
+1. Implement candidates-crud.ts with GET/POST/PUT/DELETE operations
+2. Add Firebase Auth middleware for all endpoints
+3. Implement role-based access control using allowed_users collection
+4. Create skillAwareSearch callable function with JD parsing
+5. Add getCandidateSkillAssessment for detailed skill views
+6. Implement pagination (50 results default, expandable)
+7. Add request validation and sanitization
+8. Include audit logging for all operations
+
+# Test Strategy:
+Test CRUD operations with valid/invalid auth tokens, verify RBAC enforcement, test search with various JD formats, validate pagination logic, test audit log generation
+
+# Subtasks:
+## 1. Design API architecture and endpoint structure [pending]
+### Dependencies: None
+### Description: Define the overall API architecture, endpoint naming conventions, request/response schemas, and HTTP methods for all CRUD and search operations
+### Details:
+Create detailed API specification including endpoint paths (/api/candidates, /api/search, etc.), HTTP methods mapping, request/response formats, status codes, and error response structures. Define TypeScript interfaces for all data models.
+
+## 2. Implement Firebase Auth middleware [pending]
+### Dependencies: 32.1
+### Description: Create authentication middleware that validates Firebase ID tokens and extracts user information for all protected endpoints
+### Details:
+Build middleware function that verifies Firebase ID tokens using firebase-admin SDK, extracts user claims, handles token expiration, and attaches user context to requests. Include token refresh logic and proper error handling for invalid/expired tokens.
+
+## 3. Build role-based access control system [pending]
+### Dependencies: 32.2
+### Description: Implement RBAC using allowed_users Firestore collection to enforce permissions for different user roles and operations
+### Details:
+Create authorization middleware that checks user roles against allowed_users collection, implement role hierarchy (admin, recruiter, viewer), define permission matrices for each endpoint, and cache user permissions for performance.
+
+## 4. Create CRUD endpoints for candidates [pending]
+### Dependencies: 32.1, 32.2, 32.3
+### Description: Implement GET, POST, PUT, and DELETE operations in candidates-crud.ts with proper data validation and Firestore integration
+### Details:
+Build Express/Cloud Functions handlers for: GET /candidates/:id, GET /candidates (list), POST /candidates (create), PUT /candidates/:id (update), DELETE /candidates/:id. Include field-level validation, sanitization, and Firestore transaction handling.
+
+## 5. Implement skillAwareSearch callable function [pending]
+### Dependencies: 32.1, 32.2, 32.3
+### Description: Build the main search function that parses job descriptions and matches candidates based on skills and requirements
+### Details:
+Create Cloud Function that accepts JD text, parses it using Together AI to extract required skills, queries Firestore/Cloud SQL for matching candidates, ranks results by skill match scores, and returns paginated results with relevance scores.
+
+## 6. Build getCandidateSkillAssessment endpoint [pending]
+### Dependencies: 32.4
+### Description: Create endpoint that returns detailed skill assessment for a specific candidate including confidence scores and skill categories
+### Details:
+Implement endpoint that fetches candidate data, retrieves skill assessments with confidence levels, categorizes skills (technical, soft, domain), includes explicit vs inferred classification, and formats response with skill hierarchy and proficiency levels.
+
+## 7. Implement pagination system [pending]
+### Dependencies: 32.4, 32.5
+### Description: Add cursor-based pagination for all list endpoints with configurable page sizes and efficient query optimization
+### Details:
+Build pagination utilities supporting cursor-based navigation, implement default 50 results with expandable limits (max 200), add page metadata (total count, hasNext, cursor tokens), optimize Firestore queries with proper indexing, and handle edge cases.
+
+## 8. Create request validation and sanitization layer [pending]
+### Dependencies: 32.4, 32.5, 32.6
+### Description: Implement comprehensive input validation and sanitization for all API endpoints to prevent injection attacks and ensure data integrity
+### Details:
+Use express-validator or Joi for request validation, implement input sanitization for XSS prevention, validate data types and formats, enforce field length limits, sanitize file uploads, and create reusable validation middleware.
+
+## 9. Build audit logging system [pending]
+### Dependencies: 32.4, 32.5, 32.6
+### Description: Implement comprehensive audit logging for all CRUD operations and searches with user tracking and operation details
+### Details:
+Create audit log collection in Firestore, log all operations with timestamp, user ID, action type, affected resources, request metadata, and changes made. Implement log retention policies and query capabilities for compliance.
+
+## 10. Implement error handling and response formatting [pending]
+### Dependencies: 32.4, 32.5, 32.6, 32.7, 32.8, 32.9
+### Description: Create consistent error handling across all endpoints with proper status codes, error messages, and response formatting
+### Details:
+Build centralized error handler middleware, implement error types (ValidationError, AuthError, NotFoundError), create consistent error response format, add request ID tracking, implement retry logic for transient errors, and format success responses consistently.
+
+## 11. Create API documentation and security testing [pending]
+### Dependencies: 32.1, 32.2, 32.3, 32.4, 32.5, 32.6, 32.7, 32.8, 32.9, 32.10
+### Description: Document all API endpoints with OpenAPI/Swagger and implement comprehensive security testing suite
+### Details:
+Generate OpenAPI 3.0 specification, document authentication requirements, create example requests/responses, implement security tests for auth bypass attempts, SQL/NoSQL injection, XSS, rate limiting, and RBAC enforcement. Include integration tests for all endpoints.
+

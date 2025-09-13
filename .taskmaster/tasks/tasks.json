@@ -607,136 +607,6 @@
         ]
       },
       {
-        "id": 28,
-        "title": "Implement Parsing Complexity Analyzer",
-        "description": "Build deterministic pre-processing analyzer to assess document complexity and set appropriate chunk sizes, prompt selection, and retry policies before AI enrichment",
-        "details": "1. Create ParsingComplexityAnalyzer class in scripts/parsing_complexity_analyzer.py\n2. Implement document analysis: detect tables, OCR quality, format (PDF/DOCX/TXT), page count\n3. Calculate complexity score based on: noise level, formatting complexity, content density\n4. Define risk levels (low/medium/high) with corresponding chunk sizes (1-3 pages)\n5. Select appropriate prompts based on document type (standard/tabular/noisy)\n6. Set retry and repair policies per risk level\n7. Log analysis results with risk_level, recommendations, and metadata",
-        "testStrategy": "Test with diverse document types (clean PDFs, scanned images, complex tables), verify chunk size recommendations match document complexity, validate prompt selection logic, test edge cases with corrupted or empty documents",
-        "priority": "high",
-        "dependencies": [],
-        "status": "cancelled",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create base ParsingComplexityAnalyzer class structure",
-            "description": "Set up the foundational class with configuration, initialization, and core interfaces for document analysis",
-            "dependencies": [],
-            "details": "Create scripts/parsing_complexity_analyzer.py with ParsingComplexityAnalyzer class, define configuration dataclasses for analysis settings, implement initialization with configurable thresholds, create abstract methods for each analysis component, set up logging infrastructure",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Implement document format detection system",
-            "description": "Build module to accurately detect and validate document formats (PDF, DOCX, TXT, images) with MIME type verification",
-            "dependencies": [
-              "28.1"
-            ],
-            "details": "Implement format detection using python-magic for MIME types, add file extension validation, detect encrypted or password-protected documents, identify scanned vs native PDFs, implement format-specific metadata extraction, handle edge cases like corrupted headers",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Build OCR quality assessment module",
-            "description": "Create system to evaluate OCR quality metrics including confidence scores, noise levels, and text readability",
-            "dependencies": [
-              "28.2"
-            ],
-            "details": "Integrate Tesseract OCR with confidence scoring, implement noise detection algorithms, calculate text density and readability metrics, detect orientation and skew issues, assess image resolution and contrast quality, create OCR confidence thresholds for different risk levels",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Develop table detection and parsing logic",
-            "description": "Implement algorithms to detect, extract, and analyze tabular data within documents",
-            "dependencies": [
-              "28.2"
-            ],
-            "details": "Use libraries like Camelot or Tabula for PDF table extraction, implement table structure detection using computer vision, create table complexity scoring based on rows/columns/nested structures, handle multi-page tables and merged cells, develop fallback strategies for poorly formatted tables",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Implement complexity scoring algorithm",
-            "description": "Create weighted scoring system that combines multiple document characteristics into a single complexity metric",
-            "dependencies": [
-              "28.3",
-              "28.4"
-            ],
-            "details": "Define weight factors for each complexity dimension, implement normalized scoring (0-100 scale), create composite score calculation combining OCR quality, formatting complexity, table presence, content density, develop score calibration based on document samples, add configurable weight adjustments",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Build risk level classification system",
-            "description": "Develop classifier to categorize documents into low/medium/high risk levels based on complexity scores",
-            "dependencies": [
-              "28.5"
-            ],
-            "details": "Define risk level thresholds and boundaries, implement classification logic with hysteresis to prevent flapping, create risk level dataclasses with associated metadata, add override mechanisms for manual risk assignment, implement risk level explanation generation for transparency",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 7,
-            "title": "Create dynamic chunk size calculator",
-            "description": "Build adaptive chunking system that determines optimal page/section splits based on document complexity",
-            "dependencies": [
-              "28.6"
-            ],
-            "details": "Implement base chunk sizes per risk level (1-3 pages), add dynamic adjustment based on content density, create smart splitting at logical boundaries (sections, paragraphs), handle special cases like single-page documents, implement chunk overlap strategies for context preservation",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 8,
-            "title": "Develop prompt selection engine",
-            "description": "Create intelligent prompt selection system that matches document characteristics to appropriate AI prompts",
-            "dependencies": [
-              "28.6"
-            ],
-            "details": "Build prompt template library for different document types (standard, tabular, noisy, mixed), implement prompt selection logic based on detected features, create prompt parameterization for dynamic customization, add prompt chaining for complex documents, implement A/B testing framework for prompt effectiveness",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 9,
-            "title": "Configure retry and repair policies",
-            "description": "Implement adaptive retry strategies and repair mechanisms based on risk levels and failure patterns",
-            "dependencies": [
-              "28.6",
-              "28.8"
-            ],
-            "details": "Define retry counts per risk level (low: 1, medium: 2, high: 3), implement exponential backoff strategies, create repair policies for common parsing failures, add circuit breaker patterns for persistent failures, implement fallback processing strategies, configure timeout policies based on document complexity",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 10,
-            "title": "Create comprehensive testing and logging system",
-            "description": "Build extensive test suite and detailed logging framework for analysis results and recommendations",
-            "dependencies": [
-              "28.1",
-              "28.2",
-              "28.3",
-              "28.4",
-              "28.5",
-              "28.6",
-              "28.7",
-              "28.8",
-              "28.9"
-            ],
-            "details": "Implement structured logging with risk_level, recommendations, and metadata, create test suite with diverse document types (clean PDFs, scanned images, complex tables, corrupted files), add performance benchmarking and metrics collection, implement analysis result persistence and retrieval, create visualization tools for complexity analysis results",
-            "status": "pending",
-            "testStrategy": ""
-          }
-        ]
-      },
-      {
         "id": 29,
         "title": "Build Enhanced Together AI Processor with Skill Inference",
         "description": "Implement the core Together AI processing pipeline with single-pass enrichment including explicit and inferred skills with confidence scoring and evidence tracking",
@@ -744,8 +614,7 @@
         "testStrategy": "Test with 50 sample resumes of varying quality, verify skill extraction accuracy, validate confidence scores correlate with evidence strength, test low-content detection, measure processing time per candidate",
         "priority": "high",
         "dependencies": [
-          27,
-          28
+          27
         ],
         "status": "pending",
         "subtasks": [

@@ -1,0 +1,73 @@
+# Task ID: 46
+# Title: Set Up Cloud Run Worker for Scalable Processing
+# Status: pending
+# Dependencies: None
+# Priority: low
+# Description: Containerize Python processing pipeline and deploy as Cloud Run service with Pub/Sub integration for scalable candidate enrichment
+# Details:
+1. Create Dockerfile for Python processor with all dependencies
+2. Implement Pub/Sub message handler for candidate processing requests
+3. Configure Cloud Run service with appropriate CPU/memory limits
+4. Set up Cloud Scheduler for batch processing triggers
+5. Implement idempotent message processing
+6. Add monitoring and logging with Cloud Logging
+7. Configure auto-scaling parameters based on queue depth
+
+# Test Strategy:
+Test container build and local execution, verify Pub/Sub message handling, test auto-scaling behavior under load, validate idempotency with duplicate messages, test error handling and dead letter queues
+
+# Subtasks:
+## 1. Create Multi-Stage Dockerfile for Python Processor [pending]
+### Dependencies: None
+### Description: Build optimized Docker container with all Python dependencies, Together AI SDK, and Cloud Run requirements using multi-stage build pattern
+### Details:
+Create Dockerfile with: 1) Builder stage for compiling dependencies, 2) Runtime stage with minimal Python 3.11 image, 3) Install requirements including together-ai, google-cloud-pubsub, google-cloud-firestore, fastapi, uvicorn, 4) Configure non-root user for security, 5) Set appropriate environment variables for Cloud Run, 6) Optimize layer caching for faster builds, 7) Add health check endpoint configuration
+
+## 2. Implement Pub/Sub Message Handler with Retry Logic [pending]
+### Dependencies: 46.1
+### Description: Create robust message handler that processes candidate enrichment requests from Pub/Sub with automatic retries and error handling
+### Details:
+Implement handler with: 1) Parse Pub/Sub message attributes and payload for candidate IDs/batch requests, 2) Validate message schema and format, 3) Implement exponential backoff retry logic (3 attempts), 4) Handle Together AI API rate limits gracefully, 5) Support both single candidate and batch processing modes, 6) Add message acknowledgment/negative acknowledgment logic, 7) Implement circuit breaker pattern for API failures
+
+## 3. Configure Cloud Run Service with Resource Limits [pending]
+### Dependencies: 46.1, 46.2
+### Description: Deploy and configure Cloud Run service with appropriate CPU, memory, and concurrency settings for optimal performance
+### Details:
+Configure service with: 1) Set CPU allocation (2 vCPUs minimum for async processing), 2) Configure memory limits (4GB for model processing), 3) Set max instances (100) and min instances (1), 4) Configure request timeout (540 seconds for batch processing), 5) Set concurrency limit (80 requests per container), 6) Enable CPU always allocated for background processing, 7) Configure service account with necessary permissions, 8) Set up environment variables for API keys
+
+## 4. Set Up Cloud Scheduler for Batch Processing Triggers [pending]
+### Dependencies: 46.3
+### Description: Create Cloud Scheduler jobs to trigger batch processing at optimal times with configurable schedules
+### Details:
+Implement scheduler with: 1) Create daily batch job for new candidates (2 AM UTC), 2) Set up hourly incremental processing job, 3) Configure Pub/Sub message payloads for different batch types, 4) Implement job monitoring and alerting, 5) Add configurable batch size limits in scheduler payload, 6) Create manual trigger endpoints for on-demand processing, 7) Set up timezone-aware scheduling for global operations
+
+## 5. Implement Idempotent Processing with Deduplication [pending]
+### Dependencies: 46.2
+### Description: Build idempotency layer to handle duplicate messages and ensure exactly-once processing semantics
+### Details:
+Create idempotency system: 1) Generate deterministic message IDs from candidate data, 2) Implement Firestore-based processing ledger, 3) Check for existing processing records before starting, 4) Use transactions for atomic status updates, 5) Handle partial failures with checkpointing, 6) Implement message deduplication window (24 hours), 7) Add metrics for duplicate detection rate
+
+## 6. Integrate Cloud Logging and Monitoring [pending]
+### Dependencies: 46.3
+### Description: Set up comprehensive logging, monitoring, and alerting using Cloud Logging and Cloud Monitoring
+### Details:
+Configure monitoring: 1) Structure logs with severity levels and correlation IDs, 2) Create custom metrics for processing rate, latency, and errors, 3) Set up log-based metrics for Together AI API usage, 4) Configure alerts for error rates > 5%, 5) Implement distributed tracing with OpenTelemetry, 6) Create dashboard for processing pipeline health, 7) Add cost tracking metrics for API usage
+
+## 7. Configure Auto-scaling Based on Queue Depth [pending]
+### Dependencies: 46.3, 46.6
+### Description: Implement intelligent auto-scaling that responds to Pub/Sub queue depth and processing latency
+### Details:
+Set up auto-scaling: 1) Configure Cloud Run CPU utilization scaling (target 60%), 2) Implement custom metrics from Pub/Sub queue depth, 3) Set scaling thresholds (scale up at 100+ messages), 4) Configure gradual scale-down to avoid thrashing, 5) Add predictive scaling based on historical patterns, 6) Set max surge limits to control costs, 7) Implement scaling notifications and cost alerts
+
+## 8. Set Up Dead Letter Queue with Recovery [pending]
+### Dependencies: 46.2, 46.5
+### Description: Configure dead letter queue for failed messages with manual recovery mechanisms and monitoring
+### Details:
+Implement DLQ system: 1) Create dead letter topic and subscription, 2) Configure max delivery attempts (5), 3) Build DLQ inspector Cloud Function, 4) Implement manual retry mechanism from DLQ, 5) Add categorization of failure reasons, 6) Create alerting for DLQ message accumulation, 7) Build admin UI for DLQ management and recovery
+
+## 9. Perform Load Testing and Optimization [pending]
+### Dependencies: 46.7, 46.8
+### Description: Conduct comprehensive load testing to validate scaling behavior and optimize performance under various load patterns
+### Details:
+Execute load testing: 1) Create load test scenarios with Apache JMeter or Locust, 2) Test burst traffic (1000 messages in 1 minute), 3) Test sustained load (100 messages/minute for 1 hour), 4) Measure end-to-end latency and throughput, 5) Test failure scenarios and recovery, 6) Optimize container startup time, 7) Document performance benchmarks and limits, 8) Create runbook for production incidents
+

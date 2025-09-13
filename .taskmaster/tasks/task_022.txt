@@ -1,6 +1,6 @@
 # Task ID: 22
 # Title: Create Cloud Run Worker for Pub/Sub Processing
-# Status: pending
+# Status: done
 # Dependencies: 16, 17
 # Priority: low
 # Description: Deploy Python Cloud Run service to process candidate enrichment requests via Pub/Sub for scalable async processing

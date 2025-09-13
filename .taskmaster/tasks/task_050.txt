@@ -1,0 +1,82 @@
+# Task ID: 50
+# Title: Functions cleanup: remove Gemini enrichment references and enforce Together path
+# Status: done
+# Dependencies: None
+# Priority: high
+# Description: Remove all Gemini-based enrichment code paths from Cloud Functions and ensure all enrichment/orchestration exclusively uses Together AI processors while maintaining Vertex AI for vector embeddings.
+# Details:
+1. **Code Cleanup in functions/src**:
+   - Remove or guard all Gemini API calls and imports from enrichment modules
+   - Delete gemini-enrichment.ts or similar files if they exist
+   - Remove Gemini-specific environment variables and configurations
+   - Update any orchestration logic to only reference Together AI processors
+   - Preserve Vertex AI embeddings functionality for vector search (per PRD requirements)
+
+2. **Configuration Updates**:
+   - Remove GEMINI_API_KEY and related environment variables from .env files
+   - Update firebase.json and package.json to remove Gemini dependencies
+   - Clean up any Gemini-related IAM roles or service account permissions
+   - Update deployment scripts to exclude Gemini configurations
+
+3. **Documentation Updates**:
+   - Update README files to reflect Together AI as the sole enrichment provider
+   - Remove Gemini references from API documentation
+   - Update architecture diagrams and flow charts
+   - Add migration notes explaining the transition to Together AI
+
+4. **Prevention Measures**:
+   - Add ESLint rules or code analysis to prevent Gemini imports
+   - Create pre-commit hooks to scan for Gemini references
+   - Add CI/CD pipeline checks to validate Together AI-only usage
+   - Document coding standards requiring Together AI for enrichment
+
+# Test Strategy:
+1. **Code Analysis Tests**:
+   - Run grep/ripgrep searches for "gemini", "Gemini", "GEMINI" across functions/src
+   - Verify no imports from @google-cloud/aiplatform Gemini modules
+   - Test that all enrichment endpoints only call Together AI processors
+   - Validate that vector search still uses Vertex AI embeddings
+
+2. **Integration Tests**:
+   - Test complete enrichment flow to ensure it uses Together AI exclusively
+   - Verify vector search functionality remains intact with Vertex embeddings
+   - Test error handling when Gemini code paths are removed
+   - Validate environment variable cleanup doesn't break existing functionality
+
+3. **Prevention Tests**:
+   - Test ESLint rules catch attempted Gemini imports
+   - Verify pre-commit hooks reject Gemini references
+   - Test CI/CD pipeline fails on Gemini code introduction
+   - Validate documentation accurately reflects Together AI-only architecture
+
+# Subtasks:
+## 1. Remove Gemini imports and API calls from enrichment modules [done]
+### Dependencies: None
+### Description: Scan and remove all Gemini-related imports, API calls, and references from Cloud Functions source code in functions/src directory
+### Details:
+Use grep/ripgrep to find all occurrences of 'gemini', 'Gemini', 'GEMINI' in functions/src. Remove imports from @google-cloud/aiplatform Gemini modules. Delete gemini-enrichment.ts and similar files. Remove all Gemini API initialization and call code. Update import statements to only reference Together AI modules.
+
+## 2. Update orchestration logic to exclusively use Together AI processors [done]
+### Dependencies: 50.1
+### Description: Modify all enrichment orchestration code to route exclusively through Together AI processors while preserving Vertex AI embeddings
+### Details:
+Update orchestration functions to only call Together AI endpoints for text processing and enrichment. Ensure all enrichment workflows route through Together AI processors. Preserve existing Vertex AI embedding functionality for vector search operations. Update function routing logic and processor selection code.
+
+## 3. Remove Gemini environment variables and configuration files [done]
+### Dependencies: 50.1
+### Description: Clean up all Gemini-related environment variables, configuration files, and deployment settings
+### Details:
+Remove GEMINI_API_KEY and related environment variables from .env files and Firebase configuration. Update firebase.json to remove Gemini-specific settings. Clean package.json dependencies of Gemini-related packages. Remove Gemini IAM roles and service account permissions from deployment configurations.
+
+## 4. Implement prevention measures and code analysis rules [done]
+### Dependencies: 50.2
+### Description: Add automated checks to prevent future Gemini code introduction through linting rules and CI/CD pipeline validation
+### Details:
+Add ESLint rules to detect and prevent Gemini imports. Create pre-commit hooks that scan for Gemini references in code changes. Update CI/CD pipeline with validation steps to ensure Together AI-only usage. Add automated tests that fail if Gemini references are detected in the codebase.
+
+## 5. Update documentation and architecture references [done]
+### Dependencies: 50.3
+### Description: Update all documentation, README files, and architecture diagrams to reflect Together AI as the exclusive enrichment provider
+### Details:
+Update README files to document Together AI as sole enrichment provider. Remove Gemini references from API documentation and replace with Together AI examples. Update architecture diagrams and flow charts to show Together AI integration. Add migration notes explaining the transition from Gemini to Together AI. Document new coding standards requiring Together AI for enrichment.
+
