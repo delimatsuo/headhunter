@@ -1,4 +1,6 @@
-# Webhook Integration System
+# Webhook Integration System (Legacy / Dev-Only)
+
+> Note: This document describes a legacy/dev-only local webhook + Ollama flow. The PRD and current architecture use Together AI (cloud) for production Stage‑1 enrichment. Treat this as optional developer tooling, not the production path.
 
 A complete webhook integration system that connects Firebase Cloud Functions with local Ollama processing pipeline for the Headhunter AI recruitment system.
 

@@ -1,15 +1,12 @@
 # Headhunter AI - Production Deployment Guide
 
-**Status**: Ready for Production Deployment  
-**Last Updated**: 2025-09-10  
-**Architecture**: Cloud Run + Pub/Sub + Together AI  
+**Status**: Validate before Production  
+**Last Updated**: 2025-09-13  
+**Architecture**: Cloud Run + Pub/Sub + Together AI (Qwen 2.5 32B)  
 
 ## 🚀 Deployment Status Summary
 
-✅ **All systems deployed and tested**  
-✅ **Performance validated (99.1% success rate)**  
-✅ **Cost analysis completed ($54.28 for 29K candidates)**  
-✅ **Embedding model comparison completed (VertexAI recommended)**  
+ℹ️ Some figures and deployment claims in this guide were from a prior iteration. Before launch, re‑run validation and update metrics. Embedding baseline remains VertexAI.
 
 ## Pre-Deployment Checklist
 

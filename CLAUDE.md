@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 1. **Run `task-master next`** - Check what task should be worked on
 2. **Run `task-master show <id>`** - Read the full task details  
 3. **Read PRD section** relevant to the task (cite specific line numbers from `.taskmaster/docs/prd.txt`)
-4. **Ask confirmation**: "I'm about to work on [task] which involves [summary]. This aligns with PRD section [line X-Y]. Should I proceed?"
+4. Proceed directly after verifying PRD alignment; do not pause for confirmation unless scope changes.
 
 ### VIOLATION DETECTION RULES
 - If user requests work that's NOT in the current task: **STOP immediately**
@@ -112,7 +112,7 @@ npm run lint:fix
 5. **Storage**: Firestore (`candidates/`, `enriched_profiles/`) + Cloud SQL (pgvector) for embeddings
 
 ### Technology Stack
-- **AI**: Together AI (Llama 3.1 8B Instruct Turbo) - PRIMARY PRODUCTION
+- **AI**: Together AI (Qwen 2.5 32B Instruct) - PRIMARY PRODUCTION
 - **Storage**: Firebase Firestore
 - **Vector DB**: Cloud SQL (PostgreSQL + pgvector) OR VertexAI embeddings
 - **API**: Firebase Cloud Functions / Cloud Run

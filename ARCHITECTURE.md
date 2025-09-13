@@ -472,7 +472,7 @@ CREATE EXTENSION vector;
 
 | Layer | Technology | Purpose |
 |-------|------------|---------|
-| AI Processing | Together AI + Llama 3.2 3B | Cloud LLM for candidate analysis |
+| AI Processing | Together AI Qwen 2.5 32B | Cloud LLM for single‑pass enrichment |
 | Orchestration | Cloud Run + Pub/Sub | Scalable processing workflow |
 | Embeddings | VertexAI text-embedding-004 | Semantic search vectors |
 | Vector DB | Cloud SQL + pgvector | Fast similarity search |

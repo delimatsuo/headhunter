@@ -1,6 +1,39 @@
-# Handover & Recovery Runbook (Updated 2025‑09‑11)
+# Handover & Recovery Runbook (Updated 2025‑09‑13)
 
 This document is the single source of truth to restart work quickly. It reflects the current plan and what’s actually in the repo.
+
+## Start Here (Next Agent Quick Start)
+
+1) Environment (Stage‑1 model and key)
+```bash
+export TOGETHER_API_KEY=...
+export TOGETHER_MODEL_STAGE1=Qwen/Qwen2.5-32B-Instruct
+```
+
+2) Run tests (TDD baseline)
+```bash
+# Node (Functions)
+cd functions
+npm ci
+npm test -- --runInBand --detectOpenHandles --forceExit
+
+# Python (repo root)
+cd ..
+pytest -q
+```
+
+3) Task Master (drive the workflow)
+```bash
+task-master list --with-subtasks
+task-master next
+```
+
+4) Commit policy
+```bash
+git add -A
+git commit -m "chore: progress on <task-id> — tests + impl"
+git push
+```
 
 ## Summary
 
@@ -10,6 +43,8 @@ This document is the single source of truth to restart work quickly. It reflects
 - Search: One pipeline — ANN recall (pgvector planned) + re‑rank with structured signals (skills/experience/analysis_confidence) → one ranked list.
 - UI: React SPA (Firebase Hosting) calls callable Functions.
 - Functions: CRUD/search/upload; enrichment in Python processors (remove/guard Gemini enrichment in Functions).
+
+Recent completions (Task Master 52.x): Admin allowlist (callables), dedicated Admin UI page + nav, Audit Logger, Compliance callables.
 
 Authoritative PRD: `.taskmaster/docs/prd.txt`
 
@@ -102,6 +137,8 @@ Expected:
   - `task-master set-status --id=<id> --status=in-progress`
   - `task-master update-subtask --id=<id> --prompt="TDD: tests first, then impl; notes…"`
   - `task-master set-status --id=<id> --status=done` after tests+docs
+
+Recommended next tasks (from latest complexity report): 28 (Parsing Complexity Analyzer), 29 (Enhanced Together processor), 34 (Unified Ranking), 27 (Together integration), 31 (Firestore streaming), 32 (CRUD/Search APIs). All have subtasks; force expand if needed.
 
 ## Helpful Files
 
