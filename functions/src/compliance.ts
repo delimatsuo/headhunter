@@ -1,6 +1,6 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
-import { auditLogger, AuditAction } from "./audit-logger";
+import { getAuditLogger } from "./audit-logger";
 
 const firestore = admin.firestore();
 
@@ -16,7 +16,7 @@ export const getAuditReport = onCall({ memory: "512MiB", timeoutSeconds: 120 }, 
   const start = startDate ? new Date(startDate) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const end = endDate ? new Date(endDate) : new Date();
 
-  const report = await auditLogger.generateReport(start, end);
+  const report = await getAuditLogger().generateReport(start, end);
   return { report, start: start.toISOString(), end: end.toISOString() };
 });
 

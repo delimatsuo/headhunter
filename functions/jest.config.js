@@ -3,6 +3,7 @@ module.exports = {
   testEnvironment: "node",
   roots: ["<rootDir>/src"],
   testMatch: ["**/__tests__/**/*.ts", "**/*.(test|spec).ts"],
+  setupFiles: ["<rootDir>/src/__tests__/jest.setup.ts"],
   transform: {
     "^.+\\.ts$": ["ts-jest", {
       isolatedModules: true,

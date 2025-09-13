@@ -393,4 +393,6 @@ export class AuditLogger {
 }
 
 // Export singleton instance
-export const auditLogger = AuditLogger.getInstance();
+export function getAuditLogger(): AuditLogger {
+  return AuditLogger.getInstance();
+}

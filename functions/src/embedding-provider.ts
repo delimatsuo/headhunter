@@ -54,11 +54,32 @@ class VertexProvider implements EmbeddingProvider {
   }
 }
 
+class TogetherStubProvider implements EmbeddingProvider {
+  name = "together";
+  async generateEmbedding(text: string): Promise<number[]> {
+    // Deterministic 768-dim placeholder to satisfy tests; real Together embeddings
+    // are generated in Python processors per PRD.
+    const dim = 768;
+    const vec = Array.from({ length: dim }, (_, i) => {
+      let hash = 0;
+      for (let j = 0; j < Math.min(text.length, 100); j++) {
+        hash = (hash << 5) - hash + text.charCodeAt(j);
+        hash |= 0;
+      }
+      return Math.cos(hash + i) * 0.5;
+    });
+    const mag = Math.sqrt(vec.reduce((s, v) => s + v * v, 0));
+    return vec.map((v) => v / (mag || 1));
+  }
+}
+
 export function getEmbeddingProvider(): EmbeddingProvider {
   const provider = (process.env.EMBEDDING_PROVIDER || "vertex").toLowerCase();
   switch (provider) {
     case "local":
       return new LocalDeterministicProvider();
+    case "together":
+      return new TogetherStubProvider();
     case "vertex":
     default:
       return new VertexProvider();

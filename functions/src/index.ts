@@ -15,7 +15,7 @@ import { BUCKET_PROFILES } from "./config";
 import { JobSearchService, JobDescription } from "./job-search";
 // Temporarily comment out until modules are properly exported
 // import { errorHandler } from "./error-handler";
-import { auditLogger, AuditAction } from "./audit-logger";
+import { getAuditLogger, AuditAction } from "./audit-logger";
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -243,11 +243,11 @@ export const healthCheck = onCall(
         region: "us-central1",
       };
 
-      await auditLogger.logApiCall("healthCheck", request.auth?.uid, {}, "success");
+      await getAuditLogger().logApiCall("healthCheck", request.auth?.uid, {}, "success");
       return resp;
     } catch (error) {
       console.error("Health check failed:", error);
-      await auditLogger.logApiCall("healthCheck", request.auth?.uid, {}, "error");
+      await getAuditLogger().logApiCall("healthCheck", request.auth?.uid, {}, "error");
       throw new HttpsError("internal", "Health check failed");
     }
   }
@@ -568,13 +568,13 @@ export const searchJobCandidates = onCall(
         ...searchResults,
         from_cache: false,
       };
-      await auditLogger.logSearch(request.auth.uid, "job_search", jobDesc, searchResults.matches.length, Date.now() - started);
+      await getAuditLogger().logSearch(request.auth.uid, "job_search", jobDesc, searchResults.matches.length, Date.now() - started);
       return out;
     } catch (error) {
       // const duration = Date.now() - startTime;
       
       // Log error
-      await auditLogger.log(AuditAction.ERROR_OCCURRED, {
+      await getAuditLogger().log(AuditAction.ERROR_OCCURRED, {
         userId: request.auth?.uid,
         resourceType: "job_search",
         errorMessage: (error as any)?.message,
