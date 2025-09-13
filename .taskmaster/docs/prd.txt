@@ -1,18 +1,18 @@
-# Headhunter v2.0 — Brazil MVP (Authoritative)
+# Headhunter v2.0 — MVP (Authoritative)
 
-This section supersedes prior PRD content. Region: `southamerica-east1` (São Paulo). MVP will:
+This section supersedes prior PRD content. Region: `us-central1` (current). MVP will:
 
 - Use Together AI (Qwen 2.5 32B) single‑pass enrichment with PII‑minimizing prompts; no retention/training.
-- Generate embeddings with Gemini Embeddings in São Paulo (confirm model/endpoint per current Vertex docs at deploy; keep provider flag pluggable with Vertex fallback for now).
+- Generate embeddings with Vertex AI embeddings in `us-central1` by default; keep provider pluggable to enable Gemini or others later if needed.
 - Retrieve via Postgres hybrid: pgvector (HNSW/cosine) + PostgreSQL FTS (Portuguese); score fusion; Together Rerank on top‑K≈200 → top‑20.
 - Persist explainability evidence per skill; show “Why match” bullets in UI.
 - Store LinkedIn URLs; resumes in GCS (encrypted, signed URLs). No automated scraping in MVP.
 - Personas: Ella recruiters and admin only (Phase I). Multi‑tenant is Phase II.
 - Non‑functional: p95 ≤ 1.2s; rerank ≤ 350ms @K≤200; ≥95% valid JSON; <1% auto‑repair/quarantine.
 
-Acceptance: JD (EN/PT‑BR) returns top‑20 with evidence; compliance fields (`legal_basis`, optional `consent_record`, `transfer_mechanism` when applicable) present; exportable processing register.
+Acceptance: JD (EN/PT‑BR) returns top‑20 with evidence; compliance fields (`legal_basis`, optional `consent_record`) present; exportable processing register.
 
-Implementation (high‑level): São Paulo infra; Cloud Run Enricher (Together) writing Firestore/sections and Gemini embeddings to pgvector; Search API does FTS+pgvector recall → Together Rerank → composite scoring; UI shows JD results with evidence and signed resume URLs. See `ARCHITECTURE.md` and `docs/architecture-visual.html` for details.
+Implementation (high‑level): US region infra (`us-central1`); Cloud Run Enricher (Together) writing Firestore/sections and embeddings to pgvector; Search API does FTS+pgvector recall → Together Rerank → composite scoring; UI shows JD results with evidence and signed resume URLs. See `ARCHITECTURE.md` and `docs/architecture-visual.html` for details.
 
 # Legacy PRD (retained for context)
 Headhunter v2.0 – Cloud Processing with Together AI
