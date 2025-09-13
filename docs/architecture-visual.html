@@ -64,7 +64,7 @@
 </head>
 <body>
   <h1>Headhunter System Architecture – Visual Map</h1>
-  <p class="sub">A high‑level view of data flow and components with build status (updated to single‑pass Qwen, unified search, and no‑mock policy).</p>
+  <p class="sub">A high‑level view of data flow and components with build status (Brazil-first, São Paulo region; Gemini embeddings; Together rerank; single‑pass Qwen; no‑mock policy).</p>
 
   <div class="legend">
     <span class="badge"><span class="dot work"></span> Built & Working</span>
@@ -119,8 +119,8 @@
       </div>
       <div class="box work">
         <div class="status">working</div>
-        <div class="title">Embeddings Collection</div>
-        <div class="desc"><code>candidate_embeddings</code> standardized; embedding text built from enriched profile; Vertex <code>text-embedding-004</code> baseline.</div>
+        <div class="title">Embeddings Collection (São Paulo)</div>
+        <div class="desc"><code>candidate_embeddings</code> standardized; embedding text from enriched profile; Gemini Embeddings in <code>southamerica-east1</code> (provider pluggable).</div>
       </div>
       <div class="box plan">
         <div class="status">planned</div>
@@ -144,8 +144,8 @@
       </div>
       <div class="box plan">
         <div class="status">in progress</div>
-        <div class="title">Search Pipeline (Unified)</div>
-        <div class="desc">ANN recall (pgvector planned) ∪ deterministic title/company recall → composite re‑rank (skill/conf/vec/exp) → optional low‑depth bucket for sparse profiles.</div>
+        <div class="title">Search Pipeline (Unified + Rerank)</div>
+        <div class="desc">FTS (Portuguese) + pgvector recall (K≈200) → Together Rerank → composite (skill/conf/vec/exp); optional low‑depth bucket.</div>
       </div>
       <div class="box plan">
         <div class="status">planned</div>
@@ -205,7 +205,7 @@
     </div>
   </div>
 
-  <div class="flow">End‑to‑end flow: Inputs <span class="arrow">→</span> Qwen (Stage 1 single‑pass) <span class="arrow">→</span> Firestore + Embeddings <span class="arrow">→</span> APIs/Search <span class="arrow">→</span> UI</div>
+  <div class="flow">End‑to‑end flow (São Paulo): Inputs <span class="arrow">→</span> Qwen (Together) <span class="arrow">→</span> Firestore + Gemini Embeddings (pgvector) <span class="arrow">→</span> FTS+ANN → Rerank → UI</div>
 
   <div class="notes">
     <div class="panel">
@@ -222,8 +222,8 @@
     <div class="panel">
       <h3>Next Actions</h3>
       <ul>
-        <li>Implement real Vertex client in Vector ANN service; add Dockerfile + deploy.</li>
-        <li>Wire ANN service to pgvector; fetch profiles and re‑rank with structured signals.</li>
+        <li>Implement Gemini Embeddings client (São Paulo) in vector pipeline; add Dockerfile + deploy.</li>
+        <li>Wire ANN service to pgvector; fetch profiles and apply Together Rerank + structured signals.</li>
         <li>Harden JSON repair/validation (target &lt;1% repair/quarantine on 50‑candidate batch).</li>
         <li>SPA integration with ANN service; graceful error handling for service downtime.</li>
         <li>Docs: finalize deploy/runbooks and update diagrams for pgvector path.</li>
@@ -235,7 +235,7 @@
     <div class="panel">
       <h3>Scoring Model (Unified Search)</h3>
       <ul>
-        <li>Composite: combine skill_match, analysis_confidence, vector_similarity, and experience; weights tuned via evaluation.</li>
+        <li>Composite: combine skill_match, analysis_confidence, vector_similarity, experience, and Rerank score; weights tuned via evaluation.</li>
         <li>Demotion: apply analysis_confidence demotion; raise floor when deterministic matches exist.</li>
         <li>Explainability: return top skills with confidence, rationale bullets, and summary.</li>
       </ul>
@@ -245,7 +245,9 @@
       <ul>
         <li>No mock fallbacks in prod/staging; errors are surfaced to clients.</li>
         <li><code>TOGETHER_MODEL_STAGE1</code>: default <code>Qwen/Qwen2.5-32B-Instruct</code>.</li>
-        <li><code>EMBEDDING_PROVIDER</code>: <code>vertex</code> (prod) or <code>local</code> (dev‑only deterministic).</li>
+        <li><code>EMBEDDING_PROVIDER</code>: <code>gemini</code> (São Paulo default), <code>vertex</code> (fallback), or <code>local</code> (dev only).</li>
+        <li><code>GEMINI_REGION</code>: <code>southamerica-east1</code>.</li>
+        <li><code>RERANK_PROVIDER</code>: <code>together</code>.</li>
         <li><code>ENABLE_GEMINI</code>: default <code>false</code>; enrichment path errors when disabled.</li>
         <li><code>USE_PGVECTOR</code>: toggles pgvector path for embeddings and ANN.</li>
       </ul>

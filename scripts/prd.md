@@ -1,4 +1,7 @@
 <context>
+<deprecated>
+This document is deprecated. Use `.taskmaster/docs/prd.txt` as the authoritative PRD (Brazil-first, Gemini embeddings in southamerica-east1, Together rerank).
+</deprecated>
 # Overview  
 Headhunter v1.1 transforms Ella Executive Search's historical candidate database into an intelligent, semantic search engine. It solves the inefficiency and blind spots of keyword-based ATS queries by deeply analyzing each candidate's experience, leadership scope, and cultural signals, then matching them contextually to new role descriptions. Primary users are recruiters who need to build qualified long-lists in under 30 minutes while improving search quality and unlocking the strategic value of proprietary candidate data.
 

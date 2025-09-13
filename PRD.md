@@ -1,3 +1,7 @@
+# [DEPRECATED] Headhunter PRD (use .taskmaster/docs/prd.txt)
+
+This file contains legacy content. The single source of truth is now `.taskmaster/docs/prd.txt` (Brazil-first, Gemini embeddings, Together rerank). Update and planning should reference that file.
+
 # Headhunter v2.0 - AI-Powered Recruitment Analytics Platform
 
 Note: This document contains legacy content from earlier iterations. The authoritative PRD is maintained at `.taskmaster/docs/prd.txt` and reflects the current single-pass Qwen 2.5 32B architecture, unified search pipeline, and the “no mock fallbacks” policy.
