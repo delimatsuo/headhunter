@@ -40,6 +40,11 @@ class Config:
         self.retry_max_attempts = int(os.getenv("RETRY_MAX_ATTEMPTS", "3"))
         self.retry_base_delay = float(os.getenv("RETRY_BASE_DELAY", "1.0"))
         
+        # Region and providers per PRD
+        self.region = os.getenv("REGION", "us-central1")
+        self.embedding_provider = os.getenv("EMBEDDING_PROVIDER", "gemini").lower()
+        self.rerank_provider = os.getenv("RERANK_PROVIDER", "together").lower()
+
         # Monitoring configuration
         self.log_level = os.getenv("LOG_LEVEL", "INFO")
         self.metrics_enabled = os.getenv("METRICS_ENABLED", "true").lower() == "true"
@@ -59,22 +64,11 @@ class Config:
         return value
     
     def _get_together_ai_key(self) -> str:
-        """Get Together AI API key from environment or Secret Manager"""
-        # First try environment variable
+        """Get Together AI API key strictly from environment (PRD policy)."""
         api_key = os.getenv("TOGETHER_API_KEY")
-        if api_key:
-            return api_key
-        
-        # Try to get from Secret Manager
-        try:
-            from google.cloud import secretmanager
-            client = secretmanager.SecretManagerServiceClient()
-            project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "headhunter-ai-0088")
-            secret_name = f"projects/{project_id}/secrets/together-ai-credentials/versions/latest"
-            response = client.access_secret_version(request={"name": secret_name})
-            return response.payload.data.decode("UTF-8")
-        except Exception as e:
-            raise ValueError(f"Could not retrieve Together AI API key from environment or Secret Manager: {e}")
+        if not api_key:
+            raise ValueError("TOGETHER_API_KEY is required in environment")
+        return api_key
     
     def validate(self):
         """Validate configuration"""
@@ -89,6 +83,19 @@ class Config:
         
         if self.processing_timeout <= 0:
             errors.append("PROCESSING_TIMEOUT must be positive")
+
+        # Region enforcement (US region only)
+        if self.region != "us-central1":
+            errors.append("REGION must be 'us-central1'")
+
+        # Embedding provider policy: default gemini; allowed vertex, local (dev)
+        allowed_embedding = {"gemini", "vertex", "local"}
+        if self.embedding_provider not in allowed_embedding:
+            errors.append("EMBEDDING_PROVIDER must be one of: gemini, vertex, local")
+
+        # Rerank provider policy: together
+        if self.rerank_provider != "together":
+            errors.append("RERANK_PROVIDER must be 'together'")
         
         if errors:
             raise ValueError(f"Configuration validation failed: {'; '.join(errors)}")
@@ -106,5 +113,8 @@ class Config:
             "max_concurrent_processes": self.max_concurrent_processes,
             "processing_timeout": self.processing_timeout,
             "log_level": self.log_level,
-            "metrics_enabled": self.metrics_enabled
+            "metrics_enabled": self.metrics_enabled,
+            "region": self.region,
+            "embedding_provider": self.embedding_provider,
+            "rerank_provider": self.rerank_provider,
         }

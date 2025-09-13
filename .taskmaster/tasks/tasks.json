@@ -2,418 +2,842 @@
   "master": {
     "tasks": [
       {
-        "id": 54,
-        "title": "Setup Together AI Integration and Cloud Infrastructure",
-        "description": "Configure Together AI API access, set up GCP project infrastructure in us-central1 region, and establish Firebase/Firestore foundation",
-        "details": "Set up GCP project 'headhunter-ai-0088' in us-central1 region. Configure Together AI API key (TOGETHER_API_KEY) and default model (TOGETHER_MODEL_STAGE1=Qwen 2.5 32B Instruct). Enable Firestore, Cloud Storage, Cloud Functions, and Firebase Hosting. Create service accounts with appropriate IAM roles. Set up Cloud Storage buckets for raw-csv, raw-json, and profiles. Configure Firebase Authentication with Google Sign-In restricted to Ella employees.",
-        "testStrategy": "Verify API connectivity to Together AI, test Firestore read/write operations, validate Cloud Storage bucket access, confirm Firebase Auth configuration with test user accounts",
+        "id": 66,
+        "title": "Setup Together AI Integration and Environment Configuration",
+        "description": "Configure Together AI API access with Qwen 2.5 32B model and set up required environment variables for cloud processing pipeline",
+        "details": "Set up TOGETHER_API_KEY environment variable and configure TOGETHER_MODEL_STAGE1 to use Qwen 2.5 32B Instruct. Implement async HTTP client using aiohttp for Together AI chat completions API (https://api.together.xyz/v1/chat/completions). Create configuration validation to ensure API connectivity and model availability. Set up rate limiting and circuit breaker patterns for API reliability. Configure us-central1 region for all GCP resources.",
+        "testStrategy": "Unit tests for API configuration validation, integration tests for Together AI connectivity, mock API responses for development testing, verify rate limiting and error handling with actual API calls",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
-            "title": "Configure GCP Project and Enable Required Services",
-            "description": "Set up GCP project 'headhunter-ai-0088' in us-central1 region and enable all required services including Firestore, Cloud Storage, Cloud Functions, Firebase Hosting, and Cloud SQL",
+            "title": "Configure Environment Variables and API Key Validation",
+            "description": "Set up TOGETHER_API_KEY environment variable and TOGETHER_MODEL_STAGE1 configuration with validation logic to ensure proper API access",
             "dependencies": [],
-            "details": "Create GCP project with ID 'headhunter-ai-0088' and set default region to us-central1. Enable the following APIs: Firestore API, Cloud Storage API, Cloud Functions API, Firebase Hosting API, Cloud SQL API, IAM API, and Resource Manager API. Configure billing and set up basic project settings.",
-            "status": "pending",
+            "details": "Create environment configuration module to handle TOGETHER_API_KEY setup and TOGETHER_MODEL_STAGE1 configuration for Qwen 2.5 32B Instruct model. Implement validation functions to verify API key format and accessibility. Add configuration loading with proper error handling for missing or invalid environment variables. Include secure key management practices and validation logging.\n<info added on 2025-09-13T20:19:23.512Z>\nTDD Progress Update: Successfully implemented comprehensive environment configuration validation with focused test coverage (9/9 tests passing in tests/test_env_config.py). Key validations now enforce REGION restriction to us-central1, EMBEDDING_PROVIDER allowlist (gemini default, vertex/local options), RERANK_PROVIDER policy requiring together, and strict TOGETHER_API_KEY requirement in non-test environments. Configuration module (cloud_run_worker/config.py) enhanced with region/provider fields, validate() method enforcement, and to_dict() exposure. Simplified API key retrieval to directly require TOGETHER_API_KEY without Secret Manager fallback per PRD specifications. Next development phase: implement Together client connectivity health-check unit tests and rate limiter/circuit breaker behavior validation using aiohttp mocks.\n</info added on 2025-09-13T20:19:23.512Z>",
+            "status": "done",
             "testStrategy": ""
           },
           {
             "id": 2,
-            "title": "Set up Together AI API Integration and Environment Variables",
-            "description": "Configure Together AI API access with proper authentication and set up environment variables for API key and model configuration",
+            "title": "Implement Async HTTP Client with Rate Limiting and Circuit Breaker",
+            "description": "Create async HTTP client using aiohttp for Together AI API with rate limiting and circuit breaker patterns for reliability",
             "dependencies": [
-              "54.1"
+              "66.1"
             ],
-            "details": "Configure TOGETHER_API_KEY environment variable for API authentication. Set TOGETHER_MODEL_STAGE1 to 'Qwen 2.5 32B Instruct' as the default model. Test API connectivity and validate that existing Together AI integration patterns in scripts/together_ai_processor.py work with the configured credentials.",
+            "details": "Implement async HTTP client using aiohttp for Together AI chat completions API (https://api.together.xyz/v1/chat/completions). Add rate limiting mechanism to respect API limits and prevent throttling. Implement circuit breaker pattern for handling API failures gracefully. Include retry logic with exponential backoff, timeout handling, and proper error classification for transient vs permanent failures.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 3,
-            "title": "Configure Firebase/Firestore with IAM Roles and Service Accounts",
-            "description": "Set up Firebase project, initialize Firestore database, and create service accounts with appropriate IAM roles for secure access",
+            "title": "Create Configuration Validation Module with Connectivity Tests",
+            "description": "Build validation module to test API connectivity, model availability, and overall system configuration health",
             "dependencies": [
-              "54.1"
+              "66.2"
             ],
-            "details": "Initialize Firebase project linked to GCP project. Set up Firestore in native mode with appropriate security rules. Create service accounts for different components (Cloud Run, Cloud Functions) with minimal required permissions. Configure IAM roles including Firestore User, Storage Object Admin, and Cloud Functions Invoker as needed.",
+            "details": "Create comprehensive configuration validation module that tests Together AI API connectivity and Qwen 2.5 32B model availability. Implement health check functions that verify API endpoints, authentication, and model access. Add validation tests for configuration completeness and correctness. Include diagnostic logging and error reporting for configuration issues.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 4,
-            "title": "Create GCS Buckets with Encryption Settings",
-            "description": "Set up Google Cloud Storage buckets for raw-csv, raw-json, and profiles with proper encryption and access controls",
+            "title": "Configure GCP Region Settings for us-central1",
+            "description": "Set up GCP region configuration to ensure all resources are deployed in us-central1 region consistently",
             "dependencies": [
-              "54.1",
-              "54.3"
+              "66.1"
             ],
-            "details": "Create three GCS buckets: 'raw-csv', 'raw-json', and 'profiles' in us-central1 region. Enable default encryption using Google-managed keys. Configure bucket-level IAM policies for secure access. Set up lifecycle policies for data retention and cost optimization. Ensure buckets are properly configured for the resume storage pipeline.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Setup Firebase Authentication with Google Sign-In for Ella Employees",
-            "description": "Configure Firebase Authentication with Google Sign-In provider and implement domain restriction for Ella employees only",
-            "dependencies": [
-              "54.3"
-            ],
-            "details": "Enable Firebase Authentication and configure Google Sign-In provider. Implement domain restriction to allow only Ella employee email addresses (configure allowed domains). Set up authentication rules and security policies. Create initial admin user accounts for testing. Configure authentication flow and ensure proper integration with the application architecture.",
+            "details": "Configure GCP region settings to use us-central1 across all services and resources. Update configuration files and environment variables to enforce regional consistency. Implement region validation checks to ensure all GCP resources are created in the correct region. Add configuration management for regional settings that can be easily maintained and updated.",
             "status": "pending",
             "testStrategy": ""
           }
         ]
       },
       {
-        "id": 55,
-        "title": "Implement Cloud Run Candidate Enricher with Together AI",
-        "description": "Build Python async processor using Together AI Qwen 2.5 32B for single-pass candidate enrichment with structured JSON output",
-        "details": "Create Cloud Run service 'candidate-enricher' using Python 3.10+ with aiohttp. Implement single-pass enrichment calling Together AI chat completions API with PII-minimizing prompts. Generate structured JSON including: personal_details, education_analysis, experience_analysis, technical_assessment, market_insights, cultural_assessment, executive_summary, skill_inference (explicit_skills 100%, inferred_skills with confidence 0-100 and evidence), analysis_confidence [0,1], processing_metadata. Include retry logic, circuit breakers, and rate limiting. Stream results directly to Firestore candidates collection.",
-        "testStrategy": "Unit tests for JSON schema validation, integration tests with Together AI API, test error handling and retry mechanisms, validate structured output format matches expected schema",
+        "id": 67,
+        "title": "Implement PostgreSQL with pgvector Setup and Schema",
+        "description": "Set up PostgreSQL database with pgvector extension for hybrid search combining vector similarity and full-text search capabilities",
+        "details": "Provision Cloud SQL PostgreSQL instance in us-central1 with pgvector extension enabled. Create schema with candidate_embeddings table supporting HNSW indexing for cosine similarity search. Implement Portuguese FTS configuration for text search. Set up hybrid search infrastructure combining pgvector (HNSW/cosine) with PostgreSQL FTS. Create connection pooling and query optimization for p95 ≤ 1.2s performance requirement. Include compliance fields (legal_basis, consent_record, transfer_mechanism).",
+        "testStrategy": "Database connectivity tests, pgvector extension verification, HNSW index performance tests, FTS configuration validation for Portuguese text, hybrid search query performance benchmarks",
         "priority": "high",
         "dependencies": [
-          54
+          66
         ],
         "status": "pending",
         "subtasks": [
           {
             "id": 1,
-            "title": "Adapt Together AI Processor for Cloud Run with FastAPI",
-            "description": "Convert existing together_ai_processor.py to Cloud Run service using FastAPI framework with async request handling",
+            "title": "Provision Cloud SQL PostgreSQL Instance with pgvector Extension",
+            "description": "Set up Cloud SQL PostgreSQL instance in us-central1 region with pgvector extension enabled for vector similarity search capabilities",
             "dependencies": [],
-            "details": "Create FastAPI application structure with health check endpoint. Adapt existing Together AI client code for Cloud Run environment. Implement async request handlers for candidate enrichment. Configure proper logging and environment variable handling. Set up Docker containerization with Python 3.10+ base image. Include proper error handling for Cloud Run deployment.",
+            "details": "Create Cloud SQL PostgreSQL instance with appropriate machine type and storage configuration. Enable pgvector extension through database flags or manual installation. Configure network access, SSL certificates, and backup policies. Set up database users and permissions for application access.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 2,
-            "title": "Implement Structured JSON Schema Validation",
-            "description": "Create comprehensive JSON schema validation for enriched candidate output using existing validation patterns",
+            "title": "Create Database Schema with candidate_embeddings Table and HNSW Indexing",
+            "description": "Design and implement database schema with candidate_embeddings table optimized for vector similarity search using HNSW indexing",
             "dependencies": [
-              "55.1"
+              "67.1"
             ],
-            "details": "Define Pydantic models for structured output including personal_details, education_analysis, experience_analysis, technical_assessment, market_insights, cultural_assessment, executive_summary, and processing_metadata. Implement schema validation with detailed error reporting. Add automatic JSON repair mechanisms for common formatting issues. Include validation for required fields and data types.",
+            "details": "Create candidate_embeddings table with vector column for embeddings storage. Implement HNSW index configuration for cosine similarity search optimization. Define primary keys, foreign key relationships, and appropriate data types. Create migration scripts for schema deployment and version control.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 3,
-            "title": "Add API Resilience with Retry Logic and Circuit Breakers",
-            "description": "Implement robust error handling, retry mechanisms, and circuit breakers for Together AI API calls",
+            "title": "Configure Portuguese Full-Text Search (FTS) Configuration",
+            "description": "Set up PostgreSQL full-text search configuration optimized for Portuguese language text processing and search capabilities",
             "dependencies": [
-              "55.1"
+              "67.2"
             ],
-            "details": "Add exponential backoff retry logic for API failures. Implement circuit breaker pattern to prevent cascade failures. Add rate limiting to respect Together AI API limits. Include timeout handling and connection pooling. Add comprehensive logging for API interactions and failures. Implement graceful degradation strategies.",
+            "details": "Configure Portuguese text search configuration with appropriate dictionaries and stemming rules. Create GIN indexes for full-text search columns. Set up text search vectors and ranking functions. Test search accuracy with Portuguese text samples and optimize search performance.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 4,
-            "title": "Implement Skill Inference with Confidence Scoring",
-            "description": "Build skill inference logic with confidence scoring using patterns from intelligent_skill_processor.py",
+            "title": "Implement Connection Pooling with asyncpg",
+            "description": "Set up database connection pooling using asyncpg for optimal performance and resource management",
             "dependencies": [
-              "55.2"
+              "67.1"
             ],
-            "details": "Implement explicit skills extraction with 100% confidence. Add inferred skills detection with confidence scoring (0-100) and evidence tracking. Create skill categorization and normalization logic. Include technical skill assessment and soft skill inference. Add skill gap analysis and market relevance scoring. Ensure structured output matches schema requirements.",
+            "details": "Configure asyncpg connection pool with appropriate pool size, timeout settings, and connection lifecycle management. Implement connection health checks and automatic reconnection logic. Set up connection monitoring and metrics collection. Create database service layer with proper error handling and retry mechanisms.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 5,
-            "title": "Stream Results to Firestore Using Existing Patterns",
-            "description": "Implement Firestore streaming using existing firestore_streamer.py patterns for candidate data persistence",
+            "title": "Add Compliance Fields to Database Schema",
+            "description": "Extend database schema with GDPR compliance fields including legal_basis, consent_record, and transfer_mechanism",
             "dependencies": [
-              "55.2",
-              "55.4"
+              "67.2"
             ],
-            "details": "Adapt existing firestore_streamer.py for candidate enrichment results. Implement batch writing for efficient Firestore operations. Add document validation before writing. Include error handling for Firestore write failures. Add transaction support for atomic updates. Implement proper indexing strategy for query performance.",
+            "details": "Add compliance fields (legal_basis, consent_record, transfer_mechanism) to candidate_embeddings and related tables. Create appropriate constraints, default values, and validation rules. Implement audit trail columns for tracking data processing activities. Update migration scripts to include compliance field additions.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 6,
-            "title": "Add Processing Metadata and Monitoring",
-            "description": "Implement comprehensive processing metadata tracking and monitoring capabilities for the enrichment service",
+            "title": "Performance Testing and Optimization for p95 ≤ 1.2s Requirement",
+            "description": "Conduct comprehensive performance testing and optimization to meet p95 ≤ 1.2s query response time requirement",
             "dependencies": [
-              "55.3",
-              "55.5"
+              "67.2",
+              "67.3",
+              "67.4"
             ],
-            "details": "Add processing_metadata including timestamps, API response times, confidence scores, and processing status. Implement health check endpoints for Cloud Run monitoring. Add metrics collection for processing success rates, error rates, and performance. Include structured logging for debugging and audit trails. Add alerting for critical failures and performance degradation.",
+            "details": "Create performance test suite for hybrid search queries combining vector similarity and full-text search. Benchmark HNSW index performance with various vector dimensions and dataset sizes. Optimize query execution plans and index configurations. Monitor and tune connection pool settings, query caching, and database parameters to achieve p95 ≤ 1.2s performance target.",
             "status": "pending",
             "testStrategy": ""
           }
         ]
       },
       {
-        "id": 56,
-        "title": "Setup Postgres with pgvector for Hybrid Search",
-        "description": "Provision Cloud SQL Postgres instance with pgvector extension and implement hybrid search combining vector similarity and PostgreSQL FTS",
-        "details": "Create Cloud SQL Postgres instance in us-central1 with pgvector extension enabled. Design schema for candidate_embeddings table with HNSW index for cosine similarity. Implement PostgreSQL Full-Text Search for Portuguese language support. Create hybrid search service that combines pgvector similarity search with FTS, implements score fusion, and supports Together AI reranking on top-K≈200 results to return top-20. Include connection pooling and query optimization.",
-        "testStrategy": "Test pgvector installation and HNSW index creation, validate FTS configuration for Portuguese, benchmark hybrid search performance, test score fusion algorithms",
+        "id": 68,
+        "title": "Develop Single-Pass Candidate Enrichment Processor",
+        "description": "Create Python processor using Together AI Qwen 2.5 32B for single-pass candidate profile enrichment with PII-minimizing prompts",
+        "details": "Implement intelligent_skill_processor.py with async processing using aiohttp. Create PII-minimizing prompts for candidate analysis returning structured JSON with personal_details, education_analysis, experience_analysis, technical_assessment, market_insights, cultural_assessment, executive_summary, and skill_inference with confidence scores and evidence. Include analysis_confidence scoring and quality_flags. Implement robust JSON parsing with schema validation, retry logic, and auto-repair capabilities targeting <1% quarantine rate. Add processing_metadata tracking.",
+        "testStrategy": "Unit tests for prompt generation, JSON schema validation tests, integration tests with Together AI API, performance tests for single-pass processing, validation of PII minimization in prompts",
         "priority": "high",
         "dependencies": [
-          54
+          66
         ],
         "status": "pending",
         "subtasks": [
           {
             "id": 1,
-            "title": "Provision Cloud SQL Postgres Instance",
-            "description": "Create and configure Cloud SQL Postgres instance in us-central1 region with appropriate machine type and storage settings",
+            "title": "Create PII-Minimizing Prompt Templates for Together AI",
+            "description": "Design and implement prompt templates that minimize personally identifiable information while maintaining analysis quality for candidate enrichment",
             "dependencies": [],
-            "details": "Provision Cloud SQL Postgres instance in us-central1 with sufficient resources for vector operations. Configure network settings, backup policies, and maintenance windows. Enable necessary flags for pgvector extension support.",
+            "details": "Create prompt templates for Together AI Qwen 2.5 32B that focus on skills, experience patterns, and qualifications while avoiding direct PII references. Implement templates for personal_details, education_analysis, experience_analysis, technical_assessment, market_insights, cultural_assessment, and executive_summary sections. Ensure prompts guide the model to return structured JSON responses with confidence scores and evidence extraction.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 2,
-            "title": "Install pgvector Extension and Create Schema",
-            "description": "Install pgvector extension on the Postgres instance and execute schema creation scripts",
+            "title": "Implement Async Processing Pipeline with aiohttp",
+            "description": "Build asynchronous processing pipeline using aiohttp for efficient API calls to Together AI",
             "dependencies": [
-              "56.1"
+              "68.1"
             ],
-            "details": "Install pgvector extension on the provisioned Postgres instance. Execute scripts/pgvector_schema.sql to create the database schema. Verify extension installation and schema creation success.",
+            "details": "Implement async HTTP client using aiohttp for Together AI chat completions API calls. Create connection pooling, timeout handling, and concurrent request management. Integrate with existing intelligent_skill_processor.py structure and ensure proper async/await patterns throughout the processing pipeline. Include rate limiting and circuit breaker patterns for API reliability.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 3,
-            "title": "Design and Create candidate_embeddings Table with HNSW Index",
-            "description": "Create the candidate_embeddings table with proper vector columns and HNSW index for cosine similarity",
+            "title": "Build JSON Schema Validation and Auto-Repair System",
+            "description": "Implement robust JSON parsing with schema validation, retry logic, and auto-repair capabilities to achieve <1% quarantine rate",
             "dependencies": [
-              "56.2"
+              "68.2"
             ],
-            "details": "Design candidate_embeddings table schema with vector columns for embeddings. Create HNSW index optimized for cosine similarity searches. Configure index parameters for optimal performance with expected data volume.",
+            "details": "Create comprehensive JSON schema validation for all response sections (personal_details, education_analysis, experience_analysis, technical_assessment, market_insights, cultural_assessment, executive_summary, skill_inference). Implement auto-repair logic for common JSON formatting issues, retry mechanisms for failed parsing, and fallback strategies. Target <1% quarantine rate through intelligent error recovery and response cleaning.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 4,
-            "title": "Implement PostgreSQL Full-Text Search for Portuguese",
-            "description": "Configure PostgreSQL FTS with Portuguese language support and create necessary text search configurations",
+            "title": "Add Skill Inference Engine with Confidence Scoring",
+            "description": "Implement skill inference capabilities with confidence scoring and evidence extraction for comprehensive candidate assessment",
             "dependencies": [
-              "56.2"
+              "68.3"
             ],
-            "details": "Configure PostgreSQL Full-Text Search with Portuguese language dictionary and stemming. Create text search configurations, indexes, and functions to support Portuguese text search on candidate data.",
+            "details": "Build skill inference engine that analyzes candidate profiles and extracts technical and soft skills with confidence scores. Implement evidence extraction to support skill assessments with specific examples from candidate data. Include analysis_confidence scoring system and quality_flags for assessment reliability. Integrate with existing skill taxonomy and ensure structured output format.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 5,
-            "title": "Create Hybrid Search Service",
-            "description": "Implement Python service that combines pgvector similarity search with PostgreSQL FTS",
+            "title": "Implement Processing Metadata Tracking and Quality Flags",
+            "description": "Add comprehensive processing metadata tracking and quality assessment flags for monitoring and debugging",
             "dependencies": [
-              "56.3",
-              "56.4"
+              "68.4"
             ],
-            "details": "Build Python service that performs both vector similarity search using pgvector and full-text search using PostgreSQL FTS. Implement query logic to execute both search types and combine results effectively.",
+            "details": "Implement processing_metadata tracking system that captures processing timestamps, API response times, retry attempts, confidence scores, and quality metrics. Add quality_flags system for identifying potential issues in processed data. Create logging and monitoring capabilities for tracking processing success rates, performance metrics, and error patterns. Ensure metadata supports debugging and quality assurance processes.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 69,
+        "title": "Implement Gemini Embeddings with Pluggable Provider Architecture",
+        "description": "Set up embedding generation using Gemini Embeddings as default with Vertex AI as fallback, maintaining provider pluggability",
+        "details": "Create VectorSearchService with pluggable embedding providers (gemini|vertex|local via EMBEDDING_PROVIDER env). Implement Gemini Embeddings as primary provider with automatic fallback to Vertex AI text-embedding-004. Generate embeddings from enriched candidate profiles and store in candidate_embeddings collection in PostgreSQL. Ensure deterministic fallback for development environments. Create embedding generation pipeline that processes enriched profiles and updates pgvector indexes.",
+        "testStrategy": "Provider switching tests, embedding generation validation, fallback mechanism testing, performance benchmarks for different providers, vector similarity accuracy tests",
+        "priority": "medium",
+        "dependencies": [
+          67,
+          68
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Extend Pluggable Provider Interface for Gemini Support",
+            "description": "Enhance the existing embedding provider interface to support Gemini Embeddings alongside current vertex and local providers",
+            "dependencies": [],
+            "details": "Modify embedding-provider.ts interface to include Gemini provider type. Update EMBEDDING_PROVIDER environment variable validation to accept 'gemini' option. Ensure provider interface supports Gemini-specific configuration parameters and authentication methods. Update provider factory pattern to instantiate Gemini provider when selected.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Gemini Embeddings Provider",
+            "description": "Create Gemini Embeddings provider implementation as the primary embedding generation option",
+            "dependencies": [
+              "69.1"
+            ],
+            "details": "Implement GeminiEmbeddingProvider class following the established provider interface. Configure Gemini API authentication and endpoint connections. Implement text embedding generation using Gemini's embedding models. Add proper error handling and response validation. Ensure compatibility with existing embedding pipeline and vector dimensions expected by pgvector storage.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Configure Automatic Fallback to Vertex AI",
+            "description": "Implement deterministic fallback mechanism from Gemini to Vertex AI text-embedding-004 when primary provider fails",
+            "dependencies": [
+              "69.2"
+            ],
+            "details": "Create fallback logic that automatically switches to Vertex AI text-embedding-004 when Gemini provider encounters errors or timeouts. Implement deterministic fallback behavior for development environments to ensure consistent testing. Add logging and monitoring for fallback events. Ensure seamless transition between providers without data loss or processing interruption. Configure retry policies and circuit breaker patterns.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Create Embedding Generation Pipeline with pgvector Integration",
+            "description": "Build complete embedding generation pipeline that processes enriched candidate profiles and updates pgvector indexes",
+            "dependencies": [
+              "69.3"
+            ],
+            "details": "Create embedding generation pipeline that reads enriched candidate profiles and generates embeddings using the configured provider (Gemini with Vertex fallback). Implement batch processing for efficient embedding generation. Store generated embeddings in candidate_embeddings PostgreSQL collection with proper pgvector formatting. Update HNSW indexes for optimal vector similarity search performance. Add pipeline monitoring and error handling for production reliability.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 70,
+        "title": "Build Hybrid Search with Together Rerank Integration",
+        "description": "Implement hybrid search combining pgvector similarity search with PostgreSQL FTS and Together AI reranking for top-K results",
+        "details": "Create search API that performs pgvector HNSW cosine similarity search combined with PostgreSQL FTS for Portuguese text. Implement score fusion algorithm for hybrid results. Integrate Together AI reranking service to rerank top-K≈200 results down to top-20. Ensure rerank latency ≤350ms @K≤200. Include explainability evidence per skill match for 'Why match' bullets. Support both English and Portuguese job descriptions. Implement composite scoring with skill_match, confidence, vector_similarity, and experience factors.",
+        "testStrategy": "Hybrid search accuracy tests, reranking performance benchmarks, latency validation for p95 ≤ 1.2s requirement, Portuguese FTS functionality tests, explainability evidence validation",
+        "priority": "high",
+        "dependencies": [
+          67,
+          69
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement pgvector HNSW cosine similarity search",
+            "description": "Set up pgvector extension with HNSW indexing for efficient cosine similarity search on candidate embeddings",
+            "dependencies": [],
+            "details": "Configure pgvector extension in PostgreSQL database. Create HNSW index on candidate embedding vectors for cosine similarity search. Implement search query functions with configurable similarity thresholds and result limits. Optimize index parameters (m, ef_construction) for performance. Add database migration scripts for pgvector setup and index creation.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Configure PostgreSQL FTS for Portuguese text search",
+            "description": "Set up PostgreSQL Full Text Search with Portuguese language configuration for job description and candidate profile text search",
+            "dependencies": [],
+            "details": "Configure PostgreSQL FTS with Portuguese text search configuration (portuguese). Create GIN indexes on tsvector columns for job descriptions and candidate profiles. Implement text preprocessing for Portuguese stemming and stop words. Add search ranking functions using ts_rank_cd. Create database schema updates for FTS columns and indexes.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Create score fusion algorithm for hybrid results",
+            "description": "Implement algorithm to combine and normalize scores from pgvector similarity search and PostgreSQL FTS results",
+            "dependencies": [
+              "70.1",
+              "70.2"
+            ],
+            "details": "Develop score fusion algorithm using weighted combination of vector similarity scores and FTS ranking scores. Implement score normalization to ensure comparable ranges between different search methods. Create configurable weight parameters for vector vs text search importance. Add result deduplication logic for candidates appearing in both search results. Implement top-K candidate selection from fused results.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Integrate Together AI reranking API for top-K results",
+            "description": "Implement Together AI API integration to rerank top-K≈200 hybrid search results down to top-20 with ≤350ms latency",
+            "dependencies": [
+              "70.3"
+            ],
+            "details": "Integrate Together AI reranking service using Qwen 2.5 32B model. Implement async API calls with proper error handling and timeout controls. Create reranking prompt templates for job-candidate matching context. Add latency monitoring to ensure ≤350ms rerank performance. Implement fallback mechanism when reranking service is unavailable. Add rate limiting and circuit breaker patterns for API reliability.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Build explainability system for skill match evidence",
+            "description": "Create system to generate 'Why match' evidence bullets explaining skill matches between candidates and job requirements",
+            "dependencies": [
+              "70.4"
+            ],
+            "details": "Implement skill extraction and matching logic for both candidates and job descriptions. Create evidence generation system that identifies specific skill overlaps and experience relevance. Build explanation templates for different match types (exact skill match, related experience, domain expertise). Add confidence scoring for each explanation. Support both English and Portuguese explanation generation.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 6,
-            "title": "Implement Score Fusion and Together AI Reranking",
-            "description": "Develop score fusion algorithm and integrate Together AI reranking for top-K results",
+            "title": "Implement composite scoring with multiple factors",
+            "description": "Create comprehensive scoring system combining skill_match, confidence, vector_similarity, and experience factors",
             "dependencies": [
-              "56.5"
+              "70.5"
             ],
-            "details": "Implement score fusion algorithm to combine vector similarity and FTS scores. Integrate Together AI reranking on top-K≈200 results to return top-20. Optimize fusion weights and reranking parameters for best results.",
+            "details": "Implement composite scoring algorithm incorporating skill_match score, confidence level, vector_similarity score, and experience relevance factors. Create configurable weight parameters for each scoring component. Add normalization logic to ensure consistent score ranges. Implement score explanation breakdown for transparency. Add A/B testing framework for score weight optimization.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 7,
-            "title": "Add Connection Pooling and Query Optimization",
-            "description": "Implement database connection pooling and optimize queries for performance",
+            "title": "Performance optimization for p95 ≤ 1.2s with rerank ≤350ms",
+            "description": "Optimize hybrid search performance to meet p95 ≤ 1.2s total latency and ≤350ms reranking latency requirements",
             "dependencies": [
-              "56.6"
+              "70.6"
             ],
-            "details": "Add connection pooling using appropriate Python library (e.g., asyncpg pool). Optimize database queries for hybrid search performance. Implement query caching where appropriate and add monitoring for query performance metrics.",
+            "details": "Implement performance monitoring and optimization for hybrid search pipeline. Add database query optimization with proper indexing strategies. Implement parallel processing for vector and FTS searches. Add caching layers for frequently accessed data. Create performance benchmarking suite and load testing framework. Implement latency monitoring with alerts for SLA violations. Optimize Together AI API calls with request batching and connection pooling.",
             "status": "pending",
             "testStrategy": ""
           }
         ]
       },
       {
-        "id": 57,
-        "title": "Implement Vertex AI Embeddings Generation Service",
-        "description": "Create embeddings generation service using Vertex AI text-embedding-004 with pluggable provider architecture for future migration",
-        "details": "Implement VectorSearchService using Vertex AI text-embedding-004 (768-dim, cosine) in us-central1. Create pluggable provider architecture with environment variable EMBEDDING_PROVIDER supporting vertex|together|local. Generate embeddings from enriched candidate profiles and store in candidate_embeddings table. Implement batch processing for efficient embedding generation. Include fallback mechanisms and error handling for API failures.",
-        "testStrategy": "Test embedding generation with sample profiles, validate 768-dimension output, test provider switching mechanism, benchmark embedding generation performance and cost",
+        "id": 71,
+        "title": "Develop Cloud Run Enrichment Service with Pub/Sub Integration",
+        "description": "Create containerized Cloud Run service for scalable candidate enrichment processing with Pub/Sub orchestration",
+        "details": "Build Cloud Run candidate-enricher service in Python with aiohttp for processing Pub/Sub messages. Create candidate-process-requests topic for message queuing. Implement idempotent processing with upsert by candidate_id. Set up Cloud Scheduler for batch processing and nightly updates. Configure horizontal scaling and concurrency controls. Integrate with GCS for resume storage (encrypted with signed URLs) and Firestore for profile persistence. Include processing resilience with retry logic and dead letter queues.",
+        "testStrategy": "Container deployment tests, Pub/Sub message processing validation, idempotency testing, scaling behavior verification, error handling and retry logic tests",
         "priority": "medium",
         "dependencies": [
-          56
+          68
         ],
         "status": "pending",
         "subtasks": [
           {
             "id": 1,
-            "title": "Implement VectorSearchService with Vertex AI Integration",
-            "description": "Create the core VectorSearchService class with Vertex AI text-embedding-004 integration, configured for us-central1 region and 768-dimensional embeddings with cosine similarity",
+            "title": "Complete Dockerfile and Container Configuration",
+            "description": "Finalize the Dockerfile in cloud_run_worker/ directory with proper Python dependencies, environment setup, and container optimization for Cloud Run deployment",
             "dependencies": [],
-            "details": "Implement VectorSearchService class with Vertex AI client initialization, text-embedding-004 model configuration (768-dim, cosine), region setup for us-central1, and basic embedding generation methods. Include proper authentication and client configuration.",
+            "details": "Complete the existing Dockerfile with multi-stage build, install required dependencies (aiohttp, google-cloud-pubsub, google-cloud-firestore, google-cloud-storage), set proper environment variables, configure health checks, and optimize for Cloud Run with proper port configuration and startup commands",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 2,
-            "title": "Create Pluggable Provider Architecture",
-            "description": "Design and implement the provider abstraction layer with environment variable switching between vertex, together, and local embedding providers",
+            "title": "Implement Pub/Sub Message Handler Integration",
+            "description": "Complete the pubsub_handler.py to process messages from candidate-process-requests topic with proper message acknowledgment and error handling",
             "dependencies": [
-              "57.1"
+              "71.1"
             ],
-            "details": "Create abstract EmbeddingProvider interface and concrete implementations for VertexAIProvider, TogetherProvider, and LocalProvider. Implement provider factory with EMBEDDING_PROVIDER environment variable switching. Ensure consistent API across all providers.",
+            "details": "Enhance existing pubsub_handler.py to subscribe to candidate-process-requests topic, implement message parsing and validation, add proper message acknowledgment/nack logic, integrate with the enrichment processor from Task 68, and include structured logging for message processing events",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 3,
-            "title": "Implement Batch Processing System",
-            "description": "Build efficient batch processing capabilities for embedding generation to optimize API calls and reduce costs",
+            "title": "Add Idempotent Processing with Candidate ID Upsert",
+            "description": "Implement idempotency logic to prevent duplicate processing and ensure upsert operations by candidate_id in Firestore",
             "dependencies": [
-              "57.2"
+              "71.2"
             ],
-            "details": "Implement batch processing logic with configurable batch sizes, queue management for embedding requests, and efficient batching strategies. Include rate limiting and cost optimization features for API calls.",
+            "details": "Create idempotency mechanism using candidate_id as unique key, implement upsert logic for Firestore document updates, add processing state tracking to prevent duplicate enrichment, include timestamp-based freshness checks, and ensure atomic operations for data consistency",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 4,
-            "title": "Integrate pgvector Storage System",
-            "description": "Implement database integration to store generated embeddings in the candidate_embeddings table using pgvector",
+            "title": "Configure Horizontal Scaling and Concurrency Controls",
+            "description": "Set up Cloud Run service configuration for automatic scaling, concurrency limits, and resource allocation optimization",
             "dependencies": [
-              "57.3"
+              "71.3"
             ],
-            "details": "Create database schema for candidate_embeddings table with pgvector support, implement CRUD operations for embedding storage and retrieval, add indexing for efficient similarity search, and ensure proper data persistence.",
+            "details": "Configure Cloud Run service YAML with appropriate CPU/memory limits, set max instances and concurrency per instance, implement graceful shutdown handling, configure request timeout settings, and set up proper health check endpoints for scaling decisions",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 5,
-            "title": "Add Fallback Mechanisms and Error Handling",
-            "description": "Implement comprehensive error handling, retry logic, and fallback mechanisms for API failures and service disruptions",
+            "title": "Set Up Cloud Scheduler and Implement Retry/DLQ Logic",
+            "description": "Create Cloud Scheduler jobs for batch processing and implement comprehensive retry logic with dead letter queue handling",
             "dependencies": [
-              "57.4"
+              "71.4"
             ],
-            "details": "Add retry logic with exponential backoff, circuit breaker patterns for API failures, fallback provider switching, comprehensive error logging and monitoring, and graceful degradation strategies for service reliability.",
+            "details": "Set up Cloud Scheduler for nightly batch processing jobs, create dead letter queue topic for failed messages, implement exponential backoff retry logic, configure maximum retry attempts, add monitoring and alerting for DLQ messages, and create batch processing endpoints for scheduled operations",
             "status": "pending",
             "testStrategy": ""
           }
         ]
       },
       {
-        "id": 58,
-        "title": "Build Pub/Sub Orchestration and Batch Processing Pipeline",
-        "description": "Implement Pub/Sub messaging system for candidate processing orchestration with Cloud Scheduler for batch operations",
-        "details": "Create Pub/Sub topic 'candidate-process-requests' for processing coordination. Implement message handlers that trigger candidate enrichment workflow: GCS upload → Pub/Sub message → Cloud Run enricher → Firestore → embedding generation. Set up Cloud Scheduler for batch processing of initial 29k candidates and nightly reprocessing. Implement idempotency using candidate_id for upserts across Firestore and pgvector. Include dead letter queues and retry policies.",
-        "testStrategy": "Test message flow from GCS trigger to completion, validate idempotency with duplicate messages, test batch processing with sample dataset, verify scheduler configuration",
+        "id": 72,
+        "title": "Implement Firebase Authentication and Authorization System",
+        "description": "Set up Firebase Authentication with Google Sign-In and role-based access control for Ella recruiters and admins",
+        "details": "Configure Firebase Authentication with Google Sign-In restricted to Ella employees. Implement allowed_users collection in Firestore with email domain allowlist and role management (admin/recruiter). Create Firestore security rules enforcing access controls. Build admin-only user management interface with addAllowedUser, removeAllowedUser, listAllowedUsers, and setAllowedUserRole Cloud Functions. Set up role-based UI routing and component access controls. Phase I supports Ella recruiters and admin only.",
+        "testStrategy": "Authentication flow tests, authorization rule validation, role-based access testing, admin interface functionality tests, security rule enforcement verification",
         "priority": "medium",
-        "dependencies": [
-          55
-        ],
+        "dependencies": [],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Configure Firebase Authentication with Google Sign-In and Domain Restrictions",
+            "description": "Set up Firebase Authentication with Google Sign-In provider and implement domain restrictions to allow only Ella employees (@ella.com.br) to authenticate",
+            "dependencies": [],
+            "details": "Configure Firebase Auth settings in Firebase Console to enable Google Sign-In provider. Implement domain restriction logic in authentication flow to validate user email domains against allowed list (@ella.com.br). Update existing Auth components in headhunter-ui/src/components/Auth/ to enforce domain validation. Set up proper error handling for unauthorized domain attempts.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Create allowed_users Firestore Collection with Role Management Schema",
+            "description": "Design and implement the allowed_users collection in Firestore with proper schema for email allowlist and role management",
+            "dependencies": [
+              "72.1"
+            ],
+            "details": "Create allowed_users collection schema with fields: email, role (admin/recruiter), created_at, updated_at, created_by. Set up proper indexing for efficient queries. Initialize collection with initial admin users. Implement data validation rules for role assignments and email format validation.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement Firestore Security Rules for Role-Based Access Control",
+            "description": "Create comprehensive Firestore security rules that enforce role-based access control across all collections",
+            "dependencies": [
+              "72.2"
+            ],
+            "details": "Write security rules that check user authentication and role permissions from allowed_users collection. Implement rules for admin-only access to user management functions and recruiter access to candidate data. Ensure proper read/write permissions based on user roles. Test security rules thoroughly to prevent unauthorized access.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Build Admin User Management Interface with Cloud Functions Backend",
+            "description": "Complete the admin UI components for user management and integrate with Cloud Functions for backend operations",
+            "dependencies": [
+              "72.2",
+              "72.3"
+            ],
+            "details": "Enhance existing admin-users.ts Cloud Functions with addAllowedUser, removeAllowedUser, listAllowedUsers, and setAllowedUserRole operations. Build admin-only UI components for user management interface with proper role-based routing. Implement real-time updates for user list changes. Add proper error handling and success notifications for all user management operations.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
-        "id": 59,
-        "title": "Implement JSON Validation and Error Handling Pipeline",
-        "description": "Build robust JSON parsing, schema validation, and error recovery system with repair mechanisms and quarantine handling",
-        "details": "Implement comprehensive JSON validation against defined schema for candidate profiles. Add automatic JSON repair for common formatting issues (strip code fences, fix malformed JSON). Create quarantine system for profiles that fail validation after repair attempts. Target <1% repair/quarantine rate and ≥95% valid JSON parse rate. Include retry logic with repair prompts for malformed outputs. Log all validation failures and repairs for monitoring.",
-        "testStrategy": "Test with malformed JSON samples, validate repair mechanisms, test quarantine workflow, measure validation success rates, test schema compliance",
+        "id": 73,
+        "title": "Build React Search Interface with Job Description Input",
+        "description": "Create React web application for job description input and candidate search results display with explainability features",
+        "details": "Develop React SPA hosted on Firebase Hosting with job description input interface supporting EN/PT-BR. Implement search results display showing top-20 candidates with 'Why match' evidence bullets. Create candidate detail pages with skill maps, confidence scores, LinkedIn URLs, and resume freshness indicators. Include signed URL integration for secure resume access from GCS. Implement responsive design with accessibility considerations. Add search filters and result pagination. Integrate with skillAwareSearch and getCandidateSkillAssessment Cloud Functions.",
+        "testStrategy": "Component unit tests, integration tests with search API, accessibility testing, responsive design validation, user flow testing for search and candidate detail views",
         "priority": "high",
         "dependencies": [
-          55
+          70,
+          72
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Job Description Input Component with Multilingual Support",
+            "description": "Develop React component for job description input with EN/PT-BR language support and validation",
+            "dependencies": [],
+            "details": "Build JobDescriptionInput.tsx component with textarea for job description, language selector (EN/PT-BR), character count, validation feedback, and submit functionality. Include form state management, input sanitization, and responsive design. Add placeholder text and help tooltips in both languages. Implement debounced validation and error handling for API integration.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Build Search Results Display with Pagination",
+            "description": "Implement search results component displaying top-20 candidates with pagination and filtering",
+            "dependencies": [
+              "73.1"
+            ],
+            "details": "Create SearchResults.tsx component extending existing SkillAwareCandidateCard.tsx. Display candidate cards with basic info, match scores, and preview of 'Why match' bullets. Implement pagination controls, results counter, and loading states. Add search filters for experience level, location, and skills. Include sort options and empty state handling. Integrate with skillAwareSearch Cloud Function.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement Candidate Detail Pages with Skill Visualization",
+            "description": "Create detailed candidate profile pages with skill maps, confidence scores, and comprehensive information display",
+            "dependencies": [
+              "73.2"
+            ],
+            "details": "Build CandidateDetail.tsx component with skill visualization charts, confidence score indicators, experience timeline, education details, and contact information. Include LinkedIn URL integration, resume freshness indicators, and downloadable resume access. Implement skill mapping with visual confidence levels and evidence tooltips. Add navigation breadcrumbs and back-to-results functionality.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Add Explainability Features with 'Why Match' Evidence Display",
+            "description": "Implement explainability components showing detailed match reasoning and evidence bullets",
+            "dependencies": [
+              "73.2"
+            ],
+            "details": "Create ExplainabilityPanel.tsx component displaying 'Why match' evidence bullets with skill-specific reasoning. Show match confidence scores, evidence sources, and detailed explanations for each skill match. Include expandable sections for different match categories (technical skills, experience, education). Implement evidence highlighting and cross-references to candidate profile sections.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Integrate Signed URL Generation for Secure Resume Access",
+            "description": "Implement secure resume access using signed URLs from Google Cloud Storage with proper authentication",
+            "dependencies": [
+              "73.3"
+            ],
+            "details": "Create ResumeAccess.tsx component with secure download functionality using signed URLs from GCS. Implement authentication checks, URL generation requests, and secure file access. Add resume preview modal, download progress indicators, and error handling for expired or invalid URLs. Include file type validation and virus scanning integration. Ensure proper cleanup of temporary URLs.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement Responsive Design and Accessibility Features",
+            "description": "Apply responsive design principles and accessibility standards across all React components",
+            "dependencies": [
+              "73.1",
+              "73.2",
+              "73.3",
+              "73.4",
+              "73.5"
+            ],
+            "details": "Implement responsive breakpoints for mobile, tablet, and desktop views across all components. Add ARIA labels, keyboard navigation support, screen reader compatibility, and focus management. Include high contrast mode support, font scaling options, and touch-friendly interactions. Perform accessibility audits using axe-core and implement WCAG 2.1 AA compliance. Add loading states and error boundaries for better UX.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
-        "id": 60,
-        "title": "Develop Search API with Together AI Reranking",
-        "description": "Create unified search API that combines pgvector similarity, FTS, and Together AI reranking with explainability evidence",
-        "details": "Implement search API that performs: 1) Hybrid recall using pgvector HNSW cosine similarity + PostgreSQL FTS for Portuguese, 2) Score fusion of vector and text search results, 3) Together AI reranking on top-K≈200 to return top-20 results, 4) Generate explainability evidence per skill match. Target p95 ≤ 1.2s total latency and rerank ≤ 350ms. Include composite scoring combining skill_match, confidence, vector_similarity, and experience. Store and return 'Why match' bullets for UI display.",
-        "testStrategy": "Benchmark search latency with various query types, test reranking accuracy, validate explainability evidence generation, test with English and Portuguese job descriptions",
-        "priority": "high",
-        "dependencies": [
-          56,
-          57
-        ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": 61,
-        "title": "Build Firebase Cloud Functions API Layer",
-        "description": "Implement Node.js/TypeScript Cloud Functions for CRUD operations, file upload pipeline, and search endpoints",
-        "details": "Create Cloud Functions v2 for: candidates-crud.ts (CRUD operations), jobs-crud.ts (job management), file-upload-pipeline.ts (GCS integration), vector-search.ts (search endpoints), generate-embeddings.ts (embedding coordination). Implement Firebase Authentication integration with allowed_users collection for access control. Add callable functions: skillAwareSearch, getCandidateSkillAssessment, addAllowedUser, removeAllowedUser, listAllowedUsers, setAllowedUserRole. Include proper error handling and security rules.",
-        "testStrategy": "Test all CRUD operations, validate authentication and authorization, test file upload workflow, verify search endpoint integration, test admin functions",
+        "id": 74,
+        "title": "Develop Cloud Functions API Layer",
+        "description": "Create comprehensive Cloud Functions for CRUD operations, search, and candidate management with proper error handling",
+        "details": "Implement Cloud Functions v2 for candidates-crud.ts, jobs-crud.ts, file-upload-pipeline.ts, vector-search.ts, and generate-embeddings.ts. Create callable functions for skillAwareSearch, getCandidateSkillAssessment, and admin user management. Implement processUploadedProfile trigger for GCS uploads. Add comprehensive error handling, input validation, and response formatting. Ensure functions support the compliance fields and exportable processing register requirements. Include audit logging for sensitive operations.",
+        "testStrategy": "Function unit tests, API endpoint testing, error handling validation, security testing for callable functions, integration tests with frontend, performance testing for function cold starts",
         "priority": "medium",
         "dependencies": [
-          60
+          70,
+          72
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement CRUD Functions with Validation",
+            "description": "Complete candidates-crud.ts and jobs-crud.ts Cloud Functions with comprehensive input validation, compliance field support, and proper response formatting",
+            "dependencies": [],
+            "details": "Enhance existing CRUD functions in functions/src/ to include robust input validation, support for compliance fields (exportable processing register requirements), proper error responses, and standardized data formatting. Ensure functions handle create, read, update, delete operations for both candidates and jobs collections with appropriate Firestore security rules integration.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Create File Upload Pipeline Function",
+            "description": "Implement file-upload-pipeline.ts with GCS trigger for processUploadedProfile and secure file handling",
+            "dependencies": [],
+            "details": "Build Cloud Function triggered by GCS uploads to process candidate profile documents. Implement secure file validation, virus scanning integration, metadata extraction, and trigger downstream enrichment processes. Include support for multiple file formats (PDF, DOC, DOCX) and proper error handling for corrupted or invalid files.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Build Vector Search and Embeddings Functions",
+            "description": "Complete vector-search.ts and generate-embeddings.ts functions for semantic search capabilities",
+            "dependencies": [],
+            "details": "Implement vector search functionality using Firestore vector search capabilities and generate embeddings for candidate profiles and job descriptions. Include similarity scoring, relevance ranking, and integration with the enrichment pipeline. Ensure functions support batch processing and efficient vector operations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Add Callable Functions for Skill Assessment",
+            "description": "Implement skillAwareSearch and getCandidateSkillAssessment callable functions with admin user management",
+            "dependencies": [
+              "74.1",
+              "74.3"
+            ],
+            "details": "Create callable Cloud Functions for skill-aware candidate search and detailed skill assessments. Include admin user management functions for user role assignment and permissions. Implement proper authentication, authorization checks, and rate limiting. Ensure functions return structured skill analysis with confidence scores and recommendations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement Error Handling and Audit Logging",
+            "description": "Add comprehensive error handling, audit logging, and monitoring across all Cloud Functions",
+            "dependencies": [
+              "74.1",
+              "74.2",
+              "74.3",
+              "74.4"
+            ],
+            "details": "Implement centralized error handling with proper HTTP status codes, structured error responses, and retry mechanisms. Add audit logging for all sensitive operations including data access, modifications, and admin actions. Include monitoring hooks, performance metrics collection, and integration with Cloud Logging for observability.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
-        "id": 62,
-        "title": "Implement Resume Storage with GCS and Signed URLs",
-        "description": "Set up encrypted resume storage in Google Cloud Storage with signed URL generation for secure access",
-        "details": "Configure GCS buckets for encrypted resume storage with appropriate IAM policies. Implement signed URL generation for secure, time-limited access to resume files. Store LinkedIn URLs extracted from CSV or resume text using regex patterns. Track resume_updated_at for freshness indicators. Implement upload pipeline that processes resumes and stores metadata in Firestore with references to GCS objects. No automated LinkedIn scraping in MVP.",
-        "testStrategy": "Test file encryption and storage, validate signed URL generation and expiration, test LinkedIn URL extraction, verify secure access controls",
+        "id": 75,
+        "title": "Implement Resume Storage and LinkedIn URL Management",
+        "description": "Set up secure resume storage in GCS with encryption and LinkedIn URL extraction and management",
+        "details": "Configure GCS buckets (*-raw-csv, *-raw-json, *-profiles) with encryption for secure resume storage. Implement signed URL generation for secure resume access with appropriate expiration. Create LinkedIn URL extraction from CSV data and resume text using regex patterns. Store linkedin_url field in candidate profiles. Implement resume freshness tracking with resume_updated_at timestamps and UI badges (Recent/Stale/Very stale). Add re-upload functionality with version control. No automated LinkedIn scraping in MVP - manual updates only.",
+        "testStrategy": "GCS encryption validation, signed URL generation and expiration tests, LinkedIn URL extraction accuracy tests, resume versioning functionality tests, file upload security testing",
         "priority": "medium",
         "dependencies": [
-          54
+          71
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Configure GCS Buckets with Encryption and IAM",
+            "description": "Set up GCS buckets (*-raw-csv, *-raw-json, *-profiles) with proper encryption configuration and IAM permissions for secure resume storage",
+            "dependencies": [],
+            "details": "Configure three GCS buckets with appropriate naming conventions. Enable server-side encryption with customer-managed encryption keys (CMEK) or Google-managed keys. Set up proper IAM roles and permissions for service accounts. Configure bucket lifecycle policies for data retention. Implement proper access controls and security policies.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Signed URL Generation with Expiration Logic",
+            "description": "Create secure signed URL generation system for resume access with appropriate expiration times and access controls",
+            "dependencies": [
+              "75.1"
+            ],
+            "details": "Build signed URL generation service that creates time-limited access URLs for resume files. Implement configurable expiration times (e.g., 1 hour for viewing, 24 hours for downloads). Add URL validation and revocation capabilities. Integrate with existing file-upload-pipeline.ts. Include proper error handling and logging for URL generation failures.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Create LinkedIn URL Extraction Using Regex Patterns",
+            "description": "Implement LinkedIn URL extraction from CSV data and resume text using regex patterns and store in candidate profiles",
+            "dependencies": [],
+            "details": "Develop regex patterns to extract LinkedIn URLs from various formats (linkedin.com/in/, linkedin.com/pub/, etc.). Implement extraction logic for both CSV import data and resume text content. Add linkedin_url field to candidate profile schema. Create validation for extracted URLs and handle edge cases. Integrate with existing resume_extractor.py for text-based extraction.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Build Resume Freshness Tracking with Timestamps and UI Integration",
+            "description": "Implement resume freshness tracking system with resume_updated_at timestamps, UI badges, and re-upload functionality with version control",
+            "dependencies": [
+              "75.2"
+            ],
+            "details": "Add resume_updated_at timestamp field to track resume upload/update times. Implement freshness categorization logic (Recent: <30 days, Stale: 30-90 days, Very stale: >90 days). Create UI badge components to display freshness status. Build re-upload functionality with version control to maintain resume history. Add automatic timestamp updates on file uploads and manual profile updates.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
-        "id": 63,
-        "title": "Build React Frontend with Semantic Search Interface",
-        "description": "Develop React application with job description input, ranked candidate results, and explainability features",
-        "details": "Create React SPA hosted on Firebase Hosting with: 1) JD input interface supporting EN/PT-BR, 2) Search results displaying top-20 candidates with minimal row content (name, current role, years/level, composite score, freshness badge, LinkedIn link), 3) Candidate detail page with full skill map, inferred skills with confidence, evidence tooltips, career timeline, 4) 'Why they're a match' bullets display, 5) Pre-interview analysis on-demand. Implement Firebase Authentication integration and role-based UI elements.",
-        "testStrategy": "Test search interface with various job descriptions, validate result display and ranking, test candidate detail views, verify authentication flow, test responsive design",
-        "priority": "medium",
-        "dependencies": [
-          61
-        ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": 64,
-        "title": "Implement Admin Interface and User Management",
-        "description": "Build admin-only interface for user management and system monitoring with role-based access control",
-        "details": "Create admin-only React components for: 1) User management interface to add/remove allowed_users, 2) Role assignment (admin/recruiter/viewer), 3) System health monitoring (Firestore counts, embedding stats), 4) Processing register for compliance. Implement role-based guards using Firebase Auth custom claims. Add audit logging for sensitive operations. Include allowed_users collection management with email domain validation for Ella employees.",
-        "testStrategy": "Test admin role restrictions, validate user management operations, test system monitoring displays, verify audit logging functionality",
+        "id": 76,
+        "title": "Build Pre-Interview Analysis Feature",
+        "description": "Implement on-demand pre-interview analysis generation with caching and structured output for candidate assessment",
+        "details": "Create preInterviewAnalysis.generate and preInterviewAnalysis.get callable functions. Implement analysis generation using Together AI to produce structured output with summary, strengths, potential_red_flags, and signal analysis (promotion_velocity, company_pedigree, stability_pattern, promotion_pattern, academics_strength). Include evidence array with source references. Implement caching with 14-day TTL and invalidation on profile changes. Store analysis under candidates/{id}.pre_interview_analysis with model_version and generated_at metadata. Target ≥99% valid JSON output.",
+        "testStrategy": "Analysis generation accuracy tests, caching mechanism validation, TTL and invalidation testing, JSON schema validation, performance testing for on-demand generation",
         "priority": "low",
         "dependencies": [
-          61
+          68,
+          74
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Together AI Analysis Generation Function",
+            "description": "Implement the core analysis generation function using Together AI to process candidate profiles and generate structured pre-interview analysis",
+            "dependencies": [],
+            "details": "Create preInterviewAnalysis.generate function that interfaces with Together AI API. Implement prompt engineering to extract structured insights from candidate profiles. Handle API rate limits, retries, and error scenarios. Ensure robust JSON parsing and validation of AI responses. Target ≥99% valid JSON output through prompt optimization and response validation.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Design Structured Output Schema",
+            "description": "Define and implement the structured output schema for pre-interview analysis including summary, strengths, red flags, and signal analysis",
+            "dependencies": [],
+            "details": "Create comprehensive schema for analysis output including summary, strengths array, potential_red_flags array, and signal analysis (promotion_velocity, company_pedigree, stability_pattern, promotion_pattern, academics_strength). Design evidence array structure with source references. Implement JSON schema validation and type definitions. Ensure schema supports interview preparation requirements and maintains consistency across analyses.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement 14-Day TTL Caching Mechanism",
+            "description": "Build caching system with 14-day time-to-live for pre-interview analyses to optimize performance and reduce API costs",
+            "dependencies": [
+              "76.1",
+              "76.2"
+            ],
+            "details": "Implement caching layer storing analyses under candidates/{id}.pre_interview_analysis path. Add metadata fields including model_version, generated_at timestamp, and TTL expiration. Create cache retrieval logic that checks expiration and validity. Implement automatic cleanup of expired cache entries. Ensure cache performance meets p95 ≤ 1.2s requirement.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Build Cache Invalidation on Profile Changes",
+            "description": "Implement cache invalidation mechanism that triggers when candidate profiles are updated to ensure analysis freshness",
+            "dependencies": [
+              "76.3"
+            ],
+            "details": "Create profile change detection system that monitors candidate data updates. Implement cache invalidation triggers for relevant profile changes (work experience, education, skills updates). Design selective invalidation to avoid unnecessary cache clearing. Add logging for cache invalidation events for monitoring and debugging. Ensure invalidation happens atomically with profile updates.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Create PreInterviewAnalysis Callable Functions with Error Handling",
+            "description": "Build the public API functions preInterviewAnalysis.generate and preInterviewAnalysis.get with comprehensive error handling and validation",
+            "dependencies": [
+              "76.1",
+              "76.2",
+              "76.3",
+              "76.4"
+            ],
+            "details": "Create preInterviewAnalysis.generate callable function with input validation, rate limiting, and error handling. Implement preInterviewAnalysis.get function for cached analysis retrieval with fallback to generation. Add comprehensive error handling for API failures, invalid inputs, and system errors. Implement logging and monitoring for function usage and performance. Ensure functions integrate seamlessly with existing authentication and authorization systems.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
-        "id": 65,
-        "title": "Implement Compliance and Data Privacy Features",
-        "description": "Add compliance fields, processing register, and data privacy controls to meet regulatory requirements",
-        "details": "Implement compliance fields in candidate profiles: legal_basis (required), consent_record (optional). Create exportable processing register for audit purposes. Add PII minimization in Together AI prompts. Implement data retention policies and secure deletion capabilities. Add audit logging for all data access and processing events. Ensure Firestore security rules enforce proper access controls. Include data subject rights management (access, rectification, erasure).",
-        "testStrategy": "Validate compliance field presence in all profiles, test processing register export, verify PII minimization in prompts, test audit logging completeness, validate security rule enforcement",
+        "id": 77,
+        "title": "Implement Compliance and Monitoring Systems",
+        "description": "Set up compliance tracking, monitoring, and exportable processing register for GDPR and data governance requirements",
+        "details": "Implement compliance fields (legal_basis, consent_record, transfer_mechanism) in database schema and API responses. Create exportable processing register functionality for audit requirements. Set up monitoring for p95 ≤ 1.2s performance, ≥95% valid JSON rate, and <1% auto-repair/quarantine metrics. Implement audit logging for all data access and processing operations. Create health check endpoints and system status monitoring. Add data retention policies and deletion capabilities for compliance. Configure alerting for performance and error rate thresholds.",
+        "testStrategy": "Compliance field validation, processing register export testing, performance monitoring accuracy, audit log completeness testing, data retention policy validation, alerting system testing",
         "priority": "medium",
         "dependencies": [
-          59,
-          62
+          67,
+          71,
+          74
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add compliance fields to database schemas and API responses",
+            "description": "Implement compliance fields (legal_basis, consent_record, transfer_mechanism) in database schemas and ensure they are included in all relevant API responses",
+            "dependencies": [],
+            "details": "Update database schemas to include GDPR compliance fields. Modify API response structures to include compliance metadata. Ensure all data processing operations capture and store required compliance information.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Create exportable processing register functionality",
+            "description": "Build functionality to generate and export processing register reports for GDPR audit requirements",
+            "dependencies": [
+              "77.1"
+            ],
+            "details": "Implement processing register data collection and aggregation. Create export functionality supporting multiple formats (CSV, JSON, PDF). Include all required GDPR processing register fields and metadata.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement performance monitoring for p95 latency tracking",
+            "description": "Set up comprehensive performance monitoring system to track p95 latency with target of ≤ 1.2s",
+            "dependencies": [],
+            "details": "Implement latency measurement across all API endpoints. Set up p95 percentile calculation and tracking. Create performance dashboards and historical trend analysis. Configure automated performance reporting.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Build JSON validation rate monitoring system",
+            "description": "Create monitoring system to track JSON validation rates with target of ≥95% valid JSON rate and <1% auto-repair/quarantine metrics",
+            "dependencies": [],
+            "details": "Implement JSON validation monitoring across all data processing pipelines. Track validation success rates, auto-repair attempts, and quarantine events. Create metrics collection and reporting for data quality monitoring.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Set up comprehensive audit logging system",
+            "description": "Implement audit logging for all data access and processing operations to meet compliance requirements",
+            "dependencies": [
+              "77.1"
+            ],
+            "details": "Enhance existing audit-logger.ts with comprehensive logging capabilities. Implement audit trails for all data access, modifications, and processing operations. Ensure audit logs include user context, timestamps, and operation details.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement data retention policies and deletion capabilities",
+            "description": "Build data retention policy enforcement and automated deletion capabilities for GDPR compliance",
+            "dependencies": [
+              "77.1",
+              "77.5"
+            ],
+            "details": "Create data retention policy configuration and enforcement mechanisms. Implement automated data deletion workflows based on retention periods. Build data subject deletion capabilities for GDPR right to erasure compliance.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Configure alerting for performance and error thresholds",
+            "description": "Set up comprehensive alerting system for performance metrics, error rates, and compliance violations",
+            "dependencies": [
+              "77.3",
+              "77.4"
+            ],
+            "details": "Configure alerting rules for performance threshold violations, error rate spikes, and compliance issues. Implement multi-channel alerting (email, Slack, SMS). Create escalation policies and alert fatigue prevention mechanisms.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-09-05T18:18:48.859Z",
-      "updated": "2025-09-13T19:24:01.303Z",
+      "updated": "2025-09-13T20:19:28.204Z",
       "description": "Tasks for master context"
     }
   }

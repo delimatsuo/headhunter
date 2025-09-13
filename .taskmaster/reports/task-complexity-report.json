@@ -1,6 +1,6 @@
 {
 	"meta": {
-		"generatedAt": "2025-09-13T19:32:40.543Z",
+		"generatedAt": "2025-09-13T19:58:38.522Z",
 		"tasksAnalyzed": 12,
 		"totalTasks": 12,
 		"analysisCount": 12,
@@ -10,100 +10,100 @@
 	},
 	"complexityAnalysis": [
 		{
-			"taskId": 54,
-			"taskTitle": "Setup Together AI Integration and Cloud Infrastructure",
+			"taskId": 66,
+			"taskTitle": "Setup Together AI Integration and Environment Configuration",
+			"complexityScore": 3,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down Together AI setup into: 1) Environment variable configuration and validation for TOGETHER_API_KEY, 2) Implement async HTTP client with aiohttp including rate limiting and circuit breaker patterns, 3) Create configuration validation module with connectivity tests, 4) Set up GCP region configuration for us-central1 across all services",
+			"reasoning": "Existing Together AI integration found in multiple files (together_client.py, together_ai_processor.py). Main work involves consolidating existing code, adding rate limiting/circuit breaker patterns, and ensuring proper configuration. Infrastructure mostly exists."
+		},
+		{
+			"taskId": 67,
+			"taskTitle": "Implement PostgreSQL with pgvector Setup and Schema",
 			"complexityScore": 5,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Break down cloud infrastructure setup into: 1) Configure GCP project and enable services, 2) Set up Together AI API integration and environment variables, 3) Configure Firebase/Firestore with appropriate IAM roles, 4) Create GCS buckets with encryption settings, 5) Setup Firebase Authentication with Google Sign-In for Ella employees",
-			"reasoning": "Moderate complexity as the codebase already has Together AI integration patterns in scripts/together_ai_processor.py and cloud_run_worker. Main work is GCP configuration, IAM setup, and service enablement. Scripts exist but need environment configuration."
-		},
-		{
-			"taskId": 55,
-			"taskTitle": "Implement Cloud Run Candidate Enricher with Together AI",
-			"complexityScore": 6,
 			"recommendedSubtasks": 6,
-			"expansionPrompt": "Implement Cloud Run service: 1) Adapt existing together_ai_processor.py for Cloud Run with FastAPI, 2) Add structured JSON schema validation using existing patterns, 3) Implement retry logic and circuit breakers for API resilience, 4) Add skill inference with confidence scoring, 5) Stream results to Firestore using existing firestore_streamer.py patterns, 6) Add processing metadata and monitoring",
-			"reasoning": "Moderate-high complexity but significant code exists in cloud_run_worker/ and scripts/. Need to integrate existing Together AI client with Cloud Run patterns. Skill inference logic exists in intelligent_skill_processor.py."
+			"expansionPrompt": "Break down pgvector setup into: 1) Provision Cloud SQL PostgreSQL instance with pgvector extension, 2) Create database schema with candidate_embeddings table and HNSW indexing, 3) Configure Portuguese FTS with proper text search configurations, 4) Implement connection pooling with asyncpg, 5) Add compliance fields (legal_basis, consent_record, transfer_mechanism) to schema, 6) Performance testing and optimization for p95 ≤ 1.2s requirement",
+			"reasoning": "pgvector_store.py exists with basic implementation but needs Cloud SQL provisioning, Portuguese FTS configuration, HNSW indexing setup, and compliance fields. Migration scripts and tests exist but need adaptation for production Cloud SQL."
 		},
 		{
-			"taskId": 56,
-			"taskTitle": "Setup Postgres with pgvector for Hybrid Search",
+			"taskId": 68,
+			"taskTitle": "Develop Single-Pass Candidate Enrichment Processor",
+			"complexityScore": 4,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down enrichment processor into: 1) Create PII-minimizing prompt templates for Together AI, 2) Implement async processing pipeline with aiohttp for API calls, 3) Build JSON schema validation and auto-repair system with retry logic, 4) Add skill inference engine with confidence scoring and evidence extraction, 5) Implement processing metadata tracking and quality flags",
+			"reasoning": "intelligent_skill_processor.py and firebase_streaming_processor.py already exist with much of the logic. Main work is consolidating, adding PII-minimization to prompts, improving JSON repair capabilities, and ensuring <1% quarantine rate."
+		},
+		{
+			"taskId": 69,
+			"taskTitle": "Implement Gemini Embeddings with Pluggable Provider Architecture",
+			"complexityScore": 3,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down embedding service into: 1) Create pluggable provider interface supporting gemini|vertex|local providers, 2) Implement Gemini Embeddings provider as primary option, 3) Configure automatic fallback to Vertex AI text-embedding-004, 4) Create embedding generation pipeline that processes profiles and updates pgvector",
+			"reasoning": "embedding-provider.ts already has pluggable architecture with Vertex and local providers. embedding_service.py exists. Main work is adding Gemini provider, implementing fallback logic, and ensuring deterministic behavior."
+		},
+		{
+			"taskId": 70,
+			"taskTitle": "Build Hybrid Search with Together Rerank Integration",
 			"complexityScore": 7,
 			"recommendedSubtasks": 7,
-			"expansionPrompt": "Configure pgvector search: 1) Provision Cloud SQL Postgres instance in us-central1, 2) Install pgvector extension and create schema from scripts/pgvector_schema.sql, 3) Design candidate_embeddings table with HNSW index, 4) Implement Portuguese FTS configuration, 5) Create hybrid search service combining vector and FTS, 6) Implement score fusion algorithm, 7) Add connection pooling and query optimization",
-			"reasoning": "Higher complexity as pgvector setup requires database administration, extension configuration, and hybrid search implementation. Some TypeScript pgvector client code exists in functions/src/pgvector-client.ts but needs Python service layer."
+			"expansionPrompt": "Break down hybrid search into: 1) Implement pgvector HNSW cosine similarity search, 2) Configure PostgreSQL FTS for Portuguese text search, 3) Create score fusion algorithm for combining vector and text search results, 4) Integrate Together AI reranking API for top-K results, 5) Build explainability system for skill match evidence, 6) Implement composite scoring with multiple factors, 7) Performance optimization for p95 ≤ 1.2s with rerank ≤350ms",
+			"reasoning": "This is complex new functionality requiring integration of multiple search types, Together AI reranking, and explainability. skill-aware-search.ts exists but needs major enhancement for hybrid search, Portuguese support, and Together reranking."
 		},
 		{
-			"taskId": 57,
-			"taskTitle": "Implement Vertex AI Embeddings Generation Service",
-			"complexityScore": 5,
+			"taskId": 71,
+			"taskTitle": "Develop Cloud Run Enrichment Service with Pub/Sub Integration",
+			"complexityScore": 4,
 			"recommendedSubtasks": 5,
-			"expansionPrompt": "Build embeddings service: 1) Implement VectorSearchService with Vertex AI text-embedding-004, 2) Create pluggable provider architecture with environment switching, 3) Add batch processing for efficient embedding generation, 4) Store embeddings in pgvector candidate_embeddings table, 5) Implement fallback mechanisms and error handling",
-			"reasoning": "Moderate complexity as embedding patterns exist in functions/src/embedding-provider.ts and scripts/embedding_service.py. Main work is integrating with pgvector and adding provider abstraction."
+			"expansionPrompt": "Break down Cloud Run service into: 1) Containerize existing Python enrichment processor with Dockerfile, 2) Implement Pub/Sub message handler for candidate-process-requests topic, 3) Add idempotent processing logic with upsert by candidate_id, 4) Configure horizontal scaling and concurrency controls, 5) Set up Cloud Scheduler for batch processing and implement retry/DLQ",
+			"reasoning": "cloud_run_worker/ directory exists with main.py, pubsub_handler.py, and Dockerfile. Core structure is in place but needs completion of Pub/Sub integration, idempotency logic, and Cloud Scheduler setup."
 		},
 		{
-			"taskId": 58,
-			"taskTitle": "Build Pub/Sub Orchestration and Batch Processing Pipeline",
-			"complexityScore": 6,
+			"taskId": 72,
+			"taskTitle": "Implement Firebase Authentication and Authorization System",
+			"complexityScore": 3,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down authentication into: 1) Configure Firebase Auth with Google Sign-In and domain restrictions, 2) Create allowed_users Firestore collection with role management schema, 3) Implement security rules for role-based access control, 4) Build admin UI components for user management with Cloud Functions backend",
+			"reasoning": "Auth components exist in headhunter-ui/src/components/Auth/. admin-users.ts exists in functions. Main work is configuring domain restrictions, completing admin UI, and setting up proper security rules."
+		},
+		{
+			"taskId": 73,
+			"taskTitle": "Build React Search Interface with Job Description Input",
+			"complexityScore": 5,
 			"recommendedSubtasks": 6,
-			"expansionPrompt": "Implement Pub/Sub pipeline: 1) Create Pub/Sub topic and subscriptions for candidate processing, 2) Implement message handlers in Cloud Run using existing pubsub_handler.py, 3) Add Cloud Scheduler for batch processing triggers, 4) Implement idempotency using candidate_id for upserts, 5) Configure dead letter queues and retry policies, 6) Add monitoring and alerting for pipeline health",
-			"reasoning": "Moderate-high complexity but significant scaffolding exists in cloud_run_worker/pubsub_handler.py. Need to wire up message flow, add scheduler, and ensure idempotency across systems."
+			"expansionPrompt": "Break down React UI into: 1) Create job description input component with EN/PT-BR support, 2) Build search results display with top-20 candidates and pagination, 3) Implement candidate detail pages with skill visualization, 4) Add 'Why match' evidence display with explainability bullets, 5) Integrate signed URL generation for secure resume access, 6) Implement responsive design and accessibility features",
+			"reasoning": "React components exist in headhunter-ui but need enhancement for job description input, explainability display, multilingual support, and signed URL integration. SkillAwareCandidateCard.tsx exists as starting point."
 		},
 		{
-			"taskId": 59,
-			"taskTitle": "Implement JSON Validation and Error Handling Pipeline",
+			"taskId": 74,
+			"taskTitle": "Develop Cloud Functions API Layer",
 			"complexityScore": 4,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Build validation pipeline: 1) Enhance existing json_validator.py with comprehensive schema validation, 2) Implement automatic JSON repair for common formatting issues, 3) Create quarantine system using existing quarantine_system.py patterns, 4) Add retry logic with repair prompts and monitoring",
-			"reasoning": "Lower complexity as significant code exists in scripts/json_validator.py and tests/test_json_validator.py. Main work is enhancing existing patterns and integrating with processing pipeline."
-		},
-		{
-			"taskId": 60,
-			"taskTitle": "Develop Search API with Together AI Reranking",
-			"complexityScore": 8,
-			"recommendedSubtasks": 8,
-			"expansionPrompt": "Create unified search API: 1) Implement hybrid recall combining pgvector and FTS queries, 2) Build score fusion algorithm for vector and text results, 3) Integrate Together AI API for reranking top-K candidates, 4) Generate explainability evidence per skill match, 5) Implement composite scoring system, 6) Add caching layer for performance, 7) Create API endpoints with latency monitoring, 8) Store and return 'Why match' bullets for UI",
-			"reasoning": "High complexity requiring sophisticated search implementation, AI reranking integration, and performance optimization. Some patterns exist in functions/src/skill-aware-search.ts but needs significant enhancement."
-		},
-		{
-			"taskId": 61,
-			"taskTitle": "Build Firebase Cloud Functions API Layer",
-			"complexityScore": 5,
 			"recommendedSubtasks": 5,
-			"expansionPrompt": "Implement Cloud Functions: 1) Enhance existing CRUD functions in functions/src/, 2) Add file-upload-pipeline.ts for GCS integration, 3) Implement vector-search.ts endpoint integration, 4) Add authentication with allowed_users collection, 5) Implement callable functions for skills and admin operations",
-			"reasoning": "Moderate complexity as significant code exists in functions/src/ including candidates-crud.ts, jobs-crud.ts, and vector-search.ts. Main work is enhancing and connecting existing components."
+			"expansionPrompt": "Break down API layer into: 1) Implement CRUD functions for candidates and jobs with validation, 2) Create file-upload-pipeline function for GCS triggers, 3) Build vector-search and generate-embeddings functions, 4) Add skillAwareSearch and getCandidateSkillAssessment callable functions, 5) Implement comprehensive error handling and audit logging",
+			"reasoning": "Many functions already exist in functions/src/ including candidates-crud.ts, jobs-crud.ts, vector-search.ts. Main work is completing missing functions, adding proper error handling, and ensuring compliance field support."
 		},
 		{
-			"taskId": 62,
-			"taskTitle": "Implement Resume Storage with GCS and Signed URLs",
-			"complexityScore": 4,
+			"taskId": 75,
+			"taskTitle": "Implement Resume Storage and LinkedIn URL Management",
+			"complexityScore": 3,
 			"recommendedSubtasks": 4,
-			"expansionPrompt": "Setup resume storage: 1) Configure GCS buckets with encryption and IAM policies, 2) Implement signed URL generation for secure access, 3) Extract and store LinkedIn URLs using regex patterns, 4) Create upload pipeline with metadata tracking in Firestore",
-			"reasoning": "Lower complexity as GCS integration patterns exist and signed URL generation is well-documented. Main work is configuration and integration with existing pipeline."
+			"expansionPrompt": "Break down storage management into: 1) Configure GCS buckets with encryption and proper IAM, 2) Implement signed URL generation with expiration logic, 3) Create LinkedIn URL extraction using regex patterns from CSV and resume text, 4) Build resume freshness tracking with timestamps and UI badge integration",
+			"reasoning": "GCS integration exists in file-upload-pipeline.ts. Resume extraction exists in resume_extractor.py. Main work is adding encryption, signed URLs, LinkedIn extraction logic, and freshness tracking."
 		},
 		{
-			"taskId": 63,
-			"taskTitle": "Build React Frontend with Semantic Search Interface",
+			"taskId": 76,
+			"taskTitle": "Build Pre-Interview Analysis Feature",
+			"complexityScore": 4,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down pre-interview analysis into: 1) Create analysis generation function using Together AI, 2) Design structured output schema for strengths/red flags/signals, 3) Implement 14-day TTL caching mechanism, 4) Build cache invalidation on profile changes, 5) Create preInterviewAnalysis callable functions with error handling",
+			"reasoning": "This is new functionality but can leverage existing Together AI integration. Requires new prompt engineering, caching logic, and structured output design for interview preparation."
+		},
+		{
+			"taskId": 77,
+			"taskTitle": "Implement Compliance and Monitoring Systems",
 			"complexityScore": 6,
-			"recommendedSubtasks": 6,
-			"expansionPrompt": "Develop React UI: 1) Create JD input interface with EN/PT-BR support, 2) Build search results component displaying top-20 candidates, 3) Implement candidate detail page with skill visualization, 4) Add 'Why match' evidence display, 5) Integrate Firebase Authentication, 6) Implement responsive design and performance optimization",
-			"reasoning": "Moderate-high complexity as React app exists in headhunter-ui/ but needs significant feature development. Components like SkillAwareCandidateCard.tsx provide starting points."
-		},
-		{
-			"taskId": 64,
-			"taskTitle": "Implement Admin Interface and User Management",
-			"complexityScore": 4,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Build admin interface: 1) Enhance existing AdminPage.tsx and AllowedUsersPanel.tsx components, 2) Implement role-based access control with Firebase custom claims, 3) Add system monitoring dashboard, 4) Create audit logging for sensitive operations",
-			"reasoning": "Lower complexity as admin components exist in headhunter-ui/src/components/Admin/. Main work is enhancing existing patterns and adding monitoring features."
-		},
-		{
-			"taskId": 65,
-			"taskTitle": "Implement Compliance and Data Privacy Features",
-			"complexityScore": 5,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Add compliance features: 1) Add compliance fields to candidate schema, 2) Create processing register export functionality, 3) Implement PII minimization in prompts, 4) Add data retention and deletion capabilities, 5) Implement audit logging using existing audit-logger.ts patterns",
-			"reasoning": "Moderate complexity as some patterns exist in functions/src/compliance.ts and audit-logger.ts. Need to integrate compliance throughout the system and ensure proper data handling."
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Break down compliance system into: 1) Add compliance fields to database schemas and API responses, 2) Create exportable processing register functionality, 3) Implement performance monitoring for p95 latency tracking, 4) Build JSON validation rate monitoring (≥95% target), 5) Set up comprehensive audit logging system, 6) Implement data retention policies and deletion capabilities, 7) Configure alerting for performance and error thresholds",
+			"reasoning": "compliance.ts and audit-logger.ts exist but need significant enhancement. This requires cross-cutting changes to schemas, APIs, monitoring infrastructure, and new export/retention features."
 		}
 	]
 }
