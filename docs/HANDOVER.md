@@ -39,8 +39,8 @@ git push
 
 - LLM Processing: Together AI single pass using Qwen 2.5 32B Instruct (env: `TOGETHER_MODEL_STAGE1`).
 - Output: Structured JSON profile with explicit/inferred skills, confidence, evidence, `analysis_confidence`, and `quality_flags`.
-- Storage: Firestore (`candidates/`, `enriched_profiles/`); embeddings in `candidate_embeddings` (standardized).
-- Search: One pipeline — ANN recall (pgvector planned) + re‑rank with structured signals (skills/experience/analysis_confidence) → one ranked list.
+- Embeddings: Gemini Embeddings default (e.g., `gemini-embedding-001`, US), Vertex fallback; vectors in `candidate_embeddings`.
+- Search: Unified pipeline — pgvector ANN + Together Rerank + structured signals (skills/experience/analysis_confidence) → one ranked list.
 - UI: React SPA (Firebase Hosting) calls callable Functions.
 - Functions: CRUD/search/upload; enrichment in Python processors (remove/guard Gemini enrichment in Functions).
 
@@ -82,9 +82,9 @@ List row content: name, current role @ company, years/level, composite score, fr
 
 ## Embeddings & Search
 
-- Baseline embeddings: Vertex `text-embedding-004`.
+- Default embeddings: Gemini (`gemini-embedding-001`, recommended 768 dims; normalize non‑3072 dims per docs).
 - Canonical collection: `candidate_embeddings`.
-- Planned: Cloud SQL + pgvector service for ANN; SPA calls this service.
+- Cloud SQL + pgvector service for ANN; SPA calls this service. Together Rerank on top‑K → top‑20.
 
 ### Recall Safeguards (thin profiles)
 - ANN recall unioned with deterministic title/company matches; then composite re‑rank.
@@ -116,9 +116,10 @@ Expected:
    - Guard/remove Gemini enrichment code paths
    - Standardize embeddings to `candidate_embeddings` and align `firestore.rules`
 
-4) Vector search (pgvector): implement ANN service on Cloud Run; SPA integration.
+4) Vector search (pgvector): implement ANN service on Cloud Run; SPA integration; default Gemini embeddings.
+5) Stale Profiles: implement stale list view and refresh workflow (manual initiate, auto refresh after upload).
 
-5) Pre‑Interview Analysis: add callable generate/get; add Candidate Page panel; cache with TTL.
+6) Pre‑Interview Analysis: add callable generate/get; add Candidate Page panel; cache with TTL.
 
 6) Functions cleanup (completed): Gemini enrichment removed/disabled in Cloud Functions. Enrichment is performed exclusively by Together AI Python processors. Functions storage trigger now skips enrichment; the `enrichProfile` callable returns a failed‑precondition error to guide callers.
 

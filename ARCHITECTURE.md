@@ -6,8 +6,9 @@
 
 - Stage 1 Enrichment (Single Pass): Qwen 2.5 32B Instruct on Together AI (env: `TOGETHER_MODEL_STAGE1`, default `Qwen/Qwen2.5-32B-Instruct`).
 - Outputs: structured profile JSON; explicit vs inferred skills with confidence and evidence; `analysis_confidence` and `quality_flags`.
-- Storage: Firestore (`candidates/`, `enriched_profiles/`); embeddings in `candidate_embeddings` (standardized).
-- Search: Unified pipeline — ANN recall (Cloud SQL + pgvector planned) + re‑rank with structured signals → one ranked list with explainability.
+- Storage: Firestore (`candidates/`, `enriched_profiles/`).
+- Embeddings: Gemini Embeddings as default (US region), Vertex fallback; vectors stored in `candidate_embeddings`.
+- Search: Unified pipeline — ANN recall (Cloud SQL + pgvector) + Together Rerank + structured signals → one ranked list with explainability.
 - UI: React SPA on Firebase Hosting calling callable Functions; ensure callable exports for `skillAwareSearch` and `getCandidateSkillAssessment`.
 - Functions: CRUD/search/upload; remove/guard Gemini enrichment; enrichment lives in Python processors.
 
@@ -40,6 +41,7 @@ Row content (minimal): name, current role @ company, years/level, composite scor
 - `linkedin_url` extracted from CSV when present; otherwise regex from resume text (linkedin.com/in/…).
 - `resume_updated_at` from file metadata if available; else parsed “Last updated” line; else `processed_at` labeled as analysis date.
 - Freshness badges: Recent (<6m), Stale (6–18m), Very stale (>18m).
+- Stale Profiles view (manual initiate, auto refresh): list candidates beyond freshness threshold (configurable 18–24 months). Actions: Open LinkedIn (new tab), Upload updated resume, or Skip. After upload, backend auto-extracts → validates JSON → re‑embeds (Gemini default) → updates `candidate_sections` and `candidate_embeddings`, freshness, and audit logs.
 
 ## Future (not in current scope)
 
@@ -55,7 +57,7 @@ Single‑pass enrichment + unified search. The system produces a complete struct
 ### Current System Components
 
 - Processing: Python processors calling Together AI (Qwen 2.5 32B) for single‑pass enrichment; JSON repair + schema validation.
-- Storage: Firestore for structured profiles; `candidate_embeddings` for vectors (Vertex text‑embedding‑004 baseline).
+- Storage: Firestore for structured profiles; `candidate_embeddings` for vectors (Gemini Embeddings default, Vertex fallback).
 - Search: Unified pipeline (ANN recall planned on pgvector) + deterministic re‑rank with analysis_confidence demotion and recall safeguards.
 - UI: React SPA (Firebase Hosting) with minimal list → Candidate Page; callables for search and assessment.
 - Optional: Cloud Run ANN service (planned), Cloud Run enrichment worker (future).

@@ -119,8 +119,8 @@
       </div>
       <div class="box work">
         <div class="status">working</div>
-        <div class="title">Embeddings Collection (US default)</div>
-        <div class="desc"><code>candidate_embeddings</code> standardized; embedding text from enriched profile; Vertex embeddings in <code>us-central1</code> by default (provider pluggable).</div>
+        <div class="title">Embeddings Collection (US)</div>
+        <div class="desc"><code>candidate_embeddings</code> standardized; embedding text from enriched profile; Gemini Embeddings (default, e.g., <code>gemini-embedding-001</code>). Vertex remains available as fallback via provider flag.</div>
       </div>
       <div class="box plan">
         <div class="status">planned</div>
@@ -245,7 +245,8 @@
       <ul>
         <li>No mock fallbacks in prod/staging; errors are surfaced to clients.</li>
         <li><code>TOGETHER_MODEL_STAGE1</code>: default <code>Qwen/Qwen2.5-32B-Instruct</code>.</li>
-        <li><code>EMBEDDING_PROVIDER</code>: <code>vertex</code> (US default), <code>gemini</code> (optional), or <code>local</code> (dev only).</li>
+        <li><code>EMBEDDING_PROVIDER</code>: <code>gemini</code> (default), <code>vertex</code> (fallback), or <code>local</code> (dev only).</li>
+        <li>Gemini note: configure region/model per current Vertex AI embeddings documentation.</li>
         <li><code>RERANK_PROVIDER</code>: <code>together</code>.</li>
         <li><code>ENABLE_GEMINI</code>: default <code>false</code>; enrichment path errors when disabled.</li>
         <li><code>USE_PGVECTOR</code>: toggles pgvector path for embeddings and ANN.</li>

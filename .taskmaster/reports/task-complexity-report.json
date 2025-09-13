@@ -1,157 +1,109 @@
 {
 	"meta": {
-		"generatedAt": "2025-09-12T19:22:19.637Z",
-		"tasksAnalyzed": 18,
-		"totalTasks": 44,
-		"analysisCount": 18,
+		"generatedAt": "2025-09-13T19:32:40.543Z",
+		"tasksAnalyzed": 12,
+		"totalTasks": 12,
+		"analysisCount": 12,
 		"thresholdScore": 5,
 		"projectName": "Taskmaster",
-		"usedResearch": false
+		"usedResearch": true
 	},
 	"complexityAnalysis": [
 		{
-			"taskId": 27,
-			"taskTitle": "Configure Together AI Integration and Environment",
-			"complexityScore": 8,
-			"recommendedSubtasks": 8,
-			"expansionPrompt": "Break down this complex integration task into focused subtasks covering environment setup, client implementation, resilience patterns (retry logic, rate limiting, circuit breaker), cost tracking, and comprehensive testing. Each subtask should be independently testable and have clear dependencies.",
-			"reasoning": "High complexity due to multiple technical components: API integration, environment configuration, resilience patterns, cost management, and production-ready error handling. The 8 existing subtasks appropriately decompose the work into manageable pieces with clear dependencies."
-		},
-		{
-			"taskId": 28,
-			"taskTitle": "Implement Parsing Complexity Analyzer",
-			"complexityScore": 9,
-			"recommendedSubtasks": 10,
-			"expansionPrompt": "Decompose this sophisticated analysis system into subtasks covering document format detection, OCR quality assessment, table detection, complexity scoring algorithms, risk classification, dynamic chunking, prompt selection, retry policies, and comprehensive testing with diverse document types.",
-			"reasoning": "Very high complexity involving multiple AI/ML components: document analysis, OCR integration, computer vision for table detection, scoring algorithms, and decision logic. The 10 existing subtasks properly break down the sophisticated analysis pipeline into testable components."
-		},
-		{
-			"taskId": 29,
-			"taskTitle": "Build Enhanced Together AI Processor with Skill Inference",
-			"complexityScore": 9,
-			"recommendedSubtasks": 12,
-			"expansionPrompt": "Break down this core processing pipeline into subtasks covering Together AI integration, prompt engineering, skill extraction algorithms, confidence scoring, evidence tracking, quality validation, streaming response handling, Pydantic models, error handling, performance optimization, and comprehensive testing.",
-			"reasoning": "Very high complexity as the core processing engine requiring AI integration, sophisticated algorithms for skill inference, confidence scoring, evidence extraction, streaming processing, and production-grade error handling. The 12 existing subtasks appropriately decompose this critical component."
-		},
-		{
-			"taskId": 30,
-			"taskTitle": "Implement JSON Validation and Repair System",
-			"complexityScore": 7,
-			"recommendedSubtasks": 9,
-			"expansionPrompt": "Decompose this validation system into subtasks covering Pydantic schema definition, JSON repair logic, schema validation, repair prompt templates, retry mechanisms, quarantine system, metrics tracking, performance optimization, and comprehensive testing with malformed JSON scenarios.",
-			"reasoning": "High complexity involving schema validation, repair algorithms, LLM integration for repairs, retry logic, and quarantine mechanisms. The 9 existing subtasks properly break down the validation and repair pipeline into manageable components with clear testing strategies."
-		},
-		{
-			"taskId": 31,
-			"taskTitle": "Build Firestore Streaming Pipeline",
-			"complexityScore": 7,
-			"recommendedSubtasks": 9,
-			"expansionPrompt": "Break down this streaming pipeline into subtasks covering Firestore client setup, collection schema design, field flattening logic, batch write optimization, upsert mechanisms, transaction support, progress tracking, error handling, and performance testing with large datasets.",
-			"reasoning": "High complexity involving database operations, batch processing, transaction management, data transformation, and performance optimization. The 9 existing subtasks appropriately decompose the streaming pipeline into testable components."
-		},
-		{
-			"taskId": 32,
-			"taskTitle": "Implement Cloud Functions CRUD and Search APIs",
-			"complexityScore": 8,
-			"recommendedSubtasks": 11,
-			"expansionPrompt": "Decompose this API system into subtasks covering API architecture design, Firebase Auth middleware, RBAC implementation, CRUD endpoints, search functions, skill assessment endpoints, pagination, validation, audit logging, error handling, and comprehensive security testing.",
-			"reasoning": "High complexity involving API design, authentication, authorization, multiple endpoints, security considerations, and comprehensive testing. The 11 existing subtasks properly break down the API system into focused, testable components."
-		},
-		{
-			"taskId": 34,
-			"taskTitle": "Build Unified Search and Ranking System",
-			"complexityScore": 8,
-			"recommendedSubtasks": 11,
-			"expansionPrompt": "Break down this sophisticated ranking system into subtasks covering algorithm architecture, individual signal components (vector similarity, skill matching, experience, confidence), demotion logic, deterministic fallbacks, unified ranking engine, re-ranking, caching, analytics, and comprehensive validation testing.",
-			"reasoning": "High complexity involving multiple ranking signals, machine learning components, caching strategies, analytics, and performance optimization. The 11 existing subtasks appropriately decompose the complex ranking algorithm into manageable components."
-		},
-		{
-			"taskId": 35,
-			"taskTitle": "Develop React Search UI with Authentication",
-			"complexityScore": 7,
-			"recommendedSubtasks": 10,
-			"expansionPrompt": "Decompose this frontend application into subtasks covering React setup, Firebase Auth integration, UI components (JD input, results list, candidate detail), match rationale display, external integrations, loading states, responsive design, and accessibility compliance.",
-			"reasoning": "High complexity involving full-stack frontend development, authentication, multiple UI components, responsive design, and accessibility requirements. The 10 existing subtasks properly break down the React application into focused development tasks."
-		},
-		{
-			"taskId": 42,
-			"taskTitle": "Implement Embedding Generation Service",
-			"complexityScore": 6,
-			"recommendedSubtasks": 8,
-			"expansionPrompt": "Break down this embedding service into subtasks covering service class structure, Vertex AI integration, batch processing, Firestore storage, provider abstraction, caching mechanisms, automatic triggers, and performance testing with optimization.",
-			"reasoning": "Moderate-high complexity involving AI service integration, batch processing, storage optimization, and abstraction layers. The 8 existing subtasks appropriately decompose the embedding service into testable components."
-		},
-		{
-			"taskId": 45,
-			"taskTitle": "Implement Pre-Interview Analysis Feature",
+			"taskId": 54,
+			"taskTitle": "Setup Together AI Integration and Cloud Infrastructure",
 			"complexityScore": 5,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down cloud infrastructure setup into: 1) Configure GCP project and enable services, 2) Set up Together AI API integration and environment variables, 3) Configure Firebase/Firestore with appropriate IAM roles, 4) Create GCS buckets with encryption settings, 5) Setup Firebase Authentication with Google Sign-In for Ella employees",
+			"reasoning": "Moderate complexity as the codebase already has Together AI integration patterns in scripts/together_ai_processor.py and cloud_run_worker. Main work is GCP configuration, IAM setup, and service enablement. Scripts exist but need environment configuration."
+		},
+		{
+			"taskId": 55,
+			"taskTitle": "Implement Cloud Run Candidate Enricher with Together AI",
+			"complexityScore": 6,
 			"recommendedSubtasks": 6,
-			"expansionPrompt": "Decompose this analysis feature into subtasks covering Cloud Function setup, prompt design, output schema definition, caching system implementation, cache invalidation logic, and API endpoint creation with proper authentication and validation.",
-			"reasoning": "Moderate complexity involving Cloud Functions, prompt engineering, caching, and API development. The 6 existing subtasks appropriately break down the feature into manageable development tasks."
+			"expansionPrompt": "Implement Cloud Run service: 1) Adapt existing together_ai_processor.py for Cloud Run with FastAPI, 2) Add structured JSON schema validation using existing patterns, 3) Implement retry logic and circuit breakers for API resilience, 4) Add skill inference with confidence scoring, 5) Stream results to Firestore using existing firestore_streamer.py patterns, 6) Add processing metadata and monitoring",
+			"reasoning": "Moderate-high complexity but significant code exists in cloud_run_worker/ and scripts/. Need to integrate existing Together AI client with Cloud Run patterns. Skill inference logic exists in intelligent_skill_processor.py."
 		},
 		{
-			"taskId": 46,
-			"taskTitle": "Set Up Cloud Run Worker for Scalable Processing",
+			"taskId": 56,
+			"taskTitle": "Setup Postgres with pgvector for Hybrid Search",
+			"complexityScore": 7,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Configure pgvector search: 1) Provision Cloud SQL Postgres instance in us-central1, 2) Install pgvector extension and create schema from scripts/pgvector_schema.sql, 3) Design candidate_embeddings table with HNSW index, 4) Implement Portuguese FTS configuration, 5) Create hybrid search service combining vector and FTS, 6) Implement score fusion algorithm, 7) Add connection pooling and query optimization",
+			"reasoning": "Higher complexity as pgvector setup requires database administration, extension configuration, and hybrid search implementation. Some TypeScript pgvector client code exists in functions/src/pgvector-client.ts but needs Python service layer."
+		},
+		{
+			"taskId": 57,
+			"taskTitle": "Implement Vertex AI Embeddings Generation Service",
+			"complexityScore": 5,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Build embeddings service: 1) Implement VectorSearchService with Vertex AI text-embedding-004, 2) Create pluggable provider architecture with environment switching, 3) Add batch processing for efficient embedding generation, 4) Store embeddings in pgvector candidate_embeddings table, 5) Implement fallback mechanisms and error handling",
+			"reasoning": "Moderate complexity as embedding patterns exist in functions/src/embedding-provider.ts and scripts/embedding_service.py. Main work is integrating with pgvector and adding provider abstraction."
+		},
+		{
+			"taskId": 58,
+			"taskTitle": "Build Pub/Sub Orchestration and Batch Processing Pipeline",
+			"complexityScore": 6,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Implement Pub/Sub pipeline: 1) Create Pub/Sub topic and subscriptions for candidate processing, 2) Implement message handlers in Cloud Run using existing pubsub_handler.py, 3) Add Cloud Scheduler for batch processing triggers, 4) Implement idempotency using candidate_id for upserts, 5) Configure dead letter queues and retry policies, 6) Add monitoring and alerting for pipeline health",
+			"reasoning": "Moderate-high complexity but significant scaffolding exists in cloud_run_worker/pubsub_handler.py. Need to wire up message flow, add scheduler, and ensure idempotency across systems."
+		},
+		{
+			"taskId": 59,
+			"taskTitle": "Implement JSON Validation and Error Handling Pipeline",
+			"complexityScore": 4,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Build validation pipeline: 1) Enhance existing json_validator.py with comprehensive schema validation, 2) Implement automatic JSON repair for common formatting issues, 3) Create quarantine system using existing quarantine_system.py patterns, 4) Add retry logic with repair prompts and monitoring",
+			"reasoning": "Lower complexity as significant code exists in scripts/json_validator.py and tests/test_json_validator.py. Main work is enhancing existing patterns and integrating with processing pipeline."
+		},
+		{
+			"taskId": 60,
+			"taskTitle": "Develop Search API with Together AI Reranking",
 			"complexityScore": 8,
-			"recommendedSubtasks": 9,
-			"expansionPrompt": "Break down this containerization and deployment task into subtasks covering Docker containerization, Pub/Sub integration, Cloud Run configuration, scheduler setup, idempotency implementation, monitoring, auto-scaling, dead letter queues, and comprehensive load testing.",
-			"reasoning": "High complexity involving containerization, cloud infrastructure, message queuing, auto-scaling, monitoring, and production deployment considerations. The 9 existing subtasks properly decompose the cloud infrastructure setup."
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Create unified search API: 1) Implement hybrid recall combining pgvector and FTS queries, 2) Build score fusion algorithm for vector and text results, 3) Integrate Together AI API for reranking top-K candidates, 4) Generate explainability evidence per skill match, 5) Implement composite scoring system, 6) Add caching layer for performance, 7) Create API endpoints with latency monitoring, 8) Store and return 'Why match' bullets for UI",
+			"reasoning": "High complexity requiring sophisticated search implementation, AI reranking integration, and performance optimization. Some patterns exist in functions/src/skill-aware-search.ts but needs significant enhancement."
 		},
 		{
-			"taskId": 47,
-			"taskTitle": "Create Pub/Sub topic and Cloud Scheduler jobs for batch/nightly processing",
-			"complexityScore": 6,
+			"taskId": 61,
+			"taskTitle": "Build Firebase Cloud Functions API Layer",
+			"complexityScore": 5,
 			"recommendedSubtasks": 5,
-			"expansionPrompt": "Decompose this infrastructure provisioning task into subtasks covering Pub/Sub topic creation with DLQ, service account setup, scheduler job configuration for batch and incremental processing, and infrastructure deployment with monitoring setup.",
-			"reasoning": "Moderate-high complexity involving cloud infrastructure provisioning, IAM configuration, scheduling, and monitoring setup. The 5 existing subtasks appropriately break down the infrastructure components."
+			"expansionPrompt": "Implement Cloud Functions: 1) Enhance existing CRUD functions in functions/src/, 2) Add file-upload-pipeline.ts for GCS integration, 3) Implement vector-search.ts endpoint integration, 4) Add authentication with allowed_users collection, 5) Implement callable functions for skills and admin operations",
+			"reasoning": "Moderate complexity as significant code exists in functions/src/ including candidates-crud.ts, jobs-crud.ts, and vector-search.ts. Main work is enhancing and connecting existing components."
 		},
 		{
-			"taskId": 48,
-			"taskTitle": "Embedding Bake-off Harness and Provider Selection Report",
-			"complexityScore": 7,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Break down this evaluation system into subtasks covering harness infrastructure, dataset processing and embedding generation, metrics calculation implementation, report generation with visualizations, and CI integration with migration documentation.",
-			"reasoning": "High complexity involving evaluation framework development, multiple AI provider integration, statistical analysis, report generation, and CI/CD integration. The 5 existing subtasks appropriately decompose the evaluation system."
-		},
-		{
-			"taskId": 49,
-			"taskTitle": "Migrate NAS to GCS and Execute 50-Candidate Test Run",
-			"complexityScore": 6,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Decompose this migration and testing task into subtasks covering NAS to GCS migration script development, test dataset curation, metrics collection framework, pipeline execution with monitoring, and UI validation with comprehensive reporting.",
-			"reasoning": "Moderate-high complexity involving data migration, pipeline testing, metrics collection, and comprehensive validation. The 5 existing subtasks appropriately break down the migration and testing process."
-		},
-		{
-			"taskId": 50,
-			"taskTitle": "Functions cleanup: remove Gemini enrichment references and enforce Together path",
+			"taskId": 62,
+			"taskTitle": "Implement Resume Storage with GCS and Signed URLs",
 			"complexityScore": 4,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Break down this cleanup task into subtasks covering code removal and import cleanup, orchestration logic updates, configuration cleanup, prevention measure implementation, and documentation updates to reflect Together AI-only architecture.",
-			"reasoning": "Moderate complexity involving systematic code cleanup, configuration updates, and prevention measures. The 5 existing subtasks appropriately decompose the cleanup process with proper validation."
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Setup resume storage: 1) Configure GCS buckets with encryption and IAM policies, 2) Implement signed URL generation for secure access, 3) Extract and store LinkedIn URLs using regex patterns, 4) Create upload pipeline with metadata tracking in Firestore",
+			"reasoning": "Lower complexity as GCS integration patterns exist and signed URL generation is well-documented. Main work is configuration and integration with existing pipeline."
 		},
 		{
-			"taskId": 51,
-			"taskTitle": "Documentation updates: README, Handover, Architecture to reflect v2.0 decisions",
-			"complexityScore": 4,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Decompose this documentation task into subtasks covering README updates, HANDOVER documentation, ARCHITECTURE documentation, webhook integration updates, and bake-off results integration with comprehensive validation testing.",
-			"reasoning": "Moderate complexity involving comprehensive documentation updates across multiple files and technical accuracy validation. The 5 existing subtasks appropriately break down the documentation work."
-		},
-		{
-			"taskId": 52,
-			"taskTitle": "Enforce Firestore Security Rules and Admin Allowlist",
-			"complexityScore": 7,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Break down this security implementation into subtasks covering Firestore security rules creation, allowed users collection management, admin interface development, audit logging system implementation, and comprehensive security testing with compliance features.",
-			"reasoning": "High complexity involving security rule implementation, role-based access control, admin interfaces, audit logging, and comprehensive security testing. The 5 existing subtasks appropriately decompose the security system."
-		},
-		{
-			"taskId": 53,
-			"taskTitle": "Implement People Search by Name/LinkedIn URL",
+			"taskId": 63,
+			"taskTitle": "Build React Frontend with Semantic Search Interface",
 			"complexityScore": 6,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Develop React UI: 1) Create JD input interface with EN/PT-BR support, 2) Build search results component displaying top-20 candidates, 3) Implement candidate detail page with skill visualization, 4) Add 'Why match' evidence display, 5) Integrate Firebase Authentication, 6) Implement responsive design and performance optimization",
+			"reasoning": "Moderate-high complexity as React app exists in headhunter-ui/ but needs significant feature development. Components like SkillAwareCandidateCard.tsx provide starting points."
+		},
+		{
+			"taskId": 64,
+			"taskTitle": "Implement Admin Interface and User Management",
+			"complexityScore": 4,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Build admin interface: 1) Enhance existing AdminPage.tsx and AllowedUsersPanel.tsx components, 2) Implement role-based access control with Firebase custom claims, 3) Add system monitoring dashboard, 4) Create audit logging for sensitive operations",
+			"reasoning": "Lower complexity as admin components exist in headhunter-ui/src/components/Admin/. Main work is enhancing existing patterns and adding monitoring features."
+		},
+		{
+			"taskId": 65,
+			"taskTitle": "Implement Compliance and Data Privacy Features",
+			"complexityScore": 5,
 			"recommendedSubtasks": 5,
-			"expansionPrompt": "Decompose this search feature into subtasks covering search endpoint creation with matching algorithms, company boosting and fuzzy matching implementation, search indexing and caching, frontend UI component development, and rate limiting with API documentation.",
-			"reasoning": "Moderate-high complexity involving search algorithms, indexing, caching, frontend development, and API protection. The 5 existing subtasks appropriately break down the search feature implementation."
+			"expansionPrompt": "Add compliance features: 1) Add compliance fields to candidate schema, 2) Create processing register export functionality, 3) Implement PII minimization in prompts, 4) Add data retention and deletion capabilities, 5) Implement audit logging using existing audit-logger.ts patterns",
+			"reasoning": "Moderate complexity as some patterns exist in functions/src/compliance.ts and audit-logger.ts. Need to integrate compliance throughout the system and ensure proper data handling."
 		}
 	]
 }
