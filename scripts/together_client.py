@@ -59,6 +59,14 @@ class TogetherAIClient:
         except Exception:
             self._max_estimated_cost_usd = None
 
+        # Metrics and logging
+        self.calls_total = 0
+        self.errors_total = 0
+        self.breaker_trips = 0
+        self.latency_ms_ema: Optional[float] = None
+        self._ema_alpha = 0.2
+        self._logger = logging.getLogger(__name__)
+
     def _circuit_open(self) -> bool:
         # Auto-close breaker after window expires
         if self._breaker_open_flag and time.time() >= self._breaker_open_until:
@@ -162,14 +170,6 @@ class TogetherAIClient:
 
                     if attempt > self.max_retries:
                         break
-        # Metrics
-        self.calls_total = 0
-        self.errors_total = 0
-        self.breaker_trips = 0
-        self.latency_ms_ema: Optional[float] = None
-        self._ema_alpha = 0.2
-        self._logger = logging.getLogger(__name__)
-
                     # Exponential backoff: 2, 4, 8 seconds...
                     delay = self.backoff_base_seconds ** attempt
                     await asyncio.sleep(delay)
