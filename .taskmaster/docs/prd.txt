@@ -222,13 +222,22 @@ Acceptance criteria:
 
 ## Implementation Tasks (Updated)
 
-1. UI callable wiring: add `skillAwareSearch` & `getCandidateSkillAssessment` exports.
-2. JSON repair + schema validation (TDD) integrated in processors; target <1% repair/quarantine.
-3. Functions cleanup: remove stray entrypoints, guard/remove Gemini enrichment.
-4. Embeddings: standardize collection to `candidate_embeddings`; align rules/indexes.
-5. Vector search: implement pgvector service on Cloud Run; re-rank with structured features; SPA integration.
-6. Cloud Run worker (optional): containerized Python Pub/Sub worker for throughput scaling.
-7. Documentation: update README, Handover (web steps), and Architecture to match decisions.
+**✅ COMPLETED (Task 66.1-66.2):**
+- Environment configuration validation: REGION enforcement (us-central1), EMBEDDING_PROVIDER allowlist (gemini default, vertex/local), RERANK_PROVIDER policy (together), strict TOGETHER_API_KEY requirement
+- Together AI client resilience: rate limiting (sliding window), retry with exponential backoff, circuit breaker pattern, health check capability
+
+**IN PROGRESS:**
+1. Configuration validation module with connectivity tests (Task 66.3)
+2. GCP region settings enforcement (Task 66.4)
+
+**PENDING:**
+3. UI callable wiring: add `skillAwareSearch` & `getCandidateSkillAssessment` exports.
+4. JSON repair + schema validation (TDD) integrated in processors; target <1% repair/quarantine.
+5. Functions cleanup: remove stray entrypoints, guard/remove Gemini enrichment.
+6. Embeddings: standardize collection to `candidate_embeddings`; align rules/indexes.
+7. Vector search: implement pgvector service on Cloud Run; re-rank with structured features; SPA integration.
+8. Cloud Run worker (optional): containerized Python Pub/Sub worker for throughput scaling.
+9. Documentation: update README, Handover (web steps), and Architecture to match decisions.
 
 - All tasks follow Test-Driven Development (see `docs/TDD_PROTOCOL.md`).
 - Each task includes: write tests first → implement → tests green → docs update → commit/push → next task.

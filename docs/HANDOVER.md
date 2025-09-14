@@ -44,7 +44,7 @@ git push
 - UI: React SPA (Firebase Hosting) calls callable Functions.
 - Functions: CRUD/search/upload; enrichment in Python processors (remove/guard Gemini enrichment in Functions).
 
-Recent completions (Task Master 52.x): Admin allowlist (callables), dedicated Admin UI page + nav, Audit Logger, Compliance callables.
+Recent completions (Task Master 66.1-66.2): Environment configuration validation with PRD compliance enforcement (us-central1 region, Gemini embeddings default with Vertex fallback, Together rerank), Together AI client resilience (rate limiting, retries, circuit breaker).
 
 Authoritative PRD: `.taskmaster/docs/prd.txt`
 
@@ -125,6 +125,10 @@ Expected:
 
 ## Validation Checklist
 
+- [x] Environment configuration validates PRD compliance (us-central1, Gemini default, Together rerank)
+- [x] Together AI client has resilience patterns (rate limiting, retries, circuit breaker)
+- [ ] Configuration validation module with connectivity tests (Task 66.3)
+- [ ] GCP region settings enforcement (Task 66.4)
 - [ ] Together AI connectivity OK; Stage 1 model set via env
 - [ ] Firestore writes visible; profiles include skills/confidence/evidence
 - [ ] Embeddings generated and stored in `candidate_embeddings`
@@ -139,7 +143,7 @@ Expected:
   - `task-master update-subtask --id=<id> --prompt="TDD: tests first, then impl; notes…"`
   - `task-master set-status --id=<id> --status=done` after tests+docs
 
-Recommended next tasks (from latest complexity report): 28 (Parsing Complexity Analyzer), 29 (Enhanced Together processor), 34 (Unified Ranking), 27 (Together integration), 31 (Firestore streaming), 32 (CRUD/Search APIs). All have subtasks; force expand if needed.
+Current task: 66.3 (Configuration validation module with connectivity tests). Next: 66.4 (GCP region settings). All tasks use TDD with focused test files. Environment validation enforces PRD compliance: us-central1 region, Gemini embeddings (default), Vertex fallback, Together rerank.
 
 ## Helpful Files
 
