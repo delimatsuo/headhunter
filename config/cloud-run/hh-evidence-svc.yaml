@@ -35,9 +35,9 @@ spec:
             - name: EVIDENCE_CANDIDATES_COLLECTION
               value: candidate_evidence
             - name: REDIS_HOST
-              value: redis.${SERVICE_ENVIRONMENT}.internal
+              value: 10.159.1.4
             - name: REDIS_PORT
-              value: "6379"
+              value: "6378"
             - name: EVIDENCE_REDIS_PREFIX
               value: hh:evidence
             - name: EVIDENCE_CACHE_TTL_SECONDS

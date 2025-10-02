@@ -34,9 +34,9 @@ spec:
             - name: FIREBASE_PROJECT_ID
               value: ${SERVICE_PROJECT_ID}
             - name: REDIS_HOST
-              value: redis.${SERVICE_ENVIRONMENT}.internal
+              value: 10.159.1.4
             - name: REDIS_PORT
-              value: "6379"
+              value: "6378"
             - name: PGVECTOR_HOST
               value: /cloudsql/${SERVICE_PROJECT_ID}:${SERVICE_REGION}:${SQL_INSTANCE}
             - name: PGVECTOR_PORT

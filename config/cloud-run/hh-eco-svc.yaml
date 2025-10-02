@@ -33,9 +33,9 @@ spec:
             - name: FIREBASE_PROJECT_ID
               value: ${SERVICE_PROJECT_ID}
             - name: ECO_REDIS_HOST
-              value: redis.${SERVICE_ENVIRONMENT}.internal
+              value: 10.159.1.4
             - name: ECO_REDIS_PORT
-              value: "6379"
+              value: "6378"
             - name: ECO_SEARCH_LIMIT
               value: "10"
             - name: ECO_SEARCH_THRESHOLD

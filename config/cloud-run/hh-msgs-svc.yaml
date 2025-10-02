@@ -46,7 +46,7 @@ spec:
                   name: ${SECRET_DB_OPERATIONS}
                   key: latest
             - name: MSGS_REDIS_URL
-              value: redis://redis.${SERVICE_ENVIRONMENT}.internal:6379
+              value: redis://10.159.1.4:6378
             - name: MSGS_USE_SEED_DATA
               value: "false"
             - name: MSGS_TEMPLATE_DEFAULT_LOCALE

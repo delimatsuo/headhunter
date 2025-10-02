@@ -39,9 +39,9 @@ spec:
             - name: PUBSUB_TOPIC
               value: projects/${SERVICE_PROJECT_ID}/topics/enrich-events-${SERVICE_ENVIRONMENT}
             - name: REDIS_HOST
-              value: redis.${SERVICE_ENVIRONMENT}.internal
+              value: 10.159.1.4
             - name: REDIS_PORT
-              value: "6379"
+              value: "6378"
             - name: TOGETHER_API_KEY
               valueFrom:
                 secretKeyRef:
