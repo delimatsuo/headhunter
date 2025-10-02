@@ -35,6 +35,7 @@ export interface PgVectorHealth {
 export class PgVectorClient {
   private readonly pool: Pool;
   private initialized = false;
+  private schemaSetupDone = false;
   private readonly schema: string;
   private readonly table: string;
   private readonly tenantCache = new Map<string, number>();
@@ -68,23 +69,28 @@ export class PgVectorClient {
       return;
     }
 
-    await this.withClient(async (client) => {
-      if (this.config.enableAutoMigrate) {
-        await this.ensureExtensions(client);
-        await this.ensureSchema(client);
-        await this.ensureTables(client);
-      } else {
-        await this.verifyExtensions(client);
-        await this.verifySchema(client);
-      }
-    });
-
+    // Non-blocking initialization: just mark as initialized
+    // Actual database connection and schema setup happens on first use
     this.initialized = true;
+    this.logger.info('PgVectorClient initialized (connection will be established on first use)');
+  }
+
+  private async setupDatabaseIfNeeded(client: PoolClient): Promise<void> {
+    // This is called on first actual database access
+    if (this.config.enableAutoMigrate) {
+      await this.ensureExtensions(client);
+      await this.ensureSchema(client);
+      await this.ensureTables(client);
+    } else {
+      await this.verifyExtensions(client);
+      await this.verifySchema(client);
+    }
   }
 
   async close(): Promise<void> {
     await this.pool.end();
     this.initialized = false;
+    this.schemaSetupDone = false;
     this.tenantCache.clear();
   }
 
@@ -365,6 +371,12 @@ export class PgVectorClient {
   private async withClient<T>(handler: (client: PoolClient) => Promise<T>): Promise<T> {
     const client = await this.pool.connect();
     try {
+      // Perform schema setup on first connection
+      if (!this.schemaSetupDone) {
+        await this.setupDatabaseIfNeeded(client);
+        this.schemaSetupDone = true;
+        this.logger.info('Database schema setup completed');
+      }
       return await handler(client);
     } finally {
       client.release();
