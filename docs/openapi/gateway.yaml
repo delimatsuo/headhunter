@@ -19,8 +19,6 @@ securityDefinitions:
     name: X-API-Key
     in: header
     description: Tenant-scoped API key for service authentication
-# Note: OAuth2 security removed for MVP deployment. Services validate tenant isolation via X-Tenant-ID header.
-# OAuth2 will be re-enabled once identity provider is deployed with JWKS endpoint.
 security:
 - TenantApiKey: []
 consumes:
@@ -53,8 +51,8 @@ paths:
             required:
             - status
       x-google-backend:
-        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
-        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
+        address: https://hh-admin-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-admin-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /ready:
     get:
@@ -79,8 +77,8 @@ paths:
             required:
             - status
       x-google-backend:
-        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
-        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
+        address: https://hh-admin-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-admin-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/embeddings/generate:
     post:
@@ -112,8 +110,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-embed-svc-${ENVIRONMENT}
-        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-embed-svc-${ENVIRONMENT}
+        address: https://hh-embed-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-embed-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/embeddings/upsert:
     post:
@@ -145,8 +143,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-embed-svc-${ENVIRONMENT}
-        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-embed-svc-${ENVIRONMENT}
+        address: https://hh-embed-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-embed-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/embeddings/query:
     post:
@@ -178,8 +176,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-embed-svc-${ENVIRONMENT}
-        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-embed-svc-${ENVIRONMENT}
+        address: https://hh-embed-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-embed-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/search/hybrid:
     post:
@@ -211,8 +209,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-search-svc-${ENVIRONMENT}
-        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-search-svc-${ENVIRONMENT}
+        address: https://hh-search-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-search-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/search/rerank:
     post:
@@ -244,8 +242,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-rerank-svc-${ENVIRONMENT}
-        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-rerank-svc-${ENVIRONMENT}
+        address: https://hh-rerank-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-rerank-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/evidence/{candidateId}:
     get:
@@ -287,8 +285,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-evidence-svc-${ENVIRONMENT}
-        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-evidence-svc-${ENVIRONMENT}
+        address: https://hh-evidence-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-evidence-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/occupations/search:
     get:
@@ -346,8 +344,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-eco-svc-${ENVIRONMENT}
-        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-eco-svc-${ENVIRONMENT}
+        address: https://hh-eco-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-eco-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/occupations/{ecoId}:
     get:
@@ -396,8 +394,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-eco-svc-${ENVIRONMENT}
-        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-eco-svc-${ENVIRONMENT}
+        address: https://hh-eco-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-eco-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/enrich/profile:
     post:
@@ -429,8 +427,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-enrich-svc-${ENVIRONMENT}
-        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-enrich-svc-${ENVIRONMENT}
+        address: https://hh-enrich-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-enrich-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/enrich/status/{jobId}:
     get:
@@ -466,8 +464,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-enrich-svc-${ENVIRONMENT}
-        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-enrich-svc-${ENVIRONMENT}
+        address: https://hh-enrich-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-enrich-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/admin/refresh-postings:
     post:
@@ -503,8 +501,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
-        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
+        address: https://hh-admin-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-admin-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/admin/refresh-profiles:
     post:
@@ -540,8 +538,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
-        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
+        address: https://hh-admin-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-admin-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/admin/snapshots:
     get:
@@ -572,8 +570,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
-        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
+        address: https://hh-admin-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-admin-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/skills/expand:
     post:
@@ -605,8 +603,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-msgs-svc-${ENVIRONMENT}
-        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-msgs-svc-${ENVIRONMENT}
+        address: https://hh-msgs-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-msgs-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/roles/template:
     post:
@@ -638,8 +636,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-msgs-svc-${ENVIRONMENT}
-        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-msgs-svc-${ENVIRONMENT}
+        address: https://hh-msgs-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-msgs-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/market/demand:
     get:
@@ -686,6 +684,6 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-msgs-svc-${ENVIRONMENT}
-        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-msgs-svc-${ENVIRONMENT}
+        address: https://hh-msgs-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-msgs-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
