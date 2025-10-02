@@ -1,0 +1,67 @@
+{
+  "timestamp": "2025-10-01T01:05:32Z",
+  "projectId": "headhunter-ai-0088",
+  "environment": "production",
+  "overallStatus": "READY",
+  "readinessScore": 100.0,
+  "checks": [
+    {
+      "id": 0,
+      "name": "Cloud Run services deployed",
+      "status": "PASS",
+      "message": "All 8 Fastify services ready with 100% traffic on revision 3460185-production-20250930-230317.",
+      "remediation": "None"
+    },
+    {
+      "id": 1,
+      "name": "API Gateway configured",
+      "status": "PASS",
+      "message": "Gateway headhunter-production-gateway ACTIVE at https://headhunter-api-gateway-production-hqozqcsp.uc.gateway.dev with config gateway-config-production-v12.",
+      "remediation": "None"
+    },
+    {
+      "id": 2,
+      "name": "Monitoring configured",
+      "status": "PASS",
+      "message": "9 dashboards, 12 alert policies, 8 uptime checks captured in .monitoring/setup-20251001-002418/monitoring-manifest.json.",
+      "remediation": "None"
+    },
+    {
+      "id": 3,
+      "name": "Load tests executed",
+      "status": "PASS",
+      "message": "Post-deploy load test report (.deployment/load-tests/post-deploy-20251001-003452/load-test-report.json) generated < 24h with SLA PASS.",
+      "remediation": "None"
+    },
+    {
+      "id": 4,
+      "name": "Deployment artifacts present",
+      "status": "PASS",
+      "message": "Build/deploy manifests and smoke test report available under .deployment/manifests and .deployment/test-reports.",
+      "remediation": "None"
+    },
+    {
+      "id": 5,
+      "name": "Secrets populated",
+      "status": "PASS",
+      "message": "13 Secret Manager entries verified with ENABLED versions via scripts/manage_tenant_credentials.sh log.",
+      "remediation": "None"
+    },
+    {
+      "id": 6,
+      "name": "Infrastructure provisioned",
+      "status": "PASS",
+      "message": "Cloud SQL hh-prod-sql, Redis redis-hh-prod, Firestore default DB, Pub/Sub topics, VPC connector hh-prod-run-vpc validated during phase 5.",
+      "remediation": "None"
+    },
+    {
+      "id": 7,
+      "name": "ADC credentials configured",
+      "status": "PASS",
+      "message": "Application Default Credentials issued access token successfully prior to monitoring setup.",
+      "remediation": "None"
+    }
+  ],
+  "blockers": [],
+  "warnings": []
+}
