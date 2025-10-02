@@ -29,59 +29,96 @@
 
 ---
 
-## ⚠️ Current Issue: Cloud Run Services Return 404
+## ⚠️ Current Issue: Cloud SQL Connection Timeout During Startup
 
 ### Problem
-All Cloud Run services return 404 for all endpoints, including health checks:
-```bash
-# Test command (with authentication)
-TOKEN=$(gcloud auth print-identity-token)
-curl "https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app/healthz" \
-  -H "Authorization: Bearer ${TOKEN}"
-
-# Result: 404 Not Found (Google's error page, not Fastify)
+Cloud Run services fail to start due to Cloud SQL Auth Proxy timeout:
+```
+Cloud SQL connection failed: dial error: failed to dial
+(connection name = "headhunter-ai-0088:us-central1:sql-hh-core"):
+connection to Cloud SQL instance at 10.159.0.2:3307 failed: timed out after 10s
 ```
 
-### Investigation Findings
+**Container exits with code 1, preventing services from becoming ready.**
 
-1. **Services are marked as Ready** in Cloud Run console
-   - All 8 services show status: `Ready: True`
-   - Latest revision: `hh-admin-svc-production-00003-s8h` (deployed Oct 1)
+### Investigation Findings (Oct 2, 2025)
 
-2. **No errors in logs**
-   - No ERROR or WARNING level logs in Cloud Logging
-   - No startup errors detected
+1. **Added PGVECTOR_PORT environment variable** (commit 1526ec9)
+   - Env var is correctly deployed (`PGVECTOR_PORT=5432`)
+   - Issue was NOT missing port configuration
 
-3. **IAM is configured correctly**
-   - Gateway service account has `roles/run.invoker` permission
-   - Services require authentication (correct for production)
+2. **Cloud SQL Auth Proxy configuration is correct**
+   - Instance: `sql-hh-core` (POSTGRES_15)
+   - Connection string: `headhunter-ai-0088:us-central1:sql-hh-core`
+   - Service account: `embed-production@` has `roles/cloudsql.client`
+   - Annotation: `run.googleapis.com/cloudsql-instances` is set
 
-4. **Service code looks correct**
-   - Routes are registered: `/healthz`, `/readyz`, `/health`
-   - Port: 8080 (matches Cloud Run configuration)
-   - Bootstrap logic follows standard pattern
+3. **Network configuration conflicts discovered**
+   - Services use BOTH VPC connector AND Cloud SQL proxy annotations
+   - VPC egress mode: `private-ranges-only`
+   - Cloud SQL has private IP only: 10.159.0.2 (no public IP)
+   - Both Cloud SQL and VPC connector use network `vpc-hh`
 
-5. **404 comes from Google infrastructure**
-   - Error page format indicates request isn't reaching container
-   - Not a Fastify 404 (would have different format)
+4. **Service bootstrap uses lazy initialization**
+   - Health endpoints registered before `server.listen()` (correct)
+   - Database initialization happens in `setImmediate()` callback
+   - But `pgClient.initialize()` blocks and times out (>10s)
+   - Container exits before reporting error to application logs
 
-### Possible Root Causes
+5. **Cloud SQL proxy trying wrong port (3307 vs 5432)**
+   - Error message shows proxy attempting MySQL port 3307
+   - Actual instance is POSTGRES_15 (should use 5432)
+   - This is likely a red herring - generic Google error message
 
-1. **Container not starting properly**
-   - Image might be corrupted or incomplete
-   - Dependencies missing at runtime
-   - Service crashes immediately after startup
+### Root Cause Analysis
 
-2. **Environment variables missing**
-   - Required config might be missing
-   - Service might fail validation checks
+**Network Connectivity Issue**: The Cloud SQL Auth Proxy sidecar cannot establish connection to the private IP 10.159.0.2. Possible causes:
 
-3. **Image deployed is outdated**
-   - Current image tag: `3460185-production-20250930-230317`
-   - Code changes from Oct 2 (today) aren't in deployed image
+1. **Firewall rules blocking traffic** - Missing ingress rule for Cloud SQL port 5432
+2. **VPC peering not configured** - Cloud SQL private service connection might not be established
+3. **DNS resolution failure** - Proxy can't resolve the private IP
+4. **Resource exhaustion** - Cloud SQL instance might be at max connections (800)
 
-4. **Routing configuration issue**
-   - Cloud Run might not be routing to container port correctly
+### Probable Fix Required
+
+Based on GCP best practices, when using Cloud SQL with private IP:
+- Option A: Remove VPC connector, use Cloud SQL proxy only (simpler)
+- Option B: Verify VPC peering is configured correctly for Private Service Connect
+
+---
+
+---
+
+## 🔧 Fixes Applied (Oct 2, 2025)
+
+### 1. Added PGVECTOR_PORT Environment Variable (commit 1526ec9)
+- Added `PGVECTOR_PORT=5432` to hh-embed-svc, hh-search-svc
+- Added `MSGS_DB_PORT=5432` to hh-msgs-svc
+- **Result**: Environment variables deployed correctly
+
+### 2. Enabled VPC All-Traffic Egress (commit 4d7e3a6)
+- Changed from `private-ranges-only` to `all-traffic` for all 8 services
+- Allows Cloud SQL Auth Proxy sidecar to use VPC connector
+- **Result**: Deployment still failed (not the root cause)
+
+### 3. Fixed Redis Connection Details (commit 4333115)
+- Corrected Redis host: `redis.production.internal` → `10.159.1.4`
+- Corrected Redis port: `6379` → `6378`
+- Verified against actual Memorystore Redis instance
+- **Result**: Startup probe now succeeds, but container exits with code 1
+
+### Current Status (21:07 UTC)
+- ✅ Services can listen on port 8080 (startup probe passes)
+- ✅ Redis connection details corrected
+- ✅ VPC networking properly configured
+- ❌ Containers crash after startup with exit code 1
+- ❌ No application logs written (crash happens during bootstrap)
+
+### Remaining Investigation Needed
+1. Check if Cloud SQL connection still timing out
+2. Verify Firestore initialization not blocking
+3. Review error handling in background initialization (setImmediate callbacks)
+4. Consider if services need to disable database/redis connections for MVP
 
 ---
 
