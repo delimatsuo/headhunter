@@ -27,11 +27,17 @@ $ curl https://headhunter-api-gateway-production-d735p8t6.uc.gateway.dev/health
 - Redis connection details correct
 - All environment variables set properly
 
+### 4. hh-embed-svc Deployed and Serving ✅
+- Service deploys successfully with lazy init pattern
+- Passes Cloud Run startup probes
+- Responds via API Gateway (auth required)
+- PgVectorClient defers DB connection until first use
+- Retry logic fixed to avoid port conflicts
+
 ## What's Remaining
 
-### 1. Apply Lazy Init to Other Services (7 services)
+### 1. Apply Lazy Init to Other Services (6 services)
 Need to refactor bootstrap pattern for:
-- hh-embed-svc (already has pattern, needs testing)
 - hh-search-svc
 - hh-rerank-svc
 - hh-evidence-svc
@@ -56,8 +62,8 @@ Add missing endpoints if needed (like `/admin/tenants`)
 
 - ✅ Gateway URL accessible
 - ✅ Gateway routes to backend
-- ✅ At least one service responding
-- ⏳ All 8 services responding
+- ✅ Two services responding (hh-admin-svc, hh-embed-svc)
+- ⏳ All 8 services responding (2/8 complete)
 - ⏳ All endpoints defined in OpenAPI spec working
 - ⏳ End-to-end request flow working
 
