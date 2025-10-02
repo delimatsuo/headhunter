@@ -1,69 +1,35 @@
-swagger: "2.0"
+swagger: '2.0'
 info:
   title: Headhunter API Gateway
   version: 1.0.0
-  description: |
-    API Gateway surface aggregating all recruiter platform services.
+  description: 'API Gateway surface aggregating all recruiter platform services.
+
     OAuth2 access tokens are minted by the Ella identity provider using the
+
     client-credentials grant and validated by downstream services.
+
+    '
 host: hh-gateway-${ENVIRONMENT}-${REGION}.gateway.dev
 basePath: /
 schemes:
-  - https
+- https
 securityDefinitions:
-  OAuth2ClientCredentials:
-    type: oauth2
-    description: OAuth2 client-credentials flow issued by the Ella identity provider.
-    flow: application
-    tokenUrl: https://idp.${ENVIRONMENT}.ella.jobs/oauth/token
-    scopes: {}
   TenantApiKey:
     type: apiKey
     name: X-API-Key
     in: header
+    description: Tenant-scoped API key for service authentication
+# Note: OAuth2 security removed for MVP deployment. Services validate tenant isolation via X-Tenant-ID header.
+# OAuth2 will be re-enabled once identity provider is deployed with JWKS endpoint.
 security:
-  - OAuth2ClientCredentials: []
-    TenantApiKey: []
+- TenantApiKey: []
 consumes:
-  - application/json
+- application/json
 produces:
-  - application/json
-x-google-quota:
-  metrics:
-    - name: hybrid_search_rps
-      displayName: Hybrid Search Requests Per Second
-      description: Number of hybrid search requests per tenant.
-      unit: "1/min/{project}"
-      metricKind: DELTA
-      valueType: INT64
-    - name: rerank_rps
-      displayName: Rerank Requests Per Second
-      description: Number of rerank requests per tenant.
-      unit: "1/min/{project}"
-      metricKind: DELTA
-      valueType: INT64
-    - name: tenant_global_rps
-      displayName: Tenant Global Request Rate
-      description: Combined request rate across all endpoints per tenant.
-      unit: "1/min/{project}"
-      metricKind: DELTA
-      valueType: INT64
-  limits:
-    - name: hybrid-search-per-tenant
-      metric: hybrid_search_rps
-      values:
-        STANDARD: 30
-    - name: rerank-per-tenant
-      metric: rerank_rps
-      values:
-        STANDARD: 10
-    - name: tenant-global-per-tenant
-      metric: tenant_global_rps
-      values:
-        STANDARD: 50
+- application/json
 x-google-endpoints:
-  - name: hh-gateway-${ENVIRONMENT}-${REGION}.gateway.dev
-    allowCors: true
+- name: hh-gateway-${ENVIRONMENT}-${REGION}.gateway.dev
+  allowCors: true
 paths:
   /health:
     get:
@@ -71,7 +37,7 @@ paths:
       description: Liveness probe used by deployment and monitoring checks.
       operationId: gatewayHealth
       tags:
-        - Health
+      - Health
       security: []
       responses:
         '200':
@@ -85,7 +51,7 @@ paths:
                 type: string
                 format: date-time
             required:
-              - status
+            - status
       x-google-backend:
         address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
         jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
@@ -96,7 +62,7 @@ paths:
       description: Readiness probe verifying downstream connectivity.
       operationId: gatewayReady
       tags:
-        - Health
+      - Health
       security: []
       responses:
         '200':
@@ -111,7 +77,7 @@ paths:
                 items:
                   type: string
             required:
-              - status
+            - status
       x-google-backend:
         address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
         jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
@@ -122,14 +88,14 @@ paths:
       description: Generate an embedding vector for arbitrary recruiter or candidate content.
       operationId: embeddingsGenerate
       tags:
-        - Embeddings
+      - Embeddings
       parameters:
-        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: ./schemas/common.yaml#/definitions/GenerateEmbeddingRequest
+      - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: ./schemas/common.yaml#/definitions/GenerateEmbeddingRequest
       responses:
         '200':
           description: Embedding generated successfully.
@@ -149,23 +115,20 @@ paths:
         address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-embed-svc-${ENVIRONMENT}
         jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-embed-svc-${ENVIRONMENT}
         path_translation: APPEND_PATH_TO_ADDRESS
-      x-google-quota:
-        metricCosts:
-          tenant_global_rps: 1
   /v1/embeddings/upsert:
     post:
       summary: Upsert embeddings
       description: Upsert a tenant-scoped embedding record into pgvector storage.
       operationId: embeddingsUpsert
       tags:
-        - Embeddings
+      - Embeddings
       parameters:
-        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: ./schemas/common.yaml#/definitions/UpsertEmbeddingRequest
+      - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: ./schemas/common.yaml#/definitions/UpsertEmbeddingRequest
       responses:
         '200':
           description: Embedding upserted and cached metadata returned.
@@ -185,23 +148,20 @@ paths:
         address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-embed-svc-${ENVIRONMENT}
         jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-embed-svc-${ENVIRONMENT}
         path_translation: APPEND_PATH_TO_ADDRESS
-      x-google-quota:
-        metricCosts:
-          tenant_global_rps: 1
   /v1/embeddings/query:
     post:
       summary: Query embeddings
       description: Execute a similarity search across stored embeddings.
       operationId: embeddingsQuery
       tags:
-        - Embeddings
+      - Embeddings
       parameters:
-        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: ./schemas/common.yaml#/definitions/QueryEmbeddingRequest
+      - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: ./schemas/common.yaml#/definitions/QueryEmbeddingRequest
       responses:
         '200':
           description: Ranked similarity results.
@@ -221,23 +181,20 @@ paths:
         address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-embed-svc-${ENVIRONMENT}
         jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-embed-svc-${ENVIRONMENT}
         path_translation: APPEND_PATH_TO_ADDRESS
-      x-google-quota:
-        metricCosts:
-          tenant_global_rps: 1
   /v1/search/hybrid:
     post:
       summary: Hybrid candidate search
       description: Perform tenant-scoped hybrid semantic and keyword search.
       operationId: searchHybrid
       tags:
-        - Search
+      - Search
       parameters:
-        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: ./schemas/common.yaml#/definitions/HybridSearchRequest
+      - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: ./schemas/common.yaml#/definitions/HybridSearchRequest
       responses:
         '200':
           description: Hybrid search results with tenant metadata.
@@ -257,24 +214,20 @@ paths:
         address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-search-svc-${ENVIRONMENT}
         jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-search-svc-${ENVIRONMENT}
         path_translation: APPEND_PATH_TO_ADDRESS
-      x-google-quota:
-        metricCosts:
-          hybrid_search_rps: 1
-          tenant_global_rps: 1
   /v1/search/rerank:
     post:
       summary: Rerank search results
       description: Rerank an ordered candidate list using Together AI scoring.
       operationId: searchRerank
       tags:
-        - Search
+      - Search
       parameters:
-        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: ./schemas/common.yaml#/definitions/RerankRequest
+      - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: ./schemas/common.yaml#/definitions/RerankRequest
       responses:
         '200':
           description: Reranked candidate results and reasoning.
@@ -294,30 +247,26 @@ paths:
         address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-rerank-svc-${ENVIRONMENT}
         jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-rerank-svc-${ENVIRONMENT}
         path_translation: APPEND_PATH_TO_ADDRESS
-      x-google-quota:
-        metricCosts:
-          rerank_rps: 1
-          tenant_global_rps: 1
   /v1/evidence/{candidateId}:
     get:
       summary: Retrieve candidate evidence
       description: Retrieve curated evidence sections for a candidate.
       operationId: evidenceGet
       tags:
-        - Evidence
+      - Evidence
       parameters:
-        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
-        - name: candidateId
-          in: path
-          required: true
-          type: string
-          minLength: 3
-          maxLength: 128
-        - name: sections
-          in: query
-          required: false
-          description: Optional comma separated list of sections to include.
-          type: string
+      - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+      - name: candidateId
+        in: path
+        required: true
+        type: string
+        minLength: 3
+        maxLength: 128
+      - name: sections
+        in: query
+        required: false
+        description: Optional comma separated list of sections to include.
+        type: string
       responses:
         '200':
           description: Evidence payload for the requested candidate.
@@ -341,47 +290,46 @@ paths:
         address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-evidence-svc-${ENVIRONMENT}
         jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-evidence-svc-${ENVIRONMENT}
         path_translation: APPEND_PATH_TO_ADDRESS
-      x-google-quota:
-        metricCosts:
-          tenant_global_rps: 1
   /v1/occupations/search:
     get:
       summary: Search ECO occupations
       description: Perform fuzzy search against ECO occupations with tenant safeguards.
       operationId: occupationsSearch
       tags:
-        - ECO
+      - ECO
       parameters:
-        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
-        - name: title
-          in: query
-          required: true
-          type: string
-          minLength: 2
-          maxLength: 120
-        - name: locale
-          in: query
-          required: false
-          type: string
-          minLength: 2
-          maxLength: 10
-        - name: country
-          in: query
-          required: false
-          type: string
-          minLength: 2
-          maxLength: 3
-        - name: limit
-          in: query
-          required: false
-          type: integer
-          minimum: 1
-          maximum: 50
-        - name: useCache
-          in: query
-          required: false
-          type: string
-          enum: ['true', 'false']
+      - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+      - name: title
+        in: query
+        required: true
+        type: string
+        minLength: 2
+        maxLength: 120
+      - name: locale
+        in: query
+        required: false
+        type: string
+        minLength: 2
+        maxLength: 10
+      - name: country
+        in: query
+        required: false
+        type: string
+        minLength: 2
+        maxLength: 3
+      - name: limit
+        in: query
+        required: false
+        type: integer
+        minimum: 1
+        maximum: 50
+      - name: useCache
+        in: query
+        required: false
+        type: string
+        enum:
+        - 'true'
+        - 'false'
       responses:
         '200':
           description: Occupation search results with cache metadata.
@@ -401,36 +349,33 @@ paths:
         address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-eco-svc-${ENVIRONMENT}
         jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-eco-svc-${ENVIRONMENT}
         path_translation: APPEND_PATH_TO_ADDRESS
-      x-google-quota:
-        metricCosts:
-          tenant_global_rps: 1
   /v1/occupations/{ecoId}:
     get:
       summary: Get ECO occupation detail
       description: Retrieve the ECO occupation profile, crosswalks, and template snippets.
       operationId: occupationsGet
       tags:
-        - ECO
+      - ECO
       parameters:
-        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
-        - name: ecoId
-          in: path
-          required: true
-          type: string
-          minLength: 3
-          maxLength: 64
-        - name: locale
-          in: query
-          required: false
-          type: string
-          minLength: 2
-          maxLength: 10
-        - name: country
-          in: query
-          required: false
-          type: string
-          minLength: 2
-          maxLength: 3
+      - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+      - name: ecoId
+        in: path
+        required: true
+        type: string
+        minLength: 3
+        maxLength: 64
+      - name: locale
+        in: query
+        required: false
+        type: string
+        minLength: 2
+        maxLength: 10
+      - name: country
+        in: query
+        required: false
+        type: string
+        minLength: 2
+        maxLength: 3
       responses:
         '200':
           description: Occupation detail response with cache metadata.
@@ -454,23 +399,20 @@ paths:
         address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-eco-svc-${ENVIRONMENT}
         jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-eco-svc-${ENVIRONMENT}
         path_translation: APPEND_PATH_TO_ADDRESS
-      x-google-quota:
-        metricCosts:
-          tenant_global_rps: 1
   /v1/enrich/profile:
     post:
       summary: Submit profile enrichment
       description: Submit an enrichment job for a candidate profile.
       operationId: enrichProfile
       tags:
-        - Enrichment
+      - Enrichment
       parameters:
-        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: ./schemas/common.yaml#/definitions/EnrichProfileRequest
+      - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: ./schemas/common.yaml#/definitions/EnrichProfileRequest
       responses:
         '202':
           description: Enrichment job accepted.
@@ -490,23 +432,20 @@ paths:
         address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-enrich-svc-${ENVIRONMENT}
         jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-enrich-svc-${ENVIRONMENT}
         path_translation: APPEND_PATH_TO_ADDRESS
-      x-google-quota:
-        metricCosts:
-          tenant_global_rps: 1
   /v1/enrich/status/{jobId}:
     get:
       summary: Get enrichment status
       description: Retrieve the current status for a submitted enrichment job.
       operationId: enrichStatus
       tags:
-        - Enrichment
+      - Enrichment
       parameters:
-        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
-        - name: jobId
-          in: path
-          required: true
-          type: string
-          minLength: 8
+      - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+      - name: jobId
+        in: path
+        required: true
+        type: string
+        minLength: 8
       responses:
         '200':
           description: Enrichment job status.
@@ -530,23 +469,20 @@ paths:
         address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-enrich-svc-${ENVIRONMENT}
         jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-enrich-svc-${ENVIRONMENT}
         path_translation: APPEND_PATH_TO_ADDRESS
-      x-google-quota:
-        metricCosts:
-          tenant_global_rps: 1
   /v1/admin/refresh-postings:
     post:
       summary: Trigger postings refresh
       description: Publish a postings refresh job and optional scheduler updates.
       operationId: adminRefreshPostings
       tags:
-        - Admin
+      - Admin
       parameters:
-        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: ./schemas/common.yaml#/definitions/RefreshPostingsRequest
+      - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: ./schemas/common.yaml#/definitions/RefreshPostingsRequest
       responses:
         '200':
           description: Refresh request accepted with job metadata.
@@ -570,23 +506,20 @@ paths:
         address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
         jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
         path_translation: APPEND_PATH_TO_ADDRESS
-      x-google-quota:
-        metricCosts:
-          tenant_global_rps: 1
   /v1/admin/refresh-profiles:
     post:
       summary: Trigger profile refresh
       description: Publish a profile refresh job for downstream processors.
       operationId: adminRefreshProfiles
       tags:
-        - Admin
+      - Admin
       parameters:
-        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: ./schemas/common.yaml#/definitions/RefreshProfilesRequest
+      - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: ./schemas/common.yaml#/definitions/RefreshProfilesRequest
       responses:
         '200':
           description: Refresh request accepted with job metadata.
@@ -610,22 +543,19 @@ paths:
         address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
         jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
         path_translation: APPEND_PATH_TO_ADDRESS
-      x-google-quota:
-        metricCosts:
-          tenant_global_rps: 1
   /v1/admin/snapshots:
     get:
       summary: Data freshness snapshots
       description: Retrieve postings and profiles freshness metrics.
       operationId: adminSnapshots
       tags:
-        - Admin
+      - Admin
       parameters:
-        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
-        - name: tenantId
-          in: query
-          required: false
-          type: string
+      - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+      - name: tenantId
+        in: query
+        required: false
+        type: string
       responses:
         '200':
           description: Snapshots response with freshness data.
@@ -645,23 +575,20 @@ paths:
         address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
         jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
         path_translation: APPEND_PATH_TO_ADDRESS
-      x-google-quota:
-        metricCosts:
-          tenant_global_rps: 1
   /v1/skills/expand:
     post:
       summary: Expand a skill
       description: Return adjacent skills using PMI and market data.
       operationId: skillsExpand
       tags:
-        - MSGS
+      - MSGS
       parameters:
-        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: ./schemas/common.yaml#/definitions/SkillExpandRequest
+      - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: ./schemas/common.yaml#/definitions/SkillExpandRequest
       responses:
         '200':
           description: Expanded skills and cache metadata.
@@ -681,23 +608,20 @@ paths:
         address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-msgs-svc-${ENVIRONMENT}
         jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-msgs-svc-${ENVIRONMENT}
         path_translation: APPEND_PATH_TO_ADDRESS
-      x-google-quota:
-        metricCosts:
-          tenant_global_rps: 1
   /v1/roles/template:
     post:
       summary: Retrieve role template
       description: Retrieve a market-informed role template for an ECO occupation.
       operationId: rolesTemplate
       tags:
-        - MSGS
+      - MSGS
       parameters:
-        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: ./schemas/common.yaml#/definitions/RoleTemplateRequest
+      - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: ./schemas/common.yaml#/definitions/RoleTemplateRequest
       responses:
         '200':
           description: Role template response with cache metadata.
@@ -717,38 +641,35 @@ paths:
         address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-msgs-svc-${ENVIRONMENT}
         jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-msgs-svc-${ENVIRONMENT}
         path_translation: APPEND_PATH_TO_ADDRESS
-      x-google-quota:
-        metricCosts:
-          tenant_global_rps: 1
   /v1/market/demand:
     get:
       summary: Market demand analytics
       description: Retrieve EMA-indexed demand analytics for a skill.
       operationId: marketDemand
       tags:
-        - MSGS
+      - MSGS
       parameters:
-        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
-        - name: skillId
-          in: query
-          required: true
-          type: string
-          minLength: 2
-          maxLength: 96
-        - name: region
-          in: query
-          required: false
-          type: string
-        - name: industry
-          in: query
-          required: false
-          type: string
-        - name: windowWeeks
-          in: query
-          required: false
-          type: integer
-          minimum: 4
-          maximum: 52
+      - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+      - name: skillId
+        in: query
+        required: true
+        type: string
+        minLength: 2
+        maxLength: 96
+      - name: region
+        in: query
+        required: false
+        type: string
+      - name: industry
+        in: query
+        required: false
+        type: string
+      - name: windowWeeks
+        in: query
+        required: false
+        type: integer
+        minimum: 4
+        maximum: 52
       responses:
         '200':
           description: Market demand time-series and metadata.
@@ -768,6 +689,3 @@ paths:
         address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-msgs-svc-${ENVIRONMENT}
         jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-msgs-svc-${ENVIRONMENT}
         path_translation: APPEND_PATH_TO_ADDRESS
-      x-google-quota:
-        metricCosts:
-          tenant_global_rps: 1
