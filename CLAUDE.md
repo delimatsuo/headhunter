@@ -44,6 +44,8 @@ Proceeding with: [only if all above are YES]
 
 **THESE RULES APPLY TO ALL DEVELOPMENT WORK:**
 
+**📋 IMPORTANT: See CLAUDE-FLOW.md for complete commit/push protocol**
+
 1. **Test-Driven Development (TDD) is MANDATORY**
    - Write tests BEFORE implementation
    - All tests must pass before committing
@@ -53,11 +55,13 @@ Proceeding with: [only if all above are YES]
    - When a task passes all tests: `git add . && git commit -m "feat: [description]"`
    - Update relevant documentation (README, API docs, etc.)
    - Keep commits focused and atomic
+   - **MUST follow protocol in CLAUDE-FLOW.md**
 
 3. **Push to Remote After Task Completion**
    - After successful commit: `git push origin [branch]`
    - Ensures work is backed up and visible to team
    - Creates checkpoint for recovery if needed
+   - **Push IMMEDIATELY after commit (see CLAUDE-FLOW.md)**
 
 4. **Production-First Mindset**
    - **PRIMARY GOAL**: Get application to production for testing
