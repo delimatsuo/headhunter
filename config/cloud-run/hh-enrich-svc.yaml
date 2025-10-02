@@ -15,6 +15,7 @@ spec:
         autoscaling.knative.dev/maxScale: "${SERVICE_MAX_SCALE}"
         autoscaling.knative.dev/minScale: "${SERVICE_MIN_SCALE}"
         run.googleapis.com/vpc-access-connector: projects/${SERVICE_PROJECT_ID}/locations/${SERVICE_REGION}/connectors/${VPC_CONNECTOR}
+        run.googleapis.com/vpc-access-egress: all-traffic
         run.googleapis.com/cloudsql-instances: ${SERVICE_PROJECT_ID}:${SERVICE_REGION}:${SQL_INSTANCE}
     spec:
       serviceAccountName: ${SERVICE_ACCOUNT}
