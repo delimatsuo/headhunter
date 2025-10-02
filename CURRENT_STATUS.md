@@ -107,18 +107,36 @@ Based on GCP best practices, when using Cloud SQL with private IP:
 - Verified against actual Memorystore Redis instance
 - **Result**: Startup probe now succeeds, but container exits with code 1
 
-### Current Status (21:07 UTC)
-- ✅ Services can listen on port 8080 (startup probe passes)
-- ✅ Redis connection details corrected
-- ✅ VPC networking properly configured
-- ❌ Containers crash after startup with exit code 1
-- ❌ No application logs written (crash happens during bootstrap)
+### 4. Fixed VPC Firewall Rules (21:40 UTC)
+- Added Cloud SQL peering range `10.159.0.0/16` to ingress firewall
+- Added Redis port `6378` to allowed ports
+- Firewall was blocking Cloud SQL Auth Proxy from reaching database
+- **Result**: Deployments still timeout, but some revisions succeed
 
-### Remaining Investigation Needed
-1. Check if Cloud SQL connection still timing out
-2. Verify Firestore initialization not blocking
-3. Review error handling in background initialization (setImmediate callbacks)
-4. Consider if services need to disable database/redis connections for MVP
+### Current Status (21:45 UTC)
+- ✅ Services deploy and mark as "Ready" (some revisions succeed)
+- ✅ Redis connection details corrected (10.159.1.4:6378)
+- ✅ VPC networking and firewall properly configured
+- ✅ Cloud SQL connection should work (firewall fixed)
+- ❌ **All services return 404 for all requests** (including `/health`)
+- ❌ Requests never reach containers (Google's 404, not Fastify)
+- ❌ Issue persists even for "successful" revisions
+
+### Root Cause: Request Routing Failure
+The fundamental issue is that **HTTP requests are not reaching the containers**. Services pass health probes and mark as Ready, but all HTTP requests return Google's 404 page. This indicates a routing or ingress configuration problem, NOT an application issue.
+
+### Possible Causes
+1. **Port misconfiguration**: Containers listen on 8080, but Cloud Run routes to wrong port
+2. **Health check vs traffic routing**: Startup probes succeed but traffic routing fails
+3. **Ingress annotation issue**: `internal-and-cloud-load-balancing` may require additional setup
+4. **Service account permissions**: IAM roles may be missing for request routing
+5. **Container registry access**: Images may not be fully downloaded/validated
+
+### Immediate Actions Needed
+1. Test with `--allow-unauthenticated` to rule out auth issues
+2. Check if containers are actually running (not just passing probes)
+3. Deploy a minimal "hello world" service to isolate the issue
+4. Review Cloud Run ingress settings and service IAM bindings
 
 ---
 
