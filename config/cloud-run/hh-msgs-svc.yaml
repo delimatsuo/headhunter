@@ -33,6 +33,8 @@ spec:
               value: ${SERVICE_PROJECT_ID}
             - name: MSGS_DB_HOST
               value: /cloudsql/${SERVICE_PROJECT_ID}:${SERVICE_REGION}:${SQL_INSTANCE_MSGS}
+            - name: MSGS_DB_PORT
+              value: "5432"
             - name: MSGS_DB_NAME
               value: ${SQL_DATABASE}
             - name: MSGS_DB_USER

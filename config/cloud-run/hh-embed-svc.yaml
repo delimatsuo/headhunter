@@ -38,6 +38,8 @@ spec:
               value: "6379"
             - name: PGVECTOR_HOST
               value: /cloudsql/${SERVICE_PROJECT_ID}:${SERVICE_REGION}:${SQL_INSTANCE}
+            - name: PGVECTOR_PORT
+              value: "5432"
             - name: PGVECTOR_DATABASE
               value: ${SQL_DATABASE}
             - name: PGVECTOR_USER
