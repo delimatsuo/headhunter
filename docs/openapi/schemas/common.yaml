@@ -30,8 +30,8 @@ definitions:
   ErrorResponse:
     type: object
     required:
-      - error
-      - message
+    - error
+    - message
     properties:
       error:
         type: string
@@ -78,7 +78,7 @@ definitions:
   GenerateEmbeddingRequest:
     type: object
     required:
-      - text
+    - text
     properties:
       text:
         type: string
@@ -87,9 +87,9 @@ definitions:
       provider:
         type: string
         enum:
-          - vertex-ai
-          - local
-          - together
+        - vertex-ai
+        - local
+        - together
       dimensions:
         type: integer
         minimum: 16
@@ -101,11 +101,11 @@ definitions:
   GenerateEmbeddingResponse:
     type: object
     required:
-      - embedding
-      - provider
-      - model
-      - dimensions
-      - requestId
+    - embedding
+    - provider
+    - model
+    - dimensions
+    - requestId
     properties:
       embedding:
         $ref: '#/definitions/EmbeddingVector'
@@ -125,7 +125,7 @@ definitions:
   UpsertEmbeddingRequest:
     type: object
     required:
-      - entityId
+    - entityId
     properties:
       entityId:
         type: string
@@ -147,27 +147,23 @@ definitions:
       provider:
         type: string
         enum:
-          - vertex-ai
-          - local
-          - together
+        - vertex-ai
+        - local
+        - together
     additionalProperties: true
-    anyOf:
-      - required:
-          - text
-      - required:
-          - embedding
+    # Note: Swagger 2.0 doesn't support anyOf. Either text or embedding must be provided at runtime.
   UpsertEmbeddingResponse:
     type: object
     required:
-      - entityId
-      - tenantId
-      - vectorId
-      - modelVersion
-      - chunkType
-      - dimensions
-      - createdAt
-      - updatedAt
-      - requestId
+    - entityId
+    - tenantId
+    - vectorId
+    - modelVersion
+    - chunkType
+    - dimensions
+    - createdAt
+    - updatedAt
+    - requestId
     properties:
       entityId:
         type: string
@@ -217,23 +213,19 @@ definitions:
       provider:
         type: string
         enum:
-          - vertex-ai
-          - local
-          - together
-    anyOf:
-      - required:
-          - query
-      - required:
-          - embedding
+        - vertex-ai
+        - local
+        - together
+    # Note: Swagger 2.0 doesn't support anyOf. Either query or embedding must be provided at runtime.
   QueryEmbeddingResult:
     type: object
     required:
-      - entityId
-      - similarity
-      - modelVersion
-      - chunkType
-      - embeddingId
-      - updatedAt
+    - entityId
+    - similarity
+    - modelVersion
+    - chunkType
+    - embeddingId
+    - updatedAt
     properties:
       entityId:
         type: string
@@ -255,13 +247,13 @@ definitions:
   QueryEmbeddingResponse:
     type: object
     required:
-      - results
-      - count
-      - provider
-      - model
-      - dimensions
-      - requestId
-      - executionMs
+    - results
+    - count
+    - provider
+    - model
+    - dimensions
+    - requestId
+    - executionMs
     properties:
       results:
         type: array
@@ -288,11 +280,7 @@ definitions:
   HybridSearchRequest:
     type: object
     additionalProperties: true
-    oneOf:
-      - required:
-          - query
-      - required:
-          - embedding
+    # Note: Swagger 2.0 doesn't support oneOf. Either query or embedding must be provided at runtime.
     properties:
       query:
         type: string
@@ -358,12 +346,12 @@ definitions:
   HybridSearchCandidate:
     type: object
     required:
-      - candidateId
-      - score
-      - vectorScore
-      - textScore
-      - confidence
-      - matchReasons
+    - candidateId
+    - score
+    - vectorScore
+    - textScore
+    - confidence
+    - matchReasons
     properties:
       candidateId:
         type: string
@@ -398,8 +386,8 @@ definitions:
         items:
           type: object
           required:
-            - name
-            - weight
+          - name
+          - weight
           properties:
             name:
               type: string
@@ -415,11 +403,11 @@ definitions:
   HybridSearchResponse:
     type: object
     required:
-      - results
-      - total
-      - cacheHit
-      - requestId
-      - timings
+    - results
+    - total
+    - cacheHit
+    - requestId
+    - timings
     properties:
       results:
         type: array
@@ -435,7 +423,7 @@ definitions:
       timings:
         type: object
         required:
-          - totalMs
+        - totalMs
         properties:
           totalMs:
             type: integer
@@ -464,7 +452,7 @@ definitions:
   RerankCandidate:
     type: object
     required:
-      - candidateId
+    - candidateId
     properties:
       candidateId:
         type: string
@@ -487,8 +475,8 @@ definitions:
   RerankRequest:
     type: object
     required:
-      - jobDescription
-      - candidates
+    - jobDescription
+    - candidates
     properties:
       jobDescription:
         type: string
@@ -526,10 +514,10 @@ definitions:
   RerankResult:
     type: object
     required:
-      - candidateId
-      - rank
-      - score
-      - reasons
+    - candidateId
+    - rank
+    - score
+    - reasons
     properties:
       candidateId:
         type: string
@@ -551,11 +539,11 @@ definitions:
   RerankResponse:
     type: object
     required:
-      - results
-      - cacheHit
-      - usedFallback
-      - requestId
-      - timings
+    - results
+    - cacheHit
+    - usedFallback
+    - requestId
+    - timings
     properties:
       results:
         type: array
@@ -570,7 +558,7 @@ definitions:
       timings:
         type: object
         required:
-          - totalMs
+        - totalMs
         properties:
           totalMs:
             type: integer
@@ -593,8 +581,8 @@ definitions:
   EvidenceResponse:
     type: object
     required:
-      - sections
-      - metadata
+    - sections
+    - metadata
     properties:
       sections:
         type: object
@@ -621,10 +609,10 @@ definitions:
       metadata:
         type: object
         required:
-          - candidateId
-          - orgId
-          - sectionsAvailable
-          - cacheHit
+        - candidateId
+        - orgId
+        - sectionsAvailable
+        - cacheHit
         properties:
           candidateId:
             type: string
@@ -651,22 +639,22 @@ definitions:
   OccupationSearchResponse:
     type: object
     required:
-      - results
-      - total
-      - cacheHit
-      - query
+    - results
+    - total
+    - cacheHit
+    - query
     properties:
       results:
         type: array
         items:
           type: object
           required:
-            - ecoId
-            - title
-            - locale
-            - aliases
-            - score
-            - source
+          - ecoId
+          - title
+          - locale
+          - aliases
+          - score
+          - source
           properties:
             ecoId:
               type: string
@@ -685,8 +673,8 @@ definitions:
             source:
               type: string
               enum:
-                - title
-                - alias
+              - title
+              - alias
       total:
         type: integer
       cacheHit:
@@ -694,10 +682,10 @@ definitions:
       query:
         type: object
         required:
-          - title
-          - locale
-          - country
-          - limit
+        - title
+        - locale
+        - country
+        - limit
         properties:
           title:
             type: string
@@ -713,19 +701,19 @@ definitions:
   OccupationDetailResponse:
     type: object
     required:
-      - occupation
-      - cacheHit
+    - occupation
+    - cacheHit
     properties:
       cacheHit:
         type: boolean
       occupation:
         type: object
         required:
-          - ecoId
-          - title
-          - locale
-          - aliases
-          - crosswalk
+        - ecoId
+        - title
+        - locale
+        - aliases
+        - crosswalk
         properties:
           ecoId:
             type: string
@@ -786,7 +774,7 @@ definitions:
   EnrichProfileRequest:
     type: object
     required:
-      - candidateId
+    - candidateId
     properties:
       candidateId:
         type: string
@@ -807,12 +795,12 @@ definitions:
   EnrichProfileJob:
     type: object
     required:
-      - jobId
-      - tenantId
-      - candidateId
-      - status
-      - createdAt
-      - updatedAt
+    - jobId
+    - tenantId
+    - candidateId
+    - status
+    - createdAt
+    - updatedAt
     properties:
       jobId:
         type: string
@@ -823,10 +811,10 @@ definitions:
       status:
         type: string
         enum:
-          - queued
-          - processing
-          - completed
-          - failed
+        - queued
+        - processing
+        - completed
+        - failed
       createdAt:
         type: string
       updatedAt:
@@ -840,7 +828,7 @@ definitions:
   EnrichProfileResponse:
     type: object
     required:
-      - job
+    - job
     properties:
       job:
         $ref: '#/definitions/EnrichProfileJob'
@@ -850,7 +838,7 @@ definitions:
   EnrichStatusResponse:
     type: object
     required:
-      - job
+    - job
     properties:
       job:
         $ref: '#/definitions/EnrichProfileJob'
@@ -870,8 +858,8 @@ definitions:
         type: object
         additionalProperties: false
         required:
-          - name
-          - cron
+        - name
+        - cron
         properties:
           name:
             type: string
@@ -887,7 +875,7 @@ definitions:
     type: object
     additionalProperties: false
     required:
-      - tenantId
+    - tenantId
     properties:
       tenantId:
         type: string
@@ -898,17 +886,17 @@ definitions:
       priority:
         type: string
         enum:
-          - low
-          - normal
-          - high
+        - low
+        - normal
+        - high
       force:
         type: boolean
       schedule:
         type: object
         additionalProperties: false
         required:
-          - name
-          - cron
+        - name
+        - cron
         properties:
           name:
             type: string
@@ -923,24 +911,24 @@ definitions:
   RefreshResponse:
     type: object
     required:
-      - status
-      - metadata
+    - status
+    - metadata
     properties:
       status:
         type: string
         enum:
-          - pending
-          - queued
-          - running
-          - completed
-          - failed
-          - timeout
+        - pending
+        - queued
+        - running
+        - completed
+        - failed
+        - timeout
       messageId:
         type: string
       job:
         type: object
         required:
-          - jobName
+        - jobName
         properties:
           jobName:
             type: string
@@ -949,12 +937,12 @@ definitions:
       metadata:
         type: object
         required:
-          - requestId
-          - tenantId
-          - triggeredAt
-          - triggeredBy
-          - priority
-          - force
+        - requestId
+        - tenantId
+        - triggeredAt
+        - triggeredBy
+        - priority
+        - force
         properties:
           requestId:
             type: string
@@ -968,9 +956,9 @@ definitions:
           priority:
             type: string
             enum:
-              - low
-              - normal
-              - high
+            - low
+            - normal
+            - high
           force:
             type: boolean
           scheduleName:
@@ -983,10 +971,10 @@ definitions:
   SnapshotsResponse:
     type: object
     required:
-      - generatedAt
-      - postings
-      - profiles
-      - jobHealth
+    - generatedAt
+    - postings
+    - profiles
+    - jobHealth
     properties:
       generatedAt:
         type: string
@@ -998,10 +986,10 @@ definitions:
       jobHealth:
         type: object
         required:
-          - recentExecutions
-          - recentFailures
-          - successRatio
-          - alertState
+        - recentExecutions
+        - recentFailures
+        - successRatio
+        - alertState
         properties:
           recentExecutions:
             type: number
@@ -1012,9 +1000,9 @@ definitions:
           alertState:
             type: string
             enum:
-              - ok
-              - warning
-              - critical
+            - ok
+            - warning
+            - critical
           lastFailureAt:
             type: string
             format: date-time
@@ -1024,14 +1012,13 @@ definitions:
   FreshnessSection:
     type: object
     required:
-      - maxLagDays
-      - staleTenants
+    - maxLagDays
+    - staleTenants
     properties:
       lastUpdatedAt:
-        oneOf:
-          - type: string
-            format: date-time
-          - type: 'null'
+        type: string
+        format: date-time
+        # Note: Swagger 2.0 doesn't support nullable. This field may be null at runtime.
       maxLagDays:
         type: number
       staleTenants:
@@ -1039,8 +1026,8 @@ definitions:
         items:
           type: object
           required:
-            - tenantId
-            - lagDays
+          - tenantId
+          - lagDays
           properties:
             tenantId:
               type: string
@@ -1053,7 +1040,7 @@ definitions:
   SkillExpandRequest:
     type: object
     required:
-      - skillId
+    - skillId
     properties:
       skillId:
         type: string
@@ -1079,12 +1066,12 @@ definitions:
   SkillExpandEdge:
     type: object
     required:
-      - skillId
-      - label
-      - score
-      - support
-      - recencyDays
-      - sources
+    - skillId
+    - label
+    - score
+    - support
+    - recencyDays
+    - sources
     properties:
       skillId:
         type: string
@@ -1104,17 +1091,17 @@ definitions:
   SkillExpandResponse:
     type: object
     required:
-      - seedSkill
-      - adjacent
-      - cacheHit
-      - generatedAt
-      - meta
+    - seedSkill
+    - adjacent
+    - cacheHit
+    - generatedAt
+    - meta
     properties:
       seedSkill:
         type: object
         required:
-          - skillId
-          - label
+        - skillId
+        - label
         properties:
           skillId:
             type: string
@@ -1136,7 +1123,7 @@ definitions:
   RoleTemplateRequest:
     type: object
     required:
-      - ecoId
+    - ecoId
     properties:
       ecoId:
         type: string
@@ -1156,10 +1143,10 @@ definitions:
   RoleTemplateSkill:
     type: object
     required:
-      - skillId
-      - label
-      - importance
-      - source
+    - skillId
+    - label
+    - importance
+    - source
     properties:
       skillId:
         type: string
@@ -1170,21 +1157,21 @@ definitions:
       source:
         type: string
         enum:
-          - required
-          - preferred
+        - required
+        - preferred
     additionalProperties: false
   RoleTemplateResponse:
     type: object
     required:
-      - ecoId
-      - locale
-      - title
-      - version
-      - summary
-      - requiredSkills
-      - preferredSkills
-      - cacheHit
-      - generatedAt
+    - ecoId
+    - locale
+    - title
+    - version
+    - summary
+    - requiredSkills
+    - preferredSkills
+    - cacheHit
+    - generatedAt
     properties:
       ecoId:
         type: string
@@ -1221,13 +1208,13 @@ definitions:
   MarketDemandResponse:
     type: object
     required:
-      - skillId
-      - region
-      - points
-      - trend
-      - latestEma
-      - cacheHit
-      - generatedAt
+    - skillId
+    - region
+    - points
+    - trend
+    - latestEma
+    - cacheHit
+    - generatedAt
     properties:
       skillId:
         type: string
@@ -1240,14 +1227,14 @@ definitions:
         items:
           type: object
           required:
-            - weekStart
-            - postings
-            - ema
-            - zScore
+          - weekStart
+          - postings
+          - ema
+          - zScore
           properties:
             weekStart:
               type: string
-              pattern: '^\\d{4}-\\d{2}-\\d{2}$'
+              pattern: ^\\d{4}-\\d{2}-\\d{2}$
             postings:
               type: integer
               minimum: 0
@@ -1259,9 +1246,9 @@ definitions:
       trend:
         type: string
         enum:
-          - rising
-          - steady
-          - declining
+        - rising
+        - steady
+        - declining
       latestEma:
         type: number
       cacheHit:

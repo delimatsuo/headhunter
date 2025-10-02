@@ -1,0 +1,122 @@
+{
+  "issues": [],
+  "iterations": 3,
+  "metrics": {
+    "cache": {
+      "hitRate": 1.0,
+      "hits": 33,
+      "misses": 0
+    },
+    "cachedReadMs": {
+      "avg": 1.97,
+      "count": 8,
+      "max": 3.49,
+      "min": 1.49,
+      "p95": 3.01
+    },
+    "endToEndMs": {
+      "avg": 1115.06,
+      "count": 4,
+      "max": 1129.38,
+      "min": 1103.4,
+      "p95": 1128.35
+    },
+    "rerankMs": {
+      "avg": 0.0,
+      "count": 4,
+      "max": 0.0,
+      "min": 0.0,
+      "p95": 0.0
+    }
+  },
+  "recommendations": [],
+  "samples": [
+    {
+      "cacheHits": 11,
+      "cacheMisses": 0,
+      "cachedSamples": [
+        {
+          "cacheHit": true,
+          "candidate": "integration-candidate",
+          "latencyMs": 1.81,
+          "type": "evidence"
+        },
+        {
+          "cacheHit": true,
+          "candidate": null,
+          "latencyMs": 1.61,
+          "type": "search"
+        }
+      ],
+      "endToEndMs": 1103.4,
+      "label": "iteration-1",
+      "rerankMs": 0.0
+    },
+    {
+      "cacheHits": 11,
+      "cacheMisses": 0,
+      "cachedSamples": [
+        {
+          "cacheHit": true,
+          "candidate": "integration-candidate",
+          "latencyMs": 1.51,
+          "type": "evidence"
+        },
+        {
+          "cacheHit": true,
+          "candidate": null,
+          "latencyMs": 1.49,
+          "type": "search"
+        }
+      ],
+      "endToEndMs": 1129.38,
+      "label": "iteration-2",
+      "rerankMs": 0.0
+    },
+    {
+      "cacheHits": 11,
+      "cacheMisses": 0,
+      "cachedSamples": [
+        {
+          "cacheHit": true,
+          "candidate": "integration-candidate",
+          "latencyMs": 1.85,
+          "type": "evidence"
+        },
+        {
+          "cacheHit": true,
+          "candidate": null,
+          "latencyMs": 1.9,
+          "type": "search"
+        }
+      ],
+      "endToEndMs": 1104.98,
+      "label": "iteration-3",
+      "rerankMs": 0.0
+    }
+  ],
+  "sla": {
+    "cacheHitRate": {
+      "observed": 1.0,
+      "pass": true,
+      "target": 0.7
+    },
+    "cachedRead": {
+      "p95": 3.01,
+      "pass": true,
+      "target": 250.0
+    },
+    "endToEnd": {
+      "p95": 1128.35,
+      "pass": true,
+      "target": 1200.0
+    },
+    "rerank": {
+      "p95": 0.0,
+      "pass": true,
+      "target": 350.0
+    }
+  },
+  "tenant": "tenant-alpha",
+  "warmups": 1
+}

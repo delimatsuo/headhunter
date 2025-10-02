@@ -1,0 +1,18 @@
+{
+  "executed": [
+    {
+      "details": {
+        "stepsPassed": 16
+      },
+      "name": "warm_pipeline",
+      "status": "ok"
+    }
+  ],
+  "plan": [
+    {
+      "name": "warm_pipeline",
+      "reason": "End-to-end SLA failed"
+    }
+  ],
+  "tenant": "tenant-alpha"
+}

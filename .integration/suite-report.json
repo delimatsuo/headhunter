@@ -1,0 +1,461 @@
+{
+  "completed_steps": 17,
+  "failed_steps": 0,
+  "issues": [],
+  "performance": {
+    "cache": {
+      "hitRate": 1.0,
+      "hits": 9,
+      "misses": 0,
+      "observations": [
+        {
+          "cacheHit": true,
+          "latencyMs": 13.07,
+          "step": "search_hybrid"
+        },
+        {
+          "cacheHit": true,
+          "latencyMs": 9.36,
+          "step": "search_rerank"
+        },
+        {
+          "cacheHit": true,
+          "latencyMs": 18.72,
+          "step": "search_cache_warm"
+        },
+        {
+          "cacheHit": true,
+          "latencyMs": 8.62,
+          "step": "evidence_retrieve"
+        },
+        {
+          "cacheHit": true,
+          "latencyMs": 17.27,
+          "step": "eco_search"
+        },
+        {
+          "cacheHit": true,
+          "latencyMs": 1.69,
+          "step": "eco_detail"
+        },
+        {
+          "cacheHit": true,
+          "latencyMs": 2.81,
+          "step": "msgs_skill_expand"
+        },
+        {
+          "cacheHit": true,
+          "latencyMs": 7.19,
+          "step": "msgs_role_template"
+        },
+        {
+          "cacheHit": true,
+          "latencyMs": 1.63,
+          "step": "msgs_market_demand"
+        }
+      ]
+    },
+    "cachedReadLatencyMs": 1.53,
+    "cachedReadSamples": [
+      {
+        "attempt": 1,
+        "cacheHit": true,
+        "latencyMs": 1.8
+      },
+      {
+        "attempt": 2,
+        "cacheHit": true,
+        "latencyMs": 1.26
+      }
+    ],
+    "rerankLatencyMs": 9.36,
+    "stepLatencyP95Ms": 228.74,
+    "targets": {
+      "cacheHitRate": 0.7,
+      "cachedReadP95Ms": 250.0,
+      "rerankP95Ms": 350.0,
+      "stepLatencyP95Ms": 1200.0
+    },
+    "totalRuntimeMs": 1161.24
+  },
+  "stats": {
+    "avgLatencyMs": 68.29,
+    "medianLatencyMs": 8.62,
+    "p95LatencyMs": 228.74,
+    "totalSteps": 17
+  },
+  "steps": {
+    "admin_monitor": {
+      "data": {
+        "statuses": [
+          [
+            "postings",
+            "completed"
+          ],
+          [
+            "profiles",
+            "completed"
+          ]
+        ]
+      },
+      "error": null,
+      "latencyMs": 0.0,
+      "status": "passed"
+    },
+    "admin_refresh": {
+      "data": {
+        "postings": {
+          "job": {
+            "executionName": "projects/headhunter-local/locations/us-central1/executions/mock-1759078952502",
+            "jobName": "projects/headhunter-local/locations/us-central1/jobs/postings-refresh-job"
+          },
+          "messageId": "43",
+          "metadata": {
+            "force": false,
+            "priority": "normal",
+            "requestId": "947df738-93a3-4126-8331-a50ca429dd42",
+            "tenantId": "tenant-alpha",
+            "triggeredAt": "2025-09-28T17:02:31.993Z",
+            "triggeredBy": "integration-runner"
+          },
+          "status": "completed"
+        },
+        "profiles": {
+          "job": {
+            "executionName": "projects/headhunter-local/locations/us-central1/executions/mock-1759078953012",
+            "jobName": "projects/headhunter-local/locations/us-central1/jobs/profiles-refresh-job"
+          },
+          "messageId": "44",
+          "metadata": {
+            "force": false,
+            "priority": "normal",
+            "requestId": "04cca99c-d4ea-41a1-8600-1d9893f753ec",
+            "tenantId": "tenant-alpha",
+            "triggeredAt": "2025-09-28T17:02:32.504Z",
+            "triggeredBy": "integration-runner"
+          },
+          "status": "completed"
+        }
+      },
+      "error": null,
+      "latencyMs": 1021.65,
+      "status": "passed"
+    },
+    "admin_snapshots": {
+      "data": {
+        "postingsLag": 0,
+        "profilesLag": 0
+      },
+      "error": null,
+      "latencyMs": 2.21,
+      "status": "passed"
+    },
+    "eco_detail": {
+      "data": {
+        "cacheHit": true,
+        "summary": {
+          "aliases": 4,
+          "industries": 1
+        }
+      },
+      "error": null,
+      "latencyMs": 1.69,
+      "status": "passed"
+    },
+    "eco_search": {
+      "data": {
+        "cacheHit": true,
+        "primary_eco_id": "frontend-developer",
+        "total": 3
+      },
+      "error": null,
+      "latencyMs": 17.27,
+      "status": "passed"
+    },
+    "embeddings_generate": {
+      "data": {
+        "dimensions": 768,
+        "provider": "local",
+        "requestId": "5d6711be-618d-4c73-bde3-b88bf27b8351"
+      },
+      "error": null,
+      "latencyMs": 10.34,
+      "status": "passed"
+    },
+    "embeddings_upsert": {
+      "data": {
+        "requestId": "f17b8085-732b-4fc4-93ba-434ad4b9bb7e",
+        "tenantId": "tenant-alpha",
+        "vectorId": "268a6fa2-c679-4725-8ebf-1bf5d266cc08"
+      },
+      "error": null,
+      "latencyMs": 3.7,
+      "status": "passed"
+    },
+    "enrich_submit": {
+      "data": {
+        "job": {
+          "attemptCount": 1,
+          "candidateDocumentId": "tenant-alpha_integration-candidate",
+          "candidateId": "integration-candidate",
+          "correlationId": "tenant-alpha:619c9aa0-1717-43ef-a204-2cf64c46b756",
+          "createdAt": "2025-09-28T16:49:07.081Z",
+          "dedupeKey": "hh:enrich:dedupe:tenant-alpha:30dc3e61245f9887076b4294bd8aa4b34a0c2b91",
+          "jobId": "eab407f559dd31c07f7dd8ac5aa0015ed394b3be",
+          "priority": 5,
+          "result": {
+            "attempts": 1,
+            "candidateSnapshot": {},
+            "embeddingSkippedReason": "missing_resume_text",
+            "embeddingUpserted": false,
+            "modelVersion": "qwen-2.5-32b-stage1",
+            "phaseDurationsMs": {
+              "embed": 0,
+              "python": 224.31266699999105,
+              "queue": 0,
+              "total": 225.8391249999986
+            },
+            "processingTimeSeconds": 0.22583912499999861,
+            "promptVersion": "stage1-v1",
+            "queueDurationMs": 0
+          },
+          "status": "completed",
+          "tenantId": "tenant-alpha",
+          "updatedAt": "2025-09-28T16:49:07.307Z"
+        }
+      },
+      "error": null,
+      "latencyMs": 9.92,
+      "status": "passed"
+    },
+    "enrich_wait": {
+      "data": {
+        "job": {
+          "attemptCount": 1,
+          "candidateDocumentId": "tenant-alpha_integration-candidate",
+          "candidateId": "integration-candidate",
+          "correlationId": "tenant-alpha:619c9aa0-1717-43ef-a204-2cf64c46b756",
+          "createdAt": "2025-09-28T16:49:07.081Z",
+          "dedupeKey": "hh:enrich:dedupe:tenant-alpha:30dc3e61245f9887076b4294bd8aa4b34a0c2b91",
+          "jobId": "eab407f559dd31c07f7dd8ac5aa0015ed394b3be",
+          "priority": 5,
+          "result": {
+            "attempts": 1,
+            "candidateSnapshot": {},
+            "embeddingSkippedReason": "missing_resume_text",
+            "embeddingUpserted": false,
+            "modelVersion": "qwen-2.5-32b-stage1",
+            "phaseDurationsMs": {
+              "embed": 0,
+              "python": 224.31266699999105,
+              "queue": 0,
+              "total": 225.8391249999986
+            },
+            "processingTimeSeconds": 0.22583912499999861,
+            "promptVersion": "stage1-v1",
+            "queueDurationMs": 0
+          },
+          "status": "completed",
+          "tenantId": "tenant-alpha",
+          "updatedAt": "2025-09-28T16:49:07.307Z"
+        }
+      },
+      "error": null,
+      "latencyMs": 2.3,
+      "status": "passed"
+    },
+    "evidence_retrieve": {
+      "data": {
+        "cacheHit": true,
+        "sections": [
+          "skills_analysis",
+          "experience_analysis",
+          "education_analysis",
+          "achievements"
+        ]
+      },
+      "error": null,
+      "latencyMs": 8.62,
+      "status": "passed"
+    },
+    "health_checks": {
+      "data": {
+        "healthy": [
+          {
+            "latencyMs": 4.02,
+            "service": "embed"
+          },
+          {
+            "latencyMs": 2.9,
+            "service": "search"
+          },
+          {
+            "latencyMs": 2.15,
+            "service": "rerank"
+          },
+          {
+            "latencyMs": 7.9,
+            "service": "evidence"
+          },
+          {
+            "latencyMs": 7.39,
+            "service": "eco"
+          },
+          {
+            "latencyMs": 2.12,
+            "service": "admin"
+          },
+          {
+            "latencyMs": 1.96,
+            "service": "msgs"
+          },
+          {
+            "latencyMs": 1.61,
+            "service": "enrich"
+          }
+        ],
+        "unhealthy": []
+      },
+      "error": null,
+      "latencyMs": 30.52,
+      "status": "passed"
+    },
+    "msgs_market_demand": {
+      "data": {
+        "cacheHit": true,
+        "points": 11,
+        "trend": "declining"
+      },
+      "error": null,
+      "latencyMs": 1.63,
+      "status": "passed"
+    },
+    "msgs_role_template": {
+      "data": {
+        "cacheHit": true,
+        "preferredSkills": 2,
+        "requiredSkills": 3
+      },
+      "error": null,
+      "latencyMs": 7.19,
+      "status": "passed"
+    },
+    "msgs_skill_expand": {
+      "data": {
+        "adjacent_count": 4,
+        "cacheHit": true
+      },
+      "error": null,
+      "latencyMs": 2.81,
+      "status": "passed"
+    },
+    "search_cache_warm": {
+      "data": {
+        "cacheHit": true,
+        "diagnostics": {
+          "first": {
+            "cacheHit": false,
+            "latencyMs": 9.61
+          },
+          "second": {
+            "cacheHit": true,
+            "latencyMs": 8.89
+          }
+        },
+        "timings": {
+          "cacheMs": 7,
+          "embeddingMs": 2,
+          "rankingMs": 0,
+          "retrievalMs": 5,
+          "totalMs": 7
+        }
+      },
+      "error": null,
+      "latencyMs": 18.72,
+      "status": "passed"
+    },
+    "search_hybrid": {
+      "data": {
+        "cacheHit": true,
+        "results": [
+          {
+            "candidateId": "integration-candidate",
+            "confidence": 0.92,
+            "fullName": "Maria Souza",
+            "headline": "Senior Python Developer focada em dados",
+            "industries": [
+              "Tecnologia"
+            ],
+            "location": "Sao Paulo",
+            "matchReasons": [
+              "Matches required skills: Python, Spark",
+              "Located in preferred market (Sao Paulo)"
+            ],
+            "metadata": {
+              "source": "integration"
+            },
+            "score": 0.8619789552688599,
+            "skills": [
+              {
+                "name": "python",
+                "weight": 1
+              },
+              {
+                "name": "spark",
+                "weight": 1
+              },
+              {
+                "name": "cloud",
+                "weight": 0.3
+              }
+            ],
+            "textScore": 0,
+            "title": "Senior Python Developer",
+            "vectorScore": 0.9032982587814331,
+            "yearsExperience": 6
+          }
+        ],
+        "timings": {
+          "cacheMs": 4,
+          "embeddingMs": 2,
+          "rankingMs": 0,
+          "retrievalMs": 1,
+          "totalMs": 3
+        }
+      },
+      "error": null,
+      "latencyMs": 13.07,
+      "status": "passed"
+    },
+    "search_rerank": {
+      "data": {
+        "cacheHit": true,
+        "results": [
+          {
+            "candidateId": "integration-candidate",
+            "payload": {
+              "source": "integration"
+            },
+            "rank": 1,
+            "reasons": [
+              "Initial score 0.86",
+              "Matches required skills: Python, Spark",
+              "Located in preferred market (Sao Paulo)"
+            ],
+            "score": 0.8619789552688599
+          }
+        ],
+        "timings": {
+          "cacheMs": 0,
+          "totalMs": 0
+        },
+        "top_candidate_id": "integration-candidate",
+        "usedFallback": true
+      },
+      "error": null,
+      "latencyMs": 9.36,
+      "status": "passed"
+    }
+  },
+  "tenant": "tenant-alpha"
+}

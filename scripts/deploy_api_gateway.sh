@@ -116,31 +116,13 @@ for placeholder, value in {
 # Parse YAML to inline external $refs
 spec = yaml.safe_load(content)
 
-# Load common schemas (try v3 first, then v2)
-common_path_v3 = source_path.parent / 'schemas' / 'common-v3.yaml'
-common_path_v2 = source_path.parent / 'schemas' / 'common.yaml'
-common_path = common_path_v3 if common_path_v3.exists() else common_path_v2
+# Load common schemas (ONLY v2 for Swagger 2.0 specs)
+common_path = source_path.parent / 'schemas' / 'common.yaml'
 
 if common_path.exists():
     common_spec = yaml.safe_load(common_path.read_text())
 
-    # Inline components from common spec (OpenAPI 3.0)
-    if 'components' in spec and 'components' in common_spec:
-        for component_type in ['schemas', 'parameters', 'responses', 'securitySchemes']:
-            if component_type in common_spec['components']:
-                if component_type not in spec['components']:
-                    spec['components'][component_type] = {}
-                spec['components'][component_type].update(common_spec['components'][component_type])
-    elif 'components' in common_spec:
-        # If main spec doesn't have components, add them
-        if 'components' not in spec:
-            spec['components'] = {}
-        for component_type, items in common_spec['components'].items():
-            if component_type not in spec['components']:
-                spec['components'][component_type] = {}
-            spec['components'][component_type].update(items)
-
-    # Also handle Swagger 2.0 format (definitions, parameters, responses)
+    # Handle Swagger 2.0 format (definitions, parameters, responses)
     if 'definitions' in common_spec:
         if 'definitions' not in spec:
             spec['definitions'] = {}
@@ -172,7 +154,9 @@ if common_path.exists():
                 replace_refs(item)
 
     replace_refs(spec)
-    content = yaml.dump(spec, default_flow_style=False, sort_keys=False)
+
+    # Dump YAML with proper string quoting
+    content = yaml.dump(spec, default_flow_style=False, sort_keys=False, allow_unicode=True, width=float('inf'))
 
 Path(destination).write_text(content)
 PY
