@@ -1,234 +1,197 @@
-# Headhunter Project - Current Status
-**Last Updated**: 2025-10-02 02:30 UTC
-**Status**: ✅ **READY FOR DEPLOYMENT** (Critical fix applied)
+# Headhunter API Gateway - Current Status
+
+**Last Updated**: 2025-10-02
+**Session**: API Gateway Deployment
 
 ---
 
-## 🚨 CRITICAL DEPLOYMENT FIX APPLIED
+## ✅ Completed
 
-### What Happened
-All 7 production Fastify services were crashing on Cloud Run startup with:
-```
-FST_ERR_INSTANCE_ALREADY_LISTENING: Fastify instance is already listening. Cannot add route!
-```
+### 1. API Gateway Infrastructure
+- **Gateway URL**: `https://headhunter-api-gateway-production-d735p8t6.uc.gateway.dev`
+- **API**: `headhunter-api-gateway-production`
+- **Latest Config**: `gateway-config-fixed-routing-1759425777`
+- **Status**: Deployed and operational
 
-### Root Cause
-Duplicate `/health` endpoint registration in all services:
-- **First registration**: `index.ts` (before `server.listen()`) ✓ Required for Cloud Run probes
-- **Second registration**: `routes.ts` (after `server.listen()`) ✗ Caused crash
+### 2. OpenAPI Spec Fixes
+- ✅ Enforced Swagger 2.0 compliance (removed `anyOf`/`oneOf` keywords)
+- ✅ Removed quota metrics configuration (can re-enable post-MVP)
+- ✅ Simplified security to API Key only (OAuth2 deferred until JWKS endpoint available)
+- ✅ Updated backend URLs to direct Cloud Run format
 
-### Impact
-- **Severity**: P0 / SEV-1
-- **Duration**: Since 2025-10-01 23:59 UTC
-- **Effect**: All deployments failing, services running on outdated revisions
-- **User Impact**: Production services not updated
-
-### Resolution ✅
-- Fixed all 7 services: renamed duplicate `/health` to `/health/detailed` in `routes.ts`
-- Committed: `1101e9e` - "fix(services): resolve duplicate /health endpoint crash - SEV-1"
-- **Status**: Ready for production deployment
+### 3. Code Quality Improvements
+- ✅ Removed all debug `console.log` statements (16 instances)
+- ✅ Moved `hh-example-svc` to templates with documentation
+- ✅ Enabled `noUnusedParameters` in TypeScript config
+- ✅ Created comprehensive `SECURITY.md` policy
+- ✅ Created `docs/TESTING.md` strategy (70% coverage target)
+- ✅ Added GitHub Actions CI/CD workflow (`.github/workflows/ci.yml`)
 
 ---
 
-## Services Fixed
+## ⚠️ Current Issue: Cloud Run Services Return 404
 
-| Service | Status | Health Endpoint | Detailed Health |
-|---------|--------|----------------|-----------------|
-| hh-search-svc | ✅ Fixed | `/health` | `/health/detailed` |
-| hh-embed-svc | ✅ Fixed | `/health` | `/health/detailed` |
-| hh-rerank-svc | ✅ Fixed | `/health` | `/health/detailed` |
-| hh-evidence-svc | ✅ Fixed | `/health` | `/health/detailed` |
-| hh-eco-svc | ✅ Fixed | `/health` | `/health/detailed` |
-| hh-enrich-svc | ✅ Fixed | `/health` | `/health/detailed` |
-| hh-msgs-svc | ✅ Fixed | `/health` | `/health/detailed` |
-
----
-
-## Next Steps (URGENT)
-
-### 1. Deploy to Production
+### Problem
+All Cloud Run services return 404 for all endpoints, including health checks:
 ```bash
-./scripts/deploy-cloud-run-services.sh \
-  --project-id headhunter-ai-0088 \
-  --environment production \
-  --rollback-on-failure \
-  --verbose
+# Test command (with authentication)
+TOKEN=$(gcloud auth print-identity-token)
+curl "https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app/healthz" \
+  -H "Authorization: Bearer ${TOKEN}"
+
+# Result: 404 Not Found (Google's error page, not Fastify)
 ```
 
-### 2. Verify Deployment
+### Investigation Findings
+
+1. **Services are marked as Ready** in Cloud Run console
+   - All 8 services show status: `Ready: True`
+   - Latest revision: `hh-admin-svc-production-00003-s8h` (deployed Oct 1)
+
+2. **No errors in logs**
+   - No ERROR or WARNING level logs in Cloud Logging
+   - No startup errors detected
+
+3. **IAM is configured correctly**
+   - Gateway service account has `roles/run.invoker` permission
+   - Services require authentication (correct for production)
+
+4. **Service code looks correct**
+   - Routes are registered: `/healthz`, `/readyz`, `/health`
+   - Port: 8080 (matches Cloud Run configuration)
+   - Bootstrap logic follows standard pattern
+
+5. **404 comes from Google infrastructure**
+   - Error page format indicates request isn't reaching container
+   - Not a Fastify 404 (would have different format)
+
+### Possible Root Causes
+
+1. **Container not starting properly**
+   - Image might be corrupted or incomplete
+   - Dependencies missing at runtime
+   - Service crashes immediately after startup
+
+2. **Environment variables missing**
+   - Required config might be missing
+   - Service might fail validation checks
+
+3. **Image deployed is outdated**
+   - Current image tag: `3460185-production-20250930-230317`
+   - Code changes from Oct 2 (today) aren't in deployed image
+
+4. **Routing configuration issue**
+   - Cloud Run might not be routing to container port correctly
+
+---
+
+## 📋 Next Steps (Recommended)
+
+### Option 1: Redeploy Services (Recommended)
+The services were last deployed on Oct 1 (yesterday). Recent code changes aren't deployed.
+
 ```bash
-# Check all services are healthy
-for svc in hh-search-svc hh-embed-svc hh-rerank-svc hh-evidence-svc hh-eco-svc hh-enrich-svc hh-msgs-svc; do
-  gcloud run services describe ${svc}-production \
-    --region=us-central1 \
-    --project=headhunter-ai-0088 \
-    --format="get(status.conditions[0].status)"
-done
+# 1. Build and push new images
+cd "/Volumes/Extreme Pro/myprojects/headhunter"
+./scripts/deploy-cloud-run-services.sh --project-id headhunter-ai-0088 --environment production
+
+# 2. Test service health directly
+TOKEN=$(gcloud auth print-identity-token)
+curl "https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app/healthz" \
+  -H "Authorization: Bearer ${TOKEN}"
+
+# 3. Test via API Gateway
+curl "https://headhunter-api-gateway-production-d735p8t6.uc.gateway.dev/health" \
+  -H "X-API-Key: test-key" \
+  -H "X-Tenant-ID: test-tenant"
 ```
 
-### 3. Test Health Endpoints
+### Option 2: Debug Existing Deployment
 ```bash
-# Get service URLs and test
-for svc in hh-search-svc hh-embed-svc hh-rerank-svc hh-evidence-svc hh-eco-svc hh-enrich-svc hh-msgs-svc; do
-  URL=$(gcloud run services describe ${svc}-production --region=us-central1 --project=headhunter-ai-0088 --format="get(status.url)")
-  echo "=== $svc ==="
-  curl -s "$URL/health" | jq .
-  curl -s "$URL/health/detailed" | jq .
-done
+# 1. Check service logs for startup issues
+gcloud logging read \
+  "resource.type=cloud_run_revision AND resource.labels.service_name=hh-admin-svc-production" \
+  --project=headhunter-ai-0088 \
+  --limit=50 \
+  --format="table(timestamp,severity,jsonPayload.message,textPayload)"
+
+# 2. Check environment variables
+gcloud run services describe hh-admin-svc-production \
+  --region=us-central1 \
+  --project=headhunter-ai-0088 \
+  --format="yaml(spec.template.spec.containers[0].env)"
+
+# 3. Test with Cloud Run service URL directly (bypass gateway)
+curl "https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app/healthz" \
+  -H "Authorization: Bearer $(gcloud auth print-identity-token)"
+```
+
+### Option 3: Local Testing
+```bash
+# Test services locally with docker-compose
+cd "/Volumes/Extreme Pro/myprojects/headhunter"
+docker compose -f docker-compose.local.yml up hh-admin-svc
+
+# Test health endpoint
+curl http://localhost:7107/healthz
 ```
 
 ---
 
-## Documentation Updated
+## 📁 Key Files
 
-### New Files
-- `.deployment/DEPLOYMENT_FAILURE_ANALYSIS.md` - Detailed root cause analysis
-- `.deployment/RECOVERY_SUMMARY.md` - Recovery plan and deployment checklist
-- `CURRENT_STATUS.md` - This file (project status snapshot)
+### OpenAPI Specification
+- **Gateway Spec**: `docs/openapi/gateway.yaml`
+- **Common Schemas**: `docs/openapi/schemas/common.yaml`
+- **Deployment Script**: `scripts/deploy_api_gateway.sh`
 
-### Modified Files
-- All service `routes.ts` files (7 files)
-- Git commit `1101e9e` with comprehensive commit message
+### Service Code
+- **Admin Service**: `services/hh-admin-svc/src/`
+  - `index.ts` - Bootstrap logic
+  - `routes.ts` - Endpoint registration
+  - `config.ts` - Configuration
 
----
-
-## Project Architecture (Current)
-
-### Fastify Service Mesh - 8 Services
-- **7 Production Services**: search, embed, rerank, evidence, eco, enrich, msgs
-- **1 Example Service**: hh-example-svc (template/reference)
-- **Ports**: 7101-7108 (local), 8080 (Cloud Run)
-
-### Shared Infrastructure
-- **Postgres**: ankane/pgvector:v0.5.1 (embeddings, transactional data)
-- **Redis**: redis:7-alpine (cache, idempotency, rerank scoring)
-- **Firestore**: Emulator (local) / Production (operational data)
-- **Pub/Sub**: Emulator (local) / Production (async messaging)
-- **Together AI**: Mock (local) / Production (AI processing)
-
-### Technology Stack
-- **Backend**: Fastify (Node.js 20+), TypeScript 5.4+
-- **Python**: 3.11+ (enrichment workers, pytest)
-- **Infrastructure**: GCP (Cloud Run, Cloud SQL, Memorystore)
-- **Deployment**: Docker, Cloud Build, Artifact Registry
+### Deployment
+- **Cloud Run Deploy**: `scripts/deploy-cloud-run-services.sh`
+- **Production Deploy**: `scripts/deploy-production.sh`
 
 ---
 
-## Recent Commits
+## 🔗 Resources
 
-```
-1101e9e (HEAD -> main) fix(services): resolve duplicate /health endpoint crash - SEV-1
-3460185 docs: update PRD and handover with Task 66.1-66.2 progress
-2591745 feat(together-client): resilience (rate limit, retries, circuit breaker) — Task 66.2
-3392e7b feat(config): env + provider validation for Task 66.1
-adfe699 docs: set Gemini Embeddings default (US) + Stale Profiles flow
-89a53e4 docs(region): set MVP region to us-central1, remove São Paulo refs
-```
+### Cloud Run Services (all in us-central1)
+- hh-admin-svc-production: `https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app`
+- hh-embed-svc-production: `https://hh-embed-svc-production-akcoqbr7sa-uc.a.run.app`
+- hh-search-svc-production: `https://hh-search-svc-production-akcoqbr7sa-uc.a.run.app`
+- hh-rerank-svc-production: `https://hh-rerank-svc-production-akcoqbr7sa-uc.a.run.app`
+- hh-evidence-svc-production: `https://hh-evidence-svc-production-akcoqbr7sa-uc.a.run.app`
+- hh-eco-svc-production: `https://hh-eco-svc-production-akcoqbr7sa-uc.a.run.app`
+- hh-enrich-svc-production: `https://hh-enrich-svc-production-akcoqbr7sa-uc.a.run.app`
+- hh-msgs-svc-production: `https://hh-msgs-svc-production-akcoqbr7sa-uc.a.run.app`
 
----
-
-## Environment Configuration
-
-### Production (GCP Project: headhunter-ai-0088)
-- **Region**: us-central1
-- **Cloud Run**: 7 services deployed
-- **Cloud SQL**: PostgreSQL + pgvector (headhunter DB)
-- **Redis**: Memorystore instance (production tier)
-- **Firestore**: Native mode
-- **Secrets**: Secret Manager (API keys, passwords)
-
-### Local Development
-- **Docker Compose**: `docker-compose.local.yml`
-- **Emulators**: Firestore (8080), Pub/Sub (8681)
-- **Mocks**: OAuth (8081), Together AI (8082)
-- **Services**: 8 Fastify services (7101-7108)
+### GCP Console Links
+- [API Gateway](https://console.cloud.google.com/api-gateway/api/headhunter-api-gateway-production?project=headhunter-ai-0088)
+- [Cloud Run Services](https://console.cloud.google.com/run?project=headhunter-ai-0088)
+- [Cloud Logging](https://console.cloud.google.com/logs?project=headhunter-ai-0088)
 
 ---
 
-## Testing Strategy
+## 📝 Recent Commits
 
-### Current Testing
-- **Unit Tests**: Jest (TypeScript services)
-- **Integration Tests**: pytest (Python workers)
-- **Manual Testing**: Health endpoints, Docker stack
-
-### Required Before Deployment
-1. ✅ Typecheck passes (pending: `tsc` not in PATH)
-2. ⏳ Local Docker stack runs without crashes
-3. ⏳ Health endpoints respond correctly
-4. ⏳ Integration tests pass
-
-### Post-Deployment Validation
-1. All services report "Ready" status
-2. Health and detailed health endpoints respond
-3. No crash loops in Cloud Run logs
-4. Integration tests pass against production
+1. **55d83dd** - fix(gateway): update backend URLs to direct Cloud Run addresses
+2. **ba879d6** - feat(gateway): deploy API Gateway MVP - Swagger 2.0 compliant
+3. **695e3a6** - fix(gateway): enforce Swagger 2.0 compliance for API Gateway deployment
+4. **3460185** - feat(together-client): resilience (rate limit, retries, circuit breaker)
 
 ---
 
-## Known Issues & Blockers
+## 🎯 Success Criteria
 
-### ⚠️ Critical (Blocking Deployment)
-- ~~Duplicate /health endpoint crash~~ ✅ **FIXED** (commit 1101e9e)
+API Gateway deployment is complete when:
+- [ ] `/health` endpoint returns 200 OK via gateway
+- [ ] All 8 services return 200 OK when called directly
+- [ ] Gateway successfully routes requests to backend services
+- [ ] Authentication works (API Key validation)
+- [ ] No 404 errors from Cloud Run services
 
-### 🔧 High Priority (Post-Deployment)
-- Missing integration tests for route registration order
-- TypeScript dependencies not installed (npm install needed)
-- Deployment script timeout (10min limit too short)
-
-### 📝 Medium Priority (Backlog)
-- Add staging environment with Cloud Run
-- Implement automated rollback on health check failures
-- Create pre-deployment smoke test suite
-- Update CLAUDE.md with improved architecture documentation
-
----
-
-## Contact & References
-
-### Documentation
-- **Architecture**: `ARCHITECTURE.md`
-- **Deployment Guide**: `docs/PRODUCTION_DEPLOYMENT_GUIDE.md`
-- **Operational Runbook**: `docs/HANDOVER.md`
-- **PRD (Authoritative)**: `.taskmaster/docs/prd.txt`
-- **TDD Protocol**: `docs/TDD_PROTOCOL.md`
-
-### Deployment Artifacts
-- **Analysis**: `.deployment/DEPLOYMENT_FAILURE_ANALYSIS.md`
-- **Recovery Plan**: `.deployment/RECOVERY_SUMMARY.md`
-- **Manifests**: `.deployment/manifests/` (gitignored)
-- **Reports**: `.deployment/reports/` (gitignored)
-
-### Monitoring & Logs
-- **Cloud Run Logs**: `gcloud logging read` (filter by service name)
-- **Cloud Monitoring**: Dashboards for each service
-- **Health Checks**: `/health` (simple), `/health/detailed` (components)
-
----
-
-## Action Items (Immediate)
-
-### For Engineer/Operator
-1. **Deploy fixed services** to production (see commands above)
-2. **Monitor deployment** logs for any new issues
-3. **Verify all services** are healthy and serving traffic
-4. **Run integration tests** to confirm functionality
-5. **Update Task Master** with deployment results
-
-### For DevOps/Platform Team
-1. Add CI/CD pipeline with deployment gates
-2. Set up staging environment
-3. Implement automated rollback on failures
-4. Create deployment monitoring alerts
-5. Document lessons learned
-
----
-
-**Status**: ✅ **READY FOR PRODUCTION DEPLOYMENT**
-**Risk Level**: Low (targeted fix, well-tested pattern)
-**Estimated Deployment Time**: 15-20 minutes
-**Rollback Plan**: `--rollback-on-failure` flag + manual Cloud Run revision rollback
-
----
-
-_This document is a living snapshot. Update after each major change or deployment._
+**Recommendation**: Redeploy Cloud Run services with latest code and test health endpoints.
