@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Pre-commit hook to enforce migration guardrails
+
+set -e
+
+DEPRECATED_PATH="/Users/delimatsuo/Documents/Coding/headhunter"
+CANONICAL_PATH="/Volumes/Extreme Pro/myprojects/headhunter"
+
+echo "🔍 Checking for deprecated path references..."
+
+# Check staged files for deprecated path
+if git diff --cached --name-only -z | xargs -0 grep -l "$DEPRECATED_PATH" 2>/dev/null; then
+  echo "❌ ERROR: Found deprecated path references in staged files:"
+  git diff --cached --name-only -z | xargs -0 grep -n "$DEPRECATED_PATH" 2>/dev/null || true
+  echo ""
+  echo "Please replace '$DEPRECATED_PATH' with dynamic path resolution."
+  echo "See scripts/utils/repo_guard.sh for shell scripts."
+  echo "For Python, use: REPO_ROOT = os.environ.get('REPO_ROOT') or os.path.abspath(...)"
+  exit 1
+fi
+
+echo "✅ No deprecated path references found"
+
+# Verify we're in the canonical repository
+REPO_ROOT=$(git rev-parse --show-toplevel)
+if [ "$(realpath "$REPO_ROOT")" != "$(realpath "$CANONICAL_PATH")" ]; then
+  echo "⚠️  WARNING: Not running from canonical path"
+  echo "   Current: $REPO_ROOT"
+  echo "   Expected: $CANONICAL_PATH"
+  echo ""
+  echo "Commits should be made from the canonical repository."
+  exit 1
+fi
+
+echo "✅ Running from canonical repository"
+exit 0

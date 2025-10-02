@@ -10,14 +10,20 @@ from pathlib import Path
 from typing import Dict, List, Set
 from datetime import datetime
 import time
+import os
+
+from data_paths import csv_dir, repo_root, resumes_dir
 
 # Constants
-BASE_DIR = Path("/Users/delimatsuo/Documents/Coding/headhunter")
-CSV_DIR = BASE_DIR / "CSV files" / "505039_Ella_Executive_Search_CSVs_1"
-RESUME_DIR = BASE_DIR / "CSV files" / "505039_Ella_Executive_Search_files_1"
+REPO_ROOT = repo_root()
+CSV_DIR = csv_dir()
+RESUME_DIR = resumes_dir()
 
 # Output to NAS
-NAS_DIR = Path("/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project")
+NAS_DIR = Path(os.getenv(
+    "HEADHUNTER_NAS_DIR",
+    "/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project",
+))
 OUTPUT_FILE = NAS_DIR / "comprehensive_merged_candidates.json"
 STATS_FILE = NAS_DIR / "comprehensive_merge_statistics.json"
 MISSING_IDS_FILE = NAS_DIR / "missing_candidate_ids.json"

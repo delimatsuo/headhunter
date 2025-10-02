@@ -1,0 +1,32 @@
+{
+  "ok": true,
+  "checks": [
+    {
+      "name": "trgm_extension",
+      "ok": true
+    },
+    {
+      "name": "eco_tables",
+      "ok": true,
+      "count": 4
+    },
+    {
+      "name": "embedding_provider",
+      "ok": true,
+      "dim": 768
+    },
+    {
+      "name": "similarity_search_fn",
+      "ok": true
+    },
+    {
+      "name": "array_to_vector_fn",
+      "ok": true,
+      "created": false
+    },
+    {
+      "name": "similarity_search_exec",
+      "ok": true
+    }
+  ]
+}

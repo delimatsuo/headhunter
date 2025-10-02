@@ -11,6 +11,10 @@ import urllib.request
 import urllib.parse
 import urllib.error
 import time
+from pathlib import Path
+
+SCRIPTS_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPTS_DIR.parent
 
 class FirestoreUploader:
     def __init__(self, emulator_host="localhost", emulator_port="8081"):
@@ -105,15 +109,15 @@ class FirestoreUploader:
 
 def main():
     """Main upload function"""
-    candidates_file = "/Users/delimatsuo/Documents/Coding/headhunter/scripts/real_candidates_processed.json"
+    candidates_file = SCRIPTS_DIR / "real_candidates_processed.json"
     
-    if not os.path.exists(candidates_file):
+    if not candidates_file.exists():
         print(f"❌ Candidates file not found: {candidates_file}")
         print("Please run process_real_data.py first")
         sys.exit(1)
     
     uploader = FirestoreUploader()
-    success = uploader.upload_all_candidates(candidates_file)
+    success = uploader.upload_all_candidates(str(candidates_file))
     
     if success:
         print("\n✅ Upload complete! Candidates are now in Firestore")

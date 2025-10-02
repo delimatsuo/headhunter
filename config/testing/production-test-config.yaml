@@ -1,0 +1,170 @@
+# Production validation master configuration
+# Values can be overridden per environment under the environments key.
+
+metadata:
+  name: headhunter-production-validation
+  version: 1
+  description: Production validation parameters for Headhunter Cloud Run services
+
+defaults:
+  projectId: headhunter-ai-0088
+  region: us-central1
+  primaryTenant: tenant-alpha
+  reportBucket: gs://headhunter-prod-validation-reports
+
+slaTargets:
+  endToEndP95Ms: 1200
+  rerankP95Ms: 350
+  cachedReadP95Ms: 250
+  cacheHitRateTarget: 0.7
+  errorRateTarget: 0.05
+  availabilityTarget: 0.99
+
+loadTesting:
+  hybridSearchRps: 30
+  rerankRps: 10
+  totalRps: 50
+  burstMultiplier: 2
+  testDurationMinutes: 10
+  warmupSeconds: 60
+  cooldownSeconds: 60
+  tenants:
+    - tenantId: tenant-alpha
+      oauthClientId: ${TENANT_ALPHA_CLIENT_ID}
+      oauthClientSecret: ${TENANT_ALPHA_CLIENT_SECRET}
+      cacheNamespace: tenant-alpha
+    - tenantId: tenant-beta
+      oauthClientId: ${TENANT_BETA_CLIENT_ID}
+      oauthClientSecret: ${TENANT_BETA_CLIENT_SECRET}
+      cacheNamespace: tenant-beta
+
+autoScaling:
+  minInstances: 1
+  maxInstances: 20
+  scalingThresholds:
+    cpuUtilizationPercent: 70
+    requestConcurrency: 60
+  coldStartTargets:
+    maxColdStartMs: 900
+    acceptableColdStartRate: 0.05
+  downscalingGracePeriodSeconds: 300
+
+chaosTesting:
+  failureScenarios:
+    - name: embed-service-outage
+      description: Simulate embed service unavailability
+      maxRecoverySeconds: 120
+      resilienceTarget: rerank-degrades-gracefully
+    - name: cache-cluster-failure
+      description: Force cache unavailability and validate fallbacks
+      maxRecoverySeconds: 180
+      resilienceTarget: cache-warmup-under-5m
+    - name: high-latency-together
+      description: Inject 800ms latency to Together AI rerank endpoint
+      maxRecoverySeconds: 60
+      resilienceTarget: rerank-fallback-activates
+
+securityValidation:
+  requiredHeaders:
+    - X-Tenant-ID
+    - X-Request-ID
+  forbiddenHeaders:
+    - X-Internal-Debug
+  oauth:
+    tokenAudience: https://headhunter.ai
+    scopes:
+      - https://www.googleapis.com/auth/cloud-platform
+      - https://www.googleapis.com/auth/userinfo.email
+  rateLimits:
+    hybridSearchRps: 30
+    rerankRps: 10
+    adminRps: 5
+
+monitoring:
+  dashboards:
+    - name: production-validation-overview
+      url: https://console.cloud.google.com/monitoring/dashboards/custom/production-validation
+  alertPolicies:
+    - name: latency-budget-breach
+      metric: cloudmonitoring.googleapis.com/latency/p95
+    - name: error-rate-spike
+      metric: cloudmonitoring.googleapis.com/error_rate
+  reporting:
+    timeWindowHours: 24
+    historicalComparisonDays: 7
+
+pipelineValidation:
+  steps:
+    - enrich
+    - embed
+    - hybrid_search
+    - rerank
+    - evidence
+  concurrency: 25
+  maxRetriesPerStep: 3
+
+tenantIsolation:
+  tenants:
+    - tenantId: tenant-alpha
+      dataset: datasets/tenant-alpha
+      firestorePrefix: tenants/tenant-alpha
+      profileCount: 25
+      jobCount: 10
+      skills:
+        - python
+        - gcp
+        - terraform
+        - airflow
+    - tenantId: tenant-beta
+      dataset: datasets/tenant-beta
+      firestorePrefix: tenants/tenant-beta
+      profileCount: 25
+      jobCount: 10
+      skills:
+        - javascript
+        - react
+        - node
+        - gcp
+  maliciousInputs:
+    - "' OR 1=1 --"
+    - "../../etc/passwd"
+    - "<script>alert('xss')</script>"
+
+reporting:
+  outputDirectory: ./reports
+  persistToGCS: true
+  gcsPrefixes:
+    smoke: smoke
+    load: load
+    security: security
+    chaos: chaos
+
+environments:
+  staging:
+    overrides:
+      defaults:
+        projectId: headhunter-ai-staging
+        reportBucket: gs://headhunter-staging-validation
+      loadTesting:
+        totalRps: 30
+        burstMultiplier: 1.5
+      autoScaling:
+        maxInstances: 10
+  production:
+    overrides:
+      loadTesting:
+        testDurationMinutes: 20
+      chaosTesting:
+        failureScenarios:
+          - name: embed-service-outage
+            description: Simulate embed service unavailability
+            maxRecoverySeconds: 90
+            resilienceTarget: rerank-degrades-gracefully
+          - name: cache-cluster-failure
+            description: Force cache unavailability and validate fallbacks
+            maxRecoverySeconds: 150
+            resilienceTarget: cache-warmup-under-5m
+          - name: together-degraded
+            description: Inject 500ms latency to Together AI rerank endpoint
+            maxRecoverySeconds: 45
+            resilienceTarget: rerank-fallback-activates

@@ -1,0 +1,1274 @@
+parameters:
+  TenantIdHeader:
+    name: X-Tenant-ID
+    in: header
+    required: true
+    description: Tenant identifier that must align with token org_id fields.
+    type: string
+    minLength: 1
+  PageSize:
+    name: pageSize
+    in: query
+    required: false
+    description: Maximum number of items to return.
+    type: integer
+    minimum: 1
+    maximum: 200
+    default: 25
+  PageToken:
+    name: pageToken
+    in: query
+    required: false
+    description: Opaque pagination token returned by previous request.
+    type: string
+responses:
+  ErrorResponse:
+    description: Structured error response
+    schema:
+      $ref: '#/definitions/ErrorResponse'
+definitions:
+  ErrorResponse:
+    type: object
+    required:
+      - error
+      - message
+    properties:
+      error:
+        type: string
+        description: Short error code such as AUTHENTICATION_FAILED.
+      message:
+        type: string
+        description: Human readable explanation of the failure.
+      statusCode:
+        type: integer
+        description: HTTP status code associated with the error.
+      requestId:
+        type: string
+        description: Request correlation id for troubleshooting.
+      details:
+        type: array
+        description: Additional error information.
+        items:
+          type: object
+          additionalProperties: true
+  ResponseMeta:
+    type: object
+    description: Tenant-scoped response metadata and cache annotations.
+    properties:
+      tenantId:
+        type: string
+      requestId:
+        type: string
+      cacheHit:
+        type: boolean
+      generatedAt:
+        type: string
+        format: date-time
+      region:
+        type: string
+      processedBy:
+        type: string
+    additionalProperties: true
+  EmbeddingVector:
+    type: array
+    minItems: 8
+    maxItems: 4096
+    items:
+      type: number
+  GenerateEmbeddingRequest:
+    type: object
+    required:
+      - text
+    properties:
+      text:
+        type: string
+        minLength: 1
+        maxLength: 6000
+      provider:
+        type: string
+        enum:
+          - vertex-ai
+          - local
+          - together
+      dimensions:
+        type: integer
+        minimum: 16
+        maximum: 4096
+      metadata:
+        type: object
+        additionalProperties: true
+    additionalProperties: true
+  GenerateEmbeddingResponse:
+    type: object
+    required:
+      - embedding
+      - provider
+      - model
+      - dimensions
+      - requestId
+    properties:
+      embedding:
+        $ref: '#/definitions/EmbeddingVector'
+      provider:
+        type: string
+      model:
+        type: string
+      dimensions:
+        type: integer
+        minimum: 16
+        maximum: 4096
+      requestId:
+        type: string
+      meta:
+        $ref: '#/definitions/ResponseMeta'
+    additionalProperties: false
+  UpsertEmbeddingRequest:
+    type: object
+    required:
+      - entityId
+    properties:
+      entityId:
+        type: string
+        minLength: 1
+      text:
+        type: string
+        minLength: 1
+        maxLength: 6000
+      embedding:
+        $ref: '#/definitions/EmbeddingVector'
+      metadata:
+        type: object
+        additionalProperties: true
+      modelVersion:
+        type: string
+      chunkType:
+        type: string
+        minLength: 1
+      provider:
+        type: string
+        enum:
+          - vertex-ai
+          - local
+          - together
+    additionalProperties: true
+    anyOf:
+      - required:
+          - text
+      - required:
+          - embedding
+  UpsertEmbeddingResponse:
+    type: object
+    required:
+      - entityId
+      - tenantId
+      - vectorId
+      - modelVersion
+      - chunkType
+      - dimensions
+      - createdAt
+      - updatedAt
+      - requestId
+    properties:
+      entityId:
+        type: string
+      tenantId:
+        type: string
+      vectorId:
+        type: string
+      modelVersion:
+        type: string
+      chunkType:
+        type: string
+      dimensions:
+        type: integer
+        minimum: 16
+      createdAt:
+        type: string
+        format: date-time
+      updatedAt:
+        type: string
+        format: date-time
+      requestId:
+        type: string
+      meta:
+        $ref: '#/definitions/ResponseMeta'
+    additionalProperties: false
+  QueryEmbeddingRequest:
+    type: object
+    additionalProperties: true
+    properties:
+      query:
+        type: string
+        minLength: 1
+        maxLength: 6000
+      embedding:
+        $ref: '#/definitions/EmbeddingVector'
+      limit:
+        type: integer
+        minimum: 1
+        maximum: 200
+      similarityThreshold:
+        type: number
+        minimum: 0
+        maximum: 1
+      filter:
+        type: object
+        additionalProperties: true
+      provider:
+        type: string
+        enum:
+          - vertex-ai
+          - local
+          - together
+    anyOf:
+      - required:
+          - query
+      - required:
+          - embedding
+  QueryEmbeddingResult:
+    type: object
+    required:
+      - entityId
+      - similarity
+      - modelVersion
+      - chunkType
+      - embeddingId
+      - updatedAt
+    properties:
+      entityId:
+        type: string
+      similarity:
+        type: number
+      metadata:
+        type: object
+        additionalProperties: true
+      modelVersion:
+        type: string
+      chunkType:
+        type: string
+      embeddingId:
+        type: string
+      updatedAt:
+        type: string
+        format: date-time
+    additionalProperties: false
+  QueryEmbeddingResponse:
+    type: object
+    required:
+      - results
+      - count
+      - provider
+      - model
+      - dimensions
+      - requestId
+      - executionMs
+    properties:
+      results:
+        type: array
+        items:
+          $ref: '#/definitions/QueryEmbeddingResult'
+      count:
+        type: integer
+        minimum: 0
+      provider:
+        type: string
+      model:
+        type: string
+      dimensions:
+        type: integer
+        minimum: 16
+      requestId:
+        type: string
+      executionMs:
+        type: integer
+        minimum: 0
+      meta:
+        $ref: '#/definitions/ResponseMeta'
+    additionalProperties: false
+  HybridSearchRequest:
+    type: object
+    additionalProperties: true
+    oneOf:
+      - required:
+          - query
+      - required:
+          - embedding
+    properties:
+      query:
+        type: string
+        maxLength: 6000
+      embedding:
+        $ref: '#/definitions/EmbeddingVector'
+      jdHash:
+        type: string
+        minLength: 8
+        maxLength: 64
+      jobDescription:
+        type: string
+        maxLength: 20000
+      limit:
+        type: integer
+        minimum: 1
+        maximum: 200
+      offset:
+        type: integer
+        minimum: 0
+        maximum: 200
+      includeDebug:
+        type: boolean
+      filters:
+        type: object
+        additionalProperties: true
+        properties:
+          skills:
+            type: array
+            minItems: 1
+            maxItems: 50
+            items:
+              type: string
+          locations:
+            type: array
+            minItems: 1
+            maxItems: 50
+            items:
+              type: string
+          industries:
+            type: array
+            minItems: 1
+            maxItems: 20
+            items:
+              type: string
+          seniorityLevels:
+            type: array
+            minItems: 1
+            maxItems: 20
+            items:
+              type: string
+          minExperienceYears:
+            type: number
+            minimum: 0
+            maximum: 60
+          maxExperienceYears:
+            type: number
+            minimum: 0
+            maximum: 60
+          metadata:
+            type: object
+            additionalProperties: true
+  HybridSearchCandidate:
+    type: object
+    required:
+      - candidateId
+      - score
+      - vectorScore
+      - textScore
+      - confidence
+      - matchReasons
+    properties:
+      candidateId:
+        type: string
+      score:
+        type: number
+      vectorScore:
+        type: number
+      textScore:
+        type: number
+      confidence:
+        type: number
+        minimum: 0
+        maximum: 1.5
+      fullName:
+        type: string
+      title:
+        type: string
+      headline:
+        type: string
+      location:
+        type: string
+      industries:
+        type: array
+        items:
+          type: string
+      yearsExperience:
+        type: number
+        minimum: 0
+        maximum: 80
+      skills:
+        type: array
+        items:
+          type: object
+          required:
+            - name
+            - weight
+          properties:
+            name:
+              type: string
+            weight:
+              type: number
+      matchReasons:
+        type: array
+        items:
+          type: string
+      metadata:
+        type: object
+        additionalProperties: true
+  HybridSearchResponse:
+    type: object
+    required:
+      - results
+      - total
+      - cacheHit
+      - requestId
+      - timings
+    properties:
+      results:
+        type: array
+        items:
+          $ref: '#/definitions/HybridSearchCandidate'
+      total:
+        type: integer
+        minimum: 0
+      cacheHit:
+        type: boolean
+      requestId:
+        type: string
+      timings:
+        type: object
+        required:
+          - totalMs
+        properties:
+          totalMs:
+            type: integer
+            minimum: 0
+          embeddingMs:
+            type: integer
+            minimum: 0
+          retrievalMs:
+            type: integer
+            minimum: 0
+          rankingMs:
+            type: integer
+            minimum: 0
+          cacheMs:
+            type: integer
+            minimum: 0
+      metadata:
+        type: object
+        additionalProperties: true
+      debug:
+        type: object
+        additionalProperties: true
+      meta:
+        $ref: '#/definitions/ResponseMeta'
+    additionalProperties: false
+  RerankCandidate:
+    type: object
+    required:
+      - candidateId
+    properties:
+      candidateId:
+        type: string
+      summary:
+        type: string
+      highlights:
+        type: array
+        maxItems: 20
+        items:
+          type: string
+      initialScore:
+        type: number
+      features:
+        type: object
+        additionalProperties: true
+      payload:
+        type: object
+        additionalProperties: true
+    additionalProperties: false
+  RerankRequest:
+    type: object
+    required:
+      - jobDescription
+      - candidates
+    properties:
+      jobDescription:
+        type: string
+        minLength: 20
+        maxLength: 20000
+      jdHash:
+        type: string
+        minLength: 8
+        maxLength: 64
+      docsetHash:
+        type: string
+        minLength: 8
+        maxLength: 64
+      query:
+        type: string
+        maxLength: 6000
+      candidates:
+        type: array
+        minItems: 1
+        maxItems: 200
+        items:
+          $ref: '#/definitions/RerankCandidate'
+      limit:
+        type: integer
+        minimum: 1
+        maximum: 200
+      disableCache:
+        type: boolean
+      includeReasons:
+        type: boolean
+      requestMetadata:
+        type: object
+        additionalProperties: true
+    additionalProperties: false
+  RerankResult:
+    type: object
+    required:
+      - candidateId
+      - rank
+      - score
+      - reasons
+    properties:
+      candidateId:
+        type: string
+      rank:
+        type: integer
+        minimum: 1
+      score:
+        type: number
+      reasons:
+        type: array
+        maxItems: 5
+        items:
+          type: string
+      summary:
+        type: string
+      payload:
+        type: object
+        additionalProperties: true
+  RerankResponse:
+    type: object
+    required:
+      - results
+      - cacheHit
+      - usedFallback
+      - requestId
+      - timings
+    properties:
+      results:
+        type: array
+        items:
+          $ref: '#/definitions/RerankResult'
+      cacheHit:
+        type: boolean
+      usedFallback:
+        type: boolean
+      requestId:
+        type: string
+      timings:
+        type: object
+        required:
+          - totalMs
+        properties:
+          totalMs:
+            type: integer
+            minimum: 0
+          togetherMs:
+            type: integer
+            minimum: 0
+          promptMs:
+            type: integer
+            minimum: 0
+          cacheMs:
+            type: integer
+            minimum: 0
+      metadata:
+        type: object
+        additionalProperties: true
+      meta:
+        $ref: '#/definitions/ResponseMeta'
+    additionalProperties: false
+  EvidenceResponse:
+    type: object
+    required:
+      - sections
+      - metadata
+    properties:
+      sections:
+        type: object
+        additionalProperties:
+          type: object
+          properties:
+            id:
+              type: string
+            title:
+              type: string
+            summary:
+              type: string
+            highlights:
+              type: array
+              items:
+                type: string
+            score:
+              type: number
+            confidence:
+              type: number
+            lastUpdated:
+              type: string
+          additionalProperties: false
+      metadata:
+        type: object
+        required:
+          - candidateId
+          - orgId
+          - sectionsAvailable
+          - cacheHit
+        properties:
+          candidateId:
+            type: string
+          orgId:
+            type: string
+          locale:
+            type: string
+          version:
+            type: string
+          generatedAt:
+            type: string
+          redacted:
+            type: boolean
+          cacheHit:
+            type: boolean
+          sectionsAvailable:
+            type: array
+            items:
+              type: string
+          meta:
+            $ref: '#/definitions/ResponseMeta'
+        additionalProperties: true
+    additionalProperties: false
+  OccupationSearchResponse:
+    type: object
+    required:
+      - results
+      - total
+      - cacheHit
+      - query
+    properties:
+      results:
+        type: array
+        items:
+          type: object
+          required:
+            - ecoId
+            - title
+            - locale
+            - aliases
+            - score
+            - source
+          properties:
+            ecoId:
+              type: string
+            title:
+              type: string
+            locale:
+              type: string
+            country:
+              type: string
+            aliases:
+              type: array
+              items:
+                type: string
+            score:
+              type: number
+            source:
+              type: string
+              enum:
+                - title
+                - alias
+      total:
+        type: integer
+      cacheHit:
+        type: boolean
+      query:
+        type: object
+        required:
+          - title
+          - locale
+          - country
+          - limit
+        properties:
+          title:
+            type: string
+          locale:
+            type: string
+          country:
+            type: string
+          limit:
+            type: integer
+      meta:
+        $ref: '#/definitions/ResponseMeta'
+    additionalProperties: false
+  OccupationDetailResponse:
+    type: object
+    required:
+      - occupation
+      - cacheHit
+    properties:
+      cacheHit:
+        type: boolean
+      occupation:
+        type: object
+        required:
+          - ecoId
+          - title
+          - locale
+          - aliases
+          - crosswalk
+        properties:
+          ecoId:
+            type: string
+          title:
+            type: string
+          locale:
+            type: string
+          description:
+            type: string
+          aliases:
+            type: array
+            items:
+              type: string
+          industries:
+            type: array
+            items:
+              type: string
+          salaryInsights:
+            type: object
+            additionalProperties: true
+          crosswalk:
+            type: object
+            properties:
+              cbo:
+                type: array
+                items:
+                  type: string
+              esco:
+                type: array
+                items:
+                  type: string
+              onet:
+                type: array
+                items:
+                  type: string
+            additionalProperties: false
+          template:
+            type: object
+            properties:
+              summary:
+                type: string
+              requiredSkills:
+                type: array
+                items:
+                  type: string
+              preferredSkills:
+                type: array
+                items:
+                  type: string
+              yearsExperienceMin:
+                type: number
+              yearsExperienceMax:
+                type: number
+            additionalProperties: false
+      meta:
+        $ref: '#/definitions/ResponseMeta'
+    additionalProperties: false
+  EnrichProfileRequest:
+    type: object
+    required:
+      - candidateId
+    properties:
+      candidateId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      async:
+        type: boolean
+      idempotencyKey:
+        type: string
+        minLength: 8
+        maxLength: 128
+      force:
+        type: boolean
+      payload:
+        type: object
+        additionalProperties: true
+    additionalProperties: false
+  EnrichProfileJob:
+    type: object
+    required:
+      - jobId
+      - tenantId
+      - candidateId
+      - status
+      - createdAt
+      - updatedAt
+    properties:
+      jobId:
+        type: string
+      tenantId:
+        type: string
+      candidateId:
+        type: string
+      status:
+        type: string
+        enum:
+          - queued
+          - processing
+          - completed
+          - failed
+      createdAt:
+        type: string
+      updatedAt:
+        type: string
+      error:
+        type: string
+      result:
+        type: object
+        additionalProperties: true
+    additionalProperties: true
+  EnrichProfileResponse:
+    type: object
+    required:
+      - job
+    properties:
+      job:
+        $ref: '#/definitions/EnrichProfileJob'
+      meta:
+        $ref: '#/definitions/ResponseMeta'
+    additionalProperties: false
+  EnrichStatusResponse:
+    type: object
+    required:
+      - job
+    properties:
+      job:
+        $ref: '#/definitions/EnrichProfileJob'
+      meta:
+        $ref: '#/definitions/ResponseMeta'
+    additionalProperties: false
+  RefreshPostingsRequest:
+    type: object
+    additionalProperties: false
+    properties:
+      tenantId:
+        type: string
+        minLength: 1
+      force:
+        type: boolean
+      schedule:
+        type: object
+        additionalProperties: false
+        required:
+          - name
+          - cron
+        properties:
+          name:
+            type: string
+            minLength: 3
+          cron:
+            type: string
+            minLength: 5
+          timezone:
+            type: string
+          description:
+            type: string
+  RefreshProfilesRequest:
+    type: object
+    additionalProperties: false
+    required:
+      - tenantId
+    properties:
+      tenantId:
+        type: string
+        minLength: 1
+      sinceIso:
+        type: string
+        format: date-time
+      priority:
+        type: string
+        enum:
+          - low
+          - normal
+          - high
+      force:
+        type: boolean
+      schedule:
+        type: object
+        additionalProperties: false
+        required:
+          - name
+          - cron
+        properties:
+          name:
+            type: string
+            minLength: 3
+          cron:
+            type: string
+            minLength: 5
+          timezone:
+            type: string
+          description:
+            type: string
+  RefreshResponse:
+    type: object
+    required:
+      - status
+      - metadata
+    properties:
+      status:
+        type: string
+        enum:
+          - pending
+          - queued
+          - running
+          - completed
+          - failed
+          - timeout
+      messageId:
+        type: string
+      job:
+        type: object
+        required:
+          - jobName
+        properties:
+          jobName:
+            type: string
+          executionName:
+            type: string
+      metadata:
+        type: object
+        required:
+          - requestId
+          - tenantId
+          - triggeredAt
+          - triggeredBy
+          - priority
+          - force
+        properties:
+          requestId:
+            type: string
+          tenantId:
+            type: string
+          triggeredAt:
+            type: string
+            format: date-time
+          triggeredBy:
+            type: string
+          priority:
+            type: string
+            enum:
+              - low
+              - normal
+              - high
+          force:
+            type: boolean
+          scheduleName:
+            type: string
+          meta:
+            $ref: '#/definitions/ResponseMeta'
+      meta:
+        $ref: '#/definitions/ResponseMeta'
+    additionalProperties: false
+  SnapshotsResponse:
+    type: object
+    required:
+      - generatedAt
+      - postings
+      - profiles
+      - jobHealth
+    properties:
+      generatedAt:
+        type: string
+        format: date-time
+      postings:
+        $ref: '#/definitions/FreshnessSection'
+      profiles:
+        $ref: '#/definitions/FreshnessSection'
+      jobHealth:
+        type: object
+        required:
+          - recentExecutions
+          - recentFailures
+          - successRatio
+          - alertState
+        properties:
+          recentExecutions:
+            type: number
+          recentFailures:
+            type: number
+          successRatio:
+            type: number
+          alertState:
+            type: string
+            enum:
+              - ok
+              - warning
+              - critical
+          lastFailureAt:
+            type: string
+            format: date-time
+      meta:
+        $ref: '#/definitions/ResponseMeta'
+    additionalProperties: false
+  FreshnessSection:
+    type: object
+    required:
+      - maxLagDays
+      - staleTenants
+    properties:
+      lastUpdatedAt:
+        oneOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+      maxLagDays:
+        type: number
+      staleTenants:
+        type: array
+        items:
+          type: object
+          required:
+            - tenantId
+            - lagDays
+          properties:
+            tenantId:
+              type: string
+            lagDays:
+              type: number
+            lastUpdatedAt:
+              type: string
+              format: date-time
+    additionalProperties: false
+  SkillExpandRequest:
+    type: object
+    required:
+      - skillId
+    properties:
+      skillId:
+        type: string
+        minLength: 2
+        maxLength: 96
+      topK:
+        type: integer
+        minimum: 1
+        maximum: 25
+      filters:
+        type: object
+        additionalProperties: false
+        properties:
+          region:
+            type: string
+          industry:
+            type: string
+          experience:
+            type: string
+      includeRelatedRoles:
+        type: boolean
+    additionalProperties: false
+  SkillExpandEdge:
+    type: object
+    required:
+      - skillId
+      - label
+      - score
+      - support
+      - recencyDays
+      - sources
+    properties:
+      skillId:
+        type: string
+      label:
+        type: string
+      score:
+        type: number
+      support:
+        type: integer
+      recencyDays:
+        type: integer
+      sources:
+        type: array
+        items:
+          type: string
+    additionalProperties: false
+  SkillExpandResponse:
+    type: object
+    required:
+      - seedSkill
+      - adjacent
+      - cacheHit
+      - generatedAt
+      - meta
+    properties:
+      seedSkill:
+        type: object
+        required:
+          - skillId
+          - label
+        properties:
+          skillId:
+            type: string
+          label:
+            type: string
+        additionalProperties: false
+      adjacent:
+        type: array
+        items:
+          $ref: '#/definitions/SkillExpandEdge'
+      cacheHit:
+        type: boolean
+      generatedAt:
+        type: string
+        format: date-time
+      meta:
+        $ref: '#/definitions/ResponseMeta'
+    additionalProperties: false
+  RoleTemplateRequest:
+    type: object
+    required:
+      - ecoId
+    properties:
+      ecoId:
+        type: string
+        minLength: 3
+        maxLength: 128
+      locale:
+        type: string
+        minLength: 2
+        maxLength: 10
+      experienceLevel:
+        type: string
+        minLength: 2
+        maxLength: 32
+      includeDemand:
+        type: boolean
+    additionalProperties: false
+  RoleTemplateSkill:
+    type: object
+    required:
+      - skillId
+      - label
+      - importance
+      - source
+    properties:
+      skillId:
+        type: string
+      label:
+        type: string
+      importance:
+        type: number
+      source:
+        type: string
+        enum:
+          - required
+          - preferred
+    additionalProperties: false
+  RoleTemplateResponse:
+    type: object
+    required:
+      - ecoId
+      - locale
+      - title
+      - version
+      - summary
+      - requiredSkills
+      - preferredSkills
+      - cacheHit
+      - generatedAt
+    properties:
+      ecoId:
+        type: string
+      locale:
+        type: string
+      title:
+        type: string
+      version:
+        type: string
+      summary:
+        type: string
+      requiredSkills:
+        type: array
+        items:
+          $ref: '#/definitions/RoleTemplateSkill'
+      preferredSkills:
+        type: array
+        items:
+          $ref: '#/definitions/RoleTemplateSkill'
+      yearsExperienceMin:
+        type: number
+      yearsExperienceMax:
+        type: number
+      demandIndex:
+        type: number
+      cacheHit:
+        type: boolean
+      generatedAt:
+        type: string
+        format: date-time
+      meta:
+        $ref: '#/definitions/ResponseMeta'
+    additionalProperties: false
+  MarketDemandResponse:
+    type: object
+    required:
+      - skillId
+      - region
+      - points
+      - trend
+      - latestEma
+      - cacheHit
+      - generatedAt
+    properties:
+      skillId:
+        type: string
+      region:
+        type: string
+      industry:
+        type: string
+      points:
+        type: array
+        items:
+          type: object
+          required:
+            - weekStart
+            - postings
+            - ema
+            - zScore
+          properties:
+            weekStart:
+              type: string
+              pattern: '^\\d{4}-\\d{2}-\\d{2}$'
+            postings:
+              type: integer
+              minimum: 0
+            ema:
+              type: number
+            zScore:
+              type: number
+        additionalProperties: false
+      trend:
+        type: string
+        enum:
+          - rising
+          - steady
+          - declining
+      latestEma:
+        type: number
+      cacheHit:
+        type: boolean
+      generatedAt:
+        type: string
+        format: date-time
+      meta:
+        $ref: '#/definitions/ResponseMeta'
+    additionalProperties: false

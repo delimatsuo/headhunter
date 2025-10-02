@@ -112,7 +112,7 @@ python candidate_viewer.py
 
 1. **Start the chunked processor**:
 ```bash
-cd /Users/delimatsuo/Documents/Coding/headhunter/scripts
+cd "/Volumes/Extreme Pro/myprojects/headhunter/scripts"
 python chunked_processor.py
 ```
 

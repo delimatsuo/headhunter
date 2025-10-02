@@ -36,7 +36,7 @@ The user requires:
 
 ### File Structure
 ```
-/Users/delimatsuo/Documents/Coding/headhunter/
+/Volumes/Extreme Pro/myprojects/headhunter/
 ├── scripts/
 │   ├── chunked_processor.py         # MAIN - Use this for processing
 │   ├── recruiter_enhanced_processor.py  # Quality testing (20 candidates)
@@ -63,7 +63,7 @@ The user requires:
 
 1. **Check current status**:
 ```bash
-cd /Users/delimatsuo/Documents/Coding/headhunter/scripts
+cd "/Volumes/Extreme Pro/myprojects/headhunter/scripts"
 cat processor_progress.json  # See last processed index
 ls -1 "/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project/enhanced_analysis"/*.json | wc -l
 ```
@@ -174,7 +174,7 @@ The system sends comprehensive prompts containing:
 ### File Paths
 - **Main Database**: `/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project/comprehensive_merged_candidates.json`
 - **Output Directory**: `/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project/enhanced_analysis/`
-- **Scripts**: `/Users/delimatsuo/Documents/Coding/headhunter/scripts/`
+- **Scripts**: `/Volumes/Extreme Pro/myprojects/headhunter/scripts/`
 
 ### Commands Reference
 ```bash

@@ -1,6 +1,37 @@
-# [DEPRECATED] Headhunter PRD (use .taskmaster/docs/prd.txt)
+# [DEPRECATED] Headhunter PRD – reference only
 
-This file contains legacy content. The single source of truth is now `.taskmaster/docs/prd.txt` (Brazil-first, Gemini embeddings, Together rerank). Update and planning should reference that file.
+⚠️ **Do not use this file for active planning or delivery.** The authoritative requirements live in `.taskmaster/docs/prd.txt`. All Fastify architecture, service contracts, and current milestones are documented there and in the canonical documentation set (`README.md`, `ARCHITECTURE.md`, `docs/HANDOVER.md`).
+
+## Where to Find Source of Truth
+
+- Product requirements and backlog: `.taskmaster/docs/prd.txt`
+- Architecture and service topology: `ARCHITECTURE.md`
+- Operational runbook: `docs/HANDOVER.md`
+- Bootstrap and workflow guidance: `README.md`
+
+## Current Architecture Snapshot (2025 Fastify Mesh)
+
+- **Canonical repository**: `/Volumes/Extreme Pro/myprojects/headhunter` (all automation scripts source `scripts/utils/repo_guard.sh`; deprecated clones under `/Users/delimatsuo/Documents/Coding/headhunter` exit on invocation).
+- **Fastify services**: Eight HTTP services (`hh-embed-svc`, `hh-search-svc`, `hh-rerank-svc`, `hh-evidence-svc`, `hh-eco-svc`, `hh-msgs-svc`, `hh-admin-svc`, `hh-enrich-svc`) exposing ports 7101–7108. Responsibilities and dependencies are described in `ARCHITECTURE.md`.
+- **Shared infrastructure**: Redis (redis:7-alpine), Postgres with pgvector (ankane/pgvector:v0.5.1), Firestore + Pub/Sub emulators (Cloud SDK), mock Together AI, mock OAuth, and Python enrichment workers. Topology is defined in `docker-compose.local.yml`.
+- **Integration baseline**: `SKIP_JEST=1 npm run test:integration --prefix services` must report `cacheHitRate=1.0` and rerank latency ≈ 0 ms before code is promoted. Metrics are exported via `/metrics` on each Fastify service.
+- **Bootstrap automation**: `scripts/prepare-local-env.sh` is planned to consolidate dependency installs, env hydration, emulator seeding, compose startup, and integration smoke tests. Until it lands, follow the manual procedures in `README.md` and `docs/HANDOVER.md` and annotate gaps with `TODO prepare-local-env`.
+
+## Migration Context – Why Fastify?
+
+The platform moved from Cloud Functions to the Fastify mesh to address:
+
+- **Multi-tenant isolation**: Shared middleware (`@hh/common`) enforces issuer/audience validation, per-tenant cache namespaces, and schema guards that were cumbersome in Functions.
+- **Latency and determinism**: Redis-backed rerank caching delivers near-zero latency; Functions cold starts routinely violated SLOs.
+- **Local parity**: `docker-compose.local.yml` mirrors production services, allowing deterministic integration tests and offline work (mock Together AI, mock OAuth, emulators).
+- **Operational control**: Cloud Run deployments expose consistent `/health`/`/metrics` endpoints, easing observability and incident response.
+- **Extensibility**: The enrichment service integrates Python workers through bind mounts, enabling rapid iteration on ML-heavy tasks without redeploying Functions.
+
+## Legacy Content (Cloud Functions Era)
+
+The remainder of this document is preserved for historical reference only. Use it to understand legacy decisions or compare past scope; do not base current implementation work on these sections.
+
+---
 
 # Headhunter v2.0 - AI-Powered Recruitment Analytics Platform
 
@@ -147,256 +178,3 @@ Job Description → Vector similarity → Ranked candidate matches
 
 **Storage Strategy**: Hybrid dual-database approach
 - **Cloud SQL + pgvector**: 768-dimensional vectors for fast similarity search
-- **Firestore**: Rich structured profiles with 15+ detailed fields
-- **Synchronization**: Every candidate exists in both systems with consistent IDs
-
-**Search Performance**: 
-- <100ms vector similarity search for 20,000+ candidates
-- <200ms total response time including profile enrichment
-- Cosine similarity scoring with relevance ranking
-
-### Search Capabilities
-
-**1. Semantic Job Matching**
-```
-Job Description Input → VertexAI Embedding → pgvector Query → Ranked Candidates
-```
-
-**2. Skill-Aware Search**
-- Required skills with minimum confidence thresholds
-- Skill category filtering (technical, soft, leadership, domain)
-- Composite ranking: skill_match (40%) + confidence (25%) + vector_similarity (25%) + experience_match (10%)
-- Fuzzy skill matching with synonym support
-
-**3. Hybrid Search**
-- Semantic similarity + structured filters
-- Location, experience level, skill requirements
-- Company tier and industry preferences
-- Evidence-based skill validation
-
-**4. Profile Updates**
-- LinkedIn profile changes → Re-processing → Updated embeddings
-- Skill confidence scores updated with new evidence
-- Maintains search accuracy with fresh data
-
-## Development Status & Quality Validation
-
-### ✅ Production-Ready Components
-
-**Stage 1: Basic Enhancement**
-- ✅ Together AI Llama 3.2 3B Instruct Turbo integration
-- ✅ Comprehensive 15+ field enhanced_analysis structure
-- ✅ 98.9% field completeness in quality testing
-- ✅ $0.0006 per candidate Stage 1 cost
-- ✅ 1,500+ candidates/hour throughput
-
-**Stage 2: Contextual Intelligence**
-- ✅ Qwen2.5 Coder 32B model selection and cost analysis
-- ✅ Company intelligence database (Google, Amazon, McKinsey patterns)
-- ✅ Industry pattern recognition (FinTech, consulting, tech contexts)
-- ✅ Role progression analysis (VP, team lead, individual contributor)
-- ✅ Educational context weighting system
-- ✅ Demonstrated LLM trajectory-based skill inference capability
-
-**Skill Probability Assessment (Task #25)**
-- ✅ Enhanced PromptBuilder with skill confidence scoring (0-100%)
-- ✅ SkillWithEvidence model with Pydantic schema validation
-- ✅ Skill categorization: technical, soft, leadership, domain
-- ✅ Evidence-based skill validation with supporting arrays
-- ✅ Skill-aware search with composite ranking algorithm
-- ✅ React SkillConfidenceDisplay component with interactive UI
-- ✅ Comprehensive test suite with 24 test methods
-- ✅ Integration with IntelligentSkillProcessor for probabilistic inference
-
-**Stage 3: Vector Generation**
-- ✅ VertexAI text-embedding-004 integration
-- ✅ 768-dimensional embedding generation
-- ✅ Searchable text extraction from enhanced profiles
-
-**Cloud Infrastructure**
-- ✅ Cloud Run workers with auto-scaling (1-100 instances)
-- ✅ Pub/Sub orchestration for batch processing
-- ✅ Secret Manager for secure API key management
-- ✅ Firestore + Cloud SQL dual storage
-
-**Quality Metrics** (Validated with 20-candidate test)
-- ✅ 98.9% average field completeness
-- ✅ Comprehensive profiles across all role types
-- ✅ Rich recruiter-optimized data for search
-- ✅ $0.0005 average cost per candidate
-
-### 🚧 In Development
-
-**Multi-Stage Pipeline Integration**
-- Stage 1→2→3 orchestration and error handling
-- Qwen2.5 Coder 32B implementation for contextual analysis
-- Stage-specific prompt optimization and testing
-
-**Vector Search Implementation**
-- ✅ Cloud SQL + pgvector database setup
-- ✅ Complete embedding pipeline deployment
-- ✅ Semantic search API endpoints with skill-aware ranking
-- ✅ CRUD operations for profile management
-- [ ] Multi-stage pipeline orchestration
-
-**Web Interface**
-- React TypeScript search application
-- Job description upload interface
-- Candidate results with similarity scores
-- Profile management and update workflows
-
-## Performance & Cost Analysis
-
-### Processing Performance
-- **Per Candidate**: 2-3 seconds comprehensive analysis
-- **Batch Capacity**: 1,500+ candidates/hour with parallel workers
-- **Daily Capacity**: 50,000+ candidates processed
-- **Storage**: Unlimited scalability (Firestore + Cloud SQL)
-
-### Cost Structure (20,000 candidates/month)
-- **Stage 1 (Llama 3.2 3B)**: ~$12/month ($0.0006 per candidate)
-- **Stage 2 (Qwen2.5 32B)**: ~$40/month ($0.002 per candidate)
-- **Stage 3 (VertexAI)**: ~$4/month ($0.0002 per candidate)
-- **Cloud Run Computing**: ~$160/month ($0.008 per candidate)
-- **Storage & Database**: ~$86/month ($0.0043 per candidate)
-- **Total**: ~$302/month operational cost
-
-### Multi-Stage Cost Analysis
-- **Basic Enhancement Only**: $172/month (single stage)
-- **Enhanced + Contextual**: $212/month (two stages) 
-- **Full Pipeline**: $302/month (three stages) ← **RECOMMENDED**
-- **Premium (70B model)**: $316/month (4.4x Stage 2 cost)
-- **Enterprise (405B model)**: $527/month (17.5x Stage 2 cost)
-
-### Cost-Benefit Justification
-- **4x Investment in Stage 2**: Sophisticated contextual intelligence
-- **Company Pattern Recognition**: Google vs startup skill inference
-- **Industry Intelligence**: FinTech vs consulting expertise mapping
-- **Career Trajectory Analysis**: VP vs team lead capability assessment
-- **ROI**: Superior candidate matching justifies premium contextual analysis
-
-## Implementation Roadmap
-
-### Phase 1: Core Infrastructure ✅
-- [x] Together AI integration and testing
-- [x] Cloud Run worker development
-- [x] Comprehensive profile generation
-- [x] Quality validation (98.9% completeness)
-
-### Phase 2: Multi-Stage Intelligence (Current)
-- [x] Stage 1: Basic enhancement with Llama 3.2 3B
-- [x] Stage 2: Contextual intelligence design with Qwen2.5 32B
-- [x] Stage 3: Vector generation with VertexAI embeddings
-- [ ] Multi-stage pipeline orchestration
-- [ ] Cloud SQL + pgvector database setup
-- [ ] Semantic search API development
-- [ ] CRUD operations for profile management
-
-### Phase 3: Web Interface
-- [ ] React search application
-- [ ] Job description upload interface
-- [ ] Search results with similarity scores
-- [ ] Profile update and management UI
-
-### Phase 4: Production Deployment
-- [ ] Full 29,000 candidate processing
-- [ ] Performance optimization and monitoring
-- [ ] User training and onboarding
-- [ ] Analytics and success metrics tracking
-
-## Security & Compliance
-
-### Data Privacy
-- **API Keys**: Stored in Google Secret Manager with automatic rotation
-- **Data Transit**: HTTPS-only communication with encryption
-- **Data Storage**: Encrypted at rest in Firestore and Cloud SQL
-- **Access Control**: Firebase Auth with role-based permissions
-
-### Compliance Considerations
-- **GDPR**: Right to deletion via CRUD APIs
-- **Data Residency**: All processing within specified GCP regions
-- **Audit Logging**: Complete processing and access trail
-- **PII Handling**: Sanitized logs and secure data processing
-
-## Risk Mitigation
-
-### Technical Risks
-- **AI Quality**: Validated with 98.9% field completeness across diverse candidate types
-- **Performance**: Proven scalability with auto-scaling Cloud Run architecture
-- **Cost Control**: Fixed per-candidate pricing model with budget monitoring
-- **Data Consistency**: Dual-storage synchronization with retry logic
-
-### Business Risks
-- **User Adoption**: Intuitive interface with immediate value demonstration
-- **Search Accuracy**: Semantic understanding provides superior matches vs keyword search
-- **Scalability**: Cloud-native architecture handles growth automatically
-
-## Success Criteria
-
-### Technical Milestones
-1. **Processing Capability**: Handle 29,000 candidates with >95% success rate
-2. **Search Performance**: <200ms response time for semantic queries
-3. **Data Quality**: Maintain >95% profile completeness across all candidates
-4. **Cost Efficiency**: Stay within $350/month operational budget
-
-### Business Outcomes  
-1. **Time Savings**: Reduce recruiter search time from 2+ hours to <5 minutes
-2. **Search Quality**: 90%+ relevance in top 20 search results
-3. **User Engagement**: >20 searches per recruiter per week
-4. **ROI**: 10x improvement in recruiter productivity
-
-## Future Enhancements
-
-### Advanced Features
-- **Multi-language Support**: International candidate processing
-- **Real-time Processing**: Streaming profile updates
-- **Advanced Analytics**: Hiring success metrics and model fine-tuning
-- **Integration APIs**: ATS system connectors and third-party tools
-
-### Scaling Opportunities
-- **Multi-region Deployment**: Global processing with regional compliance
-- **Custom Model Training**: Fine-tuned models based on recruiter feedback
-- **Graph-based Search**: Candidate relationship mapping and referral networks
-- **Performance Optimization**: Sub-50ms search response times
-
-## Conclusion
-
-Headhunter v2.0 represents a paradigm shift from keyword-based search to intelligent semantic matching, powered by state-of-the-art AI and cloud infrastructure. With validated quality metrics (98.9% profile completeness), cost-effective processing ($0.005 per candidate), and scalable architecture (1,500+ candidates/hour), the system is ready to transform recruitment workflows and unlock the strategic value of candidate databases.
-
-The cloud-native design ensures reliable processing at scale while maintaining cost efficiency and superior search performance compared to traditional approaches. The comprehensive 15+ field profiles provide recruiters with rich, actionable insights for effective candidate matching and relationship building.
-
----
-
-**Version**: 2.0  
-**Status**: Development Phase 2 (Integration Testing)  
-**Last Updated**: September 11, 2025
-
-## Recent Developments
-
-### Task #25: Skill Probability Assessment (Completed - September 11, 2025)
-
-**Implementation Details:**
-- **Enhanced AI Processing**: Updated PromptBuilder with comprehensive skill confidence scoring instructions for Together AI models
-- **Pydantic Schema Evolution**: Added SkillWithEvidence model with confidence (0-100%) and evidence arrays
-- **Skill Categorization**: Implemented 4-category system (technical, soft, leadership, domain) with intelligent classification
-- **Evidence-Based Validation**: Each skill includes supporting evidence from resumes and recruiter comments
-- **Advanced Search Algorithm**: Composite ranking system with weighted factors:
-  - Skill match: 40% (primary relevance)
-  - Confidence: 25% (reliability weighting)
-  - Vector similarity: 25% (semantic understanding)
-  - Experience match: 10% (additional context)
-- **Fuzzy Matching**: Synonym support for skill variations (e.g., "React.js" matches "ReactJS")
-- **Interactive UI**: React component with confidence bars, category grouping, and evidence display
-- **Quality Assurance**: 24-test comprehensive test suite covering schema validation, service functionality, and integration workflows
-
-**Technical Impact:**
-- Enhanced search precision with probabilistic skill assessment
-- Improved candidate-role matching through confidence weighting
-- Reduced false positives via evidence-based validation
-- Seamless integration with existing pgvector infrastructure
-
-**Business Value:**
-- More accurate candidate recommendations based on skill confidence
-- Reduced recruiter time evaluating candidate suitability
-- Better understanding of skill gaps and training needs
-- Enhanced user experience with interactive skill visualizations

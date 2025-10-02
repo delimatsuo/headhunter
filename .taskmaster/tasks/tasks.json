@@ -833,11 +833,106 @@
             "testStrategy": ""
           }
         ]
+      },
+      {
+        "id": 78,
+        "title": "Production Deployment Recovery - Fix Failed Fastify Service Mesh Deployment",
+        "description": "The Phase 5-7 deployment executed on 2025-09-30 failed with all 8 Fastify services unable to deploy successfully. Critical issues identified:\n\n1. Invalid Cloud Run annotation - autoscaling.knative.dev/maxScale was incorrectly applied to Service resource instead of Revision template\n2. Container PORT=8080 configuration issues - Fastify services not binding to correct port\n3. OAuth endpoint misconfiguration - token_uri pointing to non-existent auth.headhunter.ai domain instead of correct idp.production.ella.jobs\n4. API Gateway deployment blocked - prerequisite services never achieved healthy state, preventing gateway deployment\n\nRoot cause: Deployment script reported success based on submission rather than actual service health validation. All 8 services (admin, enrich, search, msgs, vector, eco, embeddings, rerank) are non-functional in production.\n\nIMMEDIATE IMPACT:\n- Zero production API availability\n- All tenant operations blocked\n- Search and enrichment pipelines offline\n- OAuth authentication broken\n\nThis task requires immediate remediation to restore production services and complete the Phase 5-7 deployment objectives.",
+        "details": "RECOVERY STEPS REQUIRED:\n\n1. Fix Cloud Run autoscaling annotation placement\n   - Move maxScale annotation from Service spec to Revision template\n   - Verify annotation applies correctly during deployment\n   - Test with single service before rolling out to all 8\n\n2. Resolve Fastify PORT binding issues\n   - Audit all 8 service Dockerfiles for PORT environment variable\n   - Ensure Fastify.listen(process.env.PORT || 8080, '0.0.0.0')\n   - Verify Cloud Run PORT injection works correctly\n\n3. Correct OAuth endpoint configuration\n   - Update Secret Manager secret for OAuth credentials\n   - Change token_uri from https://auth.headhunter.ai/oauth2/token to https://idp.production.ella.jobs/oauth2/token\n   - Verify domain routing and certificate validity\n\n4. Fix deployment health validation\n   - Modify deployment script to poll actual service health endpoints\n   - Implement retry logic with exponential backoff\n   - Fail deployment if services don't reach healthy state within timeout\n\n5. Execute phased service redeployment\n   - Deploy foundational services first (admin, enrich)\n   - Validate health before proceeding to dependent services\n   - Deploy remaining services (search, msgs, vector, eco, embeddings, rerank)\n   - Confirm all 8 services report healthy status\n\n6. Deploy API Gateway after service mesh is healthy\n   - Verify all backend service URLs are reachable\n   - Configure gateway routes to point to healthy services\n   - Test gateway routing to all 8 services\n\n7. Update deployment documentation\n   - Correct deployment report to reflect actual state (not planned)\n   - Document root causes and remediation steps\n   - Add validation checklist to prevent recurrence\n\n8. Production validation and smoke testing\n   - Test authentication flow end-to-end\n   - Verify each service endpoint responds correctly\n   - Run load tests to confirm stability\n   - Monitor for errors in first 24 hours\n\nDEPENDENCIES:\n- Access to GCP console for Cloud Run\n- Secret Manager write permissions for OAuth fix\n- Deployment script modification rights\n\nBLOCKING:\n- All production API operations\n- Phase 6 and Phase 7 objectives",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Fix Cloud Run Autoscaling Annotation Configuration",
+            "description": "Correct the placement of autoscaling.knative.dev/maxScale annotation from Service resource to Revision template in Cloud Run deployment configurations for all 8 Fastify services",
+            "dependencies": [],
+            "details": "Update deployment YAML/configuration files to move maxScale annotation from metadata.annotations at Service level to spec.template.metadata.annotations at Revision template level. Test with admin service first to validate annotation applies correctly. Verify Cloud Run console shows proper autoscaling configuration after deployment.",
+            "status": "pending",
+            "testStrategy": "Deploy single service with corrected annotation, verify in Cloud Run console that maxScale appears in revision template, confirm autoscaling behavior works as expected"
+          },
+          {
+            "id": 2,
+            "title": "Audit and Fix Fastify PORT Binding Configuration",
+            "description": "Review and correct PORT environment variable configuration in all 8 service Dockerfiles and application code to ensure proper binding to Cloud Run injected PORT",
+            "dependencies": [],
+            "details": "Audit Dockerfiles for all services (admin, enrich, search, msgs, vector, eco, embeddings, rerank) to ensure PORT environment variable is properly configured. Update Fastify application code to use Fastify.listen(process.env.PORT || 8080, '0.0.0.0') pattern. Verify Cloud Run PORT injection mechanism works correctly with container startup.",
+            "status": "pending",
+            "testStrategy": "Test container locally with PORT=8080 environment variable, verify Fastify binds to correct port, test Cloud Run deployment with health check endpoints responding"
+          },
+          {
+            "id": 3,
+            "title": "Correct OAuth Endpoint Configuration in Secret Manager",
+            "description": "Update OAuth credentials in Secret Manager to fix token_uri from incorrect auth.headhunter.ai domain to correct idp.production.ella.jobs endpoint",
+            "dependencies": [],
+            "details": "Access Secret Manager and update OAuth configuration secret to change token_uri from https://auth.headhunter.ai/oauth2/token to https://idp.production.ella.jobs/oauth2/token. Verify domain routing and SSL certificate validity for idp.production.ella.jobs. Ensure all services pick up updated secret configuration.",
+            "status": "pending",
+            "testStrategy": "Test OAuth token endpoint accessibility, verify SSL certificate validity, test authentication flow with updated endpoint configuration"
+          },
+          {
+            "id": 4,
+            "title": "Enhance Deployment Script with Health Validation",
+            "description": "Modify deployment script to implement proper service health validation instead of reporting success based on submission alone",
+            "dependencies": [],
+            "details": "Update deployment script to poll actual service health endpoints after deployment. Implement retry logic with exponential backoff (initial 5s, max 60s, 10 retries). Add timeout mechanism (5 minutes per service). Script should fail deployment if services don't reach healthy state within timeout period. Include detailed logging of health check results.",
+            "status": "pending",
+            "testStrategy": "Test deployment script with intentionally failing service to verify proper failure detection, test with healthy services to confirm success detection, validate retry logic and timeout behavior"
+          },
+          {
+            "id": 5,
+            "title": "Execute Phased Service Redeployment",
+            "description": "Deploy services in phases starting with foundational services, validating health before proceeding to dependent services",
+            "dependencies": [
+              "78.1",
+              "78.2",
+              "78.3",
+              "78.4"
+            ],
+            "details": "Phase 1: Deploy foundational services (admin, enrich) and validate health endpoints respond correctly. Phase 2: Deploy core services (search, msgs, vector) after Phase 1 validation. Phase 3: Deploy remaining services (eco, embeddings, rerank) after Phase 2 validation. Use enhanced deployment script for each phase with proper health validation.",
+            "status": "pending",
+            "testStrategy": "Validate each service health endpoint after deployment, test service dependencies between phases, confirm all 8 services report healthy status before proceeding to next subtask"
+          },
+          {
+            "id": 6,
+            "title": "Deploy and Configure API Gateway",
+            "description": "Deploy API Gateway after service mesh achieves healthy state and configure routing to all 8 backend services",
+            "dependencies": [
+              "78.5"
+            ],
+            "details": "Verify all 8 backend service URLs are reachable and responding to health checks. Deploy API Gateway with routes configured to point to healthy service endpoints. Configure gateway routing rules for admin, enrich, search, msgs, vector, eco, embeddings, and rerank services. Test gateway routing to each service endpoint.",
+            "status": "pending",
+            "testStrategy": "Test API Gateway routing to each of the 8 services, verify proper request forwarding and response handling, test authentication flow through gateway"
+          },
+          {
+            "id": 7,
+            "title": "Update Deployment Documentation and Reporting",
+            "description": "Correct deployment documentation to reflect actual deployment state and document root causes with remediation steps",
+            "dependencies": [
+              "78.6"
+            ],
+            "details": "Update deployment report to reflect actual service status rather than planned status. Document root causes: annotation placement, PORT binding, OAuth misconfiguration, and lack of health validation. Create remediation steps documentation. Add validation checklist to deployment process to prevent recurrence of these issues.",
+            "status": "pending",
+            "testStrategy": "Review documentation accuracy against actual deployment state, validate remediation steps can be followed by other team members, test validation checklist effectiveness"
+          },
+          {
+            "id": 8,
+            "title": "Production Validation and Smoke Testing",
+            "description": "Perform comprehensive production validation including authentication flow testing, service endpoint verification, and load testing",
+            "dependencies": [
+              "78.7"
+            ],
+            "details": "Test OAuth authentication flow end-to-end with corrected idp.production.ella.jobs endpoint. Verify each of the 8 service endpoints responds correctly to sample requests. Run load tests to confirm system stability under normal traffic patterns. Set up monitoring for first 24 hours to catch any errors or performance issues. Validate all tenant operations are functional.",
+            "status": "pending",
+            "testStrategy": "End-to-end authentication testing, individual service endpoint testing, load testing with gradual traffic increase, 24-hour monitoring with error rate and performance metrics tracking"
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-09-05T18:18:48.859Z",
-      "updated": "2025-09-14T14:40:45.424Z",
+      "updated": "2025-10-01T20:31:24.456Z",
       "description": "Tasks for master context"
     }
   }

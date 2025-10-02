@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Headhunter Shared Services – Visual Overview</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      background: #eef2f9;
+      color: #12213a;
+      margin: 0;
+      line-height: 1.6;
+    }
+    .wrapper {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 4rem;
+    }
+    header { text-align: center; margin-bottom: 2rem; }
+    header h1 { margin: 0 0 0.5rem; font-size: 2.35rem; }
+    header p { margin: 0 auto; max-width: 720px; color: #4c5e86; }
+    section {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 1.75rem;
+      margin-top: 1.5rem;
+      box-shadow: 0 12px 24px rgba(18, 33, 58, 0.08);
+    }
+    h2 { margin-top: 0; font-size: 1.6rem; }
+    h3 { margin: 0 0 0.35rem; font-size: 1.1rem; }
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .quick-card {
+      background: #f4f7ff;
+      border-radius: 12px;
+      padding: 1rem 1.2rem;
+      border: 1px solid #d4dcf0;
+    }
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .flow-column {
+      flex: 1 1 210px;
+      min-width: 190px;
+      background: #ffffff;
+      border: 1px solid #d4dcf0;
+      border-radius: 14px;
+      padding: 1rem 1.1rem;
+    }
+    .flow-arrow {
+      align-self: center;
+      font-size: 2rem;
+      color: #5a6b96;
+    }
+    ul { margin: 0; padding-left: 1.1rem; }
+    ul li { margin-bottom: 0.35rem; }
+    .stack {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.2rem;
+      margin-top: 1.2rem;
+    }
+    .stack-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .stack-list li {
+      margin-bottom: 0.5rem;
+      padding-left: 1.1rem;
+      position: relative;
+    }
+    .stack-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: #006dff;
+    }
+    .checklist {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-top: 1.2rem;
+    }
+    .check {
+      border-left: 4px solid #006dff;
+      background: #f4f7ff;
+      border-radius: 12px;
+      padding: 1rem 1.2rem;
+    }
+    footer {
+      text-align: center;
+      font-size: 0.85rem;
+      margin-top: 2.5rem;
+      color: #5a6b96;
+    }
+    @media (max-width: 640px) {
+      header h1 { font-size: 1.9rem; }
+      .flow { flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <header>
+      <h1>Headhunter Shared Services – Quick Visual</h1>
+      <p>AI-powered recruitment analytics for Ella Executive Search. Eight Fastify services share Redis, Postgres (pgvector), and Firestore to turn resumes and ECO/MSGs evidence into recruiter-ready insight.</p>
+    </header>
+
+    <section>
+      <h2>Snapshot</h2>
+      <div class="quick-grid">
+        <div class="quick-card">
+          <h3>Purpose</h3>
+          <p>Single-pass enrichment, semantic search, and evidence surfaces for recruiter workflows.</p>
+        </div>
+        <div class="quick-card">
+          <h3>Services</h3>
+          <p>Embed, search, rerank, evidence, eco, msgs, admin, enrich – all Fastify microservices.</p>
+        </div>
+        <div class="quick-card">
+          <h3>Shared Stack</h3>
+          <p>Redis cache, Postgres + pgvector, Firestore, Pub/Sub, mock Together + mock OAuth locally.</p>
+        </div>
+        <div class="quick-card">
+          <h3>Deployment</h3>
+          <p>Docker compose for dev; Cloud Run + API Gateway in GCP project <code>headhunter-ai-0088</code>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>How the Pieces Fit</h2>
+      <div class="flow">
+        <div class="flow-column">
+          <h3>1. Inputs</h3>
+          <ul>
+            <li>Resumes &amp; ECO datasets via scripts</li>
+            <li>Tenant seeds (e.g., <code>tenant-alpha</code>)</li>
+            <li>Evidence &amp; MSG threads</li>
+          </ul>
+        </div>
+        <div class="flow-arrow">⇒</div>
+        <div class="flow-column">
+          <h3>2. Enrich &amp; Embed</h3>
+          <ul>
+            <li><code>hh-enrich-svc</code> orchestrates Together AI pipelines</li>
+            <li><code>hh-embed-svc</code> manages embeddings + Redis cache</li>
+            <li>Structured profiles saved to Firestore</li>
+          </ul>
+        </div>
+        <div class="flow-arrow">⇒</div>
+        <div class="flow-column">
+          <h3>3. Search &amp; Evidence</h3>
+          <ul>
+            <li><code>hh-search-svc</code> + <code>hh-rerank-svc</code> blend ANN + deterministic filters</li>
+            <li><code>hh-evidence-svc</code> and <code>hh-msgs-svc</code> expose artifacts</li>
+            <li>Tenant-aware APIs surfaced via gateway</li>
+          </ul>
+        </div>
+        <div class="flow-arrow">⇒</div>
+        <div class="flow-column">
+          <h3>4. Control &amp; Ops</h3>
+          <ul>
+            <li><code>hh-admin-svc</code> enforces tenant validation</li>
+            <li><code>hh-eco-svc</code> manages taxonomy + validation queues</li>
+            <li>Metrics, logs, and guardrails feed monitoring</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Shared Platform Checklist</h2>
+      <div class="stack">
+        <div>
+          <h3>Local Workflow</h3>
+          <ul class="stack-list">
+            <li>Clone canonical repo at <code>/Volumes/Extreme Pro/myprojects/headhunter</code>.</li>
+            <li>Install Fastify workspaces: <code>npm install --workspaces --prefix services</code>.</li>
+            <li>Run <code>docker compose -f docker-compose.local.yml up</code> for full mesh.</li>
+            <li>Execute <code>./scripts/test-integration.sh</code> (no skip flags) to confirm cache hit rate 1.0 and ~0&nbsp;ms rerank latency.</li>
+            <li>Track progress with Task Master; log notes in <code>migration-log.txt</code>.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>GCP Deployment</h3>
+          <ul class="stack-list">
+            <li>Cloud Run service per Fastify workspace.</li>
+            <li>Cloud SQL (pgvector) + MemoryStore provide shared state.</li>
+            <li>API Gateway fronts services with OAuth2 and tenant headers.</li>
+            <li>Secret Manager stores Together AI keys and Firebase credentials.</li>
+            <li>Docs capture monitoring/alerting guardrails for headhunter-ai-0088.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Testing &amp; Quality Signals</h2>
+      <div class="checklist">
+        <div class="check">
+          <h3>Integration Baseline</h3>
+          <p><code>./scripts/test-integration.sh</code> with real mocks; results captured in <code>.integration</code> artifacts.</p>
+        </div>
+        <div class="check">
+          <h3>Health &amp; Metrics</h3>
+          <p>Every service exposes <code>/health</code>; monitoring targets cache hit rate, rerank latency, tenant validation failures.</p>
+        </div>
+        <div class="check">
+          <h3>Data Seeds</h3>
+          <p>Firestore, Postgres, and Redis seeds enable deterministic runs for <code>tenant-alpha</code> and ECO validation flows.</p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Generated to support onboarding and documentation refresh for the Headhunter Shared Services program.
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,134 @@
+import type { FastifySchema } from 'fastify';
+
+const embeddingVectorSchema = {
+  type: 'array',
+  minItems: 8,
+  items: {
+    type: 'number'
+  }
+} as const;
+
+const providerEnum = ['vertex-ai', 'local', 'together'] as const;
+
+export const generateEmbeddingSchema: FastifySchema = {
+  summary: 'Generate an embedding vector from free-form text.',
+  description: 'Accepts raw text and returns the generated embedding vector using the configured provider.',
+  tags: ['Embeddings'],
+  body: {
+    type: 'object',
+    required: ['text'],
+    additionalProperties: true,
+    properties: {
+      text: { type: 'string', minLength: 1, maxLength: 6000 },
+      provider: { type: 'string', enum: providerEnum },
+      dimensions: { type: 'integer', minimum: 16, maximum: 4096 },
+      metadata: { type: 'object', additionalProperties: true }
+    }
+  },
+  response: {
+    200: {
+      type: 'object',
+      required: ['embedding', 'provider', 'model', 'dimensions', 'requestId'],
+      properties: {
+        embedding: embeddingVectorSchema,
+        provider: { type: 'string', enum: providerEnum },
+        model: { type: 'string' },
+        dimensions: { type: 'integer', minimum: 16, maximum: 4096 },
+        requestId: { type: 'string', minLength: 8 }
+      }
+    }
+  }
+};
+
+export const upsertEmbeddingSchema: FastifySchema = {
+  summary: 'Upsert an embedding record into pgvector for a tenant-scoped entity.',
+  description: 'Generates an embedding (if not provided) and stores it in the search.candidate_embeddings table.',
+  tags: ['Embeddings'],
+  body: {
+    type: 'object',
+    required: ['entityId'],
+    additionalProperties: true,
+    properties: {
+      entityId: { type: 'string', minLength: 1 },
+      text: { type: 'string', minLength: 1, maxLength: 6000 },
+      embedding: embeddingVectorSchema,
+      metadata: { type: 'object', additionalProperties: true },
+      modelVersion: { type: 'string' },
+      chunkType: { type: 'string', minLength: 1 },
+      provider: { type: 'string', enum: providerEnum }
+    },
+    anyOf: [
+      { required: ['text'] },
+      { required: ['embedding'] }
+    ]
+  },
+  response: {
+    200: {
+      type: 'object',
+      required: ['entityId', 'tenantId', 'vectorId', 'modelVersion', 'chunkType', 'dimensions', 'createdAt', 'updatedAt', 'requestId'],
+      properties: {
+        entityId: { type: 'string' },
+        tenantId: { type: 'string' },
+        vectorId: { type: 'string' },
+        modelVersion: { type: 'string' },
+        chunkType: { type: 'string' },
+        dimensions: { type: 'integer', minimum: 16 },
+        createdAt: { type: 'string', format: 'date-time' },
+        updatedAt: { type: 'string', format: 'date-time' },
+        requestId: { type: 'string' }
+      }
+    }
+  }
+};
+
+export const queryEmbeddingsSchema: FastifySchema = {
+  summary: 'Perform a similarity search against stored embeddings.',
+  description: 'Runs a tenant-scoped pgvector similarity search returning ranked results.',
+  tags: ['Embeddings'],
+  body: {
+    type: 'object',
+    additionalProperties: true,
+    properties: {
+      query: { type: 'string', minLength: 1, maxLength: 6000 },
+      embedding: embeddingVectorSchema,
+      limit: { type: 'integer', minimum: 1, maximum: 200 },
+      similarityThreshold: { type: 'number', minimum: 0, maximum: 1 },
+      filter: { type: 'object', additionalProperties: true },
+      provider: { type: 'string', enum: providerEnum }
+    },
+    anyOf: [
+      { required: ['query'] },
+      { required: ['embedding'] }
+    ]
+  },
+  response: {
+    200: {
+      type: 'object',
+      required: ['results', 'count', 'provider', 'model', 'dimensions', 'requestId', 'executionMs'],
+      properties: {
+        results: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['entityId', 'similarity', 'modelVersion', 'chunkType', 'embeddingId', 'updatedAt'],
+            properties: {
+              entityId: { type: 'string' },
+              similarity: { type: 'number' },
+              metadata: { type: 'object', additionalProperties: true },
+              modelVersion: { type: 'string' },
+              chunkType: { type: 'string' },
+              embeddingId: { type: 'string' },
+              updatedAt: { type: 'string', format: 'date-time' }
+            }
+          }
+        },
+        count: { type: 'integer', minimum: 0 },
+        provider: { type: 'string', enum: providerEnum },
+        model: { type: 'string' },
+        dimensions: { type: 'integer', minimum: 16 },
+        requestId: { type: 'string' },
+        executionMs: { type: 'integer', minimum: 0 }
+      }
+    }
+  }
+};

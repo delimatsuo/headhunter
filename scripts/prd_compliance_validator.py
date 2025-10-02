@@ -12,7 +12,7 @@ import subprocess
 
 class PRDComplianceValidator:
     def __init__(self):
-        self.project_root = Path("/Users/delimatsuo/Documents/Coding/headhunter")
+        self.project_root = Path(__file__).resolve().parents[1]
         self.prd_path = self.project_root / ".taskmaster/docs/prd.txt"
         self.results = {
             "compliance_score": 0,

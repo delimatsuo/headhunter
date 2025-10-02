@@ -643,20 +643,20 @@ def main():
     print("=" * 70)
     
     # Paths
-    csv_dir = "/Users/delimatsuo/Documents/Coding/headhunter/CSV files/505039_Ella_Executive_Search_CSVs_1"
-    resumes_dir = "/Users/delimatsuo/Documents/Coding/headhunter/CSV files/505039_Ella_Executive_Search_files_1/resumes"
+    csv_dir = DEFAULT_CSV_DIR
+    resumes_dir = DEFAULT_RESUME_DIR
     
     # Validate paths
-    if not os.path.exists(csv_dir):
+    if not csv_dir.exists():
         print(f"❌ CSV directory not found: {csv_dir}")
         return None
     
-    if not os.path.exists(resumes_dir):
+    if not resumes_dir.exists():
         print(f"⚠️  Resumes directory not found: {resumes_dir}")
         print("   Continuing without resume processing...")
     
     # Initialize processor
-    processor = ComprehensiveDataProcessor(csv_dir, resumes_dir)
+    processor = ComprehensiveDataProcessor(str(csv_dir), str(resumes_dir))
     
     # Process comprehensive batch - prioritize candidates_3-1.csv which has the most data
     batch_size = 500  # Increased batch size for comprehensive processing
@@ -667,7 +667,7 @@ def main():
         return None
     
     # Save results
-    output_file = "/Users/delimatsuo/Documents/Coding/headhunter/scripts/comprehensive_candidates_processed.json"
+    output_file = DEFAULT_OUTPUT_FILE
     
     try:
         with open(output_file, 'w', encoding='utf-8') as f:

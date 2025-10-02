@@ -10,8 +10,9 @@ from collections import defaultdict
 from datetime import datetime
 
 # Paths
+REPO_ROOT = Path(__file__).resolve().parents[1]
 NAS_DIR = Path("/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project")
-CSV_DIR = Path("/Users/delimatsuo/Documents/Coding/headhunter/CSV files/505039_Ella_Executive_Search_CSVs_1")
+CSV_DIR = REPO_ROOT / "CSV files/505039_Ella_Executive_Search_CSVs_1"
 MERGED_FILE = NAS_DIR / "comprehensive_merged_candidates.json"
 
 def analyze_orphaned_comments():

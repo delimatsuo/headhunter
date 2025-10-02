@@ -1,0 +1,110 @@
+import 'dotenv/config';
+
+import { buildServer, getLogger } from '@hh/common';
+
+import { getEnrichServiceConfig } from './config';
+import { EnrichmentJobStore } from './job-store';
+import { EnrichmentService } from './enrichment-service';
+import { registerRoutes } from './routes';
+import { EnrichmentWorker } from './worker';
+import { MetricsExporter } from './metrics-exporter';
+
+async function bootstrap(): Promise<void> {
+  process.env.SERVICE_NAME = process.env.SERVICE_NAME ?? 'hh-enrich-svc';
+
+  const logger = getLogger({ module: 'enrich-bootstrap' });
+
+  try {
+    logger.info('Starting hh-enrich-svc bootstrap...');
+    const config = getEnrichServiceConfig();
+    logger.info('Configuration loaded');
+
+    const server = await buildServer({ disableDefaultHealthRoute: true });
+    logger.info('Fastify server built');
+
+    let isReady = false;
+    let worker: EnrichmentWorker | null = null;
+
+    // Register health endpoints BEFORE listening (critical for Cloud Run probes)
+    server.get('/health', async () => {
+      if (!isReady) {
+        return { status: 'initializing' };
+      }
+      return { status: 'ok' };
+    });
+
+    server.get('/ready', async () => {
+      if (!isReady) {
+        return { status: 'initializing', ready: false };
+      }
+      return { status: 'ready', ready: true };
+    });
+
+    // Start listening AFTER registering health endpoints
+    const port = Number(process.env.PORT ?? 8080);
+    const host = '0.0.0.0';
+
+    await server.listen({ port, host });
+    logger.info({ port }, 'hh-enrich-svc listening (initializing dependencies...)');
+
+    setImmediate(async () => {
+      try {
+        logger.info('Initializing metrics exporter...');
+        const metricsExporter = MetricsExporter.fromEnv(
+          config.base.firestore.projectId,
+          config.base.runtime.serviceName,
+          getLogger({ module: 'metrics-exporter' })
+        ) ?? undefined;
+        logger.info('Metrics exporter initialized');
+
+        logger.info('Initializing job store...');
+        const jobStore = new EnrichmentJobStore(config);
+        logger.info('Job store initialized');
+
+        logger.info('Initializing enrichment service...');
+        const service = new EnrichmentService(config, jobStore, metricsExporter);
+        logger.info('Enrichment service initialized');
+
+        logger.info('Initializing enrichment worker...');
+        worker = new EnrichmentWorker(config, jobStore, service, metricsExporter);
+        logger.info('Enrichment worker initialized');
+
+        logger.info('Registering routes...');
+        await registerRoutes(server, { config, jobStore, service, worker });
+        logger.info('Routes registered');
+
+        logger.info('Starting enrichment worker...');
+        await worker.start();
+        logger.info('Enrichment worker started');
+
+        isReady = true;
+        logger.info('hh-enrich-svc fully initialized and ready');
+      } catch (error) {
+        logger.error({ error }, 'Failed to initialize dependencies');
+      }
+    });
+
+    const shutdown = async () => {
+      logger.info('Received shutdown signal.');
+      try {
+        if (worker) {
+          await worker.stop();
+        }
+        await server.close();
+        logger.info('hh-enrich-svc closed gracefully.');
+        process.exit(0);
+      } catch (error) {
+        logger.error({ error }, 'Failed to shutdown gracefully.');
+        process.exit(1);
+      }
+    };
+
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
+  } catch (error) {
+    logger.error({ error }, 'Failed to bootstrap hh-enrich-svc.');
+    process.exit(1);
+  }
+}
+
+void bootstrap();

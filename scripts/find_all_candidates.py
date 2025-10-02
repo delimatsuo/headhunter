@@ -4,14 +4,20 @@ Deep scan to find ALL unique candidate IDs across ALL CSV files
 """
 
 import csv
-from pathlib import Path
-from typing import Set, Dict
 import json
+import os
+from pathlib import Path
+from typing import Dict, Set
+
+from data_paths import csv_dir, repo_root
 
 # Constants
-BASE_DIR = Path("/Users/delimatsuo/Documents/Coding/headhunter")
-CSV_DIR = BASE_DIR / "CSV files" / "505039_Ella_Executive_Search_CSVs_1"
-NAS_DIR = Path("/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project")
+REPO_ROOT = repo_root()
+CSV_DIR = csv_dir()
+NAS_DIR = Path(os.getenv(
+    "HEADHUNTER_NAS_DIR",
+    "/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project",
+))
 
 def deep_scan_for_ids():
     """Deep scan ALL CSV files for any ID-like values"""

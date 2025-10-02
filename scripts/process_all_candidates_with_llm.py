@@ -17,14 +17,23 @@ import time
 # Import existing LLM processor
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from llm_processor import OllamaAPIClient, process_candidate_with_llm
+from data_paths import csv_dir, repo_root, resumes_dir
 
 # Constants
-BASE_DIR = Path("/Users/delimatsuo/Documents/Coding/headhunter")
-CSV_DIR = BASE_DIR / "CSV files"
-RESUME_DIR = CSV_DIR / "RESUMES"
+REPO_ROOT = repo_root()
+CSV_DIR = csv_dir()
+RESUME_DIR = resumes_dir()
+CANDIDATE_FILE_CANDIDATES = [
+    "CLEANED CANDIDATES - 1.csv",
+    "Ella_Executive_Search_candidates_1-1.csv",
+    "sample_candidates.csv",
+]
 # Use NAS for output storage
-NAS_DIR = Path("/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project")
-OUTPUT_DIR = NAS_DIR / "processed_candidates"
+NAS_DIR = Path(os.getenv(
+    "HEADHUNTER_NAS_DIR",
+    "/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project",
+))
+OUTPUT_DIR = Path(os.getenv("HEADHUNTER_OUTPUT_DIR", str(NAS_DIR / "processed_candidates")))
 BATCH_SIZE = 50
 
 def load_all_candidates() -> Dict[str, Dict]:
@@ -33,30 +42,47 @@ def load_all_candidates() -> Dict[str, Dict]:
     candidates = {}
     
     # Load main candidate file
-    candidates_file = CSV_DIR / "CLEANED CANDIDATES - 1.csv"
-    if candidates_file.exists():
+    candidates_file = None
+    for file_name in CANDIDATE_FILE_CANDIDATES:
+        candidate_path = CSV_DIR / file_name
+        if candidate_path.exists():
+            candidates_file = candidate_path
+            break
+
+    if candidates_file is None:
+        csv_files = sorted(CSV_DIR.glob("*.csv"))
+        if csv_files:
+            candidates_file = csv_files[0]
+
+    if candidates_file and candidates_file.exists():
         with open(candidates_file, 'r', encoding='utf-8', errors='ignore') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                candidate_id = row.get('ID', '').strip()
+                candidate_id = row.get('ID', '').strip() or row.get('CandidateId', '').strip() or row.get('candidate_id', '').strip()
                 if candidate_id:
                     candidates[candidate_id] = {
                         'id': candidate_id,
-                        'name': row.get('Name', ''),
-                        'title': row.get('Title', ''),
-                        'company': row.get('Company', ''),
-                        'email': row.get('Email', ''),
-                        'phone': row.get('Phone', ''),
-                        'source_file': 'CLEANED CANDIDATES - 1.csv',
+                        'name': row.get('Name', row.get('name', '')),
+                        'title': row.get('Title', row.get('CurrentTitle', '')),
+                        'company': row.get('Company', row.get('CurrentCompany', '')),
+                        'email': row.get('Email', row.get('email', '')),
+                        'phone': row.get('Phone', row.get('phone', '')),
+                        'source_file': candidates_file.name,
                         'comments': [],
                         'resumes': []
                     }
     
-    print(f"Loaded {len(candidates)} candidates from main file")
+    print(f"Loaded {len(candidates)} candidates from {candidates_file.name if candidates_file else 'CSV directory'}")
     
     # Load additional candidate data from file 3
-    candidates_3_file = CSV_DIR / "CLEANED CANDIDATES - 3.csv"
-    if candidates_3_file.exists():
+    candidates_3_file = None
+    for file_name in ["CLEANED CANDIDATES - 3.csv", "Ella_Executive_Search_candidates_3-1.csv"]:
+        candidate_path = CSV_DIR / file_name
+        if candidate_path.exists():
+            candidates_3_file = candidate_path
+            break
+
+    if candidates_3_file and candidates_3_file.exists():
         with open(candidates_3_file, 'r', encoding='utf-8', errors='ignore') as f:
             reader = csv.DictReader(f)
             added = 0

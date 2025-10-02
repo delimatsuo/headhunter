@@ -1,0 +1,61 @@
+{
+  "name": "@headhunter/services-root",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Shared workspace configuration for Headhunter Cloud Run services.",
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "tsc -b common/tsconfig.json hh-example-svc/tsconfig.json hh-search-svc/tsconfig.json hh-rerank-svc/tsconfig.json hh-evidence-svc/tsconfig.json hh-eco-svc/tsconfig.json hh-enrich-svc/tsconfig.json hh-admin-svc/tsconfig.json hh-msgs-svc/tsconfig.json",
+    "clean": "rimraf common/dist hh-example-svc/dist hh-search-svc/dist hh-rerank-svc/dist hh-evidence-svc/dist hh-eco-svc/dist hh-enrich-svc/dist hh-admin-svc/dist hh-msgs-svc/dist",
+    "lint": "eslint \"**/*.{ts,tsx}\"",
+    "test": "jest",
+    "typecheck": "tsc -b common/tsconfig.json hh-example-svc/tsconfig.json hh-search-svc/tsconfig.json hh-rerank-svc/tsconfig.json hh-evidence-svc/tsconfig.json hh-eco-svc/tsconfig.json hh-enrich-svc/tsconfig.json hh-admin-svc/tsconfig.json hh-msgs-svc/tsconfig.json --pretty"
+  },
+  "workspaces": {
+    "packages": [
+      "common",
+      "hh-example-svc",
+      "hh-search-svc",
+      "hh-rerank-svc",
+      "hh-evidence-svc",
+      "hh-eco-svc",
+      "hh-enrich-svc",
+      "hh-admin-svc",
+      "hh-msgs-svc"
+    ]
+  },
+  "dependencies": {
+    "@fastify/cors": "^9.0.0",
+    "@fastify/helmet": "^11.0.0",
+    "@google-cloud/cloud-sql-connector": "^1.8.3",
+    "@google-cloud/firestore": "^7.8.0",
+    "@google-cloud/pubsub": "^5.2.0",
+    "@google-cloud/run": "^3.0.0",
+    "@google-cloud/scheduler": "^5.3.0",
+    "fastify": "^4.26.2",
+    "firebase-admin": "^12.0.0",
+    "lru-cache": "^10.2.0",
+    "p-retry": "^7.0.0",
+    "p-timeout": "^7.0.0",
+    "pino": "^8.17.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.12.7",
+    "@typescript-eslint/eslint-plugin": "^7.5.0",
+    "@typescript-eslint/parser": "^7.5.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-jest": "^27.9.0",
+    "jest": "^29.7.0",
+    "rimraf": "^5.0.5",
+    "ts-jest": "^29.1.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

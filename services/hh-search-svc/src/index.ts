@@ -7,30 +7,17 @@ import { registerRoutes } from './routes';
 import { SearchRedisClient } from './redis-client';
 import { SearchService } from './search-service';
 
-console.log('[SEARCH] index.ts module loaded');
-
 async function bootstrap(): Promise<void> {
-  console.log('[SEARCH] bootstrap() called');
-
   process.env.SERVICE_NAME = process.env.SERVICE_NAME ?? 'hh-search-svc';
-  console.log('[SEARCH] SERVICE_NAME set');
-
-  console.log('[SEARCH] Calling getLogger...');
   const logger = getLogger({ module: 'bootstrap' });
-  console.log('[SEARCH] Logger initialized');
 
   try {
-    console.log('[SEARCH] In try block');
     logger.info('Starting hh-search-svc bootstrap...');
 
-    console.log('[SEARCH] Calling getSearchServiceConfig...');
     const config = getSearchServiceConfig();
-    console.log('[SEARCH] Config loaded:', { serviceName: config.base.runtime.serviceName });
-    logger.info('Configuration loaded');
+    logger.info({ serviceName: config.base.runtime.serviceName }, 'Configuration loaded');
 
-    console.log('[SEARCH] Calling buildServer...');
     const server = await buildServer({ disableDefaultHealthRoute: true });
-    console.log('[SEARCH] Fastify server built');
     logger.info('Fastify server built');
 
     let isReady = false;
@@ -38,14 +25,13 @@ async function bootstrap(): Promise<void> {
     let redisClient: SearchRedisClient | null = null;
 
     // Register health endpoints BEFORE listening (critical for Cloud Run probes)
-    console.log('[SEARCH] Registering /health endpoint...');
     server.get('/health', async () => {
       if (!isReady) {
         return { status: 'initializing', service: config.base.runtime.serviceName };
       }
       return { status: 'ok', service: config.base.runtime.serviceName };
     });
-    console.log('[SEARCH] /health endpoint registered');
+    logger.debug('Health endpoint registered');
 
     // Note: /ready endpoint is already registered by buildServer in @hh/common
 
@@ -53,9 +39,7 @@ async function bootstrap(): Promise<void> {
     const port = Number(process.env.PORT ?? 8080);
     const host = '0.0.0.0';
 
-    console.log('[SEARCH] Calling server.listen on port', port);
     await server.listen({ port, host });
-    console.log('[SEARCH] Server listening successfully on port', port);
     logger.info({ port, service: config.base.runtime.serviceName }, 'hh-search-svc listening (initializing dependencies...)');
 
     setImmediate(async () => {
@@ -145,11 +129,9 @@ async function bootstrap(): Promise<void> {
     process.on('SIGTERM', shutdown);
     process.on('SIGINT', shutdown);
   } catch (error) {
-    console.error('[SEARCH] FATAL ERROR in bootstrap:', error);
-    logger.error({ error }, 'Failed to bootstrap hh-search-svc.');
+    logger.error({ error }, 'Failed to bootstrap hh-search-svc');
     process.exit(1);
   }
 }
 
-console.log('[SEARCH] Calling bootstrap()...');
 void bootstrap();

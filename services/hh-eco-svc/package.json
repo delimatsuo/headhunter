@@ -1,0 +1,35 @@
+{
+  "name": "@hh/hh-eco-svc",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Headhunter Cloud Run ECO taxonomy service exposing occupation search and detail endpoints with caching.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rimraf dist",
+    "dev": "node --loader ts-node/esm src/index.ts",
+    "start": "node dist/index.js",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings=0",
+    "typecheck": "tsc -p tsconfig.json --pretty",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fastify/under-pressure": "^8.5.0",
+    "@hh/common": "file:../common",
+    "dotenv": "^16.4.5",
+    "fuse.js": "^7.0.0",
+    "ioredis": "^5.3.2",
+    "lodash": "^4.17.21",
+    "remove-accents": "^0.5.0"
+  },
+  "devDependencies": {
+    "@types/ioredis": "^5.0.0",
+    "@types/lodash": "^4.17.0",
+    "@types/node": "^20.12.7",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5",
+    "vitest": "^1.5.3"
+  }
+}

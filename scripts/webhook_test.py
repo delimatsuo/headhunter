@@ -16,8 +16,11 @@ import uuid
 
 # Import local modules
 import sys
-sys.path.append('/Users/delimatsuo/Documents/Coding/headhunter/scripts')
-sys.path.append('/Users/delimatsuo/Documents/Coding/headhunter/config')
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.append(str(REPO_ROOT / 'scripts'))
+sys.path.append(str(REPO_ROOT / 'config'))
 
 from webhook_config import get_development_config, WebhookIntegrationConfig
 from cloud_integration import CloudAPIClient, CloudIntegrationManager, CloudIntegrationContext

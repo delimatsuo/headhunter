@@ -4,21 +4,26 @@ Candidate Data CRUD Viewer
 Visualize and analyze candidate data at different processing stages
 """
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, jsonify, render_template, request
 import json
 import csv
-from pathlib import Path
-from typing import Dict, List, Any, Optional
-from datetime import datetime
 import os
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+from datetime import datetime
+
+from data_paths import csv_dir, repo_root, resumes_dir
 
 app = Flask(__name__)
 
 # Data directories
-BASE_DIR = Path("/Users/delimatsuo/Documents/Coding/headhunter")
-CSV_DIR = BASE_DIR / "CSV files" / "505039_Ella_Executive_Search_CSVs_1"
-PROCESSED_DIR = BASE_DIR / "scripts" / "processed_candidates"
-RESUME_DIR = BASE_DIR / "CSV files" / "505039_Ella_Executive_Search_files_1"
+REPO_ROOT = repo_root()
+CSV_DIR = csv_dir()
+PROCESSED_DIR = Path(os.getenv(
+    "HEADHUNTER_PROCESSED_DIR",
+    str(REPO_ROOT / "scripts" / "processed_candidates"),
+))
+RESUME_DIR = resumes_dir()
 
 class CandidateDataViewer:
     """CRUD operations for candidate data visualization"""

@@ -1,0 +1,5 @@
+{
+  "name": "fastify-plugin",
+  "version": "0.0.0-stub",
+  "main": "./plugin.js"
+}

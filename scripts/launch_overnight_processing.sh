@@ -1,5 +1,12 @@
 #!/bin/bash
 
+
+SCRIPT_DIR=${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}
+# Guard against running from deprecated repository clones.
+REPO_ROOT=${REPO_ROOT:-$(cd "${SCRIPT_DIR}/.." && pwd)}
+# shellcheck source=./utils/repo_guard.sh
+source "${SCRIPT_DIR}/utils/repo_guard.sh"
+
 # Overnight Processing Launcher
 # Runs from 6:50 PM to 7:00 AM with maximum performance
 

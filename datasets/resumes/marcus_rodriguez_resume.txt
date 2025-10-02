@@ -1,0 +1,72 @@
+Marcus Rodriguez
+Principal Engineer
+
+Email: marcus.rodriguez@email.com
+Phone: (555) 987-6543
+GitHub: github.com/marcusr
+Location: Seattle, WA
+
+Professional Summary:
+Technical leader with 12+ years building scalable systems and leading high-performing engineering teams. Deep expertise in machine learning infrastructure, distributed systems, and engineering management. Proven track record of delivering complex technical initiatives while mentoring and developing talent.
+
+Professional Experience:
+
+Principal Engineer | Netflix (2020-Present)
+• Architect for recommendation platform serving 200M+ global users
+• Lead technical strategy for ML infrastructure and data pipelines
+• Built real-time data processing systems handling 1TB+ daily throughput
+• Mentor for senior engineering promotion track, developed 12 engineers
+• Designed A/B testing framework used across 50+ product teams
+• Established technical standards for ML model deployment and monitoring
+
+Senior Engineer | Uber (2017-2020)
+• Led marketplace optimization team of 15 engineers across 3 offices
+• Reduced ride matching latency by 60% through algorithmic improvements
+• Implemented dynamic pricing algorithms increasing revenue by 25%
+• Architected real-time data streaming platform using Apache Kafka
+• Led incident response for critical marketplace outages
+• Mentored 8 engineers with 6 receiving promotions
+
+Software Engineer | PayPal (2014-2017)
+• Developed payment processing systems handling $1B+ annual volume
+• Built fraud detection algorithms reducing false positives by 40%
+• Implemented microservices architecture for checkout platform
+• Led technical design reviews and architecture decision records
+• Collaborated with security team on PCI compliance initiatives
+
+Software Developer | Accenture (2011-2014)
+• Enterprise software consulting for Fortune 500 clients
+• Led development of customer relationship management systems
+• Implemented integrations between legacy and modern systems
+• Mentored junior developers on best practices and code quality
+
+Education:
+Master of Science in Software Engineering
+Carnegie Mellon University (2011)
+Thesis: "Scalable Machine Learning Systems for Real-time Recommendations"
+
+Technical Expertise:
+• Languages: Python, Scala, Java, C++, SQL, R
+• ML/Data: TensorFlow, PyTorch, Apache Spark, Kafka, Airflow
+• Infrastructure: AWS, GCP, Kubernetes, Docker, Terraform
+• Databases: PostgreSQL, Cassandra, Redis, Elasticsearch
+• Monitoring: Prometheus, Grafana, DataDog, Splunk
+
+Leadership & Impact:
+• Reduced infrastructure costs by 30% through optimization initiatives
+• Established ML model versioning and deployment standards
+• Built cross-functional partnerships with Product, Data Science, and Business teams
+• Led technical interviews and improved hiring bar for senior roles
+• Published 5 technical blog posts on ML infrastructure (50K+ views)
+• Speaker at MLSys, VLDB, and internal tech talks
+
+Key Projects:
+• Recommendation Engine Redesign: Led complete overhaul serving 200M users
+• Real-time Fraud Detection: Built ML pipeline processing 100K+ transactions/second  
+• Marketplace Optimization: Improved matching efficiency by 60%
+• Data Platform Migration: Migrated petabyte-scale data to cloud infrastructure
+
+Awards & Recognition:
+• Netflix Engineering Excellence Award (2022)
+• Uber Technical Leadership Award (2019)
+• "Top 40 Under 40" - Tech Industry Magazine (2021)

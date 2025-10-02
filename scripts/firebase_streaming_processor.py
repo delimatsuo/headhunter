@@ -10,6 +10,7 @@ import os
 import time
 import asyncio
 import aiohttp
+from pathlib import Path
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from datetime import datetime
@@ -17,6 +18,9 @@ import logging
 import firebase_admin
 from firebase_admin import credentials, firestore
 from dotenv import load_dotenv
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+LOCAL_BATCH_DIR = REPO_ROOT / "data" / "processed_batches"
 
 # Load environment variables
 load_dotenv()
@@ -267,11 +271,11 @@ Return ONLY the JSON object, no other text."""
     
     def save_batch_locally(self, candidates: List[Dict[str, Any]], batch_num: int):
         """Save batch to local file as backup"""
-        output_dir = "/Users/delimatsuo/Documents/Coding/headhunter/data/processed_batches"
-        os.makedirs(output_dir, exist_ok=True)
+        output_dir = LOCAL_BATCH_DIR
+        output_dir.mkdir(parents=True, exist_ok=True)
         
-        filename = f"{output_dir}/batch_{batch_num:04d}.json"
-        with open(filename, 'w', encoding='utf-8') as f:
+        filename = output_dir / f"batch_{batch_num:04d}.json"
+        with open(filename, "w", encoding="utf-8") as f:
             json.dump(candidates, f, indent=2, default=str)
         
         logger.info(f"💾 Saved batch {batch_num} locally to {filename}")
@@ -343,7 +347,7 @@ Return ONLY the JSON object, no other text."""
    ⏱️ Total time: {total_time/60:.1f} minutes
    💰 Estimated cost: ${self.stats.processed * 5000 * self.cost_per_token:.2f}
    
-   {'🔍 View results at: https://headhunter-ai-0088.web.app/dashboard' if self.use_firestore else '📁 Results saved in: /Users/delimatsuo/Documents/Coding/headhunter/data/processed_batches/'}
+   {'🔍 View results at: https://headhunter-ai-0088.web.app/dashboard' if self.use_firestore else f'📁 Results saved in: {LOCAL_BATCH_DIR}'}
         """)
 
 async def main():

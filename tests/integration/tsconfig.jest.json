@@ -1,0 +1,14 @@
+{
+  "extends": "../../services/tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node", "jest"],
+    "noImplicitOverride": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "isolatedModules": true
+  },
+  "include": [
+    "../../services/**/*.ts",
+    "./**/*.ts"
+  ]
+}

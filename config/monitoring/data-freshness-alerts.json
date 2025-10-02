@@ -1,0 +1,85 @@
+{
+  "policies": [
+    {
+      "displayName": "Admin Service - Posting Freshness Lag",
+      "combiner": "OR",
+      "documentation": {
+        "content": "Triggered when posting data has not refreshed within the SLA window.",
+        "mimeType": "text/markdown"
+      },
+      "conditions": [
+        {
+          "displayName": "Postings lag exceeds 10 days",
+          "conditionThreshold": {
+            "filter": "metric.type=\"custom.googleapis.com/hh_admin/postings_max_lag_days\"",
+            "duration": "0s",
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 10,
+            "aggregations": [
+              {
+                "alignmentPeriod": "3600s",
+                "perSeriesAligner": "ALIGN_MAX"
+              }
+            ]
+          }
+        }
+      ],
+      "notificationChannels": [],
+      "enabled": true
+    },
+    {
+      "displayName": "Admin Service - Profile Freshness Lag",
+      "combiner": "OR",
+      "documentation": {
+        "content": "Triggered when profile refresh cadence exceeds SLA thresholds.",
+        "mimeType": "text/markdown"
+      },
+      "conditions": [
+        {
+          "displayName": "Profiles lag exceeds 5 days",
+          "conditionThreshold": {
+            "filter": "metric.type=\"custom.googleapis.com/hh_admin/profiles_max_lag_days\"",
+            "duration": "0s",
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 5,
+            "aggregations": [
+              {
+                "alignmentPeriod": "3600s",
+                "perSeriesAligner": "ALIGN_MAX"
+              }
+            ]
+          }
+        }
+      ],
+      "notificationChannels": [],
+      "enabled": true
+    },
+    {
+      "displayName": "Admin Service - Refresh Job Failures",
+      "combiner": "OR",
+      "documentation": {
+        "content": "Triggered when refresh job failures occur within a monitoring window.",
+        "mimeType": "text/markdown"
+      },
+      "conditions": [
+        {
+          "displayName": "Refresh failures detected",
+          "conditionThreshold": {
+            "filter": "metric.type=\"custom.googleapis.com/hh_admin/refresh_job_failure\"",
+            "duration": "0s",
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 0,
+            "aggregations": [
+              {
+                "alignmentPeriod": "300s",
+                "perSeriesAligner": "ALIGN_RATE"
+              }
+            ]
+          }
+        }
+      ],
+      "notificationChannels": [],
+      "enabled": true
+    }
+  ]
+}

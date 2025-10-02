@@ -1,0 +1,401 @@
+
+services:
+  postgres:
+    image: ankane/pgvector:v0.5.1
+    container_name: hh-local-postgres
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_DB: headhunter
+      POSTGRES_USER: headhunter
+      POSTGRES_PASSWORD: headhunter
+      POSTGRES_HOST_AUTH_METHOD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/initdb:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U headhunter -d headhunter']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: hh-local-redis
+    restart: unless-stopped
+    command: ['redis-server', '--save', '', '--appendonly', 'no', '--maxmemory-policy', 'allkeys-lru']
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  firestore-emulator:
+    image: gcr.io/google.com/cloudsdktool/cloud-sdk:emulators
+    container_name: hh-local-firestore
+    restart: unless-stopped
+    environment:
+      CLOUDSDK_CORE_PROJECT: headhunter-local
+    command:
+      - /bin/bash
+      - -c
+      - >-
+        gcloud config set project headhunter-local &&
+        gcloud beta emulators firestore start --quiet --host-port=0.0.0.0:8080 --project=headhunter-local
+    ports:
+      - '8080:8080'
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -s http://localhost:8080 || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pubsub-emulator:
+    image: gcr.io/google.com/cloudsdktool/cloud-sdk:emulators
+    container_name: hh-local-pubsub
+    restart: unless-stopped
+    command:
+      - /bin/bash
+      - -c
+      - >-
+        gcloud config set project headhunter-local &&
+        gcloud beta emulators pubsub start --quiet --host-port=0.0.0.0:8681 --project=headhunter-local
+    ports:
+      - '8681:8681'
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -s http://localhost:8681 || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mock-oauth:
+    build:
+      context: ./docker/mock-oauth
+    container_name: hh-local-mock-oauth
+    restart: unless-stopped
+    environment:
+      MOCK_OAUTH_PORT: '8081'
+      MOCK_OAUTH_ISSUER: http://mock-oauth:8081/
+      MOCK_OAUTH_AUDIENCE: headhunter-local
+      MOCK_OAUTH_DEFAULT_TENANT: tenant-alpha
+      MOCK_OAUTH_TENANTS: tenant-alpha,tenant-beta,tenant-gamma,tenant-delta
+    ports:
+      - '8081:8081'
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:8081/health']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mock-together:
+    build:
+      context: ./docker/mock-together
+    container_name: hh-local-mock-together
+    restart: unless-stopped
+    environment:
+      MOCK_TOGETHER_PORT: '7500'
+    ports:
+      - '7500:7500'
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:7500/health']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  hh-embed-svc:
+    build:
+      context: ./services
+      dockerfile: hh-embed-svc/Dockerfile
+    container_name: hh-local-embed
+    restart: unless-stopped
+    env_file:
+      - ./services/hh-embed-svc/.env.local
+    environment:
+      PORT: '7101'
+      NODE_OPTIONS: '--experimental-specifier-resolution=node'
+      FIRESTORE_EMULATOR_HOST: firestore-emulator:8080
+      ALLOWED_TOKEN_ISSUERS: http://mock-oauth:8081/
+      GATEWAY_AUDIENCE: headhunter-local
+      REDIS_HOST: redis
+      PGVECTOR_HOST: postgres
+      PGVECTOR_USER: headhunter
+      PGVECTOR_PASSWORD: headhunter
+    ports:
+      - '7101:7101'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mock-oauth:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:7101/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  hh-search-svc:
+    build:
+      context: ./services
+      dockerfile: hh-search-svc/Dockerfile
+    container_name: hh-local-search
+    restart: unless-stopped
+    env_file:
+      - ./services/hh-search-svc/.env.local
+    environment:
+      PORT: '7102'
+      NODE_OPTIONS: '--experimental-specifier-resolution=node'
+      FIRESTORE_EMULATOR_HOST: firestore-emulator:8080
+      ALLOWED_TOKEN_ISSUERS: http://mock-oauth:8081/
+      GATEWAY_AUDIENCE: headhunter-local
+      REDIS_HOST: redis
+      REDIS_PORT: '6379'
+      PGVECTOR_HOST: postgres
+      PGVECTOR_PORT: '5432'
+      PGVECTOR_USER: headhunter
+      PGVECTOR_PASSWORD: headhunter
+      EMBED_SERVICE_URL: http://hh-embed-svc:7101
+      EVIDENCE_SERVICE_URL: http://hh-evidence-svc:7104
+      RERANK_SERVICE_URL: http://hh-rerank-svc:7103
+    ports:
+      - '7102:7102'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      firestore-emulator:
+        condition: service_healthy
+      hh-embed-svc:
+        condition: service_started
+      hh-rerank-svc:
+        condition: service_started
+      hh-evidence-svc:
+        condition: service_started
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:7102/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  hh-rerank-svc:
+    build:
+      context: ./services
+      dockerfile: hh-rerank-svc/Dockerfile
+    container_name: hh-local-rerank
+    restart: unless-stopped
+    env_file:
+      - ./services/hh-rerank-svc/.env.local
+    environment:
+      PORT: '7103'
+      NODE_OPTIONS: '--experimental-specifier-resolution=node'
+      FIRESTORE_EMULATOR_HOST: firestore-emulator:8080
+      ALLOWED_TOKEN_ISSUERS: http://mock-oauth:8081/
+      GATEWAY_AUDIENCE: headhunter-local
+      REDIS_HOST: redis
+      REDIS_PORT: '6379'
+      TOGETHER_API_BASE_URL: http://mock-together:7500
+      TOGETHER_API_KEY: mock-together-key
+    ports:
+      - '7103:7103'
+    depends_on:
+      redis:
+        condition: service_healthy
+      mock-oauth:
+        condition: service_healthy
+      mock-together:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:7103/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  hh-evidence-svc:
+    build:
+      context: ./services
+      dockerfile: hh-evidence-svc/Dockerfile
+    container_name: hh-local-evidence
+    restart: unless-stopped
+    env_file:
+      - ./services/hh-evidence-svc/.env.local
+    environment:
+      PORT: '7104'
+      NODE_OPTIONS: '--experimental-specifier-resolution=node'
+      FIRESTORE_EMULATOR_HOST: firestore-emulator:8080
+      ALLOWED_TOKEN_ISSUERS: http://mock-oauth:8081/
+      GATEWAY_AUDIENCE: headhunter-local
+      REDIS_HOST: redis
+      REDIS_PORT: '6379'
+    ports:
+      - '7104:7104'
+    depends_on:
+      redis:
+        condition: service_healthy
+      firestore-emulator:
+        condition: service_healthy
+      mock-oauth:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:7104/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  hh-eco-svc:
+    build:
+      context: ./services
+      dockerfile: hh-eco-svc/Dockerfile
+    container_name: hh-local-eco
+    restart: unless-stopped
+    env_file:
+      - ./services/hh-eco-svc/.env.local
+    environment:
+      PORT: '7105'
+      NODE_OPTIONS: '--experimental-specifier-resolution=node'
+      FIRESTORE_EMULATOR_HOST: firestore-emulator:8080
+      ALLOWED_TOKEN_ISSUERS: http://mock-oauth:8081/
+      GATEWAY_AUDIENCE: headhunter-local
+      REDIS_HOST: redis
+      REDIS_PORT: '6379'
+      ECO_REDIS_HOST: redis
+      ECO_REDIS_PORT: '6379'
+    ports:
+      - '7105:7105'
+    depends_on:
+      redis:
+        condition: service_healthy
+      firestore-emulator:
+        condition: service_healthy
+      mock-oauth:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:7105/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  hh-admin-svc:
+    build:
+      context: ./services
+      dockerfile: hh-admin-svc/Dockerfile
+    container_name: hh-local-admin
+    restart: unless-stopped
+    env_file:
+      - ./services/hh-admin-svc/.env.local
+    environment:
+      NODE_OPTIONS: '--experimental-specifier-resolution=node --require ./hh-admin-svc/stubs/admin-cloud-run-stub.js'
+      FIRESTORE_EMULATOR_HOST: firestore-emulator:8080
+      ALLOWED_TOKEN_ISSUERS: http://mock-oauth:8081/
+      ADMIN_SCHEDULER_TARGET_BASE_URL: http://hh-admin-svc:7106
+      SERVICE_BASE_URL: http://hh-admin-svc:7106
+      CACHE_REDIS_HOST: redis
+      PUBSUB_EMULATOR_HOST: pubsub-emulator:8681
+    ports:
+      - '7106:7106'
+    depends_on:
+      firestore-emulator:
+        condition: service_healthy
+      mock-oauth:
+        condition: service_healthy
+      pubsub-emulator:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:7106/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  hh-msgs-svc:
+    build:
+      context: ./services
+      dockerfile: hh-msgs-svc/Dockerfile
+    container_name: hh-local-msgs
+    restart: unless-stopped
+    env_file:
+      - ./services/hh-msgs-svc/.env.local
+    environment:
+      PORT: '7107'
+      NODE_OPTIONS: '--experimental-specifier-resolution=node'
+      NODE_ENV: development
+      FIREBASE_PROJECT_ID: headhunter-local
+      FIRESTORE_EMULATOR_HOST: firestore-emulator:8080
+      AUTH_MODE: gateway
+      ENABLE_GATEWAY_TOKENS: 'true'
+      ALLOWED_TOKEN_ISSUERS: http://mock-oauth:8081/
+      GATEWAY_AUDIENCE: headhunter-local
+      MSGS_DB_HOST: postgres
+      MSGS_DB_PORT: '5432'
+      MSGS_DB_USER: headhunter
+      MSGS_DB_PASS: headhunter
+      MSGS_DB_NAME: headhunter
+      MSGS_DB_SSL: 'false'
+      MSGS_REDIS_URL: redis://redis:6379
+      MSGS_REDIS_TLS: 'false'
+      MSGS_USE_SEED_DATA: 'false'
+    ports:
+      - '7107:7107'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      firestore-emulator:
+        condition: service_healthy
+      mock-oauth:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:7107/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  hh-enrich-svc:
+    build:
+      context: ./services
+      dockerfile: hh-enrich-svc/Dockerfile
+    container_name: hh-local-enrich
+    restart: unless-stopped
+    env_file:
+      - ./services/hh-enrich-svc/.env.local
+    environment:
+      PORT: '7108'
+      NODE_OPTIONS: '--experimental-specifier-resolution=node'
+      FIRESTORE_EMULATOR_HOST: firestore-emulator:8080
+      ENRICH_EMBED_BASE_URL: http://hh-embed-svc:7101
+      ENRICH_PYTHON_SCRIPT: /usr/src/app/scripts/run_enrich_job.py
+      ENRICH_PYTHON_BIN: python3
+      REDIS_HOST: redis
+      ALLOWED_TOKEN_ISSUERS: http://mock-oauth:8081/
+      GATEWAY_AUDIENCE: headhunter-local
+    ports:
+      - '7108:7108'
+    depends_on:
+      redis:
+        condition: service_healthy
+      firestore-emulator:
+        condition: service_healthy
+      hh-embed-svc:
+        condition: service_started
+      mock-oauth:
+        condition: service_healthy
+    # Local bind mount overrides bundled python_runtime assets to enable live edits; do not use in production.
+    volumes:
+      - ./services:/usr/src/app/services
+      - ./scripts:/usr/src/app/scripts
+      - ./cloud_run_worker:/usr/src/app/cloud_run_worker
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:7108/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:

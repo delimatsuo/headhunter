@@ -10,9 +10,12 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_CSV_PATH = REPO_ROOT / "CSV files/505039_Ella_Executive_Search_CSVs_1/Ella_Executive_Search_candidates_1-1.csv"
+
 def get_real_candidates_from_csv():
     """Get real candidates from CSV files"""
-    csv_path = Path("/Users/delimatsuo/Documents/Coding/headhunter/CSV files/505039_Ella_Executive_Search_CSVs_1/Ella_Executive_Search_candidates_1-1.csv")
+    csv_path = DEFAULT_CSV_PATH
     
     candidates = []
     with open(csv_path, 'r', encoding='utf-8') as f:

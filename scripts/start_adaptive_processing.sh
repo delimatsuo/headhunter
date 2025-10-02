@@ -1,5 +1,12 @@
 #!/bin/bash
 
+
+SCRIPT_DIR=${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}
+# Guard against running from deprecated repository clones.
+REPO_ROOT=${REPO_ROOT:-$(cd "${SCRIPT_DIR}/.." && pwd)}
+# shellcheck source=./utils/repo_guard.sh
+source "${SCRIPT_DIR}/utils/repo_guard.sh"
+
 # Adaptive Processing Launcher
 # Automatically manages processing with day/night optimization
 
@@ -45,7 +52,7 @@ echo "  - Night: 6 threads for maximum throughput"
 echo "  - Day: 2 threads for background processing"
 echo ""
 
-cd scripts 2>/dev/null || cd /Users/delimatsuo/Documents/Coding/headhunter/scripts
+cd "${SCRIPT_DIR}"
 
 # Run with nohup
 nohup python3 night_turbo_processor.py > night_turbo.log 2>&1 &

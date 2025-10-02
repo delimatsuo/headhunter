@@ -1,0 +1,150 @@
+import { buildServer, getLogger } from '@hh/common';
+
+import { getMsgsServiceConfig } from './config';
+import { MsgsCloudSqlClient } from './cloudsql-client';
+import { MsgsRedisClient } from './redis-client';
+import { MsgsService } from './msgs-service';
+import { registerRoutes } from './routes';
+
+async function bootstrap(): Promise<void> {
+  process.env.SERVICE_NAME = process.env.SERVICE_NAME ?? 'hh-msgs-svc';
+
+  const logger = getLogger({ module: 'msgs-bootstrap' });
+
+  try {
+    logger.info('Starting hh-msgs-svc bootstrap...');
+    const config = getMsgsServiceConfig();
+    logger.info('Configuration loaded');
+
+    const server = await buildServer({ disableDefaultHealthRoute: true });
+    logger.info('Fastify server built');
+
+    let isReady = false;
+    let redisClient: MsgsRedisClient | null = null;
+    let cloudSqlClient: MsgsCloudSqlClient | null = null;
+
+    // Register health endpoints BEFORE listening (critical for Cloud Run probes)
+    server.get('/health', async () => {
+      if (!isReady) {
+        return { status: 'initializing', service: config.base.runtime.serviceName };
+      }
+      return { status: 'ok', service: config.base.runtime.serviceName };
+    });
+
+    server.get('/ready', async () => {
+      if (!isReady) {
+        return { status: 'initializing', ready: false };
+      }
+      return { status: 'ready', ready: true, service: config.base.runtime.serviceName };
+    });
+
+    // Start listening AFTER registering health endpoints
+    const port = Number(process.env.PORT ?? 8080);
+    const host = '0.0.0.0';
+
+    await server.listen({ port, host });
+    logger.info({ port, service: config.base.runtime.serviceName }, 'hh-msgs-svc listening (initializing dependencies...)');
+
+    setImmediate(async () => {
+      try {
+        logger.info('Initializing Redis client...');
+        redisClient = new MsgsRedisClient(config.redis, getLogger({ module: 'msgs-redis-client' }));
+        logger.info('Redis client initialized');
+
+        logger.info('Initializing Cloud SQL client...');
+        cloudSqlClient = new MsgsCloudSqlClient(
+          config.database,
+          getLogger({ module: 'msgs-cloudsql-client' })
+        );
+        logger.info('Cloud SQL client initialized');
+
+        logger.info('Initializing msgs service...');
+        const service = new MsgsService({
+          config,
+          redisClient,
+          dbClient: cloudSqlClient,
+          logger: getLogger({ module: 'msgs-service' })
+        });
+        logger.info('Msgs service initialized');
+
+        logger.info('Registering under-pressure plugin...');
+        const underPressure = await import('@fastify/under-pressure');
+        await server.register(underPressure.default, {
+          maxEventLoopDelay: 2000,
+          maxHeapUsedBytes: 1_024 * 1_024 * 1024,
+          maxRssBytes: 1_536 * 1_024 * 1024,
+          healthCheckInterval: 10000,
+          healthCheck: async () => {
+            if (!redisClient || !cloudSqlClient) return true;
+
+            const [redis, cloudSql] = await Promise.all([
+              redisClient.healthCheck(),
+              cloudSqlClient.healthCheck()
+            ]);
+
+            if (!['healthy', 'disabled'].includes(redis.status)) {
+              throw new Error(redis.message ?? 'Redis degraded.');
+            }
+
+            if (cloudSql.status !== 'healthy' && !config.runtime.useSeedData) {
+              throw new Error(cloudSql.message ?? 'Cloud SQL degraded.');
+            }
+
+            if (cloudSql.status !== 'healthy' && config.runtime.useSeedData) {
+              logger.warn(
+                { status: cloudSql.status, message: cloudSql.message },
+                'Cloud SQL unreachable in seed mode.'
+              );
+            }
+
+            return true;
+          }
+        });
+        logger.info('Under-pressure plugin registered');
+
+        logger.info('Registering routes...');
+        await registerRoutes(server, {
+          service,
+          config,
+          redisClient,
+          cloudSqlClient
+        });
+        logger.info('Routes registered');
+
+        server.addHook('onClose', async () => {
+          if (redisClient && cloudSqlClient) {
+            await Promise.all([redisClient.close(), cloudSqlClient.close()]);
+          }
+        });
+
+        isReady = true;
+        logger.info('hh-msgs-svc fully initialized and ready');
+      } catch (error) {
+        logger.error({ error }, 'Failed to initialize dependencies');
+      }
+    });
+
+    const shutdown = async () => {
+      logger.info('Received shutdown signal.');
+      try {
+        await server.close();
+        if (redisClient && cloudSqlClient) {
+          await Promise.all([redisClient.close(), cloudSqlClient.close()]);
+        }
+        logger.info('Server closed gracefully.');
+        process.exit(0);
+      } catch (error) {
+        logger.error({ error }, 'Failed to close server gracefully.');
+        process.exit(1);
+      }
+    };
+
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
+  } catch (error) {
+    logger.error({ error }, 'Failed to bootstrap hh-msgs-svc.');
+    process.exit(1);
+  }
+}
+
+void bootstrap();

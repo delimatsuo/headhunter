@@ -13,6 +13,9 @@ from datetime import datetime
 from google.cloud import firestore
 import subprocess
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+FUNCTIONS_DIR = REPO_ROOT / "functions"
+
 def setup_gcp():
     """Initialize GCP clients"""
     try:
@@ -182,7 +185,7 @@ def test_vector_embeddings(firestore_client, candidate_profiles):
     
     # Build and run the TypeScript embeddings function
     build_result = subprocess.run(['npm', 'run', 'build'], 
-                                  cwd='/Users/delimatsuo/Documents/Coding/headhunter/functions',
+                                  cwd=str(FUNCTIONS_DIR),
                                   capture_output=True, text=True)
     
     if build_result.returncode != 0:
@@ -252,7 +255,7 @@ def main():
     # Build TypeScript functions
     print("🔨 Building TypeScript functions...")
     build_result = subprocess.run(['npm', 'run', 'build'], 
-                                  cwd='/Users/delimatsuo/Documents/Coding/headhunter/functions',
+                                  cwd=str(FUNCTIONS_DIR),
                                   capture_output=True, text=True)
     
     if build_result.returncode != 0:

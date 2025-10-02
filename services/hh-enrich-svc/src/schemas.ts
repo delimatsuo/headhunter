@@ -1,0 +1,72 @@
+import type { FastifySchema } from 'fastify';
+
+export const enrichProfileSchema: FastifySchema = {
+  body: {
+    type: 'object',
+    additionalProperties: false,
+    required: ['candidateId'],
+    properties: {
+      candidateId: { type: 'string', minLength: 1, maxLength: 128 },
+      async: { type: 'boolean' },
+      idempotencyKey: { type: 'string', minLength: 8, maxLength: 128 },
+      force: { type: 'boolean' },
+      payload: { type: 'object', additionalProperties: true }
+    }
+  },
+  response: {
+    202: {
+      type: 'object',
+      required: ['job'],
+      properties: {
+        job: {
+          type: 'object',
+          required: ['jobId', 'tenantId', 'candidateId', 'status', 'createdAt', 'updatedAt'],
+          additionalProperties: true,
+          properties: {
+            jobId: { type: 'string' },
+            tenantId: { type: 'string' },
+            candidateId: { type: 'string' },
+            status: { type: 'string', enum: ['queued', 'processing', 'completed', 'failed'] },
+            createdAt: { type: 'string' },
+            updatedAt: { type: 'string' },
+            error: { type: 'string' },
+            result: { type: 'object', additionalProperties: true }
+          }
+        }
+      }
+    }
+  }
+};
+
+export const enrichmentStatusSchema: FastifySchema = {
+  params: {
+    type: 'object',
+    required: ['jobId'],
+    properties: {
+      jobId: { type: 'string', minLength: 8 }
+    }
+  },
+  response: {
+    200: {
+      type: 'object',
+      required: ['job'],
+      properties: {
+        job: {
+          type: 'object',
+          required: ['jobId', 'tenantId', 'candidateId', 'status', 'createdAt', 'updatedAt'],
+          additionalProperties: true,
+          properties: {
+            jobId: { type: 'string' },
+            tenantId: { type: 'string' },
+            candidateId: { type: 'string' },
+            status: { type: 'string', enum: ['queued', 'processing', 'completed', 'failed'] },
+            createdAt: { type: 'string' },
+            updatedAt: { type: 'string' },
+            error: { type: 'string' },
+            result: { type: 'object', additionalProperties: true }
+          }
+        }
+      }
+    }
+  }
+};

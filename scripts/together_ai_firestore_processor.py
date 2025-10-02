@@ -48,7 +48,7 @@ class TogetherFirestoreProcessor:
         self.session = None
         
         # Initialize Firestore
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/Users/delimatsuo/Documents/Coding/headhunter/.gcp/headhunter-service-key.json'
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = str(REPO_ROOT / '.gcp/headhunter-service-key.json')
         self.db = firestore.Client(project='headhunter-ai-0088')
         logger.info("✅ Connected to Firestore database")
         

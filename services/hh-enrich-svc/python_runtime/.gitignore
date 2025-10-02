@@ -1,0 +1,8 @@
+*
+!/.gitignore
+!/scripts/
+!/cloud_run_worker/
+/scripts/*
+/cloud_run_worker/*
+!/scripts/.gitkeep
+!/cloud_run_worker/.gitkeep

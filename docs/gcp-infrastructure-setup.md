@@ -1,302 +1,374 @@
-# Google Cloud Platform Infrastructure Setup
+# Google Cloud Platform Infrastructure Setup (Fastify Services)
 
-This document describes the complete GCP infrastructure setup for Headhunter AI, including all services, configurations, and deployment instructions.
+> Canonical repository path: `/Volumes/Extreme Pro/myprojects/headhunter`. All deployment scripts assume this layout.
 
-## Overview
+This guide documents the infrastructure required to run the Headhunter Fastify mesh on Google Cloud Platform (GCP) and how it maps to the local `docker-compose.local.yml` stack. Use it alongside `README.md`, `ARCHITECTURE.md`, and `docs/HANDOVER.md` for daily operations.
 
-Headhunter AI uses the following GCP services:
-- **Vertex AI**: For enhanced LLM processing and model deployment
-- **Firestore**: For structured data storage (candidate profiles, searches)
-- **Cloud Storage**: For file storage (resumes, processed profiles)
-- **Cloud Functions**: For serverless API endpoints
-- **Firebase Hosting**: For web application deployment
-- **Firebase Authentication**: For user management (future)
+## Core GCP Resources
 
-## Project Information
+| Resource | Purpose |
+| --- | --- |
+| **Cloud Run (8 services)** | `hh-embed-svc`, `hh-search-svc`, `hh-rerank-svc`, `hh-evidence-svc`, `hh-eco-svc`, `hh-msgs-svc`, `hh-admin-svc`, `hh-enrich-svc`.
+| **Cloud SQL (Postgres + pgvector)** | Embeddings, rerank materializations, messaging state, admin schedules.
+| **MemoryStore (Redis)** | Cache for embeddings/rerank, rate limits, worker coordination.
+| **Firestore (Native mode)** | Canonical candidate profiles, recruiter activity, tenant metadata.
+| **Pub/Sub + Cloud Scheduler** | Admin schedulers, async jobs, enrichment triggers.
+| **Artifact Registry** | Stores container images built from `services/**/Dockerfile`.
+| **Secret Manager** | Keeps API keys (Together AI, Firebase Admin, OAuth JWKs, etc.).
+| **Cloud Build / GitHub Actions** | CI/CD for building and deploying services.
 
-- **Project ID**: `headhunter-ai-0088`
-- **Project Name**: Headhunter AI
-- **Region**: us-central1
-- **Service Account**: `headhunter-service@headhunter-ai-0088.iam.gserviceaccount.com`
+## Local ↔ Production Parity Map
 
-## Console URLs
+| Local container (`docker-compose.local.yml`) | Image | Production equivalent |
+| --- | --- | --- |
+| `postgres` | `ankane/pgvector:v0.5.1` | Cloud SQL instance with pgvector extension enabled |
+| `redis` | `redis:7-alpine` | MemoryStore Redis (standard tier) |
+| `firestore` & `pubsub` emulators | `gcr.io/google.com/cloudsdktool/cloud-sdk:slim` | Firestore (native mode) & Pub/Sub + Cloud Scheduler |
+| `mock-together-ai` | `node:20-alpine` mock server | Together AI hosted API |
+| `mock-oauth` | `node:20-alpine` mock issuer | Google Identity Platform / Auth0 tenant SSO |
+| `python-worker` | `python:3.11-slim` | Cloud Run jobs for enrichment pipelines |
+| `hh-*-svc` containers | `node:20-alpine` derived images | Cloud Run services per workspace |
 
-- **GCP Console**: https://console.cloud.google.com/home/dashboard?project=headhunter-ai-0088
-- **Firebase Console**: https://console.firebase.google.com/project/headhunter-ai-0088
-- **Vertex AI**: https://console.cloud.google.com/vertex-ai?project=headhunter-ai-0088
-- **Firestore**: https://console.cloud.google.com/firestore?project=headhunter-ai-0088
+Maintain parity by keeping compose definitions and GCP infra configs in sync. When you change a dependency locally, reflect the same in Terraform or deployment scripts and update this guide.
 
 ## Prerequisites
 
-1. **Google Cloud CLI** installed and authenticated
-2. **Firebase CLI** installed and authenticated
-3. **Node.js 20+** for Cloud Functions
-4. **Python 3.8+** with required Google Cloud libraries
+- Google Cloud CLI (`gcloud`) authenticated with deployment credentials.
+- Docker (build services locally, mirror Cloud Build outputs when needed).
+- Node.js 20+ and Python 3.11+ for local builds/tests.
+- Access to production secrets (Secret Manager).
 
-### Installation Commands
+## Project Bootstrap
 
-```bash
-# Install Google Cloud libraries
-pip install google-cloud-aiplatform google-cloud-firestore google-cloud-storage
+### Automated Provisioning (Recommended)
 
-# Install Firebase CLI (if not already installed)
-npm install -g firebase-tools
-```
-
-## Automated Setup
-
-Use the automated setup script for new environments:
+The fastest way to provision all infrastructure is using the automated orchestration script:
 
 ```bash
-# Run the setup script
-./scripts/setup_gcp_infrastructure.sh
+# Provision all infrastructure with a single command
+./scripts/provision-gcp-infrastructure.sh --project-id headhunter-ai-0088
 
-# Test connectivity
-python scripts/test_gcp_connectivity.py
+# Or with custom config
+./scripts/provision-gcp-infrastructure.sh \
+  --project-id headhunter-ai-0088 \
+  --config config/infrastructure/headhunter-production.env
+
+# Dry run to see what would be provisioned
+./scripts/provision-gcp-infrastructure.sh \
+  --project-id headhunter-ai-0088 \
+  --dry-run
 ```
 
-## Manual Setup Steps
+**What this does:**
+1. Validates prerequisites (gcloud auth, IAM permissions, secret values)
+2. Enables all required GCP APIs
+3. Sets up Secret Manager with placeholder secrets
+4. Provisions VPC networking with NAT and connectors
+5. Creates Cloud SQL instance with pgvector extension
+6. Creates Redis (MemoryStore) instance
+7. Sets up Pub/Sub topics and subscriptions
+8. Creates Cloud Storage buckets
+9. Configures Firestore database in native mode
+10. Generates comprehensive infrastructure notes
+11. Runs validation checks
 
-### 1. Create GCP Project
+**After provisioning:**
+- Review provisioned resources: `docs/infrastructure-notes.md`
+- Populate secrets with real values (see Secret Prerequisites section below)
+- Deploy Cloud Run services (see Service Deployment section)
+
+### Secret Prerequisites
+
+Before provisioning, prepare your secret values:
 
 ```bash
-# Create new project
-gcloud projects create headhunter-ai-XXXXX --name="Headhunter AI"
+# Validate secret prerequisites
+./scripts/validate-secret-prerequisites.sh --check-only
 
-# Set as active project
-gcloud config set project headhunter-ai-XXXXX
+# Generate a template for secret values
+./scripts/validate-secret-prerequisites.sh --generate-template
+
+# Populate secrets (example)
+export HH_SECRET_DB_PRIMARY_PASSWORD="$(openssl rand -base64 32)"
+export HH_SECRET_TOGETHER_AI_API_KEY="your-together-api-key"
+export HH_SECRET_OAUTH_CLIENT_CREDENTIALS='{"client_id":"...","client_secret":"..."}'
+export HH_SECRET_STORAGE_SIGNER_KEY="$(openssl rand -base64 32)"
 ```
 
-### 2. Enable Billing
+**Note:** The provisioning script will create placeholder secrets if real values aren't provided. You can populate them after provisioning using Secret Manager commands (documented in `docs/infrastructure-notes.md`).
+
+### Manual Provisioning (Alternative)
+
+If you prefer step-by-step control or need to troubleshoot specific components, follow the manual commands below:
 
 ```bash
-# List billing accounts
-gcloud billing accounts list
+PROJECT_ID=headhunter-ai-0088
+REGION=us-central1
 
-# Link billing account
-gcloud billing projects link headhunter-ai-XXXXX --billing-account=BILLING_ACCOUNT_ID
+gcloud config set project "$PROJECT_ID"
+gcloud services enable run.googleapis.com sqladmin.googleapis.com redis.googleapis.com \
+  firestore.googleapis.com pubsub.googleapis.com artifactregistry.googleapis.com \
+  secretmanager.googleapis.com cloudbuild.googleapis.com iam.googleapis.com
 ```
 
-### 3. Enable Required APIs
+### Cloud SQL (Postgres + pgvector)
 
 ```bash
-gcloud services enable aiplatform.googleapis.com
-gcloud services enable firestore.googleapis.com
-gcloud services enable storage.googleapis.com
-gcloud services enable cloudfunctions.googleapis.com
-gcloud services enable firebase.googleapis.com
-gcloud services enable artifactregistry.googleapis.com
-gcloud services enable run.googleapis.com
-gcloud services enable cloudbuild.googleapis.com
+INSTANCE=headhunter-shared-services
+gcloud sql instances create "$INSTANCE" \
+  --database-version=POSTGRES_15 \
+  --tier=db-custom-2-7680 \
+  --region="$REGION" \
+  --storage-auto-increase
+
+gcloud sql databases create headhunter --instance="$INSTANCE"
+gcloud sql users set-password headhunter --instance="$INSTANCE" --password=$(openssl rand -base64 20)
+
+gcloud sql connect "$INSTANCE" --user=postgres --quiet <<'SQL'
+CREATE EXTENSION IF NOT EXISTS vector;
+SQL
 ```
 
-### 4. Create Service Account
+### MemoryStore (Redis)
 
 ```bash
-# Create service account
-gcloud iam service-accounts create headhunter-service \
-    --display-name="Headhunter AI Service Account"
-
-# Assign IAM roles
-gcloud projects add-iam-policy-binding headhunter-ai-XXXXX \
-    --member="serviceAccount:headhunter-service@headhunter-ai-XXXXX.iam.gserviceaccount.com" \
-    --role="roles/aiplatform.user"
-
-gcloud projects add-iam-policy-binding headhunter-ai-XXXXX \
-    --member="serviceAccount:headhunter-service@headhunter-ai-XXXXX.iam.gserviceaccount.com" \
-    --role="roles/datastore.user"
-
-gcloud projects add-iam-policy-binding headhunter-ai-XXXXX \
-    --member="serviceAccount:headhunter-service@headhunter-ai-XXXXX.iam.gserviceaccount.com" \
-    --role="roles/storage.admin"
-
-gcloud projects add-iam-policy-binding headhunter-ai-XXXXX \
-    --member="serviceAccount:headhunter-service@headhunter-ai-XXXXX.iam.gserviceaccount.com" \
-    --role="roles/cloudfunctions.invoker"
-
-# Create service account key
-mkdir -p .gcp
-gcloud iam service-accounts keys create .gcp/headhunter-service-key.json \
-    --iam-account=headhunter-service@headhunter-ai-XXXXX.iam.gserviceaccount.com
+gcloud redis instances create headhunter-shared-cache \
+  --size=1 \
+  --region="$REGION" \
+  --tier=BASIC \
+  --replica-count=1
 ```
 
-### 5. Setup Firebase
+### Firestore & Pub/Sub
 
 ```bash
-# Add Firebase to project
-firebase projects:addfirebase headhunter-ai-XXXXX
-
-# Initialize Firebase (configuration files are already created)
-# firebase init --project headhunter-ai-XXXXX
+gcloud firestore databases create --location="$REGION" --type=firestore-native
+gcloud pubsub topics create hh-admin-scheduler
+gcloud pubsub subscriptions create hh-admin-scheduler-sub \
+  --topic=hh-admin-scheduler \
+  --ack-deadline=30
 ```
 
-### 6. Create Firestore Database
+### Artifact Registry
 
 ```bash
-gcloud firestore databases create --location=us-central1
+gcloud artifacts repositories create headhunter-shared-services \
+  --repository-format=docker \
+  --location="$REGION"
 ```
 
-### 7. Setup Cloud Storage Buckets (Optional)
+### Secret Manager
 
 ```bash
-# Create buckets for file storage
-gsutil mb -p headhunter-ai-XXXXX gs://headhunter-ai-XXXXX-resumes/
-gsutil mb -p headhunter-ai-XXXXX gs://headhunter-ai-XXXXX-profiles/
-gsutil mb -p headhunter-ai-XXXXX gs://headhunter-ai-XXXXX-embeddings/
+gcloud secrets create hh-together-api-key --replication-policy="automatic"
+gcloud secrets create hh-firebase-service-account --replication-policy="automatic"
+gcloud secrets create hh-oauth-jwks --replication-policy="automatic"
+
+gcloud secrets versions add hh-together-api-key --data-file=./.gcp/together.key
+gcloud secrets versions add hh-firebase-service-account --data-file=./.gcp/headhunter-service-key.json
+gcloud secrets versions add hh-oauth-jwks --data-file=./.gcp/mock-oauth-jwks.json
 ```
 
-## Firebase Configuration
+Reference these secrets in Cloud Run via `--set-secrets` (CLI) or Terraform equivalent.
 
-### firestore.rules
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Allow authenticated users to read and write their own data
-    match /candidates/{candidateId} {
-      allow read, write: if request.auth != null;
-    }
-    
-    match /searches/{searchId} {
-      allow read, write: if request.auth != null;
-    }
-    
-    match /job_descriptions/{jobId} {
-      allow read, write: if request.auth != null;
-    }
-    
-    // Vector embeddings collection
-    match /embeddings/{embeddingId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == resource.data.created_by;
-    }
-  }
-}
-```
+## Deploying Fastify Services to Cloud Run
 
-### firestore.indexes.json
-Composite indexes for efficient queries on:
-- Candidates by score and processed_at
-- Candidates by recommendation and score
-- Searches by created_at and created_by
+Each workspace has a Dockerfile under `services/<name>/Dockerfile`. Cloud Build configs (`cloud_run_<service>.yaml`) handle build arguments.
 
-## Environment Setup
+| Service | Key env vars | Secret bindings | Notes |
+| --- | --- | --- | --- |
+| `hh-embed-svc` | `REDIS_URL`, `PGVECTOR_URL`, `EMBEDDING_PROVIDER` | Together AI key | Enable Cloud SQL connection via `--add-cloudsql-instances`. |
+| `hh-search-svc` | `REDIS_URL`, `PGVECTOR_URL`, `TENANT_HEADER`, `RERANK_ENDPOINT` | OAuth JWKs | Requires outbound call to rerank service; allow private ingress. |
+| `hh-rerank-svc` | `REDIS_URL`, `PGVECTOR_URL`, `EMBED_CACHE_TTL` | Together AI key (fallback) | Configure autoscaling min instances to keep caches warm. |
+| `hh-evidence-svc` | `FIRESTORE_PROJECT`, `PGVECTOR_URL` | Firebase SA | Needs Firestore IAM binding `roles/datastore.user`. |
+| `hh-eco-svc` | `PGVECTOR_URL`, `FIRESTORE_PROJECT`, `TEMPLATE_BUCKET` | Firebase SA | Mount templates via Cloud Storage bucket. |
+| `hh-msgs-svc` | `PUBSUB_TOPIC`, `REDIS_URL`, `PGVECTOR_URL` | Firebase SA | Grant `roles/pubsub.publisher` to service account. |
+| `hh-admin-svc` | `ADMIN_TOPIC`, `SCHEDULER_PROJECT`, `REDIS_URL` | Firebase SA, OAuth JWKs | Ensure Cloud Scheduler targets Pub/Sub topic created above. |
+| `hh-enrich-svc` | `PGVECTOR_URL`, `REDIS_URL`, `PY_WORKER_URL` | Together AI key, Firebase SA | Calls Cloud Run job (Python worker) or Vertex pipelines.
 
-### Local Development
+Example deployment snippet (adjust per service):
 
 ```bash
-# Set environment variables
-export GOOGLE_APPLICATION_CREDENTIALS="/path/to/.gcp/headhunter-service-key.json"
-export GOOGLE_CLOUD_PROJECT="headhunter-ai-0088"
+SERVICE=hh-search-svc
+IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/headhunter-shared-services/${SERVICE}:$(git rev-parse --short HEAD)"
 
-# Verify setup
-python scripts/test_gcp_connectivity.py
+# Build
+gcloud builds submit --config=cloud_run_${SERVICE}.yaml . --substitutions=_IMAGE="$IMAGE"
+
+# Deploy
+gcloud run deploy "$SERVICE" \
+  --image="$IMAGE" \
+  --region="$REGION" \
+  --allow-unauthenticated \
+  --add-cloudsql-instances="$PROJECT_ID:$REGION:$INSTANCE" \
+  --set-env-vars="REDIS_URL=rediss://<memorystore-host>:6379" \
+  --set-env-vars="PGVECTOR_URL=postgresql://headhunter:<password>@/<db>?host=/cloudsql/$PROJECT_ID:$REGION:$INSTANCE" \
+  --set-secrets="TOGETHER_API_KEY=hh-together-api-key:latest" \
+  --set-secrets="OAUTH_JWKS=hh-oauth-jwks:latest" \
+  --vpc-connector=headhunter-shared-vpc \
+  --ingress=internal-and-cloud-load-balancing
 ```
 
-### Production Deployment
+Repeat for each service, adjusting env vars, secrets, and minimum instance counts to maintain warm caches (especially `hh-rerank-svc`). Document any service-specific flags in Terraform modules and keep this table updated.
 
-For production deployments, use service account keys through secure secret management rather than environment variables.
+## Bootstrap Automation Alignment
 
-## Firebase Deployment
+`scripts/prepare-local-env.sh` (in development) will unify local bootstrap steps: dependency install, `.env` hydration, emulator reseed, compose startup, and integration smoke tests. Ensure the script also writes Cloud SQL proxy instructions and surfaces any GCP-specific prerequisites (e.g., enabling APIs). Tag manual GCP setup steps in this doc with `TODO prepare-local-env` if they should be automated or validated by the script.
 
-### Deploy Security Rules
-```bash
-firebase deploy --only firestore:rules
-firebase deploy --only firestore:indexes
-firebase deploy --only storage
-```
+## Integration Validation After Deployment
 
-### Deploy Functions
-```bash
-cd functions
-npm install
-cd ..
-firebase deploy --only functions
-```
-
-### Deploy Hosting
-```bash
-firebase deploy --only hosting
-```
-
-## Monitoring and Logging
-
-### Cloud Logging
-- Function execution logs: Cloud Functions > Logs
-- Firestore operations: Firestore > Usage
-- API usage: APIs & Services > Dashboard
-
-### Error Monitoring
-- Cloud Error Reporting automatically tracks errors
-- Custom metrics can be added using Cloud Monitoring
-
-## Security Best Practices
-
-1. **Service Account Keys**: Store securely, never commit to version control
-2. **IAM Permissions**: Use principle of least privilege
-3. **Firestore Rules**: Validate all database access
-4. **API Keys**: Restrict by referrer/IP when possible
-5. **Regular Audits**: Review IAM bindings and access logs
-
-## Cost Optimization
-
-1. **Firestore**: Use native mode, monitor read/write operations
-2. **Cloud Functions**: Optimize memory allocation and execution time
-3. **Storage**: Use lifecycle policies for old files
-4. **Vertex AI**: Monitor model prediction costs
-5. **Alerts**: Set up billing alerts for unexpected usage
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Authentication Errors**
+1. Run the local integration suite to establish baseline metrics:
    ```bash
-   gcloud auth application-default login
-   export GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-key.json"
+   SKIP_JEST=1 npm run test:integration --prefix services
    ```
-
-2. **Permission Denied**
-   - Verify service account has required roles
-   - Check IAM bindings with `gcloud projects get-iam-policy`
-
-3. **Firestore Not Found**
+   Confirm `cacheHitRate=1.0` and rerank latency ≈ 0 ms.
+2. Deploy services to Cloud Run.
+3. Execute the same integration tests against staging/production endpoints using the `API_BASE_URL` override:
    ```bash
-   gcloud firestore databases create --location=us-central1
+   API_BASE_URL=https://staging.api.headhunter.ai \
+   npm run test:integration --prefix services
    ```
+4. Compare metrics: Managed Prometheus should report parity with local baselines. Investigate Redis or Postgres configuration if hit rate or latency diverges.
+5. Record results in `integration-results.log` and append a note to `docs/HANDOVER.md` if anomalies persist.
 
-4. **Function Deployment Issues**
-   - Check Node.js version (should be 20+)
-   - Verify billing is enabled
-   - Check function logs in Cloud Console
+## Monitoring & Observability
 
-### Testing Connectivity
+- **Metrics ingestion**: Enable Managed Prometheus. Annotate each Cloud Run service with `--set-env-vars="METRICS_ENABLED=true"` and configure scrape targets for `/metrics`.
+- **Dashboards**: Track `rerank_cache_hit_rate`, `rerank_latency_ms`, HTTP 5xx counts, Redis connection errors, and Cloud SQL connection utilization.
+- **Health checks**: Cloud Run uses `/health`; also expose `/ready` where applicable. Configure alerting policies for repeated failures.
+- **Logging**: Logs stream to Cloud Logging under each service. Use log-based metrics to capture tenant violations or JWT failures.
 
-Run the connectivity test script to verify all services:
+## Infrastructure Notes & Documentation
+
+After provisioning infrastructure (either automated or manual), consult the auto-generated infrastructure notes document:
+
+**Location:** `docs/infrastructure-notes.md`
+
+This document contains:
+- Actual resource IDs and connection strings for all provisioned resources
+- Service account emails and IAM roles
+- Network configuration details (VPC connector URIs, subnet ranges)
+- Ready-to-use connection strings for local development and Cloud Run deployment
+- Validation results showing infrastructure health status
+- Step-by-step instructions for populating secrets
+- Next steps for service deployment
+
+**Regenerate the notes at any time:**
 
 ```bash
-python scripts/test_gcp_connectivity.py
+./scripts/generate-infrastructure-notes.sh --project-id headhunter-ai-0088
 ```
 
-Expected output should show all tests passing:
-- ✅ Python Imports
-- ✅ Credentials
-- ✅ Firebase Config
-- ✅ Firestore
-- ✅ Cloud Storage
-- ✅ Vertex AI
+## Infrastructure Cleanup (Development/Testing)
 
-## Next Steps
+For development iterations or testing, you can safely tear down provisioned infrastructure:
 
-1. **Deploy Cloud Functions**: Implement candidate processing and search endpoints
-2. **Set up Vector Search**: Configure Vertex AI Vector Search for semantic matching
-3. **Build Web Interface**: Create React application for candidate search
-4. **Configure Authentication**: Add Firebase Auth for user management
-5. **Set up CI/CD**: Automate deployments with GitHub Actions
+```bash
+# Full cleanup (requires explicit confirmation)
+./scripts/cleanup-gcp-infrastructure.sh \
+  --project-id headhunter-ai-0088 \
+  --confirm
 
-## Support
+# Dry run to see what would be deleted
+./scripts/cleanup-gcp-infrastructure.sh \
+  --project-id headhunter-ai-0088 \
+  --confirm \
+  --dry-run
 
-For issues related to:
-- **GCP Services**: [Google Cloud Support](https://cloud.google.com/support)
-- **Firebase**: [Firebase Support](https://firebase.google.com/support)
-- **This Project**: Create an issue in the project repository
+# Selective cleanup
+./scripts/cleanup-gcp-infrastructure.sh \
+  --project-id headhunter-ai-0088 \
+  --confirm \
+  --only-storage  # Only delete Cloud Storage buckets
+
+# Keep secrets during cleanup
+./scripts/cleanup-gcp-infrastructure.sh \
+  --project-id headhunter-ai-0088 \
+  --confirm \
+  --keep-secrets
+```
+
+**Safety features:**
+- Requires explicit `--confirm` flag
+- Requires typing project ID to confirm deletion
+- Refuses to delete production project without `--force-production` flag
+- Creates timestamped cleanup logs in `.infrastructure/cleanup-YYYYMMDD-HHMMSS.log`
+- Supports dry-run mode to preview deletions
+
+## Mock Services & Production Equivalents
+
+- **Together AI mock** (`mock-together-ai` in compose) simulates embedding/enrichment APIs offline. Production always calls the real Together AI endpoint secured by Secret Manager keys.
+- **Mock OAuth** issues JWTs locally; production relies on Google Identity Platform/SSO. Ensure JWKS hosted in Secret Manager matches the gateway configuration.
+- **Firestore/Pub/Sub emulators** mimic data stores locally; production uses fully managed services with IAM-scoped service accounts. Keep topic and collection names identical for parity.
+
+## Troubleshooting Cloud Run Deployments
+
+- **Cold start latency**: Increase minimum instances (`--min-instances=1`) for `hh-rerank-svc` and `hh-search-svc` to keep caches warm.
+- **Redis connectivity failures**: Verify VPC connector and serverless NEG configuration. Test connectivity with `gcloud beta compute ssh` into a bastion host and run `redis-cli -h <host>`.
+- **Cloud SQL connection limits**: Adjust `--set-env-vars="PG_POOL_MAX=10"` and ensure Cloud SQL instance tier supports required connections.
+- **JWT validation errors**: Rotate JWKS in Secret Manager and redeploy. Confirm gateway audience/issuer match service env vars.
+- **Pub/Sub permission issues**: Service accounts need `roles/pubsub.publisher`/`subscriber`. Re-run `gcloud projects add-iam-policy-binding` as needed.
+- **Python worker timeouts**: Scale Cloud Run job CPU/memory or switch to dedicated Cloud Run service if enrichment exceeds 15 minutes.
+
+### Troubleshooting Infrastructure Provisioning
+
+**Insufficient IAM permissions:**
+- Verify current user has Owner or Editor role: `gcloud projects get-iam-policy headhunter-ai-0088 --flatten="bindings[].members" --filter="bindings.members:<your-email>"`
+- Grant required permissions: `gcloud projects add-iam-policy-binding headhunter-ai-0088 --member="user:<your-email>" --role="roles/editor"`
+
+**API enablement delays:**
+- Some APIs (especially VPC, Cloud SQL) can take 2-5 minutes to become fully active after enabling
+- If provisioning fails immediately after API enablement, wait a few minutes and retry
+
+**Resource quota limits:**
+- Check quota status: `gcloud compute project-info describe --project=headhunter-ai-0088`
+- Request quota increases through GCP Console if needed (especially for Cloud SQL CPU, Redis memory)
+
+**Network configuration conflicts:**
+- If VPC creation fails with "already exists", check for orphaned resources: `gcloud compute networks list --project=headhunter-ai-0088`
+- Use the cleanup script to remove conflicting resources before reprovisioning
+
+**Secret population issues:**
+- Validate secret format before adding: `echo "$SECRET_VALUE" | jq .` (for JSON secrets)
+- Ensure secret values meet minimum length requirements (20+ chars for passwords, 32+ for API keys)
+- Check secret access: `gcloud secrets versions access latest --secret=SECRET_NAME --project=headhunter-ai-0088`
+
+**Cloud SQL connectivity issues:**
+- Verify pgvector extension is enabled: `gcloud sql connect INSTANCE_NAME --user=postgres` then `\dx`
+- Check private IP configuration and VPC peering
+- Ensure Cloud SQL instance has sufficient memory for pgvector operations (recommend 7680 MB minimum)
+
+**Firestore mode conflicts:**
+- If Firestore creation fails, check existing mode: `gcloud firestore databases list --project=headhunter-ai-0088`
+- Cannot convert Datastore mode to Firestore native mode - would require a new project
+
+## Local Parity Checklist
+
+1. Ensure Docker Desktop is running.
+2. From `/Volumes/Extreme Pro/myprojects/headhunter`, run `docker compose -f docker-compose.local.yml up --build`.
+3. Seed Firestore and Postgres using `scripts/manage_tenant_credentials.sh`.
+4. Validate health endpoints (`curl localhost:710X/health`) and metrics parity with production.
+5. Tag any manual gap with `TODO prepare-local-env` to feed the upcoming bootstrap script.
+
+## Bootstrap Automation Alignment
+
+The new automated provisioning scripts integrate seamlessly with the local development environment:
+
+**Provisioning → Local Development Flow:**
+
+1. **Provision infrastructure**: `./scripts/provision-gcp-infrastructure.sh --project-id headhunter-ai-0088`
+2. **Review infrastructure notes**: `docs/infrastructure-notes.md` contains all connection strings
+3. **Configure local environment**: Use connection strings from infrastructure notes to configure local `.env` files
+4. **Test locally**: `docker compose -f docker-compose.local.yml up --build`
+5. **Deploy to Cloud Run**: Use the same configuration from infrastructure notes for Cloud Run deployment
+
+**Key integration points:**
+- Infrastructure notes document provides connection strings compatible with both local and Cloud Run environments
+- Secret values populated in Secret Manager can be used by both local development (via `gcloud secrets versions access`) and Cloud Run (via `--set-secrets`)
+- VPC connector URIs from infrastructure notes can be used directly in Cloud Run deployment commands
+- Cloud SQL connection names work with both Cloud SQL Proxy (local) and Cloud SQL connector (Cloud Run)
+
+## Change Log
+
+- **2025-09-29** – Added automated provisioning orchestration, infrastructure notes generation, secret validation, cleanup scripts, and comprehensive troubleshooting guides.
+- **2025-09-13** – Expanded parity mapping, deployment specifics, monitoring guidance, and troubleshooting playbooks for the Fastify mesh.

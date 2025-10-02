@@ -11,6 +11,9 @@ from datetime import datetime
 from google.cloud import firestore
 import subprocess
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+FUNCTIONS_DIR = REPO_ROOT / "functions"
+
 def test_enrichment_direct():
     """Test the enrichment function directly using the Firebase Functions emulator"""
     print("🧪 SIMPLE ENRICHMENT TEST")
@@ -72,9 +75,9 @@ def test_enrichment_direct():
         # Start emulator in background
         emulator_process = subprocess.Popen([
             'firebase', 'emulators:start', '--only', 'functions', '--project', 'headhunter-ai-0088'
-        ], 
-        cwd='/Users/delimatsuo/Documents/Coding/headhunter/functions',
-        stdout=subprocess.PIPE, 
+        ],
+        cwd=str(FUNCTIONS_DIR),
+        stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True)
         

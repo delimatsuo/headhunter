@@ -8,8 +8,14 @@ import csv
 import json
 import os
 import sys
+from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Any, Optional
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_CSV_DIR = REPO_ROOT / "CSV files/505039_Ella_Executive_Search_CSVs_1"
+DEFAULT_RESUME_DIR = REPO_ROOT / "CSV files/505039_Ella_Executive_Search_files_1/resumes"
+DEFAULT_OUTPUT_FILE = REPO_ROOT / "scripts/real_candidates_processed.json"
 
 class RealDataProcessor:
     def __init__(self, csv_dir: str, resumes_dir: str):
@@ -237,10 +243,10 @@ class RealDataProcessor:
 
 def main():
     """Main processing function"""
-    csv_dir = "/Users/delimatsuo/Documents/Coding/headhunter/CSV files/505039_Ella_Executive_Search_CSVs_1"
-    resumes_dir = "/Users/delimatsuo/Documents/Coding/headhunter/CSV files/505039_Ella_Executive_Search_files_1/resumes"
-    
-    processor = RealDataProcessor(csv_dir, resumes_dir)
+    csv_dir = DEFAULT_CSV_DIR
+    resumes_dir = DEFAULT_RESUME_DIR
+
+    processor = RealDataProcessor(str(csv_dir), str(resumes_dir))
     
     # Process a reasonable batch for testing
     batch_size = 100  # Start with 100 candidates
@@ -248,8 +254,8 @@ def main():
     
     if processed_candidates:
         # Save to JSON
-        output_file = "/Users/delimatsuo/Documents/Coding/headhunter/scripts/real_candidates_processed.json"
-        with open(output_file, 'w') as f:
+        output_file = DEFAULT_OUTPUT_FILE
+        with open(output_file, "w") as f:
             json.dump(processed_candidates, f, indent=2)
         
         print(f"💾 Saved {len(processed_candidates)} processed candidates to {output_file}")

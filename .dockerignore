@@ -1,0 +1,61 @@
+# Version-controlled metadata
+.git
+.git-rewrite
+.quarantine
+
+# Environment and dependency directories
+venv
+pm_check_venv
+node_modules
+**/node_modules
+
+# Build and cache artifacts
+DIST
+build
+coverage
+cache
+**/dist
+**/build
+**/.cache
+
+# Bytecode / temporary files
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.tmp
+*.swp
+*.swo
+
+# IDE and tooling configs
+.mcp
+.mcp.json
+.mcp.json.template
+.taskmaster
+.claude
+.cursor
+.vscode
+.idea
+
+# Large project areas not required for hh-enrich-svc image
+headhunter-ui/
+functions/
+public/
+vector-ann-service/
+cloud_run_eco_service/
+cloud_run_vector_service/
+packages/
+
+# Data, docs, and tests excluded from docker build context
+config/
+docs/
+tests/
+
+# Environment files
+.env
+.env.*
+docker-compose.local.yml
+workspace-final.log
+phase1-fix.log
+docker-build-final.log

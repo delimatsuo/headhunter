@@ -10,12 +10,15 @@ import os
 import time
 import asyncio
 import aiohttp
+from pathlib import Path
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from datetime import datetime
 import logging
 from google.cloud import firestore
 from google.auth import default
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -47,7 +50,7 @@ class TogetherAIProcessor:
         if self.use_firestore:
             try:
                 # Set credentials path
-                os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/Users/delimatsuo/Documents/Coding/headhunter/.gcp/headhunter-service-key.json'
+                os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = str(REPO_ROOT / '.gcp/headhunter-service-key.json')
                 self.db = firestore.Client(project='headhunter-ai-0088')
                 logger.info("✅ Connected to Firestore database")
             except Exception as e:

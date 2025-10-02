@@ -18,7 +18,8 @@ import hmac
 
 # Import configuration
 import sys
-sys.path.append('/Users/delimatsuo/Documents/Coding/headhunter/config')
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.append(str(REPO_ROOT / 'config'))
 from webhook_config import WebhookIntegrationConfig
 
 # Firebase/Google Cloud imports

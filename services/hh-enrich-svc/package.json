@@ -1,0 +1,29 @@
+{
+  "name": "@hh/hh-enrich-svc",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Headhunter Cloud Run enrichment service providing async profile enrichment and job management.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rimraf dist",
+    "dev": "ts-node src/index.ts",
+    "start": "node dist/index.js",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings=0",
+    "typecheck": "tsc -p tsconfig.json --pretty"
+  },
+  "dependencies": {
+    "@hh/common": "file:../common",
+    "@google-cloud/monitoring": "^5.3.0",
+    "dotenv": "^16.4.5",
+    "node-fetch": "^3.3.2",
+    "redis": "^4.6.13",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "@hh/hh-embed-svc",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Headhunter Cloud Run embeddings service providing text embedding generation, storage, and similarity search.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rimraf dist",
+    "dev": "ts-node src/index.ts",
+    "start": "node dist/index.js",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings=0",
+    "typecheck": "tsc -p tsconfig.json --pretty",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@google-cloud/aiplatform": "^3.6.0",
+    "@hh/common": "file:../common",
+    "dotenv": "^16.4.5",
+    "pg": "^8.11.3",
+    "pgvector": "^0.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "@types/pg": "^8.11.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5",
+    "vitest": "^1.5.3"
+  }
+}

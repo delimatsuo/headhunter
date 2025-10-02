@@ -1,0 +1,202 @@
+import type { FastifySchema } from 'fastify';
+
+const skillAdjacencyEdgeSchema = {
+  type: 'object',
+  required: ['skillId', 'label', 'score', 'support', 'recencyDays', 'sources'],
+  properties: {
+    skillId: { type: 'string', minLength: 2, maxLength: 96 },
+    label: { type: 'string', minLength: 2, maxLength: 128 },
+    score: { type: 'number', minimum: 0 },
+    support: { type: 'integer', minimum: 0 },
+    recencyDays: { type: 'integer', minimum: 0 },
+    sources: {
+      type: 'array',
+      items: { type: 'string' }
+    }
+  },
+  additionalProperties: false
+} as const;
+
+export const skillExpandSchema: FastifySchema = {
+  tags: ['MSGS'],
+  summary: 'Expand a skill into adjacent skills.',
+  body: {
+    type: 'object',
+    required: ['skillId'],
+    properties: {
+      skillId: { type: 'string', minLength: 2, maxLength: 96 },
+      topK: { type: 'integer', minimum: 1, maximum: 25 },
+      filters: {
+        type: 'object',
+        properties: {
+          region: { type: 'string', minLength: 2, maxLength: 64 },
+          industry: { type: 'string', minLength: 2, maxLength: 64 },
+          experience: { type: 'string', minLength: 2, maxLength: 32 }
+        },
+        additionalProperties: false
+      },
+      includeRelatedRoles: { type: 'boolean' }
+    },
+    additionalProperties: false
+  },
+  response: {
+    200: {
+      type: 'object',
+      required: ['seedSkill', 'adjacent', 'cacheHit', 'generatedAt', 'meta'],
+      properties: {
+        seedSkill: {
+          type: 'object',
+          required: ['skillId', 'label'],
+          properties: {
+            skillId: { type: 'string' },
+            label: { type: 'string' }
+          },
+          additionalProperties: false
+        },
+        adjacent: {
+          type: 'array',
+          items: skillAdjacencyEdgeSchema
+        },
+        cacheHit: { type: 'boolean' },
+        generatedAt: { type: 'string', format: 'date-time' },
+        meta: {
+          type: 'object',
+          required: ['tenantId', 'algorithm'],
+          properties: {
+            tenantId: { type: 'string' },
+            filters: {
+              type: 'object',
+              properties: {
+                region: { type: 'string' },
+                industry: { type: 'string' },
+                experience: { type: 'string' }
+              },
+              additionalProperties: false
+            },
+            algorithm: { type: 'string' }
+          },
+          additionalProperties: false
+        }
+      },
+      additionalProperties: false
+    }
+  }
+};
+
+const roleTemplateSkillSchema = {
+  type: 'object',
+  required: ['skillId', 'label', 'importance', 'source'],
+  properties: {
+    skillId: { type: 'string' },
+    label: { type: 'string' },
+    importance: { type: 'number', minimum: 0 },
+    source: { type: 'string', enum: ['required', 'preferred'] }
+  },
+  additionalProperties: false
+} as const;
+
+export const roleTemplateSchema: FastifySchema = {
+  tags: ['MSGS'],
+  summary: 'Retrieve a market-driven role template.',
+  body: {
+    type: 'object',
+    required: ['ecoId'],
+    properties: {
+      ecoId: { type: 'string', minLength: 3, maxLength: 128 },
+      locale: { type: 'string', minLength: 2, maxLength: 10 },
+      experienceLevel: { type: 'string', minLength: 2, maxLength: 32 },
+      includeDemand: { type: 'boolean' }
+    },
+    additionalProperties: false
+  },
+  response: {
+    200: {
+      type: 'object',
+      required: [
+        'ecoId',
+        'locale',
+        'title',
+        'version',
+        'summary',
+        'requiredSkills',
+        'preferredSkills',
+        'cacheHit',
+        'generatedAt'
+      ],
+      properties: {
+        ecoId: { type: 'string' },
+        locale: { type: 'string' },
+        title: { type: 'string' },
+        version: { type: 'string' },
+        summary: { type: 'string' },
+        requiredSkills: {
+          type: 'array',
+          items: roleTemplateSkillSchema
+        },
+        preferredSkills: {
+          type: 'array',
+          items: roleTemplateSkillSchema
+        },
+        yearsExperienceMin: { type: 'number' },
+        yearsExperienceMax: { type: 'number' },
+        demandIndex: { type: 'number' },
+        cacheHit: { type: 'boolean' },
+        generatedAt: { type: 'string', format: 'date-time' }
+      },
+      additionalProperties: false
+    }
+  }
+};
+
+const demandPointSchema = {
+  type: 'object',
+  required: ['weekStart', 'postings', 'ema', 'zScore'],
+  properties: {
+    weekStart: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+    postings: { type: 'integer', minimum: 0 },
+    ema: { type: 'number' },
+    zScore: { type: 'number' }
+  },
+  additionalProperties: false
+} as const;
+
+export const marketDemandSchema: FastifySchema = {
+  tags: ['MSGS'],
+  summary: 'Fetch EMA-indexed market demand analytics for a skill.',
+  querystring: {
+    type: 'object',
+    required: ['skillId'],
+    properties: {
+      skillId: { type: 'string', minLength: 2, maxLength: 96 },
+      region: { type: 'string', minLength: 2, maxLength: 64 },
+      industry: { type: 'string', minLength: 2, maxLength: 64 },
+      windowWeeks: { type: 'integer', minimum: 4, maximum: 52 }
+    },
+    additionalProperties: false
+  },
+  response: {
+    200: {
+      type: 'object',
+      required: ['skillId', 'region', 'points', 'trend', 'latestEma', 'cacheHit', 'generatedAt'],
+      properties: {
+        skillId: { type: 'string' },
+        region: { type: 'string' },
+        industry: { type: 'string' },
+        points: {
+          type: 'array',
+          items: demandPointSchema
+        },
+        trend: { type: 'string', enum: ['rising', 'steady', 'declining'] },
+        latestEma: { type: 'number' },
+        cacheHit: { type: 'boolean' },
+        generatedAt: { type: 'string', format: 'date-time' }
+      },
+      additionalProperties: false
+    }
+  }
+};
+
+export const msgsHealthSchema: FastifySchema = {
+  tags: ['Health'],
+  summary: 'Service health check endpoint.'
+};

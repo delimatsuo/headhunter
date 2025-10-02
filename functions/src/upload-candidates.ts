@@ -6,6 +6,10 @@ import * as functions from 'firebase-functions/v2';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp } from 'firebase-admin/app';
 import * as fs from 'fs';
+import * as path from 'path';
+
+const CANONICAL_REPO = process.env.HEADHUNTER_HOME ?? '/Volumes/Extreme Pro/myprojects/headhunter';
+const DEFAULT_CANDIDATES_PATH = process.env.HEADHUNTER_CANDIDATES_PATH ?? path.join(CANONICAL_REPO, 'scripts', 'comprehensive_candidates_processed.json');
 
 // Initialize Firebase Admin if not already done
 try {
@@ -26,7 +30,7 @@ export const uploadCandidates = functions.https.onCall(
     
     try {
       // Read the comprehensive processed candidates file
-      const candidatesPath = '/Users/delimatsuo/Documents/Coding/headhunter/scripts/comprehensive_candidates_processed.json';
+      const candidatesPath = DEFAULT_CANDIDATES_PATH;
       
       if (!fs.existsSync(candidatesPath)) {
         throw new Error(`Candidates file not found: ${candidatesPath}`);
@@ -86,7 +90,7 @@ export const uploadCandidatesHttp = functions.https.onRequest(
     
     try {
       // Read the comprehensive processed candidates file
-      const candidatesPath = '/Users/delimatsuo/Documents/Coding/headhunter/scripts/comprehensive_candidates_processed.json';
+      const candidatesPath = DEFAULT_CANDIDATES_PATH;
       
       if (!fs.existsSync(candidatesPath)) {
         res.status(404).json({ 

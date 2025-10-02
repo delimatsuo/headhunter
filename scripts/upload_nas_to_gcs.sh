@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+
+SCRIPT_DIR=${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}
+# Guard against running from deprecated repository clones.
+REPO_ROOT=${REPO_ROOT:-$(cd "${SCRIPT_DIR}/.." && pwd)}
+# shellcheck source=./utils/repo_guard.sh
+source "${SCRIPT_DIR}/utils/repo_guard.sh"
+
 # Sync NAS data to GCS buckets for processing
 # Usage: ./scripts/upload_nas_to_gcs.sh headhunter-ai-0088 \
 #        "/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project"

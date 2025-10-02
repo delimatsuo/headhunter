@@ -4,24 +4,32 @@ Candidate Data CRUD Viewer
 Visualize and analyze candidate data at different processing stages
 """
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, jsonify, render_template, request
 import json
 import csv
-from pathlib import Path
-from typing import Dict, List, Any, Optional
-from datetime import datetime
 import os
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+from datetime import datetime
+
+from data_paths import csv_dir, repo_root, resumes_dir
 
 app = Flask(__name__)
 
 # Data directories
-BASE_DIR = Path("/Users/delimatsuo/Documents/Coding/headhunter")
-CSV_DIR = BASE_DIR / "CSV files" / "505039_Ella_Executive_Search_CSVs_1"
+REPO_ROOT = repo_root()
+CSV_DIR = csv_dir()
+RESUME_DIR = resumes_dir()
 # Check both local and NAS for processed data
-NAS_DIR = Path("/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project")
-PROCESSED_DIR = NAS_DIR / "processed_candidates"  # Primary location on NAS
-LOCAL_PROCESSED_DIR = BASE_DIR / "scripts" / "processed_candidates"  # Fallback local
-RESUME_DIR = BASE_DIR / "CSV files" / "505039_Ella_Executive_Search_files_1"
+NAS_DIR = Path(os.getenv(
+    "HEADHUNTER_NAS_DIR",
+    "/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project",
+))
+PROCESSED_DIR = Path(os.getenv("HEADHUNTER_PROCESSED_DIR", str(NAS_DIR / "processed_candidates")))
+LOCAL_PROCESSED_DIR = Path(os.getenv(
+    "HEADHUNTER_LOCAL_PROCESSED_DIR",
+    str(REPO_ROOT / "scripts" / "processed_candidates"),
+))
 
 class CandidateDataViewer:
     """CRUD operations for candidate data visualization"""

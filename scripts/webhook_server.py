@@ -26,8 +26,10 @@ import httpx
 
 # Import existing processing components
 import sys
-sys.path.append('/Users/delimatsuo/Documents/Coding/headhunter/scripts')
-sys.path.append('/Users/delimatsuo/Documents/Coding/headhunter/config')
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.append(str(REPO_ROOT / 'scripts'))
+sys.path.append(str(REPO_ROOT / 'config'))
 
 from llm_processor import LLMProcessor, CandidateProfile, ProcessingStats
 from cloud_integration import CloudAPIClient

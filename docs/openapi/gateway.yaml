@@ -1,0 +1,773 @@
+swagger: "2.0"
+info:
+  title: Headhunter API Gateway
+  version: 1.0.0
+  description: |
+    API Gateway surface aggregating all recruiter platform services.
+    OAuth2 access tokens are minted by the Ella identity provider using the
+    client-credentials grant and validated by downstream services.
+host: hh-gateway-${ENVIRONMENT}-${REGION}.gateway.dev
+basePath: /
+schemes:
+  - https
+securityDefinitions:
+  OAuth2ClientCredentials:
+    type: oauth2
+    description: OAuth2 client-credentials flow issued by the Ella identity provider.
+    flow: application
+    tokenUrl: https://idp.${ENVIRONMENT}.ella.jobs/oauth/token
+    scopes: {}
+  TenantApiKey:
+    type: apiKey
+    name: X-API-Key
+    in: header
+security:
+  - OAuth2ClientCredentials: []
+    TenantApiKey: []
+consumes:
+  - application/json
+produces:
+  - application/json
+x-google-quota:
+  metrics:
+    - name: hybrid_search_rps
+      displayName: Hybrid Search Requests Per Second
+      description: Number of hybrid search requests per tenant.
+      unit: "1/min/{project}"
+      metricKind: DELTA
+      valueType: INT64
+    - name: rerank_rps
+      displayName: Rerank Requests Per Second
+      description: Number of rerank requests per tenant.
+      unit: "1/min/{project}"
+      metricKind: DELTA
+      valueType: INT64
+    - name: tenant_global_rps
+      displayName: Tenant Global Request Rate
+      description: Combined request rate across all endpoints per tenant.
+      unit: "1/min/{project}"
+      metricKind: DELTA
+      valueType: INT64
+  limits:
+    - name: hybrid-search-per-tenant
+      metric: hybrid_search_rps
+      values:
+        STANDARD: 30
+    - name: rerank-per-tenant
+      metric: rerank_rps
+      values:
+        STANDARD: 10
+    - name: tenant-global-per-tenant
+      metric: tenant_global_rps
+      values:
+        STANDARD: 50
+x-google-endpoints:
+  - name: hh-gateway-${ENVIRONMENT}-${REGION}.gateway.dev
+    allowCors: true
+paths:
+  /health:
+    get:
+      summary: Gateway health check
+      description: Liveness probe used by deployment and monitoring checks.
+      operationId: gatewayHealth
+      tags:
+        - Health
+      security: []
+      responses:
+        '200':
+          description: Gateway is healthy.
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              timestamp:
+                type: string
+                format: date-time
+            required:
+              - status
+      x-google-backend:
+        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
+        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
+        path_translation: APPEND_PATH_TO_ADDRESS
+  /ready:
+    get:
+      summary: Gateway readiness check
+      description: Readiness probe verifying downstream connectivity.
+      operationId: gatewayReady
+      tags:
+        - Health
+      security: []
+      responses:
+        '200':
+          description: Gateway and dependencies are ready.
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              checks:
+                type: array
+                items:
+                  type: string
+            required:
+              - status
+      x-google-backend:
+        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
+        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
+        path_translation: APPEND_PATH_TO_ADDRESS
+  /v1/embeddings/generate:
+    post:
+      summary: Generate embeddings
+      description: Generate an embedding vector for arbitrary recruiter or candidate content.
+      operationId: embeddingsGenerate
+      tags:
+        - Embeddings
+      parameters:
+        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/GenerateEmbeddingRequest
+      responses:
+        '200':
+          description: Embedding generated successfully.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/GenerateEmbeddingResponse
+        '429':
+          description: Tenant request rate limit exceeded. Retry after the provided duration.
+          headers:
+            Retry-After:
+              description: Seconds until the tenant quota window resets.
+              type: string
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/ErrorResponse
+        default:
+          $ref: ./schemas/common.yaml#/responses/ErrorResponse
+      x-google-backend:
+        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-embed-svc-${ENVIRONMENT}
+        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-embed-svc-${ENVIRONMENT}
+        path_translation: APPEND_PATH_TO_ADDRESS
+      x-google-quota:
+        metricCosts:
+          tenant_global_rps: 1
+  /v1/embeddings/upsert:
+    post:
+      summary: Upsert embeddings
+      description: Upsert a tenant-scoped embedding record into pgvector storage.
+      operationId: embeddingsUpsert
+      tags:
+        - Embeddings
+      parameters:
+        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/UpsertEmbeddingRequest
+      responses:
+        '200':
+          description: Embedding upserted and cached metadata returned.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/UpsertEmbeddingResponse
+        '429':
+          description: Tenant request rate limit exceeded. Retry after the provided duration.
+          headers:
+            Retry-After:
+              description: Seconds until the tenant quota window resets.
+              type: string
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/ErrorResponse
+        default:
+          $ref: ./schemas/common.yaml#/responses/ErrorResponse
+      x-google-backend:
+        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-embed-svc-${ENVIRONMENT}
+        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-embed-svc-${ENVIRONMENT}
+        path_translation: APPEND_PATH_TO_ADDRESS
+      x-google-quota:
+        metricCosts:
+          tenant_global_rps: 1
+  /v1/embeddings/query:
+    post:
+      summary: Query embeddings
+      description: Execute a similarity search across stored embeddings.
+      operationId: embeddingsQuery
+      tags:
+        - Embeddings
+      parameters:
+        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/QueryEmbeddingRequest
+      responses:
+        '200':
+          description: Ranked similarity results.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/QueryEmbeddingResponse
+        '429':
+          description: Tenant request rate limit exceeded. Retry after the provided duration.
+          headers:
+            Retry-After:
+              description: Seconds until the tenant quota window resets.
+              type: string
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/ErrorResponse
+        default:
+          $ref: ./schemas/common.yaml#/responses/ErrorResponse
+      x-google-backend:
+        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-embed-svc-${ENVIRONMENT}
+        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-embed-svc-${ENVIRONMENT}
+        path_translation: APPEND_PATH_TO_ADDRESS
+      x-google-quota:
+        metricCosts:
+          tenant_global_rps: 1
+  /v1/search/hybrid:
+    post:
+      summary: Hybrid candidate search
+      description: Perform tenant-scoped hybrid semantic and keyword search.
+      operationId: searchHybrid
+      tags:
+        - Search
+      parameters:
+        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/HybridSearchRequest
+      responses:
+        '200':
+          description: Hybrid search results with tenant metadata.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/HybridSearchResponse
+        '429':
+          description: Tenant request rate limit exceeded. Retry after the provided duration.
+          headers:
+            Retry-After:
+              description: Seconds until the tenant quota window resets.
+              type: string
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/ErrorResponse
+        default:
+          $ref: ./schemas/common.yaml#/responses/ErrorResponse
+      x-google-backend:
+        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-search-svc-${ENVIRONMENT}
+        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-search-svc-${ENVIRONMENT}
+        path_translation: APPEND_PATH_TO_ADDRESS
+      x-google-quota:
+        metricCosts:
+          hybrid_search_rps: 1
+          tenant_global_rps: 1
+  /v1/search/rerank:
+    post:
+      summary: Rerank search results
+      description: Rerank an ordered candidate list using Together AI scoring.
+      operationId: searchRerank
+      tags:
+        - Search
+      parameters:
+        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/RerankRequest
+      responses:
+        '200':
+          description: Reranked candidate results and reasoning.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/RerankResponse
+        '429':
+          description: Tenant request rate limit exceeded. Retry after the provided duration.
+          headers:
+            Retry-After:
+              description: Seconds until the tenant quota window resets.
+              type: string
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/ErrorResponse
+        default:
+          $ref: ./schemas/common.yaml#/responses/ErrorResponse
+      x-google-backend:
+        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-rerank-svc-${ENVIRONMENT}
+        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-rerank-svc-${ENVIRONMENT}
+        path_translation: APPEND_PATH_TO_ADDRESS
+      x-google-quota:
+        metricCosts:
+          rerank_rps: 1
+          tenant_global_rps: 1
+  /v1/evidence/{candidateId}:
+    get:
+      summary: Retrieve candidate evidence
+      description: Retrieve curated evidence sections for a candidate.
+      operationId: evidenceGet
+      tags:
+        - Evidence
+      parameters:
+        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+        - name: candidateId
+          in: path
+          required: true
+          type: string
+          minLength: 3
+          maxLength: 128
+        - name: sections
+          in: query
+          required: false
+          description: Optional comma separated list of sections to include.
+          type: string
+      responses:
+        '200':
+          description: Evidence payload for the requested candidate.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/EvidenceResponse
+        '404':
+          description: Candidate evidence not found.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/ErrorResponse
+        '429':
+          description: Tenant request rate limit exceeded. Retry after the provided duration.
+          headers:
+            Retry-After:
+              description: Seconds until the tenant quota window resets.
+              type: string
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/ErrorResponse
+        default:
+          $ref: ./schemas/common.yaml#/responses/ErrorResponse
+      x-google-backend:
+        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-evidence-svc-${ENVIRONMENT}
+        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-evidence-svc-${ENVIRONMENT}
+        path_translation: APPEND_PATH_TO_ADDRESS
+      x-google-quota:
+        metricCosts:
+          tenant_global_rps: 1
+  /v1/occupations/search:
+    get:
+      summary: Search ECO occupations
+      description: Perform fuzzy search against ECO occupations with tenant safeguards.
+      operationId: occupationsSearch
+      tags:
+        - ECO
+      parameters:
+        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+        - name: title
+          in: query
+          required: true
+          type: string
+          minLength: 2
+          maxLength: 120
+        - name: locale
+          in: query
+          required: false
+          type: string
+          minLength: 2
+          maxLength: 10
+        - name: country
+          in: query
+          required: false
+          type: string
+          minLength: 2
+          maxLength: 3
+        - name: limit
+          in: query
+          required: false
+          type: integer
+          minimum: 1
+          maximum: 50
+        - name: useCache
+          in: query
+          required: false
+          type: string
+          enum: ['true', 'false']
+      responses:
+        '200':
+          description: Occupation search results with cache metadata.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/OccupationSearchResponse
+        '429':
+          description: Tenant request rate limit exceeded. Retry after the provided duration.
+          headers:
+            Retry-After:
+              description: Seconds until the tenant quota window resets.
+              type: string
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/ErrorResponse
+        default:
+          $ref: ./schemas/common.yaml#/responses/ErrorResponse
+      x-google-backend:
+        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-eco-svc-${ENVIRONMENT}
+        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-eco-svc-${ENVIRONMENT}
+        path_translation: APPEND_PATH_TO_ADDRESS
+      x-google-quota:
+        metricCosts:
+          tenant_global_rps: 1
+  /v1/occupations/{ecoId}:
+    get:
+      summary: Get ECO occupation detail
+      description: Retrieve the ECO occupation profile, crosswalks, and template snippets.
+      operationId: occupationsGet
+      tags:
+        - ECO
+      parameters:
+        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+        - name: ecoId
+          in: path
+          required: true
+          type: string
+          minLength: 3
+          maxLength: 64
+        - name: locale
+          in: query
+          required: false
+          type: string
+          minLength: 2
+          maxLength: 10
+        - name: country
+          in: query
+          required: false
+          type: string
+          minLength: 2
+          maxLength: 3
+      responses:
+        '200':
+          description: Occupation detail response with cache metadata.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/OccupationDetailResponse
+        '404':
+          description: Occupation not found.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/ErrorResponse
+        '429':
+          description: Tenant request rate limit exceeded. Retry after the provided duration.
+          headers:
+            Retry-After:
+              description: Seconds until the tenant quota window resets.
+              type: string
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/ErrorResponse
+        default:
+          $ref: ./schemas/common.yaml#/responses/ErrorResponse
+      x-google-backend:
+        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-eco-svc-${ENVIRONMENT}
+        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-eco-svc-${ENVIRONMENT}
+        path_translation: APPEND_PATH_TO_ADDRESS
+      x-google-quota:
+        metricCosts:
+          tenant_global_rps: 1
+  /v1/enrich/profile:
+    post:
+      summary: Submit profile enrichment
+      description: Submit an enrichment job for a candidate profile.
+      operationId: enrichProfile
+      tags:
+        - Enrichment
+      parameters:
+        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/EnrichProfileRequest
+      responses:
+        '202':
+          description: Enrichment job accepted.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/EnrichProfileResponse
+        '429':
+          description: Tenant request rate limit exceeded. Retry after the provided duration.
+          headers:
+            Retry-After:
+              description: Seconds until the tenant quota window resets.
+              type: string
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/ErrorResponse
+        default:
+          $ref: ./schemas/common.yaml#/responses/ErrorResponse
+      x-google-backend:
+        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-enrich-svc-${ENVIRONMENT}
+        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-enrich-svc-${ENVIRONMENT}
+        path_translation: APPEND_PATH_TO_ADDRESS
+      x-google-quota:
+        metricCosts:
+          tenant_global_rps: 1
+  /v1/enrich/status/{jobId}:
+    get:
+      summary: Get enrichment status
+      description: Retrieve the current status for a submitted enrichment job.
+      operationId: enrichStatus
+      tags:
+        - Enrichment
+      parameters:
+        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+        - name: jobId
+          in: path
+          required: true
+          type: string
+          minLength: 8
+      responses:
+        '200':
+          description: Enrichment job status.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/EnrichStatusResponse
+        '404':
+          description: Job not found.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/ErrorResponse
+        '429':
+          description: Tenant request rate limit exceeded. Retry after the provided duration.
+          headers:
+            Retry-After:
+              description: Seconds until the tenant quota window resets.
+              type: string
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/ErrorResponse
+        default:
+          $ref: ./schemas/common.yaml#/responses/ErrorResponse
+      x-google-backend:
+        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-enrich-svc-${ENVIRONMENT}
+        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-enrich-svc-${ENVIRONMENT}
+        path_translation: APPEND_PATH_TO_ADDRESS
+      x-google-quota:
+        metricCosts:
+          tenant_global_rps: 1
+  /v1/admin/refresh-postings:
+    post:
+      summary: Trigger postings refresh
+      description: Publish a postings refresh job and optional scheduler updates.
+      operationId: adminRefreshPostings
+      tags:
+        - Admin
+      parameters:
+        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/RefreshPostingsRequest
+      responses:
+        '200':
+          description: Refresh request accepted with job metadata.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/RefreshResponse
+        '202':
+          description: Refresh request queued for async execution.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/RefreshResponse
+        '429':
+          description: Tenant request rate limit exceeded. Retry after the provided duration.
+          headers:
+            Retry-After:
+              description: Seconds until the tenant quota window resets.
+              type: string
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/ErrorResponse
+        default:
+          $ref: ./schemas/common.yaml#/responses/ErrorResponse
+      x-google-backend:
+        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
+        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
+        path_translation: APPEND_PATH_TO_ADDRESS
+      x-google-quota:
+        metricCosts:
+          tenant_global_rps: 1
+  /v1/admin/refresh-profiles:
+    post:
+      summary: Trigger profile refresh
+      description: Publish a profile refresh job for downstream processors.
+      operationId: adminRefreshProfiles
+      tags:
+        - Admin
+      parameters:
+        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/RefreshProfilesRequest
+      responses:
+        '200':
+          description: Refresh request accepted with job metadata.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/RefreshResponse
+        '202':
+          description: Refresh request queued for async execution.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/RefreshResponse
+        '429':
+          description: Tenant request rate limit exceeded. Retry after the provided duration.
+          headers:
+            Retry-After:
+              description: Seconds until the tenant quota window resets.
+              type: string
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/ErrorResponse
+        default:
+          $ref: ./schemas/common.yaml#/responses/ErrorResponse
+      x-google-backend:
+        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
+        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
+        path_translation: APPEND_PATH_TO_ADDRESS
+      x-google-quota:
+        metricCosts:
+          tenant_global_rps: 1
+  /v1/admin/snapshots:
+    get:
+      summary: Data freshness snapshots
+      description: Retrieve postings and profiles freshness metrics.
+      operationId: adminSnapshots
+      tags:
+        - Admin
+      parameters:
+        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+        - name: tenantId
+          in: query
+          required: false
+          type: string
+      responses:
+        '200':
+          description: Snapshots response with freshness data.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/SnapshotsResponse
+        '429':
+          description: Tenant request rate limit exceeded. Retry after the provided duration.
+          headers:
+            Retry-After:
+              description: Seconds until the tenant quota window resets.
+              type: string
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/ErrorResponse
+        default:
+          $ref: ./schemas/common.yaml#/responses/ErrorResponse
+      x-google-backend:
+        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
+        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-admin-svc-${ENVIRONMENT}
+        path_translation: APPEND_PATH_TO_ADDRESS
+      x-google-quota:
+        metricCosts:
+          tenant_global_rps: 1
+  /v1/skills/expand:
+    post:
+      summary: Expand a skill
+      description: Return adjacent skills using PMI and market data.
+      operationId: skillsExpand
+      tags:
+        - MSGS
+      parameters:
+        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/SkillExpandRequest
+      responses:
+        '200':
+          description: Expanded skills and cache metadata.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/SkillExpandResponse
+        '429':
+          description: Tenant request rate limit exceeded. Retry after the provided duration.
+          headers:
+            Retry-After:
+              description: Seconds until the tenant quota window resets.
+              type: string
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/ErrorResponse
+        default:
+          $ref: ./schemas/common.yaml#/responses/ErrorResponse
+      x-google-backend:
+        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-msgs-svc-${ENVIRONMENT}
+        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-msgs-svc-${ENVIRONMENT}
+        path_translation: APPEND_PATH_TO_ADDRESS
+      x-google-quota:
+        metricCosts:
+          tenant_global_rps: 1
+  /v1/roles/template:
+    post:
+      summary: Retrieve role template
+      description: Retrieve a market-informed role template for an ECO occupation.
+      operationId: rolesTemplate
+      tags:
+        - MSGS
+      parameters:
+        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/RoleTemplateRequest
+      responses:
+        '200':
+          description: Role template response with cache metadata.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/RoleTemplateResponse
+        '429':
+          description: Tenant request rate limit exceeded. Retry after the provided duration.
+          headers:
+            Retry-After:
+              description: Seconds until the tenant quota window resets.
+              type: string
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/ErrorResponse
+        default:
+          $ref: ./schemas/common.yaml#/responses/ErrorResponse
+      x-google-backend:
+        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-msgs-svc-${ENVIRONMENT}
+        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-msgs-svc-${ENVIRONMENT}
+        path_translation: APPEND_PATH_TO_ADDRESS
+      x-google-quota:
+        metricCosts:
+          tenant_global_rps: 1
+  /v1/market/demand:
+    get:
+      summary: Market demand analytics
+      description: Retrieve EMA-indexed demand analytics for a skill.
+      operationId: marketDemand
+      tags:
+        - MSGS
+      parameters:
+        - $ref: ./schemas/common.yaml#/parameters/TenantIdHeader
+        - name: skillId
+          in: query
+          required: true
+          type: string
+          minLength: 2
+          maxLength: 96
+        - name: region
+          in: query
+          required: false
+          type: string
+        - name: industry
+          in: query
+          required: false
+          type: string
+        - name: windowWeeks
+          in: query
+          required: false
+          type: integer
+          minimum: 4
+          maximum: 52
+      responses:
+        '200':
+          description: Market demand time-series and metadata.
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/MarketDemandResponse
+        '429':
+          description: Tenant request rate limit exceeded. Retry after the provided duration.
+          headers:
+            Retry-After:
+              description: Seconds until the tenant quota window resets.
+              type: string
+          schema:
+            $ref: ./schemas/common.yaml#/definitions/ErrorResponse
+        default:
+          $ref: ./schemas/common.yaml#/responses/ErrorResponse
+      x-google-backend:
+        address: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-msgs-svc-${ENVIRONMENT}
+        jwt_audience: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT_ID}/services/hh-msgs-svc-${ENVIRONMENT}
+        path_translation: APPEND_PATH_TO_ADDRESS
+      x-google-quota:
+        metricCosts:
+          tenant_global_rps: 1

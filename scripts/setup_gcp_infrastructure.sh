@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e
 
+
+SCRIPT_DIR=${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}
+# Guard against running from deprecated repository clones.
+REPO_ROOT=${REPO_ROOT:-$(cd "${SCRIPT_DIR}/.." && pwd)}
+# shellcheck source=./utils/repo_guard.sh
+source "${SCRIPT_DIR}/utils/repo_guard.sh"
+
 # Headhunter AI - GCP Infrastructure Setup Script
 # This script sets up the complete Google Cloud Platform infrastructure for Headhunter AI
 

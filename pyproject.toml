@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=67", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "headhunter-ai"
+version = "0.1.0"
+description = "Headhunter AI ingestion pipeline, scripts, and supporting tooling."
+readme = "README.md"
+authors = [{name = "Headhunter AI Team"}]
+requires-python = ">=3.9"
+dependencies = []
+
+[tool.setuptools]
+packages = ["cloud_run_worker", "scripts"]
+include-package-data = true
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]

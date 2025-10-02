@@ -1,0 +1,56 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: hh-eco-svc-${SERVICE_ENVIRONMENT}
+  labels:
+    app: hh-eco-svc
+    environment: ${SERVICE_ENVIRONMENT}
+  annotations:
+    run.googleapis.com/ingress: internal-and-cloud-load-balancing
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/cpu-throttling: "true"
+        autoscaling.knative.dev/maxScale: "${SERVICE_MAX_SCALE}"
+        autoscaling.knative.dev/minScale: "${SERVICE_MIN_SCALE}"
+        run.googleapis.com/vpc-access-connector: projects/${SERVICE_PROJECT_ID}/locations/${SERVICE_REGION}/connectors/${VPC_CONNECTOR}
+        run.googleapis.com/cloudsql-instances: ${SERVICE_PROJECT_ID}:${SERVICE_REGION}:${SQL_INSTANCE}
+    spec:
+      serviceAccountName: ${SERVICE_ACCOUNT}
+      timeoutSeconds: 45
+      containerConcurrency: ${SERVICE_CONCURRENCY}
+      containers:
+        - image: ${SERVICE_IMAGE}
+          ports:
+            - containerPort: ${SERVICE_PORT}
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: SERVICE_ENV
+              value: ${SERVICE_ENVIRONMENT}
+            - name: FIREBASE_PROJECT_ID
+              value: ${SERVICE_PROJECT_ID}
+            - name: ECO_REDIS_HOST
+              value: redis.${SERVICE_ENVIRONMENT}.internal
+            - name: ECO_REDIS_PORT
+              value: "6379"
+            - name: ECO_SEARCH_LIMIT
+              value: "10"
+            - name: ECO_SEARCH_THRESHOLD
+              value: "0.45"
+            - name: ECO_DEFAULT_COUNTRY
+              value: BR
+            - name: ECO_DEFAULT_LOCALE
+              value: pt-BR
+            - name: ENABLE_GATEWAY_TOKENS
+              value: "false"
+            - name: AUTH_MODE
+              value: "firebase"
+          resources:
+            limits:
+              cpu: "${SERVICE_CPU}"
+              memory: ${SERVICE_MEMORY}
+  traffic:
+    - latestRevision: true
+      percent: 100

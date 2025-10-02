@@ -1,0 +1,244 @@
+{
+  "policies": [
+    {
+      "displayName": "SLA - End-to-End Search Latency",
+      "combiner": "OR",
+      "documentation": {
+        "content": "Triggered when end-to-end search latency p95 exceeds the 1.2s SLA target.",
+        "mimeType": "text/markdown"
+      },
+      "conditions": [
+        {
+          "displayName": "Search pipeline p95 latency > 1.2s",
+          "conditionThreshold": {
+            "filter": "metric.type=\"custom.googleapis.com/hh_search/end_to_end_latency_ms\" AND metric.label.percentile=\"p95\"",
+            "duration": "300s",
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 1200,
+            "aggregations": [
+              {
+                "alignmentPeriod": "300s",
+                "perSeriesAligner": "ALIGN_MEAN"
+              }
+            ]
+          }
+        }
+      ],
+      "notificationChannels": [
+        "projects/headhunter-ai-0088/notificationChannels/4707499773465197758",
+        "projects/headhunter-ai-0088/notificationChannels/13066045561995581972"
+      ],
+      "enabled": true
+    },
+    {
+      "displayName": "SLA - Rerank Latency",
+      "combiner": "OR",
+      "documentation": {
+        "content": "Triggered when rerank service latency violates the 350ms SLA target.",
+        "mimeType": "text/markdown"
+      },
+      "conditions": [
+        {
+          "displayName": "Rerank p95 latency > 350ms",
+          "conditionThreshold": {
+            "filter": "metric.type=\"custom.googleapis.com/hh_rerank/latency_ms\" AND metric.label.percentile=\"p95\"",
+            "duration": "180s",
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 350,
+            "aggregations": [
+              {
+                "alignmentPeriod": "180s",
+                "perSeriesAligner": "ALIGN_MEAN"
+              }
+            ]
+          }
+        }
+      ],
+      "notificationChannels": [
+        "projects/headhunter-ai-0088/notificationChannels/4707499773465197758",
+        "projects/headhunter-ai-0088/notificationChannels/13066045561995581972"
+      ],
+      "enabled": true
+    },
+    {
+      "displayName": "SLA - Cached Read Latency",
+      "combiner": "OR",
+      "documentation": {
+        "content": "Alert for cached read surfaces (evidence/ECO/MSGS) exceeding 250ms p95 latency target.",
+        "mimeType": "text/markdown"
+      },
+      "conditions": [
+        {
+          "displayName": "Evidence cached read p95 > 250ms",
+          "conditionThreshold": {
+            "filter": "metric.type=\"custom.googleapis.com/hh_evidence/latency_ms\" AND metric.label.cache_state=\"hit\" AND metric.label.percentile=\"p95\"",
+            "duration": "300s",
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 250,
+            "aggregations": [
+              {
+                "alignmentPeriod": "300s",
+                "perSeriesAligner": "ALIGN_MEAN"
+              }
+            ]
+          }
+        },
+        {
+          "displayName": "ECO cached read p95 > 250ms",
+          "conditionThreshold": {
+            "filter": "metric.type=\"custom.googleapis.com/hh_eco/search_latency_ms\" AND metric.label.cache_state=\"hit\" AND metric.label.percentile=\"p95\"",
+            "duration": "300s",
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 250,
+            "aggregations": [
+              {
+                "alignmentPeriod": "300s",
+                "perSeriesAligner": "ALIGN_MEAN"
+              }
+            ]
+          }
+        },
+        {
+          "displayName": "MSGS cached read p95 > 250ms",
+          "conditionThreshold": {
+            "filter": "metric.type=\"custom.googleapis.com/hh_msgs/latency_ms\" AND metric.label.cache_state=\"hit\" AND metric.label.percentile=\"p95\"",
+            "duration": "300s",
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 250,
+            "aggregations": [
+              {
+                "alignmentPeriod": "300s",
+                "perSeriesAligner": "ALIGN_MEAN"
+              }
+            ]
+          }
+        }
+      ],
+      "notificationChannels": [
+        "projects/headhunter-ai-0088/notificationChannels/4707499773465197758",
+        "projects/headhunter-ai-0088/notificationChannels/13066045561995581972"
+      ],
+      "enabled": true
+    },
+    {
+      "displayName": "SLA - Error Rate Guardrail",
+      "combiner": "OR",
+      "documentation": {
+        "content": "Triggered when any service error ratio exceeds 5% over a rolling window.",
+        "mimeType": "text/markdown"
+      },
+      "conditions": [
+        {
+          "displayName": "Service error ratio > 5%",
+          "conditionThreshold": {
+            "filter": "metric.type=\"custom.googleapis.com/hh_platform/service_error_ratio\"",
+            "duration": "300s",
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 0.05,
+            "aggregations": [
+              {
+                "alignmentPeriod": "300s",
+                "perSeriesAligner": "ALIGN_MEAN"
+              }
+            ]
+          }
+        }
+      ],
+      "notificationChannels": [
+        "projects/headhunter-ai-0088/notificationChannels/4707499773465197758",
+        "projects/headhunter-ai-0088/notificationChannels/13066045561995581972"
+      ],
+      "enabled": true
+    },
+    {
+      "displayName": "SLA - Cache Hit Rate",
+      "combiner": "OR",
+      "documentation": {
+        "content": "Alerts when search cache hit ratio falls below the 70% SLA target.",
+        "mimeType": "text/markdown"
+      },
+      "conditions": [
+        {
+          "displayName": "Search cache hit ratio < 70%",
+          "conditionThreshold": {
+            "filter": "metric.type=\"custom.googleapis.com/hh_search/cache_hit_ratio\"",
+            "duration": "600s",
+            "comparison": "COMPARISON_LT",
+            "thresholdValue": 0.7,
+            "aggregations": [
+              {
+                "alignmentPeriod": "300s",
+                "perSeriesAligner": "ALIGN_MEAN"
+              }
+            ]
+          }
+        }
+      ],
+      "notificationChannels": [
+        "projects/headhunter-ai-0088/notificationChannels/4707499773465197758",
+        "projects/headhunter-ai-0088/notificationChannels/13066045561995581972"
+      ],
+      "enabled": true
+    },
+    {
+      "displayName": "SLA - Together AI Failures",
+      "combiner": "OR",
+      "documentation": {
+        "content": "Alert when Together AI integration failure ratio exceeds 10%.",
+        "mimeType": "text/markdown"
+      },
+      "conditions": [
+        {
+          "displayName": "Together AI failure ratio > 10%",
+          "conditionThreshold": {
+            "filter": "metric.type=\"custom.googleapis.com/hh_rerank/together_failure_ratio\"",
+            "duration": "300s",
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 0.1,
+            "aggregations": [
+              {
+                "alignmentPeriod": "300s",
+                "perSeriesAligner": "ALIGN_MEAN"
+              }
+            ]
+          }
+        }
+      ],
+      "notificationChannels": [
+        "projects/headhunter-ai-0088/notificationChannels/4707499773465197758",
+        "projects/headhunter-ai-0088/notificationChannels/13066045561995581972"
+      ],
+      "enabled": true
+    },
+    {
+      "displayName": "SLA - Service Availability",
+      "combiner": "OR",
+      "documentation": {
+        "content": "Triggered when any core API availability drops below 99% over the rolling window.",
+        "mimeType": "text/markdown"
+      },
+      "conditions": [
+        {
+          "displayName": "Service availability < 99%",
+          "conditionThreshold": {
+            "filter": "metric.type=\"custom.googleapis.com/hh_platform/service_availability_ratio\"",
+            "duration": "900s",
+            "comparison": "COMPARISON_LT",
+            "thresholdValue": 0.99,
+            "aggregations": [
+              {
+                "alignmentPeriod": "300s",
+                "perSeriesAligner": "ALIGN_MEAN"
+              }
+            ]
+          }
+        }
+      ],
+      "notificationChannels": [
+        "projects/headhunter-ai-0088/notificationChannels/4707499773465197758",
+        "projects/headhunter-ai-0088/notificationChannels/13066045561995581972"
+      ],
+      "enabled": true
+    }
+  ]
+}

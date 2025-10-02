@@ -1,0 +1,184 @@
+{
+  "policies": [
+    {
+      "displayName": "Cost - Daily Spend Threshold",
+      "combiner": "OR",
+      "documentation": {
+        "content": "Triggers when the total daily platform cost exceeds the configured budget ceiling.",
+        "mimeType": "text/markdown"
+      },
+      "conditions": [
+        {
+          "displayName": "Daily cost > $100",
+          "conditionThreshold": {
+            "filter": "metric.type=\"custom.googleapis.com/hh_costs/daily_total_usd\"",
+            "duration": "0s",
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 100,
+            "aggregations": [
+              {
+                "alignmentPeriod": "3600s",
+                "perSeriesAligner": "ALIGN_MAX"
+              }
+            ]
+          }
+        }
+      ],
+      "notificationChannels": [
+        "projects/headhunter-ai-0088/notificationChannels/finops_slack",
+        "projects/headhunter-ai-0088/notificationChannels/oncall_email"
+      ],
+      "enabled": true
+    },
+    {
+      "displayName": "Cost - Weekly Spend Threshold",
+      "combiner": "OR",
+      "documentation": {
+        "content": "Triggers when aggregate weekly costs exceed the budget guardrail.",
+        "mimeType": "text/markdown"
+      },
+      "conditions": [
+        {
+          "displayName": "Weekly cost > $500",
+          "conditionThreshold": {
+            "filter": "metric.type=\"custom.googleapis.com/hh_costs/weekly_total_usd\"",
+            "duration": "0s",
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 500,
+            "aggregations": [
+              {
+                "alignmentPeriod": "86400s",
+                "perSeriesAligner": "ALIGN_MAX"
+              }
+            ]
+          }
+        }
+      ],
+      "notificationChannels": [
+        "projects/headhunter-ai-0088/notificationChannels/finops_slack",
+        "projects/headhunter-ai-0088/notificationChannels/oncall_email"
+      ],
+      "enabled": true
+    },
+    {
+      "displayName": "Cost - Monthly Spend Threshold",
+      "combiner": "OR",
+      "documentation": {
+        "content": "Triggers when month-to-date platform spending surpasses the budget target.",
+        "mimeType": "text/markdown"
+      },
+      "conditions": [
+        {
+          "displayName": "Monthly cost > $2000",
+          "conditionThreshold": {
+            "filter": "metric.type=\"custom.googleapis.com/hh_costs/monthly_total_usd\"",
+            "duration": "0s",
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 2000,
+            "aggregations": [
+              {
+                "alignmentPeriod": "86400s",
+                "perSeriesAligner": "ALIGN_MAX"
+              }
+            ]
+          }
+        }
+      ],
+      "notificationChannels": [
+        "projects/headhunter-ai-0088/notificationChannels/finops_slack",
+        "projects/headhunter-ai-0088/notificationChannels/oncall_email"
+      ],
+      "enabled": true
+    },
+    {
+      "displayName": "Cost - Spend Spike Detection",
+      "combiner": "OR",
+      "documentation": {
+        "content": "Triggers when spend increases by more than 50% compared to the trailing seven-day average.",
+        "mimeType": "text/markdown"
+      },
+      "conditions": [
+        {
+          "displayName": "Cost spike > 50%",
+          "conditionThreshold": {
+            "filter": "metric.type=\"custom.googleapis.com/hh_costs/cost_spike_ratio\"",
+            "duration": "0s",
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 1.5,
+            "aggregations": [
+              {
+                "alignmentPeriod": "3600s",
+                "perSeriesAligner": "ALIGN_MAX"
+              }
+            ]
+          }
+        }
+      ],
+      "notificationChannels": [
+        "projects/headhunter-ai-0088/notificationChannels/finops_slack",
+        "projects/headhunter-ai-0088/notificationChannels/oncall_email"
+      ],
+      "enabled": true
+    },
+    {
+      "displayName": "Cost - Tenant Anomaly Detection",
+      "combiner": "OR",
+      "documentation": {
+        "content": "Alerts when an individual tenant's cost trajectory exceeds anomaly thresholds.",
+        "mimeType": "text/markdown"
+      },
+      "conditions": [
+        {
+          "displayName": "Tenant cost anomaly score > 3",
+          "conditionThreshold": {
+            "filter": "metric.type=\"custom.googleapis.com/hh_costs/tenant_anomaly_score\"",
+            "duration": "0s",
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 3,
+            "aggregations": [
+              {
+                "alignmentPeriod": "3600s",
+                "perSeriesAligner": "ALIGN_MAX"
+              }
+            ]
+          }
+        }
+      ],
+      "notificationChannels": [
+        "projects/headhunter-ai-0088/notificationChannels/finops_slack",
+        "projects/headhunter-ai-0088/notificationChannels/oncall_email"
+      ],
+      "enabled": true
+    },
+    {
+      "displayName": "Cost - Together AI Failure Cost",
+      "combiner": "OR",
+      "documentation": {
+        "content": "Alerts when Together AI failures generate wasteful spending above the tolerated threshold.",
+        "mimeType": "text/markdown"
+      },
+      "conditions": [
+        {
+          "displayName": "Together AI failed cost > $20",
+          "conditionThreshold": {
+            "filter": "metric.type=\"custom.googleapis.com/hh_costs/together_failed_cost_usd\"",
+            "duration": "0s",
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 20,
+            "aggregations": [
+              {
+                "alignmentPeriod": "3600s",
+                "perSeriesAligner": "ALIGN_MAX"
+              }
+            ]
+          }
+        }
+      ],
+      "notificationChannels": [
+        "projects/headhunter-ai-0088/notificationChannels/finops_slack",
+        "projects/headhunter-ai-0088/notificationChannels/oncall_email"
+      ],
+      "enabled": true
+    }
+  ]
+}

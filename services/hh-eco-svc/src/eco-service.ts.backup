@@ -1,0 +1,332 @@
+import { getLogger } from '@hh/common';
+import removeAccents from 'remove-accents';
+import { uniq } from 'lodash';
+import type { Logger } from 'pino';
+
+import type { EcoServiceConfig } from './config';
+import { EcoFirestoreClient } from './firestore-client';
+import type {
+  OccupationCacheEntry,
+  OccupationDetail,
+  OccupationDetailResponse,
+  OccupationSearchRequestQuery,
+  OccupationSearchResponse,
+  OccupationSummary
+} from './types';
+import { EcoRedisClient } from './redis-client';
+
+type FuseConstructor<T> = new (
+  list: ReadonlyArray<T>,
+  options?: Record<string, unknown>
+) => {
+  search: (pattern: string, options?: Record<string, unknown>) => Array<{
+    item: T;
+    score?: number;
+  }>;
+};
+
+let fuseCtor: FuseConstructor<unknown> | null = null;
+
+async function getFuse<T>(): Promise<FuseConstructor<T>> {
+  if (!fuseCtor) {
+    const module = (await import('fuse.js')) as unknown;
+    const moduleAny = module as { default?: unknown } | undefined;
+    const resolved = (moduleAny?.default ?? module) as unknown;
+
+    if (typeof resolved !== 'function') {
+      throw new Error('Fuse.js constructor could not be resolved.');
+    }
+
+    fuseCtor = resolved as FuseConstructor<unknown>;
+  }
+
+  return fuseCtor as FuseConstructor<T>;
+}
+
+interface EcoServiceDeps {
+  config: EcoServiceConfig;
+  firestoreClient: EcoFirestoreClient;
+  redisClient: EcoRedisClient;
+  logger?: Logger;
+}
+
+interface NormalizedSearchQuery {
+  title: string;
+  locale: string;
+  country: string;
+  limit: number;
+}
+
+export class EcoService {
+  private readonly logger: Logger;
+
+  constructor(private readonly deps: EcoServiceDeps) {
+    this.logger = deps.logger ?? getLogger({ module: 'eco-service' });
+  }
+
+  private now(): number {
+    return Date.now();
+  }
+
+  private normalizeSearchQuery(query: OccupationSearchRequestQuery): NormalizedSearchQuery {
+    const maxLimit = this.deps.config.search.limit;
+    const limit = Math.min(maxLimit, Math.max(1, query.limit ?? maxLimit));
+    const locale = query.locale ?? this.deps.config.search.defaultLocale;
+    const country = query.country ?? this.deps.config.search.defaultCountry;
+    const cleanedTitle = query.title?.trim();
+    if (!cleanedTitle) {
+      throw new Error('Title is required for occupation search.');
+    }
+
+    const normalizedTitle = this.deps.config.search.normalizeAccents
+      ? removeAccents(cleanedTitle.toLowerCase())
+      : cleanedTitle.toLowerCase();
+
+    return {
+      title: normalizedTitle,
+      locale,
+      country,
+      limit
+    } satisfies NormalizedSearchQuery;
+  }
+
+  private buildSearchCacheKey(tenantId: string, normalized: NormalizedSearchQuery): string {
+    return [tenantId, normalized.locale, normalized.country, normalized.limit, normalized.title].join('|');
+  }
+
+  private sanitizeAliases(values: string[] | undefined): string[] {
+    if (!values) {
+      return [];
+    }
+    return uniq(
+      values
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0)
+    );
+  }
+
+  private toSummary(
+    occupation: { eco_id: string; title: string; locale: string; country?: string; aliases?: string[] },
+    score: number,
+    source: 'title' | 'alias',
+    aliases: string[]
+  ): OccupationSummary {
+    return {
+      ecoId: occupation.eco_id,
+      title: occupation.title,
+      locale: occupation.locale,
+      country: occupation.country,
+      aliases,
+      score,
+      source
+    } satisfies OccupationSummary;
+  }
+
+  async search(
+    tenantId: string,
+    query: OccupationSearchRequestQuery,
+    options: { bypassCache?: boolean } = {}
+  ): Promise<OccupationSearchResponse> {
+    const normalized = this.normalizeSearchQuery(query);
+    const cacheToken = this.buildSearchCacheKey(tenantId, normalized);
+
+    const shouldUseCache = !options.bypassCache && !this.deps.config.redis.disable;
+
+    if (shouldUseCache) {
+      const cached = await this.deps.redisClient.readSearch(tenantId, cacheToken);
+      if (cached) {
+        return {
+          ...cached.payload,
+          cacheHit: cached.expiresAt > this.now()
+        } satisfies OccupationSearchResponse;
+      }
+    }
+
+    const dataset = await this.deps.firestoreClient.loadSearchDataset(tenantId, normalized.locale);
+    const FuseCtor = await getFuse<OccupationRecord>();
+    type OccupationRecord = (typeof dataset.occupations)[number];
+    const fuse = new FuseCtor<OccupationRecord>(dataset.occupations, {
+      keys: ['title'],
+      includeScore: true,
+      threshold: this.deps.config.search.fuzzyThreshold
+    });
+
+    const searchResults = fuse.search(normalized.title, { limit: normalized.limit * 2 });
+
+    const aliasMatches = dataset.aliases
+      .filter((alias) => alias.locale === undefined || alias.locale === normalized.locale)
+      .map((alias) => {
+        const normalizedAlias = this.deps.config.search.normalizeAccents
+          ? removeAccents(alias.alias.toLowerCase())
+          : alias.alias.toLowerCase();
+        const distance = Math.abs(normalizedAlias.length - normalized.title.length);
+        const maxLength = Math.max(normalizedAlias.length, normalized.title.length, 1);
+        const similarity = 1 - distance / maxLength;
+        return { alias, similarity };
+      })
+      .filter((entry) => entry.similarity >= this.deps.config.search.fuzzyThreshold)
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, normalized.limit);
+
+    const results: OccupationSummary[] = [];
+
+    for (const match of searchResults) {
+      if (!match.item) {
+        continue;
+      }
+      const score = 1 - (match.score ?? 1);
+      if (score < this.deps.config.search.minScore) {
+        continue;
+      }
+      const occupation = match.item;
+      results.push(
+        this.toSummary(
+          occupation,
+          score,
+          'title',
+          this.sanitizeAliases(occupation.aliases)
+        )
+      );
+      if (results.length >= normalized.limit) {
+        break;
+      }
+    }
+
+    if (results.length < normalized.limit) {
+      for (const entry of aliasMatches) {
+        const occupation = dataset.occupations.find((item) => item.eco_id === entry.alias.eco_id);
+        if (!occupation) {
+          continue;
+        }
+        const score = Math.min(1, entry.similarity * this.deps.config.search.aliasBoost);
+        if (score < this.deps.config.search.minScore) {
+          continue;
+        }
+        if (results.some((result) => result.ecoId === occupation.eco_id)) {
+          continue;
+        }
+
+        const combinedAliases = this.sanitizeAliases([
+          ...(occupation.aliases ?? []),
+          entry.alias.alias
+        ]);
+
+        results.push(this.toSummary(occupation, score, 'alias', combinedAliases));
+        if (results.length >= normalized.limit) {
+          break;
+        }
+      }
+    }
+
+    const payload: OccupationSearchResponse = {
+      results,
+      total: results.length,
+      cacheHit: false,
+      query: {
+        title: query.title,
+        locale: normalized.locale,
+        country: normalized.country,
+        limit: normalized.limit
+      }
+    } satisfies OccupationSearchResponse;
+
+    if (shouldUseCache) {
+      const entry: OccupationCacheEntry<OccupationSearchResponse> = {
+        payload,
+        storedAt: this.now(),
+        expiresAt: this.now() + this.deps.config.redis.searchTtlSeconds * 1000
+      } satisfies OccupationCacheEntry<OccupationSearchResponse>;
+      await this.deps.redisClient.writeSearch(tenantId, cacheToken, entry);
+    }
+
+    this.logger.info(
+      {
+        tenantId,
+        query: normalized.title,
+        locale: normalized.locale,
+        results: results.length
+      },
+      'ECO search executed.'
+    );
+
+    return payload;
+  }
+
+  async detail(
+    tenantId: string,
+    ecoId: string,
+    options: { locale?: string; country?: string; bypassCache?: boolean } = {}
+  ): Promise<OccupationDetailResponse> {
+    const locale = options.locale ?? this.deps.config.search.defaultLocale;
+    const country = options.country ?? this.deps.config.search.defaultCountry;
+
+    const shouldUseCache = !options.bypassCache && !this.deps.config.redis.disable;
+
+    if (shouldUseCache) {
+      const cached = await this.deps.redisClient.readOccupation(tenantId, ecoId, locale, country);
+      if (cached) {
+        return {
+          ...cached.payload,
+          cacheHit: cached.expiresAt > this.now()
+        } satisfies OccupationDetailResponse;
+      }
+    }
+
+    const occupation = await this.deps.firestoreClient.getOccupation(tenantId, ecoId);
+    if (!occupation) {
+      throw new Error('Occupation not found');
+    }
+
+    const [templates, crosswalk] = await Promise.all([
+      this.deps.firestoreClient.getTemplate(tenantId, ecoId),
+      this.deps.firestoreClient.getCrosswalk(tenantId, ecoId)
+    ]);
+
+    const templateForLocale = templates.find((tpl) => tpl.locale === locale) ?? templates[0] ?? null;
+
+    const detail: OccupationDetail = {
+      ecoId,
+      title: occupation.title,
+      locale: occupation.locale,
+      description: occupation.description,
+      aliases: this.sanitizeAliases(occupation.aliases),
+      industries: occupation.industries ?? [],
+      salaryInsights: occupation.salary_insights ?? {},
+      crosswalk: {
+        cbo: crosswalk?.cbo ?? [],
+        esco: crosswalk?.esco ?? [],
+        onet: crosswalk?.onet ?? []
+      },
+      template: templateForLocale
+        ? {
+            summary: templateForLocale.summary ?? '',
+            requiredSkills: templateForLocale.required_skills ?? [],
+            preferredSkills: templateForLocale.preferred_skills ?? [],
+            yearsExperienceMin: templateForLocale.years_experience_min ?? undefined,
+            yearsExperienceMax: templateForLocale.years_experience_max ?? undefined
+          }
+        : undefined
+    } satisfies OccupationDetail;
+
+    const payload: OccupationDetailResponse = {
+      occupation: detail,
+      cacheHit: false
+    } satisfies OccupationDetailResponse;
+
+    if (shouldUseCache) {
+      const entry: OccupationCacheEntry<OccupationDetailResponse> = {
+        payload,
+        storedAt: this.now(),
+        expiresAt: this.now() + this.deps.config.redis.occupationTtlSeconds * 1000
+      } satisfies OccupationCacheEntry<OccupationDetailResponse>;
+      await this.deps.redisClient.writeOccupation(tenantId, ecoId, locale, country, entry);
+    }
+
+    this.logger.info(
+      { tenantId, ecoId, locale },
+      'ECO occupation detail resolved.'
+    );
+
+    return payload;
+  }
+}

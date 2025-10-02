@@ -1,0 +1,36 @@
+{
+  "name": "@ella/ella-sdk-node",
+  "version": "0.1.0",
+  "description": "Node.js SDK for the Ella Skills API Gateway",
+  "main": "dist/client.js",
+  "types": "dist/client.d.ts",
+  "module": "dist/client.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc --project tsconfig.json",
+    "test": "node --test",
+    "prepare": "npm run build",
+    "publish:dry-run": "npm pack"
+  },
+  "keywords": [
+    "ella",
+    "skills",
+    "api-gateway",
+    "sdk",
+    "oauth2"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "undici": "^6.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,0 +1,73 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: hh-embed-svc-${SERVICE_ENVIRONMENT}
+  labels:
+    app: hh-embed-svc
+    environment: ${SERVICE_ENVIRONMENT}
+  annotations:
+    run.googleapis.com/ingress: internal-and-cloud-load-balancing
+    run.googleapis.com/launch-stage: GA
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/cpu-throttling: "true"
+        autoscaling.knative.dev/maxScale: "${SERVICE_MAX_SCALE}"
+        autoscaling.knative.dev/minScale: "${SERVICE_MIN_SCALE}"
+        run.googleapis.com/vpc-access-connector: projects/${SERVICE_PROJECT_ID}/locations/${SERVICE_REGION}/connectors/${VPC_CONNECTOR}
+        run.googleapis.com/cloudsql-instances: ${SERVICE_PROJECT_ID}:${SERVICE_REGION}:${SQL_INSTANCE}
+    spec:
+      serviceAccountName: ${SERVICE_ACCOUNT}
+      timeoutSeconds: 300
+      containerConcurrency: ${SERVICE_CONCURRENCY}
+      containers:
+        - image: ${SERVICE_IMAGE}
+          ports:
+            - containerPort: ${SERVICE_PORT}
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: SERVICE_ENV
+              value: ${SERVICE_ENVIRONMENT}
+            - name: FIREBASE_PROJECT_ID
+              value: ${SERVICE_PROJECT_ID}
+            - name: REDIS_HOST
+              value: redis.${SERVICE_ENVIRONMENT}.internal
+            - name: REDIS_PORT
+              value: "6379"
+            - name: PGVECTOR_HOST
+              value: /cloudsql/${SERVICE_PROJECT_ID}:${SERVICE_REGION}:${SQL_INSTANCE}
+            - name: PGVECTOR_DATABASE
+              value: ${SQL_DATABASE}
+            - name: PGVECTOR_USER
+              value: ${SQL_USER_APP}
+            - name: PGVECTOR_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ${SECRET_DB_PRIMARY}
+                  key: latest
+            - name: EMBEDDING_PROVIDER
+              value: together
+            - name: TOGETHER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ${SECRET_TOGETHER_AI}
+                  key: latest
+            - name: TOGETHER_EMBEDDING_MODEL
+              value: ${TOGETHER_EMBED_MODEL}
+            - name: ENABLE_REQUEST_LOGGING
+              value: "true"
+            - name: PROPAGATE_TRACE_CONTEXT
+              value: "true"
+            - name: ENABLE_GATEWAY_TOKENS
+              value: "false"
+            - name: AUTH_MODE
+              value: "firebase"
+          resources:
+            limits:
+              cpu: "${SERVICE_CPU}"
+              memory: ${SERVICE_MEMORY}
+  traffic:
+    - latestRevision: true
+      percent: 100

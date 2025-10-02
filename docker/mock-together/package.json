@@ -1,0 +1,14 @@
+{
+  "name": "hh-mock-together",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "fastify": "^4.25.2",
+    "uuid": "^9.0.1"
+  }
+}

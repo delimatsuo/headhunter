@@ -1,0 +1,19 @@
+{
+  "name": "@hh/hh-example-svc",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Example Fastify Cloud Run service demonstrating @hh/common usage.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rimraf dist",
+    "dev": "ts-node src/index.ts",
+    "start": "node dist/index.js",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings=0",
+    "typecheck": "tsc -p tsconfig.json --pretty"
+  },
+  "dependencies": {
+    "@hh/common": "file:../common"
+  }
+}

@@ -20,6 +20,7 @@ node_modules/
 
 # Google Cloud Platform - NEVER commit service account keys!
 .gcp/
+.gcloud/
 service-account*.json
 *-key.json
 gcp-key.json
@@ -68,3 +69,42 @@ CSV files/
 # tasks/ 
 .mcp.json
 .checkpoints/
+
+# Fastify monorepo artifacts
+services/*/node_modules/
+services/*/dist/
+services/*/.env*
+
+# Infrastructure state
+docker/*/data/
+config/*/secrets/
+.integration/results/
+.infrastructure/
+.deployment/*
+!.deployment/
+
+# Monitoring artifacts
+.monitoring/*
+!.monitoring/.gitkeep
+
+# Deployment reports: timestamped versions are ignored; template remains tracked
+docs/deployment-report-*.md
+!docs/deployment-report-phase5-7.md
+
+# Deployment readiness validation reports
+.deployment/validation-report-*.json
+!.deployment/validation-report-20251001-010532.json
+
+# Secret files
+.env.secrets
+.env.secrets.template
+*.key
+*.pem
+
+# Migration cleanup artifacts
+*.bak_before_migration
+._*
+migration-log.txt
+
+# Husky
+.husky/_
