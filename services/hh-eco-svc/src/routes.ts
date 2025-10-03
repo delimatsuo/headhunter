@@ -4,7 +4,7 @@ import { badRequestError, getLogger, notFoundError } from '@hh/common';
 import type { EcoServiceConfig } from './config.js';
 import { EcoFirestoreClient } from './firestore-client.js';
 import { EcoRedisClient } from './redis-client.js';
-import { ecoHealthSchema, occupationDetailSchema, occupationSearchSchema } from './schemas.js';
+import { occupationDetailSchema, occupationSearchSchema } from './schemas.js';
 import type {
   OccupationDetailParams,
   OccupationDetailQuerystring,

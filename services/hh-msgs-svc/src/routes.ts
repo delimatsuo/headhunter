@@ -4,7 +4,7 @@ import { badRequestError, getLogger, notFoundError } from '@hh/common';
 import type { MsgsServiceConfig } from './config';
 import { MsgsCloudSqlClient } from './cloudsql-client';
 import { MsgsRedisClient } from './redis-client';
-import { marketDemandSchema, msgsHealthSchema, roleTemplateSchema, skillExpandSchema } from './schemas';
+import { marketDemandSchema, roleTemplateSchema, skillExpandSchema } from './schemas';
 import type {
   MarketDemandQuerystring,
   RoleTemplateRequestBody,

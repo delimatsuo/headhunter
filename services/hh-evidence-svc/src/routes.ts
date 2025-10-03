@@ -4,7 +4,7 @@ import { badRequestError, getLogger, notFoundError } from '@hh/common';
 import type { EvidenceServiceConfig } from './config';
 import { EvidenceFirestoreClient } from './firestore-client';
 import { EvidenceRedisClient } from './redis-client';
-import { evidenceRouteSchema, healthSchema } from './schemas';
+import { evidenceRouteSchema } from './schemas';
 import type { EvidenceQuerystring, EvidenceRequestParams, EvidenceResponse, EvidenceSectionKey } from './types';
 import { EvidenceService } from './evidence-service';
 

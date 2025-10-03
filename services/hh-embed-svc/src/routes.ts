@@ -75,7 +75,12 @@ export async function registerRoutes(app: FastifyInstance, dependencies: Registe
     {
       schema: upsertEmbeddingSchema
     },
-    async (request: FastifyRequest<{ Body: UpsertEmbeddingRequest }>) => {
+    async (request: FastifyRequest<{ Body: UpsertEmbeddingRequest }>, reply: FastifyReply) => {
+      if (!dependencies.service) {
+        reply.status(503);
+        return { error: 'Service initializing, please retry' };
+      }
+
       if (!request.tenant) {
         throw badRequestError('Tenant context is required.');
       }
@@ -83,7 +88,7 @@ export async function registerRoutes(app: FastifyInstance, dependencies: Registe
       const body = request.body;
       const requestId = request.requestContext.requestId;
 
-      return service.upsertEmbedding({
+      return dependencies.service.upsertEmbedding({
         tenant: request.tenant,
         user: request.user,
         requestId,
@@ -103,7 +108,12 @@ export async function registerRoutes(app: FastifyInstance, dependencies: Registe
     {
       schema: queryEmbeddingsSchema
     },
-    async (request: FastifyRequest<{ Body: QueryEmbeddingRequest }>) => {
+    async (request: FastifyRequest<{ Body: QueryEmbeddingRequest }>, reply: FastifyReply) => {
+      if (!dependencies.service) {
+        reply.status(503);
+        return { error: 'Service initializing, please retry' };
+      }
+
       if (!request.tenant) {
         throw badRequestError('Tenant context is required.');
       }
@@ -111,7 +121,7 @@ export async function registerRoutes(app: FastifyInstance, dependencies: Registe
       const body = request.body ?? {};
       const requestId = request.requestContext.requestId;
 
-      return service.queryEmbeddings({
+      return dependencies.service.queryEmbeddings({
         tenant: request.tenant,
         user: request.user,
         requestId,

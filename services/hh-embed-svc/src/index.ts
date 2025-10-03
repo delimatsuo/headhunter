@@ -71,8 +71,8 @@ async function bootstrap(): Promise<void> {
       logger.info('Received shutdown signal.');
       try {
         await server.close();
-        if (pgClient) {
-          await pgClient.close();
+        if (dependencies.pgClient) {
+          await dependencies.pgClient.close();
         }
         logger.info('Server closed gracefully.');
         process.exit(0);
