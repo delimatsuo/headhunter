@@ -287,6 +287,7 @@ upsert_gateway() {
     log "Updating gateway ${GATEWAY_ID} from ${PREVIOUS_CONFIG} to ${CONFIG_ID}"
     gcloud api-gateway gateways update "$GATEWAY_ID" \
       --location="$REGION" \
+      --api="$GATEWAY_ID" \
       --api-config="$CONFIG_ID" \
       --project="$PROJECT_ID"
     GATEWAY_CONFIG_UPDATED=1

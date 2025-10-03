@@ -1,0 +1,104 @@
+COMPREHENSIVE SMOKE TEST SCRIPT - IMPLEMENTATION SUMMARY
+=========================================================
+
+File: /Volumes/Extreme Pro/myprojects/headhunter/scripts/comprehensive_smoke_test.sh
+Created: 2025-10-03
+Purpose: Production smoke testing for all 8 Headhunter services via API Gateway
+
+REQUIREMENTS MET:
+✅ Tests all 8 services through API Gateway
+✅ Uses API key authentication (X-API-Key header)
+✅ Includes X-Tenant-ID header for multi-tenant tests
+✅ Tests actual functionality, not just health checks
+✅ Provides clear pass/fail reporting with colored output
+✅ Exits with appropriate status codes (0=pass, 1=fail, 2=config error)
+✅ Retrieves API key from Secret Manager automatically
+✅ Uses test candidates loaded in Firestore
+✅ Includes end-to-end integration test
+
+SCRIPT STATISTICS:
+- Total lines: 755
+- Test count: 31 individual tests + 1 integration test = 32 total
+- Service coverage: 8/8 services (100%)
+
+SERVICES TESTED (All 8):
+1. hh-admin-svc (7107)    - 3 tests
+2. hh-embed-svc (7101)    - 3 tests
+3. hh-search-svc (7102)   - 4 tests
+4. hh-rerank-svc (7103)   - 3 tests
+5. hh-msgs-svc (7106)     - 3 tests
+6. hh-evidence-svc (7104) - 4 tests
+7. hh-eco-svc (7105)      - 5 tests
+8. hh-enrich-svc (7108)   - 4 tests
++ Gateway health checks   - 2 tests
++ Integration pipeline    - 1 test
+
+TEST TYPES:
+1. Health checks (gateway + services): 10 tests
+2. Functional API tests: 21 tests
+3. Integration test (full pipeline): 1 test
+
+FEATURES IMPLEMENTED:
+✅ Automatic API key retrieval from GCP Secret Manager
+✅ Manual API key override via --api-key flag
+✅ Configurable project ID, gateway URL, tenant ID
+✅ Verbose mode for debugging (--verbose flag)
+✅ Colored output for readability
+✅ Test timing measurements (milliseconds)
+✅ Comprehensive error handling
+✅ Dependency checking (curl, jq, gcloud, python3)
+✅ Detailed test results summary with pass rate
+✅ Failed test listing in final report
+✅ Uses real test candidates from Firestore
+✅ Integration test validates full search pipeline
+
+USAGE EXAMPLES:
+1. Default (auto-fetch API key):
+   ./scripts/comprehensive_smoke_test.sh
+
+2. With custom configuration:
+   ./scripts/comprehensive_smoke_test.sh \
+     --project-id headhunter-ai-0088 \
+     --gateway-url https://headhunter-api-gateway-production-d735p8t6.uc.gateway.dev \
+     --tenant-id test-tenant
+
+3. With explicit API key:
+   ./scripts/comprehensive_smoke_test.sh --api-key "your-key"
+
+4. Verbose mode:
+   ./scripts/comprehensive_smoke_test.sh --verbose
+
+EXIT CODES:
+- 0: All tests passed
+- 1: One or more tests failed
+- 2: Configuration error (missing deps, auth failure, etc.)
+
+TEST CANDIDATES USED:
+- sarah_chen
+- marcus_rodriguez
+- james_thompson
+- lisa_park
+- emily_watson
+- john_smith
+
+INTEGRATION TEST FLOW:
+1. Generate embedding for job description
+2. Perform semantic search → get top 10 candidates
+3. Rerank top 5 candidates → get top 3
+4. Fetch evidence for top match
+
+AUTHENTICATION:
+- Primary: Retrieves api-gateway-key from Secret Manager
+- Fallback: Accepts API key via --api-key flag
+- Headers used: X-API-Key, X-Tenant-ID, X-Request-ID
+
+DOCUMENTATION:
+- Main script: scripts/comprehensive_smoke_test.sh (755 lines)
+- README: scripts/README_SMOKE_TEST.md (comprehensive usage guide)
+- Help: ./scripts/comprehensive_smoke_test.sh --help
+
+VALIDATION:
+✅ Syntax check passed (bash -n)
+✅ Made executable (chmod +x)
+✅ Help output verified
+✅ All required features implemented
