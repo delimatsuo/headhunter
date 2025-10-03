@@ -42,6 +42,12 @@ async function bootstrap(): Promise<void> {
     console.log('[BOOTSTRAP] Fastify routes:', JSON.stringify(server.printRoutes()));
     logger.info('Routes registered');
 
+    // DEBUG: Add notFound handler to see if it's being called
+    server.setNotFoundHandler(async (request, reply) => {
+      console.log('[404 HANDLER] Not found!', request.method, request.url);
+      reply.status(404).send({ error: 'Not found', method: request.method, url: request.url });
+    });
+
     // Start listening IMMEDIATELY
     const port = Number(process.env.PORT ?? 8080);
     const host = '0.0.0.0';
