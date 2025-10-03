@@ -5,16 +5,16 @@
   "description": "Shared workspace configuration for Headhunter Cloud Run services.",
   "license": "UNLICENSED",
   "scripts": {
-    "build": "tsc -b common/tsconfig.json hh-example-svc/tsconfig.json hh-search-svc/tsconfig.json hh-rerank-svc/tsconfig.json hh-evidence-svc/tsconfig.json hh-eco-svc/tsconfig.json hh-enrich-svc/tsconfig.json hh-admin-svc/tsconfig.json hh-msgs-svc/tsconfig.json",
-    "clean": "rimraf common/dist hh-example-svc/dist hh-search-svc/dist hh-rerank-svc/dist hh-evidence-svc/dist hh-eco-svc/dist hh-enrich-svc/dist hh-admin-svc/dist hh-msgs-svc/dist",
+    "build": "tsc -b common/tsconfig.json hh-embed-svc/tsconfig.json hh-search-svc/tsconfig.json hh-rerank-svc/tsconfig.json hh-evidence-svc/tsconfig.json hh-eco-svc/tsconfig.json hh-enrich-svc/tsconfig.json hh-admin-svc/tsconfig.json hh-msgs-svc/tsconfig.json",
+    "clean": "rimraf common/dist hh-embed-svc/dist hh-search-svc/dist hh-rerank-svc/dist hh-evidence-svc/dist hh-eco-svc/dist hh-enrich-svc/dist hh-admin-svc/dist hh-msgs-svc/dist",
     "lint": "eslint \"**/*.{ts,tsx}\"",
     "test": "jest",
-    "typecheck": "tsc -b common/tsconfig.json hh-example-svc/tsconfig.json hh-search-svc/tsconfig.json hh-rerank-svc/tsconfig.json hh-evidence-svc/tsconfig.json hh-eco-svc/tsconfig.json hh-enrich-svc/tsconfig.json hh-admin-svc/tsconfig.json hh-msgs-svc/tsconfig.json --pretty"
+    "typecheck": "tsc -b common/tsconfig.json hh-embed-svc/tsconfig.json hh-search-svc/tsconfig.json hh-rerank-svc/tsconfig.json hh-evidence-svc/tsconfig.json hh-eco-svc/tsconfig.json hh-enrich-svc/tsconfig.json hh-admin-svc/tsconfig.json hh-msgs-svc/tsconfig.json --pretty"
   },
   "workspaces": {
     "packages": [
       "common",
-      "hh-example-svc",
+      "hh-embed-svc",
       "hh-search-svc",
       "hh-rerank-svc",
       "hh-evidence-svc",

@@ -23,7 +23,7 @@ interface RegisterEcoRoutesOptions {
 
 export async function registerRoutes(
   app: FastifyInstance,
-  { service, config, redisClient, firestoreClient }: RegisterEcoRoutesOptions
+  { service, config: _config, redisClient, firestoreClient }: RegisterEcoRoutesOptions
 ): Promise<void> {
   const logger = getLogger({ module: 'eco-routes' });
 

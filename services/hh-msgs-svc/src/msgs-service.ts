@@ -327,7 +327,7 @@ export class MsgsService {
   }
 
   private buildDemandFromRows(
-    tenantId: string,
+    _tenantId: string,
     query: MarketDemandQuerystring,
     rows: DemandSeriesRow[]
   ): MarketDemandResponse | null {
