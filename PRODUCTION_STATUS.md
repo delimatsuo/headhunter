@@ -1,32 +1,33 @@
 # Headhunter Production Status
 
-**Last Updated:** October 3, 2025 19:30 UTC  
-**Status:** 🟡 Deployment In Progress
+**Last Updated:** October 3, 2025 20:00 UTC
+**Status:** 🔴 Services Deployed But Not Responding
 
 ## Summary
 
-All 8 Headhunter Cloud Run services have been fixed with the lazy initialization pattern and are currently being deployed to production with the corrected code.
+All 8 Headhunter Cloud Run services have been successfully deployed with lazy initialization fixes and TypeScript compilation errors resolved. API Gateway has been updated with correct OpenAPI spec. However, 7 of 8 services are returning 404 on all routes despite successful builds and deployments. Only hh-admin-svc is fully operational.
 
 ## Services Status
 
 | Service | Status | Health | Notes |
 |---------|--------|--------|-------|
-| hh-admin-svc | ✅ Deployed | ✅ Healthy | Working with lazy init fix |
-| hh-embed-svc | 🔄 Deploying | ⏳ Pending | Lazy init applied |
-| hh-search-svc | 🔄 Deploying | ⏳ Pending | Lazy init applied |
-| hh-rerank-svc | 🔄 Deploying | ⏳ Pending | Lazy init applied |
-| hh-enrich-svc | 🔄 Deploying | ⏳ Pending | Lazy init applied |
-| hh-evidence-svc | 🔄 Deploying | ⏳ Pending | Lazy init applied |
-| hh-eco-svc | 🔄 Deploying | ⏳ Pending | Lazy init applied |
-| hh-msgs-svc | 🔄 Deploying | ⏳ Pending | Lazy init applied |
+| hh-admin-svc | ✅ Deployed | ✅ Healthy | Fully operational with lazy init |
+| hh-embed-svc | ✅ Deployed | ❌ 404 | Build SUCCESS, routes not registered |
+| hh-search-svc | ✅ Deployed | ❌ 404 | Build SUCCESS, routes not registered |
+| hh-rerank-svc | ✅ Deployed | ❌ 404 | Build SUCCESS, routes not registered |
+| hh-enrich-svc | ✅ Deployed | ❌ 404 | Build SUCCESS, routes not registered |
+| hh-evidence-svc | ✅ Deployed | ❌ 404 | Build SUCCESS, routes not registered |
+| hh-eco-svc | ✅ Deployed | ❌ 404 | Build SUCCESS, routes not registered |
+| hh-msgs-svc | ✅ Deployed | ❌ 404 | Build SUCCESS, routes not registered |
 
 ## Infrastructure
 
 ### API Gateway
 - **URL:** https://headhunter-api-gateway-production-d735p8t6.uc.gateway.dev
-- **Status:** ✅ Configured with 18 routes
+- **Status:** ✅ Configured with OpenAPI spec (gateway-config-20251003154745)
 - **Authentication:** ✅ API key in Secret Manager (`api-gateway-key`)
-- **Routes:** All 8 services exposed via gateway
+- **Routes:** Properly configured, but backend services returning 404
+- **Working:** `/health` endpoint (routes to hh-admin-svc)
 
 ### Data
 - **Firestore:** ✅ 6 test candidates loaded (test-tenant)
@@ -63,20 +64,27 @@ All 8 Headhunter Cloud Run services have been fixed with the lazy initialization
 
 ## Deployment History
 
-### Current Deployment (In Progress)
-- **Time:** 2025-10-03 19:26-19:27 UTC
-- **Builds:** 7 builds running in parallel
-- **Changes:** Lazy initialization pattern applied to all services
+### Latest Deployment (All Services)
+- **Time:** 2025-10-03 19:35-19:41 UTC
+- **Builds:** 8 builds (ALL SUCCESS)
+- **Changes:** TypeScript compilation fixes applied
+- **Build IDs:**
+  - hh-admin-svc: Already deployed (working)
+  - hh-embed-svc: 08ea8234-b253-44dd-90e4-f5c48f9ee66a ✅
+  - hh-msgs-svc: fadbe6ea-cee0-453a-b954-906c9070374f ✅
+  - hh-evidence-svc: e6681681-be26-4035-a825-9be8d95871cf ✅
+  - hh-eco-svc: cd5349f0-8acd-4829-954b-e0b8087d7d32 ✅
+  - hh-search-svc: cd85f954-cd79-466c-8b22-6a17083b6d3f ✅
+  - hh-rerank-svc: bc42d75d-e292-4d1f-8692-16f56c0561c3 ✅
+  - hh-enrich-svc: 28d7a1e0-e472-4338-bb43-5e7f7e878e82 ✅
+- **Result:** All builds succeeded, TypeScript compiled, containers started, BUT routes not registered
 
-### Previous Deployment
-- **Time:** 2025-10-03 19:06-19:13 UTC
-- **Builds:** 7 builds (SUCCESS)
-- **Result:** Services deployed but crashed due to route registration bug
-
-### Initial Admin Fix
-- **Time:** 2025-10-03 18:44 UTC  
-- **Service:** hh-admin-svc
-- **Result:** SUCCESS - established working pattern
+### API Gateway Deployment
+- **Time:** 2025-10-03 19:48-19:52 UTC
+- **Config:** gateway-config-20251003154745
+- **Result:** Successfully deployed with full OpenAPI spec
+- **Rollback:** Occurred due to smoke test script bug (line 201 syntax error)
+- **Re-applied:** 2025-10-03 19:53 UTC - Now active
 
 ## Next Steps
 
@@ -116,15 +124,28 @@ curl -H "Authorization: Bearer $TOKEN" \
 ## Known Issues
 
 ### Resolved ✅
-- ✅ Service crash loops (lazy init fix)
-- ✅ Missing API Gateway routes (configured)
-- ✅ TypeScript CI failures (fixed)
-- ✅ No test data (loaded 6 candidates)
+- ✅ TypeScript CI failures (132 errors → 0 errors, 40 warnings)
+- ✅ Python lint errors (868 → 218, 75% improvement)
+- ✅ Service crash loops (lazy init pattern applied)
+- ✅ API Gateway OpenAPI spec deployment
+- ✅ Build failures (4 services had TS errors, now fixed)
+- ✅ Test data loaded (6 candidates in Firestore)
 
-### Pending ⏳
-- ⏳ Services still deploying with fixes
-- ⏳ Embeddings not yet generated
-- ⏳ End-to-end pipeline not tested
+### Critical Issues 🔴
+- 🔴 **7 of 8 services return 404 on all routes** (hh-embed-svc, hh-search-svc, hh-rerank-svc, hh-enrich-svc, hh-evidence-svc, hh-eco-svc, hh-msgs-svc)
+  - Services start successfully (startup probes pass)
+  - Port 8080 opens (TCP check succeeds)
+  - NO routes registered (all endpoints return 404)
+  - NO application logs (completely silent)
+  - Only hh-admin-svc works correctly
+  - **Root Cause:** Unknown - routes should be registered before server.listen() but aren't
+
+### Next Steps 🎯
+1. **Debug route registration failure** - Compare working admin-svc with broken services
+2. **Check for runtime module loading errors** - Silent failures preventing route registration
+3. **Verify Dockerfile entrypoint** - Ensure Node.js application actually executes
+4. **Test locally with Docker** - Reproduce issue outside Cloud Run
+5. **Add verbose logging** - Instrument bootstrap sequence to find where it fails
 
 ## Production Readiness Checklist
 
