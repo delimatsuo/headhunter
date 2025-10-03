@@ -4,10 +4,11 @@ steps:
       - 'build'
       - '--no-cache'
       - '-f'
-      - 'services/hh-admin-svc/Dockerfile'
+      - 'hh-admin-svc/Dockerfile'
       - '-t'
       - 'us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-admin-svc:latest'
       - '.'
+    dir: 'services'
 
   - name: 'gcr.io/cloud-builders/docker'
     args:
