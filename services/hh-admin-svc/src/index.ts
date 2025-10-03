@@ -24,67 +24,24 @@ async function bootstrap(): Promise<void> {
     const server = await buildServer({ disableDefaultHealthRoute: true });
     logger.info('Fastify server built');
 
-    // Track initialization state
+    // Track initialization state with mutable dependency container
     let isReady = false;
-    let initializationAttempts = 0;
-    const MAX_INIT_ATTEMPTS = 5;
-
-    // Initialize dependencies function (can be retried)
-    const initializeDependencies = async () => {
-      try {
-        initializationAttempts++;
-        logger.info({ attempt: initializationAttempts }, 'Initializing dependencies...');
-
-        logger.info('Initializing Pub/Sub client...');
-        const pubsubClient = new AdminPubSubClient(config.pubsub);
-        logger.info('Pub/Sub client initialized');
-
-        logger.info('Initializing Jobs client...');
-        const jobsClient = new AdminJobsClient(config.jobs, config.scheduler);
-        logger.info('Jobs client initialized');
-
-        logger.info('Initializing Monitoring client...');
-        const monitoringClient = new MonitoringClient(config.monitoring);
-        logger.info('Monitoring client initialized');
-
-        logger.info('Initializing IAM validator...');
-        const iamValidator = new AdminIamValidator(config.iam);
-        logger.info('IAM validator initialized');
-
-        logger.info('Initializing Admin service...');
-        const service = new AdminService(config, pubsubClient, jobsClient, monitoringClient);
-        logger.info('Admin service initialized');
-
-        logger.info('Registering routes...');
-        await registerRoutes(server, {
-          config,
-          service,
-          pubsub: pubsubClient,
-          jobs: jobsClient,
-          monitoring: monitoringClient,
-          iam: iamValidator
-        });
-        logger.info('Routes registered');
-
-        isReady = true;
-        logger.info('hh-admin-svc fully initialized and ready');
-      } catch (error) {
-        logger.error({ error, attempt: initializationAttempts }, 'Failed to initialize dependencies');
-
-        if (initializationAttempts < MAX_INIT_ATTEMPTS) {
-          // Retry after delay
-          const retryDelayMs = 5000 * initializationAttempts; // Exponential backoff
-          logger.info({ retryDelayMs, attempt: initializationAttempts + 1 }, 'Will retry initialization...');
-          setTimeout(() => {
-            void initializeDependencies();
-          }, retryDelayMs);
-        } else {
-          logger.error({ maxAttempts: MAX_INIT_ATTEMPTS }, 'Max initialization attempts reached, giving up');
-        }
-      }
+    const dependencies = {
+      config,
+      service: null as any,
+      pubsub: null as any,
+      jobs: null as any,
+      monitoring: null as any,
+      iam: null as any
     };
 
-    // Register health endpoint BEFORE listening (critical for Cloud Run probes)
+    // Register ALL routes BEFORE listen (required by Fastify)
+    // Routes will use lazily-initialized dependencies via closure
+    logger.info('Registering routes (with lazy dependencies)...');
+    await registerRoutes(server, dependencies);
+    logger.info('Routes registered');
+
+    // Simple health endpoint (registered BEFORE listen)
     server.get('/health', async () => {
       if (!isReady) {
         return { status: 'initializing', service: 'hh-admin-svc' };
@@ -92,16 +49,41 @@ async function bootstrap(): Promise<void> {
       return { status: 'ok', service: 'hh-admin-svc' };
     });
 
-    // Start listening FIRST
+    // Start listening IMMEDIATELY (Cloud Run requires fast startup)
     const port = Number(process.env.PORT ?? 8080);
     const host = '0.0.0.0';
-
     await server.listen({ port, host });
-    logger.info({ port }, 'hh-admin-svc listening (will initialize dependencies in background)');
+    logger.info({ port }, 'hh-admin-svc listening (initializing dependencies...)');
 
-    // Initialize heavy dependencies in background
-    setImmediate(() => {
-      void initializeDependencies();
+    // Initialize real dependencies in background (after listen)
+    setImmediate(async () => {
+      try {
+        logger.info('Initializing Pub/Sub client...');
+        dependencies.pubsub = new AdminPubSubClient(config.pubsub);
+        logger.info('Pub/Sub client initialized');
+
+        logger.info('Initializing Jobs client...');
+        dependencies.jobs = new AdminJobsClient(config.jobs, config.scheduler);
+        logger.info('Jobs client initialized');
+
+        logger.info('Initializing Monitoring client...');
+        dependencies.monitoring = new MonitoringClient(config.monitoring);
+        logger.info('Monitoring client initialized');
+
+        logger.info('Initializing IAM validator...');
+        dependencies.iam = new AdminIamValidator(config.iam);
+        logger.info('IAM validator initialized');
+
+        logger.info('Initializing Admin service...');
+        dependencies.service = new AdminService(config, dependencies.pubsub, dependencies.jobs, dependencies.monitoring);
+        logger.info('Admin service initialized');
+
+        isReady = true;
+        logger.info('hh-admin-svc fully initialized and ready');
+      } catch (error) {
+        logger.error({ error }, 'Failed to initialize dependencies - service running in degraded mode');
+        // Service stays up but routes will fail when accessed
+      }
     });
 
     const shutdown = async () => {

@@ -1,0 +1,28 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--no-cache'
+      - '-f'
+      - 'hh-admin-svc/Dockerfile'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-admin-svc:latest'
+      - '.'
+    dir: '.'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-admin-svc:latest'
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'hh-admin-svc-production'
+      - '--image=us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-admin-svc:latest'
+      - '--region=us-central1'
+      - '--platform=managed'
+
+images:
+  - 'us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-admin-svc:latest'
