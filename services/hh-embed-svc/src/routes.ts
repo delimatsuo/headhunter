@@ -22,22 +22,13 @@ interface RegisterRoutesOptions {
 export async function registerRoutes(app: FastifyInstance, dependencies: RegisterRoutesOptions): Promise<void> {
   // Health endpoint (responds even during initialization)
   app.get('/health', async (_request, reply: FastifyReply) => {
-    console.log('[ROUTE] /health endpoint called!');
-    console.log('[ROUTE] Request URL:', _request.url);
-    console.log('[ROUTE] Request method:', _request.method);
-    console.log('[ROUTE] isReady:', dependencies.state.isReady);
-    console.log('[ROUTE] pgClient exists:', !!dependencies.pgClient);
-
     if (!dependencies.state.isReady || !dependencies.pgClient) {
-      console.log('[ROUTE] Returning 503 - initializing');
       reply.status(503);
       return { status: 'initializing', service: 'hh-embed-svc' };
     }
 
-    console.log('[ROUTE] Checking pgClient health...');
     const health = await dependencies.pgClient.healthCheck();
     if (health.status !== 'healthy') {
-      console.log('[ROUTE] Database not healthy, returning 503');
       reply.status(503);
       return {
         status: health.status,
@@ -46,7 +37,6 @@ export async function registerRoutes(app: FastifyInstance, dependencies: Registe
       };
     }
 
-    console.log('[ROUTE] Returning 200 OK');
     return { status: 'ok', service: 'hh-embed-svc' };
   });
 
