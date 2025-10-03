@@ -26,38 +26,25 @@ async function bootstrap(): Promise<void> {
 
     // Track initialization state
     let isReady = false;
-    let pubsubClient: AdminPubSubClient | null = null;
-    let jobsClient: AdminJobsClient | null = null;
-    let monitoringClient: MonitoringClient | null = null;
+    let initializationAttempts = 0;
+    const MAX_INIT_ATTEMPTS = 5;
 
-    // Register health endpoint BEFORE listening (critical for Cloud Run probes)
-    server.get('/health', async () => {
-      if (!isReady) {
-        return { status: 'initializing', service: 'hh-admin-svc' };
-      }
-      return { status: 'ok', service: 'hh-admin-svc' };
-    });
-
-    // Start listening AFTER registering health endpoints
-    const port = Number(process.env.PORT ?? 8080);
-    const host = '0.0.0.0';
-
-    await server.listen({ port, host });
-    logger.info({ port }, 'hh-admin-svc listening (initializing dependencies...)');
-
-    // Initialize heavy dependencies in background
-    setImmediate(async () => {
+    // Initialize dependencies function (can be retried)
+    const initializeDependencies = async () => {
       try {
+        initializationAttempts++;
+        logger.info({ attempt: initializationAttempts }, 'Initializing dependencies...');
+
         logger.info('Initializing Pub/Sub client...');
-        pubsubClient = new AdminPubSubClient(config.pubsub);
+        const pubsubClient = new AdminPubSubClient(config.pubsub);
         logger.info('Pub/Sub client initialized');
 
         logger.info('Initializing Jobs client...');
-        jobsClient = new AdminJobsClient(config.jobs, config.scheduler);
+        const jobsClient = new AdminJobsClient(config.jobs, config.scheduler);
         logger.info('Jobs client initialized');
 
         logger.info('Initializing Monitoring client...');
-        monitoringClient = new MonitoringClient(config.monitoring);
+        const monitoringClient = new MonitoringClient(config.monitoring);
         logger.info('Monitoring client initialized');
 
         logger.info('Initializing IAM validator...');
@@ -82,14 +69,39 @@ async function bootstrap(): Promise<void> {
         isReady = true;
         logger.info('hh-admin-svc fully initialized and ready');
       } catch (error) {
-        logger.error({ error }, 'Failed to initialize dependencies');
-        // Don't exit - server is still running and can report errors via /health
-        // Retry initialization after a delay
-        setTimeout(() => {
-          logger.info('Retrying initialization...');
-          void bootstrap();
-        }, 5000);
+        logger.error({ error, attempt: initializationAttempts }, 'Failed to initialize dependencies');
+
+        if (initializationAttempts < MAX_INIT_ATTEMPTS) {
+          // Retry after delay
+          const retryDelayMs = 5000 * initializationAttempts; // Exponential backoff
+          logger.info({ retryDelayMs, attempt: initializationAttempts + 1 }, 'Will retry initialization...');
+          setTimeout(() => {
+            void initializeDependencies();
+          }, retryDelayMs);
+        } else {
+          logger.error({ maxAttempts: MAX_INIT_ATTEMPTS }, 'Max initialization attempts reached, giving up');
+        }
       }
+    };
+
+    // Register health endpoint BEFORE listening (critical for Cloud Run probes)
+    server.get('/health', async () => {
+      if (!isReady) {
+        return { status: 'initializing', service: 'hh-admin-svc' };
+      }
+      return { status: 'ok', service: 'hh-admin-svc' };
+    });
+
+    // Start listening FIRST
+    const port = Number(process.env.PORT ?? 8080);
+    const host = '0.0.0.0';
+
+    await server.listen({ port, host });
+    logger.info({ port }, 'hh-admin-svc listening (will initialize dependencies in background)');
+
+    // Initialize heavy dependencies in background
+    setImmediate(() => {
+      void initializeDependencies();
     });
 
     const shutdown = async () => {
