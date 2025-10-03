@@ -220,7 +220,7 @@ run_test() {
   echo -n "⏳ Test $TESTS_RUN: $test_name... "
 
   local start_time
-  start_time=$(date +%s%3N)
+  start_time=$(date +%s)
 
   # Build curl command
   local curl_args=(
@@ -250,10 +250,10 @@ run_test() {
   local response
   if ! response=$(curl "${curl_args[@]}" 2>&1); then
     local end_time
-    end_time=$(date +%s%3N)
+    end_time=$(date +%s)
     local duration=$((end_time - start_time))
 
-    log_error "FAIL (curl error after ${duration}ms)"
+    log_error "FAIL (curl error after ${duration}s)"
     log_verbose "Error: $response"
     TESTS_FAILED=$((TESTS_FAILED + 1))
     TEST_RESULTS+=("FAIL|$test_name|curl_error|$duration")
@@ -261,7 +261,7 @@ run_test() {
   fi
 
   local end_time
-  end_time=$(date +%s%3N)
+  end_time=$(date +%s)
   local duration=$((end_time - start_time))
 
   # Extract status code and body
@@ -272,7 +272,7 @@ run_test() {
 
   # Validate status code
   if [[ "$status_code" == "$expected_status" ]]; then
-    echo -e "${COLOR_GREEN}✅ PASS${COLOR_RESET} (HTTP $status_code, ${duration}ms)"
+    echo -e "${COLOR_GREEN}✅ PASS${COLOR_RESET} (HTTP $status_code, ${duration}s)"
     TESTS_PASSED=$((TESTS_PASSED + 1))
     TEST_RESULTS+=("PASS|$test_name|$status_code|$duration")
 
