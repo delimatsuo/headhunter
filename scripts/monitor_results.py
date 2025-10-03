@@ -10,13 +10,9 @@ import time
 from pathlib import Path
 from datetime import datetime
 from google.cloud import firestore
-import subprocess
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
-from rich.json import JSON
-from rich.live import Live
-from rich.layout import Layout
 import argparse
 
 console = Console()
@@ -77,7 +73,7 @@ def display_profile_details(profile):
     console.clear()
     
     # Header
-    console.print(f"\n🔍 CANDIDATE PROFILE DETAILS", style="bold blue")
+    console.print("\n🔍 CANDIDATE PROFILE DETAILS", style="bold blue")
     console.print("=" * 60)
     
     # Basic Info

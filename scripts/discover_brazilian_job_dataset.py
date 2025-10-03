@@ -23,7 +23,7 @@ import json
 import os
 import random
 import sys
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 

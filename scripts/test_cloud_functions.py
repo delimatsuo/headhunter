@@ -7,7 +7,6 @@ import json
 import sys
 import os
 import tempfile
-from pathlib import Path
 from datetime import datetime
 
 # Add scripts directory to path
@@ -102,10 +101,10 @@ def test_profile_upload():
         ], capture_output=True, text=True)
         
         if result.returncode == 0:
-            print(f"✅ Successfully uploaded profile to Cloud Storage")
+            print("✅ Successfully uploaded profile to Cloud Storage")
             print(f"   File: gs://{bucket_name}/{gcs_path}")
-            print(f"   This should trigger the processUploadedProfile function")
-            print(f"   Check Firebase Functions logs for processing results")
+            print("   This should trigger the processUploadedProfile function")
+            print("   Check Firebase Functions logs for processing results")
             return True
         else:
             print(f"❌ Upload failed: {result.stderr}")

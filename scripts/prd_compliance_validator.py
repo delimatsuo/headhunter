@@ -4,11 +4,9 @@ PRD Compliance Validator - Comprehensive architecture validation
 Validates current implementation against PRD requirements and identifies critical gaps
 """
 
-import json
 import os
 from pathlib import Path
-from typing import Dict, List, Any, Tuple
-import subprocess
+from typing import Dict, Any
 
 class PRDComplianceValidator:
     def __init__(self):
@@ -418,7 +416,7 @@ def main():
     with open(report_path, 'w') as f:
         f.write(report)
     
-    print(f"\n📋 PRD COMPLIANCE VALIDATION COMPLETE")
+    print("\n📋 PRD COMPLIANCE VALIDATION COMPLETE")
     print(f"📄 Report saved to: {report_path}")
     print(f"🎯 Compliance Score: {results['compliance_score']}%")
     

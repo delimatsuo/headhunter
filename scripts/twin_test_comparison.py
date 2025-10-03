@@ -14,7 +14,6 @@ import sys
 import time
 from datetime import datetime
 from typing import Dict, List, Any
-import random
 
 # Add cloud_run_worker to path
 sys.path.append('cloud_run_worker')
@@ -412,7 +411,7 @@ async def main():
     candidates = generate_twin_test_candidates(10)
     print(f"✅ Generated {len(candidates)} test candidates for comparison")
     
-    print(f"\\n🔄 Processing candidates with BOTH prompt types:")
+    print("\\n🔄 Processing candidates with BOTH prompt types:")
     
     # Process each candidate with both prompts
     original_results = []
@@ -422,7 +421,7 @@ async def main():
         print(f"\\n📊 Candidate {i+1}: {candidate['name']}")
         
         # Process with original prompt
-        print(f"  🔹 Original prompt...", end=" ")
+        print("  🔹 Original prompt...", end=" ")
         original_result, original_time = await process_candidate_twin_test(config, candidate, "original")
         if original_result:
             original_results.append(original_result)
@@ -435,7 +434,7 @@ async def main():
         await asyncio.sleep(0.5)
         
         # Process with enhanced prompt
-        print(f"  🔸 Enhanced prompt...", end=" ")
+        print("  🔸 Enhanced prompt...", end=" ")
         enhanced_result, enhanced_time = await process_candidate_twin_test(config, candidate, "enhanced")
         if enhanced_result:
             enhanced_results.append(enhanced_result)
@@ -449,7 +448,7 @@ async def main():
             await asyncio.sleep(1)
     
     # Analyze results
-    print(f"\\n" + "=" * 65)
+    print("\\n" + "=" * 65)
     print("📊 TWIN TEST COMPARISON RESULTS")
     print("=" * 65)
     
@@ -457,8 +456,8 @@ async def main():
     enhanced_analysis = analyze_prompt_quality(enhanced_results, "enhanced")
     
     # Display comparison
-    print(f"\\n📈 PROMPT PERFORMANCE COMPARISON:")
-    print(f"")
+    print("\\n📈 PROMPT PERFORMANCE COMPARISON:")
+    print("")
     print(f"{'Metric':<30} {'Original':<15} {'Enhanced':<15} {'Improvement'}")
     print(f"{'-'*30} {'-'*15} {'-'*15} {'-'*12}")
     
@@ -490,19 +489,19 @@ async def main():
     
     # Sample comparison
     if enhanced_results and enhanced_results[0] and original_results and original_results[0]:
-        print(f"\\n🔍 SAMPLE QUALITY COMPARISON:")
+        print("\\n🔍 SAMPLE QUALITY COMPARISON:")
         
         orig_sample = original_results[0]
         enh_sample = enhanced_results[0]
         
-        print(f"\\n📋 Original Prompt Output:")
+        print("\\n📋 Original Prompt Output:")
         print(f"   - Fields: {count_nested_fields(orig_sample)}")
-        print(f"   - Structure: Basic flat fields")
+        print("   - Structure: Basic flat fields")
         print(f"   - One-line Pitch: {orig_sample.get('executive_summary', {}).get('one_line_pitch', 'N/A')[:60]}...")
         
-        print(f"\\n📋 Enhanced Prompt Output:")
+        print("\\n📋 Enhanced Prompt Output:")
         print(f"   - Fields: {count_nested_fields(enh_sample)}")
-        print(f"   - Structure: Deep nested analysis")
+        print("   - Structure: Deep nested analysis")
         if 'recruiter_verdict' in enh_sample:
             print(f"   - One-line Pitch: {enh_sample['recruiter_verdict'].get('one_line_pitch', 'N/A')[:60]}...")
         if 'career_trajectory_analysis' in enh_sample:
@@ -516,14 +515,14 @@ async def main():
     ]
     
     if sum(improvements) >= 2:
-        print(f"\\n🎉 ENHANCED PROMPT WINS!")
-        print(f"✅ Superior structure depth and recruiter intelligence")
-        print(f"✅ Better suited for professional recruitment workflows")
-        print(f"✅ Provides actionable insights for candidate placement")
+        print("\\n🎉 ENHANCED PROMPT WINS!")
+        print("✅ Superior structure depth and recruiter intelligence")
+        print("✅ Better suited for professional recruitment workflows")
+        print("✅ Provides actionable insights for candidate placement")
         return 0
     else:
-        print(f"\\n🤔 MIXED RESULTS")
-        print(f"⚠️ Enhanced prompt may need further refinement")
+        print("\\n🤔 MIXED RESULTS")
+        print("⚠️ Enhanced prompt may need further refinement")
         return 1
 
 if __name__ == "__main__":

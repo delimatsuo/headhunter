@@ -4,10 +4,8 @@ EXPERT PROMPT ENGINEERING FRAMEWORK
 Systematically optimized prompts for consistent, high-quality LLM performance
 """
 
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from dataclasses import dataclass
-import json
-import re
 
 @dataclass
 class PromptEngineeringPrinciples:

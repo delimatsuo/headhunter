@@ -5,7 +5,6 @@ Check available models on Together AI
 
 import asyncio
 import aiohttp
-import json
 import os
 import sys
 
@@ -24,7 +23,7 @@ async def check_available_models():
             'Content-Type': 'application/json'
         }
         
-        print(f"🔄 Fetching available models from Together AI...")
+        print("🔄 Fetching available models from Together AI...")
         
         async with aiohttp.ClientSession() as session:
             async with session.get(
@@ -43,7 +42,7 @@ async def check_available_models():
                         if 'llama' in model.get('id', '').lower()
                     ]
                     
-                    print(f"\n🦙 Available Llama models:")
+                    print("\n🦙 Available Llama models:")
                     for model in llama_models[:10]:  # Show first 10
                         print(f"   - {model['id']}")
                     
@@ -54,7 +53,7 @@ async def check_available_models():
                     ]
                     
                     if target_models:
-                        print(f"\n🎯 Found matching Llama 3.1 8B models:")
+                        print("\n🎯 Found matching Llama 3.1 8B models:")
                         for model in target_models:
                             print(f"   - {model['id']}")
                             
@@ -64,7 +63,7 @@ async def check_available_models():
                         
                         await test_model_completion(config, test_model)
                     else:
-                        print(f"\n❌ No Llama 3.1 8B models found")
+                        print("\n❌ No Llama 3.1 8B models found")
                         
                 else:
                     error_text = await response.text()
@@ -98,7 +97,7 @@ async def test_model_completion(config, model_id):
                 if response.status == 200:
                     result = await response.json()
                     message = result.get('choices', [{}])[0].get('message', {}).get('content', '')
-                    print(f"✅ Model test successful!")
+                    print("✅ Model test successful!")
                     print(f"   - Response: {message.strip()}")
                     print(f"   - Recommended model: {model_id}")
                 else:

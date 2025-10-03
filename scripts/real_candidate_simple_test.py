@@ -234,8 +234,8 @@ async def save_to_firestore(profiles: List[Dict[str, Any]]):
             print(f"   💾 Saved {profile['name']} to Firestore")
             
         print(f"✅ Saved {saved_count} REAL profiles to Firestore")
-        print(f"🔍 Check collection: enhanced_candidates")
-        print(f"📋 Document IDs start with: real_candidate_")
+        print("🔍 Check collection: enhanced_candidates")
+        print("📋 Document IDs start with: real_candidate_")
         
     except Exception as e:
         print(f"❌ Error saving to Firestore: {e}")
@@ -284,23 +284,23 @@ async def main():
     total = len(real_candidates)
     success_rate = (len(successful_profiles) / total) * 100 if total > 0 else 0
     
-    print(f"\\n" + "=" * 50)
-    print(f"🎯 REAL CANDIDATE TEST RESULTS")
-    print(f"=" * 50)
+    print("\\n" + "=" * 50)
+    print("🎯 REAL CANDIDATE TEST RESULTS")
+    print("=" * 50)
     print(f"✅ Successfully processed: {len(successful_profiles)}/{total} ({success_rate:.1f}%)")
     print(f"❌ Failed: {failed_count}")
     print(f"💰 Estimated cost: ${len(successful_profiles) * 0.0005:.4f}")
     
     # Save to Firestore
     if successful_profiles:
-        print(f"\\n💾 Saving REAL profiles to Firestore...")
+        print("\\n💾 Saving REAL profiles to Firestore...")
         await save_to_firestore(successful_profiles)
         
-        print(f"\\n🎉 SUCCESS: Real candidates processed and saved!")
-        print(f"🔍 Review in Firestore: enhanced_candidates collection")
-        print(f"📋 Look for documents: real_candidate_[id]")
+        print("\\n🎉 SUCCESS: Real candidates processed and saved!")
+        print("🔍 Review in Firestore: enhanced_candidates collection")
+        print("📋 Look for documents: real_candidate_[id]")
     else:
-        print(f"\\n❌ No successful profiles to save")
+        print("\\n❌ No successful profiles to save")
 
 if __name__ == "__main__":
     asyncio.run(main())

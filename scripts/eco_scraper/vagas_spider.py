@@ -1,7 +1,5 @@
-from datetime import datetime
 from urllib.parse import urljoin
 
-import scrapy
 
 from .base_spider import BaseEcoSpider
 

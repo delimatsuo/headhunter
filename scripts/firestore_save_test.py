@@ -4,7 +4,6 @@ Simple test to verify we can save processed data to Firestore
 """
 
 import asyncio
-import json
 import os
 import sys
 from datetime import datetime
@@ -91,7 +90,7 @@ async def test_firestore_save():
         saved_doc = doc_ref.get()
         if saved_doc.exists:
             saved_data = saved_doc.to_dict()
-            print(f"✅ Successfully retrieved saved document")
+            print("✅ Successfully retrieved saved document")
             print(f"   - Candidate: {saved_data.get('name')}")
             print(f"   - Rating: {saved_data.get('executive_summary', {}).get('overall_rating')}")
             print(f"   - Processed at: {saved_data.get('metadata', {}).get('processed_at')}")

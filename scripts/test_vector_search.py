@@ -364,7 +364,7 @@ def main():
     validation_steps = create_deployment_validation()
     
     print("\n✅ Vector Search Test Setup Complete!")
-    print(f"\nNext Steps:")
+    print("\nNext Steps:")
     print("1. Wait 2-3 minutes for profile processing")
     print("2. Deploy functions: ./scripts/deploy_functions.sh")  
     print("3. Test semantic search with the queries above")

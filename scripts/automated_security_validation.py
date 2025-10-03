@@ -30,7 +30,7 @@ import time
 from dataclasses import dataclass, asdict
 from typing import Any, Dict, List, Optional, Tuple
 
-from scripts.utils.reporting import _log as _base_log, ensure_reports_dir, save_json_report
+from scripts.utils.reporting import _log as _base_log, save_json_report
 
 NAME = "automated_security_validation"
 
@@ -123,7 +123,6 @@ def _rules_test_via_emulator() -> Tuple[bool, Dict[str, Any], List[str]]:
     Returns (passed, details, recommendations)
     """
     import os
-    import json as _json
     import time as _time
     host = os.environ.get("FIRESTORE_EMULATOR_HOST")
     project = os.environ.get("FIREBASE_PROJECT") or os.environ.get("GOOGLE_CLOUD_PROJECT") or "demo-project"

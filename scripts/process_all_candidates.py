@@ -21,7 +21,7 @@ class CompleteBatchProcessor:
         
     def load_nas_data(self):
         """Load the NAS database"""
-        print(f"📂 Loading NAS database...")
+        print("📂 Loading NAS database...")
         with open(self.nas_file, 'r') as f:
             return json.load(f)
     
@@ -32,7 +32,7 @@ class CompleteBatchProcessor:
         with open(backup_file, 'w') as f:
             json.dump(data, f, indent=2)
         
-        print(f"💾 Updating NAS database...")
+        print("💾 Updating NAS database...")
         with open(self.nas_file, 'w') as f:
             json.dump(data, f, indent=2)
     
@@ -235,7 +235,7 @@ Return ONLY valid JSON with ALL these fields:
             if batch_processed > 0:
                 self.save_nas_data(candidates)
                 print(f"  ✓ Batch complete: {batch_processed} processed, {batch_failed} failed")
-                print(f"  💾 Database updated")
+                print("  💾 Database updated")
             
             # Remove processed candidates from unprocessed list
             unprocessed = unprocessed[len(batch):]

@@ -275,7 +275,7 @@ def main():
         print("✅ All tests passed! Together API is ready for use.")
         print()
         print("Configuration:")
-        print(f"  Model: meta-llama/Llama-3.1-8B-Instruct-Turbo")
+        print("  Model: meta-llama/Llama-3.1-8B-Instruct-Turbo")
         print(f"  Latency: {basic_results['latency_ms']}ms")
         print(f"  Profile Analysis: {prompt_results['response_time_ms']}ms")
     else:

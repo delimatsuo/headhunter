@@ -6,8 +6,8 @@ Extract insights and patterns from recruiter feedback using Llama 3.1 8b
 
 import json
 import subprocess
-from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass, asdict
+from typing import Dict, List, Optional, Any
+from dataclasses import dataclass
 from enum import Enum
 import re
 

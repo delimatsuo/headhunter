@@ -8,10 +8,9 @@ import json
 import subprocess
 import time
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Dict, Optional
 from datetime import datetime
 import re
-import sys
 import psutil
 
 class QualityBatchProcessor:
@@ -33,8 +32,8 @@ class QualityBatchProcessor:
         self.file_sizes = []
         self.processing_times = []
         
-        print(f"🎯 QUALITY BATCH PROCESSOR")
-        print(f"=" * 60)
+        print("🎯 QUALITY BATCH PROCESSOR")
+        print("=" * 60)
         print(f"📦 Batch Size: {self.batch_size} candidates")
         print(f"⏱️ Timeout: {self.ollama_timeout}s per candidate")
         print(f"🔄 Max Retries: {self.max_retries}")
@@ -209,14 +208,14 @@ Return ONLY the JSON, no additional text."""
             
             # Skip if no meaningful data
             if not candidate.get('education') and not candidate.get('experience'):
-                print(f"    ⏭️ Skipped - No education or experience data")
+                print("    ⏭️ Skipped - No education or experience data")
                 continue
             
             # Create comprehensive prompt
             prompt = self.create_comprehensive_prompt(candidate)
             
             # Process with Ollama
-            print(f"    🤖 Sending to LLM...")
+            print("    🤖 Sending to LLM...")
             analysis = self.process_with_ollama(prompt)
             
             if analysis:
@@ -257,7 +256,7 @@ Return ONLY the JSON, no additional text."""
                     print(f"    ❌ Failed to save: {e}")
                     self.failed_count += 1
             else:
-                print(f"    ❌ LLM processing failed")
+                print("    ❌ LLM processing failed")
                 self.failed_count += 1
                 
             # Progress update every 10 candidates
@@ -277,12 +276,12 @@ Return ONLY the JSON, no additional text."""
         print("📊 FINAL REPORT")
         print("=" * 60)
         
-        print(f"\n⏰ TIMING:")
+        print("\n⏰ TIMING:")
         print(f"  Start: {self.start_time.strftime('%I:%M:%S %p')}")
         print(f"  End: {self.end_time.strftime('%I:%M:%S %p')}")
         print(f"  Total Duration: {duration:.1f} seconds ({duration/60:.1f} minutes)")
         
-        print(f"\n📈 PROCESSING METRICS:")
+        print("\n📈 PROCESSING METRICS:")
         print(f"  Attempted: {self.batch_size}")
         print(f"  Successful: {self.processed_count}")
         print(f"  Failed: {self.failed_count}")
@@ -290,14 +289,14 @@ Return ONLY the JSON, no additional text."""
         
         if self.processing_times:
             avg_time = sum(self.processing_times) / len(self.processing_times)
-            print(f"\n⚡ PERFORMANCE:")
+            print("\n⚡ PERFORMANCE:")
             print(f"  Avg Time per Candidate: {avg_time:.1f}s")
             print(f"  Processing Rate: {60/avg_time:.1f} candidates/minute")
             print(f"  Estimated for 29,138: {29138*avg_time/3600:.1f} hours")
         
         if self.file_sizes:
             avg_size = sum(self.file_sizes) / len(self.file_sizes)
-            print(f"\n📁 FILE QUALITY:")
+            print("\n📁 FILE QUALITY:")
             print(f"  Avg File Size: {avg_size:,.0f} bytes")
             print(f"  Min File Size: {min(self.file_sizes):,} bytes")
             print(f"  Max File Size: {max(self.file_sizes):,} bytes")
@@ -306,7 +305,7 @@ Return ONLY the JSON, no additional text."""
             good_files = sum(1 for s in self.file_sizes if s > 2000)
             print(f"  Files >2KB (good quality): {good_files}/{len(self.file_sizes)}")
         
-        print(f"\n💻 SYSTEM RESOURCES:")
+        print("\n💻 SYSTEM RESOURCES:")
         print(f"  CPU Usage: {psutil.cpu_percent()}%")
         print(f"  Memory Usage: {psutil.virtual_memory().percent}%")
         

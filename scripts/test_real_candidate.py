@@ -110,7 +110,7 @@ def main():
     models = ["llama3.1:8b", "qwen2.5:7b", "deepseek-r1:8b"]
     test_candidate = candidates[0]
     
-    print(f"Testing with REAL candidate:")
+    print("Testing with REAL candidate:")
     print(f"  Name: {test_candidate[1]}")
     print(f"  Role: {test_candidate[2]}")
     print(f"  Company: {test_candidate[3]}")

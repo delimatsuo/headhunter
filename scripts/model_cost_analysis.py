@@ -54,12 +54,12 @@ def analyze_together_ai_models():
     tokens_per_contextual_analysis = 2500  # Stage 2: New contextual intelligence
     candidates_per_month = 20000
     
-    print(f"\n💼 BUSINESS ASSUMPTIONS:")
+    print("\n💼 BUSINESS ASSUMPTIONS:")
     print(f"   - Candidates per month: {candidates_per_month:,}")
     print(f"   - Tokens per basic enhancement: {tokens_per_basic_enhancement:,}")
     print(f"   - Tokens per contextual analysis: {tokens_per_contextual_analysis:,}")
     
-    print(f"\n📊 MODEL ANALYSIS:")
+    print("\n📊 MODEL ANALYSIS:")
     print("-" * 70)
     
     for model in models:
@@ -91,7 +91,7 @@ def analyze_together_ai_models():
         
         print(f"   🎯 Best for: {model['best_for']}")
     
-    print(f"\n🏗️ RECOMMENDED ARCHITECTURE:")
+    print("\n🏗️ RECOMMENDED ARCHITECTURE:")
     print("-" * 40)
     print("📍 STAGE 1 - Basic Enhancement:")
     print("   Model: Llama 3.2 3B Instruct Turbo ($0.20/1M)")
@@ -114,14 +114,14 @@ def analyze_together_ai_models():
     print(f"   - Total: ${total_cost:.2f}/month")
     print(f"   - Per candidate: ${total_cost/20000:.4f}")
     
-    print(f"\n🎯 WHY QWEN2.5 CODER 32B FOR CONTEXTUAL INTELLIGENCE:")
+    print("\n🎯 WHY QWEN2.5 CODER 32B FOR CONTEXTUAL INTELLIGENCE:")
     print("   ✅ Specialized for technical/coding contexts")
     print("   ✅ 32B parameters = sophisticated reasoning")
     print("   ✅ 4x current cost = significant quality improvement")
     print("   ✅ Still affordable for 20k candidates/month")
     print("   ✅ Perfect for company/industry pattern recognition")
     
-    print(f"\n💡 ALTERNATIVE CONFIGURATIONS:")
+    print("\n💡 ALTERNATIVE CONFIGURATIONS:")
     print("   🥉 Budget: Keep 3B for both stages ($24/month)")
     print("   🥈 Balanced: 3B + Qwen2.5 32B ($52/month) ← RECOMMENDED")
     print("   🥇 Premium: 3B + Llama 70B ($56/month)")

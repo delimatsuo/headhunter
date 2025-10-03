@@ -23,7 +23,7 @@ import random
 import string
 import dataclasses
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import List
 
 from google.cloud import pubsub_v1
 from google.cloud import firestore

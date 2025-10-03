@@ -7,11 +7,9 @@ Comprehensive testing for the webhook integration system
 import asyncio
 import json
 import logging
-import time
 from datetime import datetime
 from typing import Dict, Any
 import httpx
-import pytest
 import uuid
 
 # Import local modules
@@ -23,8 +21,7 @@ sys.path.append(str(REPO_ROOT / 'scripts'))
 sys.path.append(str(REPO_ROOT / 'config'))
 
 from webhook_config import get_development_config, WebhookIntegrationConfig
-from cloud_integration import CloudAPIClient, CloudIntegrationManager, CloudIntegrationContext
-from webhook_server import WebhookServer, CandidateData, WebhookRequest
+from cloud_integration import CloudIntegrationContext
 
 
 class WebhookTester:
@@ -389,8 +386,8 @@ class WebhookTester:
         
         overall_status = 'success' if success_count == total_tests else 'partial' if success_count > 0 else 'failed'
         
-        print(f"\n" + "=" * 50)
-        print(f"Test Summary:")
+        print("\n" + "=" * 50)
+        print("Test Summary:")
         print(f"  Total Tests: {total_tests}")
         print(f"  Passed: {success_count}")
         print(f"  Failed: {total_tests - success_count}")
@@ -418,7 +415,7 @@ async def main():
     config.server.port = 8080
     config.processing.log_level = "INFO"
     
-    print(f"Test Configuration:")
+    print("Test Configuration:")
     print(f"  Server: {config.server.host}:{config.server.port}")
     print(f"  Ollama: {config.ollama.model}")
     print(f"  Environment: {config.environment.value}")

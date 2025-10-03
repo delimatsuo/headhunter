@@ -8,7 +8,7 @@ import json
 import subprocess
 import time
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Dict, Optional, List
 from datetime import datetime, timedelta, time as datetime_time
 import re
 import sys
@@ -16,8 +16,6 @@ import signal
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import psutil
-from queue import Queue
-import os
 
 class NightTurboProcessor:
     def __init__(self):
@@ -51,10 +49,10 @@ class NightTurboProcessor:
         self.current_mode = "DAY" if not self.is_night_time() else "NIGHT"
         self.current_threads = self.day_threads if self.current_mode == "DAY" else self.night_threads
         
-        print(f"🌙 NIGHT TURBO PROCESSOR")
-        print(f"=" * 60)
-        print(f"🕐 Night Hours: 8:00 PM - 7:00 AM (Max Performance)")
-        print(f"☀️ Day Hours: 7:00 AM - 8:00 PM (Background Mode)")
+        print("🌙 NIGHT TURBO PROCESSOR")
+        print("=" * 60)
+        print("🕐 Night Hours: 8:00 PM - 7:00 AM (Max Performance)")
+        print("☀️ Day Hours: 7:00 AM - 8:00 PM (Background Mode)")
         print(f"📊 Current Mode: {self.current_mode}")
         print(f"⚡ Active Threads: {self.current_threads}")
         print(f"🔄 Starting from index: {self.last_processed_index}")
@@ -401,7 +399,7 @@ Return ONLY the JSON, no additional text."""
         
         batch_time = time.time() - batch_start
         
-        print(f"\n✅ Batch complete!")
+        print("\n✅ Batch complete!")
         print(f"  Time: {batch_time/60:.1f} minutes")
         print(f"  Processed: {batch_processed} | Failed: {batch_failed}")
         print(f"  Rate: {batch_processed/(batch_time/60):.1f} candidates/minute")
@@ -440,7 +438,7 @@ Return ONLY the JSON, no additional text."""
             self.save_progress(current_index)
             
             # Statistics
-            print(f"\n📊 OVERALL PROGRESS:")
+            print("\n📊 OVERALL PROGRESS:")
             print(f"  Completed: {current_index}/{total_candidates} ({100*current_index/total_candidates:.1f}%)")
             print(f"  Session Total: {self.total_processed} processed, {self.total_failed} failed")
             
@@ -465,17 +463,17 @@ Return ONLY the JSON, no additional text."""
             
             # Short pause between batches
             if current_index < total_candidates:
-                print(f"\n⏸️ Pausing 3 seconds before next batch...")
+                print("\n⏸️ Pausing 3 seconds before next batch...")
                 time.sleep(3)
         
-        print(f"\n🎉 ALL PROCESSING COMPLETE!")
+        print("\n🎉 ALL PROCESSING COMPLETE!")
         print(f"Total time: {datetime.now() - self.session_start}")
         print(f"Total processed: {self.total_processed}")
         print(f"Total failed: {self.total_failed}")
     
     def graceful_shutdown(self, signum, frame):
         """Handle shutdown gracefully"""
-        print(f"\n🛑 Graceful shutdown...")
+        print("\n🛑 Graceful shutdown...")
         print(f"📊 Session stats: {self.total_processed} processed, {self.total_failed} failed")
         if hasattr(self, 'current_index'):
             self.save_progress(self.current_index)

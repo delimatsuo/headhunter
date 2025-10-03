@@ -121,14 +121,14 @@ def generate_test_candidates(num_candidates: int = 50) -> List[Dict[str, Any]]:
 
 async def run_batch_test(num_candidates: int = 50) -> Dict[str, Any]:
     """Run the actual 50-candidate batch test"""
-    print(f"🚀 Starting REAL 50-Candidate Batch Test with Together AI")
+    print("🚀 Starting REAL 50-Candidate Batch Test with Together AI")
     print("=" * 60)
     
     # Set up configuration
     os.environ['GOOGLE_CLOUD_PROJECT'] = 'headhunter-ai-0088'
     config = Config()
     
-    print(f"✅ Configuration loaded:")
+    print("✅ Configuration loaded:")
     print(f"   - Model: {config.together_ai_model}")
     print(f"   - API Key: {'*' * 60}{config.together_ai_api_key[-4:]}")
     print(f"   - Base URL: {config.together_ai_base_url}")
@@ -138,7 +138,7 @@ async def run_batch_test(num_candidates: int = 50) -> Dict[str, Any]:
     print(f"✅ Generated {len(candidates)} test candidates")
     
     # Process candidates
-    print(f"🔄 Processing candidates...")
+    print("🔄 Processing candidates...")
     start_time = time.time()
     
     results = []

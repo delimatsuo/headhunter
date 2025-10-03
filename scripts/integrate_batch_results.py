@@ -71,12 +71,12 @@ def integrate_batch_results():
     processed_count = sum(1 for c in updated_candidates if c.get('enhanced_analysis'))
     with_analysis = sum(1 for c in updated_candidates if c.get('enhanced_analysis', {}).get('analysis'))
     
-    print(f"\nUpdated dataset statistics:")
+    print("\nUpdated dataset statistics:")
     print(f"  Total candidates: {len(updated_candidates):,}")
     print(f"  With LLM processing: {processed_count:,}")
     print(f"  With analysis data: {with_analysis:,}")
     
-    print(f"\n✅ Integration complete!")
+    print("\n✅ Integration complete!")
     print(f"Updated dataset saved to: {MERGED_FILE}")
     print("=" * 80)
 

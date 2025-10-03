@@ -6,13 +6,11 @@ Includes timing, throughput, cost analysis, and quality metrics
 """
 
 import asyncio
-import csv
 import json
 import time
 import logging
 import statistics
 from datetime import datetime
-from pathlib import Path
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 import random
@@ -112,8 +110,8 @@ class PerformanceTestSuite:
             recruiter_comments = [
                 f"Excellent technical depth in {random.choice(candidate_skills)}",
                 f"Strong leadership experience at {company}",
-                f"Great cultural fit for fast-paced environments",
-                f"Proven track record of delivering complex projects"
+                "Great cultural fit for fast-paced environments",
+                "Proven track record of delivering complex projects"
             ]
             
             candidate = {

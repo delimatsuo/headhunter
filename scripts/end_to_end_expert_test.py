@@ -7,9 +7,6 @@ Process 10 actual candidates with expert-optimized prompts and upload to Firebas
 import json
 import asyncio
 import time
-from typing import Dict, List, Any, Optional
-import firebase_admin
-from firebase_admin import credentials, firestore
 import logging
 from enhanced_together_ai_processor import EnhancedTogetherAIProcessor
 
@@ -66,7 +63,7 @@ async def run_end_to_end_test():
             print(f"    🎓 Education: {edu_length} chars") 
             print(f"    💬 Comments: {comments_count} items")
         
-        print(f"\n🚀 Processing with EXPERT PROMPT ENGINEERING...")
+        print("\n🚀 Processing with EXPERT PROMPT ENGINEERING...")
         print("-" * 50)
         
         # Process with enhanced processor using expert prompts
@@ -119,17 +116,17 @@ async def run_end_to_end_test():
                 print(f"⚡ Rate: {len(successful_profiles)/total_time:.1f} candidates/sec")
                 print(f"💰 Estimated cost: ${len(successful_profiles) * 5000 * 0.10 / 1_000_000:.4f}")
                 
-                print(f"\n🔍 VIEW RESULTS:")
-                print(f"   Firebase Console: https://console.firebase.google.com/project/headhunter-ai-0088")
-                print(f"   Collection: enhanced_candidates")
-                print(f"   Search for recent documents with expert analysis")
+                print("\n🔍 VIEW RESULTS:")
+                print("   Firebase Console: https://console.firebase.google.com/project/headhunter-ai-0088")
+                print("   Collection: enhanced_candidates")
+                print("   Search for recent documents with expert analysis")
                 
                 # Show sample analysis
                 if successful_profiles:
                     sample = successful_profiles[0]
                     enhanced = sample.get('enhanced_analysis', {})
                     
-                    print(f"\n📋 SAMPLE ENHANCED PROFILE:")
+                    print("\n📋 SAMPLE ENHANCED PROFILE:")
                     print(f"   👤 Name: {sample.get('name', 'N/A')}")
                     print(f"   🔧 Processor: {sample.get('processing_metadata', {}).get('processor', 'N/A')}")
                     print(f"   📊 Analysis Fields: {len(enhanced)} top-level sections")
@@ -145,10 +142,10 @@ async def run_end_to_end_test():
                     print(f"   ⭐ Overall Rating: {summary.get('overall_rating', 'N/A')}/100")
                     print(f"   📝 Pitch: {summary.get('one_line_pitch', 'N/A')[:60]}...")
                 
-                print(f"\n✅ Expert prompt engineering framework validated!")
-                print(f"   All profiles generated with systematic optimization")
-                print(f"   Anti-hallucination protection active")
-                print(f"   JSON schema enforcement successful")
+                print("\n✅ Expert prompt engineering framework validated!")
+                print("   All profiles generated with systematic optimization")
+                print("   Anti-hallucination protection active")
+                print("   JSON schema enforcement successful")
                 
             else:
                 print("\n❌ No successful profiles generated")

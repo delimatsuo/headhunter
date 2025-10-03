@@ -21,7 +21,7 @@ class EnhancedFullProcessor:
         
     def load_nas_data(self):
         """Load the NAS database"""
-        print(f"📂 Loading NAS database...")
+        print("📂 Loading NAS database...")
         with open(self.nas_file, 'r') as f:
             return json.load(f)
     
@@ -32,7 +32,7 @@ class EnhancedFullProcessor:
         with open(backup_file, 'w') as f:
             json.dump(data, f, indent=2)
         
-        print(f"💾 Updating NAS database...")
+        print("💾 Updating NAS database...")
         with open(self.nas_file, 'w') as f:
             json.dump(data, f, indent=2)
     
@@ -183,7 +183,7 @@ IMPORTANT: Base your analysis on the ACTUAL DATA provided above, not generic ass
                 if analysis.get('career_trajectory', {}).get('years_experience') is not None:
                     return analysis
                 else:
-                    print(f"    ⚠️ Incomplete analysis, retrying...")
+                    print("    ⚠️ Incomplete analysis, retrying...")
                     if retry_count < self.max_retries:
                         time.sleep(2)
                         return self.process_with_ollama(prompt, retry_count + 1)
@@ -192,7 +192,7 @@ IMPORTANT: Base your analysis on the ACTUAL DATA provided above, not generic ass
             return None
             
         except subprocess.TimeoutExpired:
-            print(f"    ⏱️ Timeout, retrying...")
+            print("    ⏱️ Timeout, retrying...")
             if retry_count < self.max_retries:
                 time.sleep(2)
                 return self.process_with_ollama(prompt, retry_count + 1)
@@ -279,7 +279,7 @@ IMPORTANT: Base your analysis on the ACTUAL DATA provided above, not generic ass
                 prompt = self.create_comprehensive_prompt(candidate)
                 
                 # Process with Ollama
-                print(f"      🤖 Analyzing...", end="")
+                print("      🤖 Analyzing...", end="")
                 analysis = self.process_with_ollama(prompt)
                 
                 if analysis:
@@ -326,7 +326,7 @@ IMPORTANT: Base your analysis on the ACTUAL DATA provided above, not generic ass
             if batch_processed > 0:
                 self.save_nas_data(candidates)
                 print(f"\n  ✓ Batch complete: {batch_processed} processed, {batch_failed} failed")
-                print(f"  💾 Database updated")
+                print("  💾 Database updated")
             
             # Remove processed candidates
             needs_processing = needs_processing[len(batch):]

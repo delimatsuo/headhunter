@@ -237,8 +237,8 @@ async def process_enhanced_candidate(config, db, candidate_data):
             
             enhanced_analysis = json.loads(clean_response)
             
-        except json.JSONDecodeError as e:
-            print(f"❌ JSON error")
+        except json.JSONDecodeError:
+            print("❌ JSON error")
             return None
         
         # Create enhanced candidate document (original structure)
@@ -506,7 +506,7 @@ async def main():
     print(f"   - Company tiers: {len(set(c['tier'] for c in candidates))}")
     print(f"   - Experience range: {min(c['experience'] for c in candidates)}-{max(c['experience'] for c in candidates)} years")
     
-    print(f"\\n🔄 Processing candidates with enhanced recruiter analysis:")
+    print("\\n🔄 Processing candidates with enhanced recruiter analysis:")
     
     # Process candidates
     start_time = time.time()
@@ -535,13 +535,13 @@ async def main():
         
         # Small delay between batches
         if batch_end < len(candidates):
-            print(f"   ⏸️ Cooling down for 2 seconds...")
+            print("   ⏸️ Cooling down for 2 seconds...")
             await asyncio.sleep(2)
     
     total_time = time.time() - start_time
     
     # Analyze results
-    print(f"\\n" + "=" * 70)
+    print("\\n" + "=" * 70)
     print("📊 ENHANCED BATCH TEST RESULTS")
     print("=" * 70)
     
@@ -557,18 +557,18 @@ async def main():
     print(f"💰 Cost per candidate: ${quality_analysis['total_cost']/len(candidates):.4f}")
     
     # Section coverage analysis
-    print(f"\\n📋 SECTION COVERAGE:")
+    print("\\n📋 SECTION COVERAGE:")
     for section, count in quality_analysis['section_coverage'].items():
         coverage = (count / quality_analysis['with_enhanced_analysis']) * 100 if quality_analysis['with_enhanced_analysis'] > 0 else 0
         print(f"   - {section}: {coverage:.1f}% ({count}/{quality_analysis['with_enhanced_analysis']})")
     
     # Rating distribution
-    print(f"\\n🏆 RATING DISTRIBUTION:")
+    print("\\n🏆 RATING DISTRIBUTION:")
     for rating, count in quality_analysis['rating_distribution'].items():
         print(f"   - {rating}: {count} candidates")
     
     # Performance tiers
-    print(f"\\n📈 PERFORMANCE TIERS:")
+    print("\\n📈 PERFORMANCE TIERS:")
     for tier, count in quality_analysis['performance_tiers'].items():
         print(f"   - {tier}: {count} candidates")
     
@@ -576,7 +576,7 @@ async def main():
     if successful_profiles:
         sample = successful_profiles[0]
         enhanced = sample.get('enhanced_analysis', {})
-        print(f"\\n🔍 SAMPLE PROFILE ANALYSIS:")
+        print("\\n🔍 SAMPLE PROFILE ANALYSIS:")
         print(f"   - Name: {sample.get('name')}")
         print(f"   - Current Level: {enhanced.get('career_trajectory_analysis', {}).get('current_level')}")
         print(f"   - Performance Tier: {enhanced.get('performance_indicators', {}).get('estimated_performance_tier')}")
@@ -586,17 +586,17 @@ async def main():
     
     # Final assessment
     if success_rate >= 85 and quality_analysis['with_enhanced_analysis'] >= len(successful_profiles) * 0.9:
-        print(f"\\n🎉 BATCH TEST PASSED!")
+        print("\\n🎉 BATCH TEST PASSED!")
         print(f"✅ High success rate: {success_rate:.1f}%")
-        print(f"✅ Excellent enhanced analysis coverage")
-        print(f"✅ Ready for production processing")
+        print("✅ Excellent enhanced analysis coverage")
+        print("✅ Ready for production processing")
         print(f"✅ Cost-effective: ${quality_analysis['total_cost']/len(candidates):.4f} per candidate")
         
         return 0
     else:
-        print(f"\\n❌ BATCH TEST NEEDS IMPROVEMENT")
+        print("\\n❌ BATCH TEST NEEDS IMPROVEMENT")
         print(f"⚠️ Success rate: {success_rate:.1f}% (target: 85%+)")
-        print(f"⚠️ Enhanced analysis coverage may need improvement")
+        print("⚠️ Enhanced analysis coverage may need improvement")
         
         return 1
 

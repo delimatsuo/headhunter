@@ -4,10 +4,7 @@ Setup Vertex AI Vector Search infrastructure for candidate profile similarity ma
 """
 
 import sys
-import os
 import json
-import time
-from datetime import datetime
 from pathlib import Path
 
 def setup_vector_search():
@@ -78,7 +75,7 @@ def setup_vector_search():
     for i, cmd in enumerate(commands, 1):
         print(f"{i}. {cmd}")
     
-    print(f"\n🔧 Manual Setup Instructions:")
+    print("\n🔧 Manual Setup Instructions:")
     print("-" * 40)
     print("1. Create embeddings storage bucket:")
     print(f"   gsutil mb -p {project_id} -c STANDARD -l {region} gs://{project_id}-embeddings")
@@ -207,7 +204,7 @@ def main():
     # Create sample embeddings
     create_sample_embeddings()
     
-    print(f"\n✅ Vector Search setup configuration complete!")
+    print("\n✅ Vector Search setup configuration complete!")
     print("\n📋 Next Steps:")
     print("1. Run the gcloud commands above to create infrastructure")
     print("2. Implement embeddings generation in Cloud Functions")

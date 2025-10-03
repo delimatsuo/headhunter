@@ -6,8 +6,8 @@ Structured prompts for extracting career insights from resume text using Llama 3
 
 import json
 import subprocess
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, asdict
+from typing import Dict, List, Any
+from dataclasses import dataclass
 from enum import Enum
 
 

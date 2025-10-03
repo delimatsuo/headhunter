@@ -4,7 +4,6 @@ Analysis of orphaned comments in the headhunter dataset
 """
 
 import json
-import csv
 from pathlib import Path
 from collections import defaultdict
 from datetime import datetime
@@ -72,13 +71,13 @@ def analyze_orphaned_comments():
                     pass
     
     if normal_dates:
-        print(f"Normal candidate comments:")
+        print("Normal candidate comments:")
         print(f"  Earliest: {min(normal_dates).strftime('%Y-%m-%d')}")
         print(f"  Latest: {max(normal_dates).strftime('%Y-%m-%d')}")
         print(f"  Total: {len(normal_dates):,}")
     
     if orphaned_dates:
-        print(f"\nOrphaned candidate comments:")
+        print("\nOrphaned candidate comments:")
         print(f"  Earliest: {min(orphaned_dates).strftime('%Y-%m-%d')}")
         print(f"  Latest: {max(orphaned_dates).strftime('%Y-%m-%d')}")
         print(f"  Total: {len(orphaned_dates):,}")
@@ -92,7 +91,7 @@ def analyze_orphaned_comments():
     for date_obj in normal_dates:
         normal_by_year[date_obj.year] += 1
     
-    print(f"\nYearly breakdown:")
+    print("\nYearly breakdown:")
     all_years = sorted(set(list(orphaned_by_year.keys()) + list(normal_by_year.keys())))
     for year in all_years:
         orphaned_count = orphaned_by_year[year]
@@ -167,26 +166,26 @@ def analyze_orphaned_comments():
         gap_start = orphaned_latest.strftime('%Y-%m-%d')
         gap_end = normal_earliest.strftime('%Y-%m-%d')
         
-        print(f"1. DATA MIGRATION DETECTED:")
+        print("1. DATA MIGRATION DETECTED:")
         print(f"   - Orphaned comments end: {gap_start}")
         print(f"   - Normal comments start: {gap_end}")
-        print(f"   - Gap suggests system migration around March-April 2023")
+        print("   - Gap suggests system migration around March-April 2023")
         
-        print(f"\n2. MISSING HISTORICAL DATA:")
-        print(f"   - candidates_1-1.csv appears corrupted/empty but should contain")
+        print("\n2. MISSING HISTORICAL DATA:")
+        print("   - candidates_1-1.csv appears corrupted/empty but should contain")
         print(f"     historical candidates from {min(orphaned_dates).strftime('%Y-%m-%d')} to {gap_start}")
         print(f"   - {len(orphaned):,} candidate records are missing")
         print(f"   - {orphaned_comment_count:,} comments are orphaned")
         
-        print(f"\n3. CURRENT DATA INTEGRITY:")
-        print(f"   - candidates_2-1.csv and candidates_3-1.csv contain current data")
+        print("\n3. CURRENT DATA INTEGRITY:")
+        print("   - candidates_2-1.csv and candidates_3-1.csv contain current data")
         print(f"   - Comments from {gap_end} onwards are properly linked")
         print(f"   - {len(normal):,} candidates with {len(normal_dates):,} comments are intact")
     
-    print(f"\n4. RECOMMENDATION:")
-    print(f"   - Request historical candidate data export for 2021-2023 period")
-    print(f"   - Or mark orphaned comments as 'historical' and exclude from processing")
-    print(f"   - Current dataset is complete for 2023+ candidates")
+    print("\n4. RECOMMENDATION:")
+    print("   - Request historical candidate data export for 2021-2023 period")
+    print("   - Or mark orphaned comments as 'historical' and exclude from processing")
+    print("   - Current dataset is complete for 2023+ candidates")
 
 if __name__ == "__main__":
     analyze_orphaned_comments()

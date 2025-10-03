@@ -12,7 +12,6 @@ Checks:
 
 import argparse
 import json
-import statistics
 import time
 from typing import List, Dict, Any, Optional
 

@@ -23,14 +23,13 @@ The script supports a dry-run mode by default to operate without cloud credentia
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import sys
 import time
 from dataclasses import dataclass, asdict
 from typing import Any, Dict, List, Optional, Tuple
 
-from scripts.utils.reporting import _log as _base_log, ensure_reports_dir, save_json_report
+from scripts.utils.reporting import _log as _base_log, save_json_report
 
 NAME = "setup_cloud_monitoring_dashboards"
 

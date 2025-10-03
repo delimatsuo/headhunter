@@ -22,14 +22,13 @@ Features:
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import subprocess
 import sys
 import time
 from typing import Any, Dict, List, Optional
 
-from scripts.utils.reporting import _log as _base_log, ensure_reports_dir, save_json_report
+from scripts.utils.reporting import _log as _base_log, save_json_report
 
 NAME = "cicd_automation_pipeline"
 

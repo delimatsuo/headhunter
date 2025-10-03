@@ -6,10 +6,10 @@ stats with confidence scores, plus optional SQL upserts.
 """
 import json
 import os
-from collections import Counter, defaultdict
+from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime
-from typing import DefaultDict, Dict, Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List
 
 try:
     from scripts.eco_title_normalizer import normalize_title_ptbr  # type: ignore

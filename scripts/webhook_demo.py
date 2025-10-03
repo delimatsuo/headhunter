@@ -15,7 +15,7 @@ sys.path.append(str(Path(__file__).parent))
 sys.path.append(str(Path(__file__).parent.parent / 'config'))
 
 from webhook_config import get_development_config
-from cloud_integration import CloudIntegrationManager, CloudIntegrationContext
+from cloud_integration import CloudIntegrationContext
 
 
 def create_example_candidate():
@@ -90,14 +90,14 @@ async def demonstrate_webhook_system():
     
     # Load configuration
     config = get_development_config()
-    print(f"📋 Configuration loaded:")
+    print("📋 Configuration loaded:")
     print(f"   Environment: {config.environment.value}")
     print(f"   Ollama Model: {config.ollama.model}")
     print(f"   Server: {config.server.host}:{config.server.port}")
     print(f"   Worker Count: {config.queue.worker_count}")
     
     # Test cloud integration
-    print(f"\n🌐 Testing cloud integration...")
+    print("\n🌐 Testing cloud integration...")
     async with CloudIntegrationContext(config) as integration:
         try:
             # Test connectivity
@@ -115,7 +115,7 @@ async def demonstrate_webhook_system():
             print(f"   ⚠️ Cloud integration test failed: {e}")
     
     # Create example candidate
-    print(f"\n👤 Example candidate profile:")
+    print("\n👤 Example candidate profile:")
     candidate = create_example_candidate()
     print(f"   ID: {candidate['candidate_id']}")
     print(f"   Name: {candidate['name']}")
@@ -125,7 +125,7 @@ async def demonstrate_webhook_system():
     print(f"   Comments Length: {len(candidate['recruiter_comments'])} chars")
     
     # Demonstrate webhook request format
-    print(f"\n📡 Example webhook request:")
+    print("\n📡 Example webhook request:")
     webhook_request = {
         "request_id": f"demo_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
         "action": "process_candidate",
@@ -138,28 +138,28 @@ async def demonstrate_webhook_system():
     print(json.dumps(webhook_request, indent=2))
     
     # Show expected endpoints
-    print(f"\n🔗 System endpoints:")
+    print("\n🔗 System endpoints:")
     local_endpoints = config.get_local_endpoints()
     for name, url in local_endpoints.items():
         print(f"   {name}: {url}")
     
-    print(f"\n🌩️ Cloud endpoints:")
+    print("\n🌩️ Cloud endpoints:")
     cloud_endpoints = config.get_cloud_endpoints()
     for name, url in cloud_endpoints.items():
         print(f"   {name}: {url}")
     
     # Show processing pipeline
-    print(f"\n⚙️ Processing pipeline:")
-    print(f"   1. Receive webhook → Local server queue")
-    print(f"   2. Extract text → resume_extractor.py")
-    print(f"   3. Analyze resume → llm_prompts.py + Ollama")
-    print(f"   4. Analyze comments → recruiter_prompts.py + Ollama") 
-    print(f"   5. Validate results → quality_validator.py")
-    print(f"   6. Send to cloud → Cloud Functions")
-    print(f"   7. Store results → Firestore")
+    print("\n⚙️ Processing pipeline:")
+    print("   1. Receive webhook → Local server queue")
+    print("   2. Extract text → resume_extractor.py")
+    print("   3. Analyze resume → llm_prompts.py + Ollama")
+    print("   4. Analyze comments → recruiter_prompts.py + Ollama") 
+    print("   5. Validate results → quality_validator.py")
+    print("   6. Send to cloud → Cloud Functions")
+    print("   7. Store results → Firestore")
     
     # Show example result structure
-    print(f"\n📊 Example processing result:")
+    print("\n📊 Example processing result:")
     example_result = {
         "candidate_id": candidate["candidate_id"],
         "name": candidate["name"],
@@ -190,12 +190,12 @@ async def demonstrate_webhook_system():
     
     print(json.dumps(example_result, indent=2))
     
-    print(f"\n✅ Demo completed successfully!")
-    print(f"\nNext steps:")
-    print(f"1. Start webhook server: ./scripts/start_webhook_server.sh start")
-    print(f"2. Run tests: ./scripts/start_webhook_server.sh test")
-    print(f"3. Deploy Cloud Functions with webhook endpoints")
-    print(f"4. Configure Firebase to send webhooks to local server")
+    print("\n✅ Demo completed successfully!")
+    print("\nNext steps:")
+    print("1. Start webhook server: ./scripts/start_webhook_server.sh start")
+    print("2. Run tests: ./scripts/start_webhook_server.sh test")
+    print("3. Deploy Cloud Functions with webhook endpoints")
+    print("4. Configure Firebase to send webhooks to local server")
 
 
 def show_quick_start():

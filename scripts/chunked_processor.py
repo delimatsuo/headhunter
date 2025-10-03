@@ -12,7 +12,6 @@ from datetime import datetime
 import re
 import signal
 import sys
-import os
 
 class ChunkedProcessor:
     def __init__(self):
@@ -33,7 +32,7 @@ class ChunkedProcessor:
         self.progress_file = Path("processor_progress.json")
         self.last_processed_index = self.load_progress()
         
-        print(f"🚀 CHUNKED PROCESSOR INITIALIZED")
+        print("🚀 CHUNKED PROCESSOR INITIALIZED")
         print(f"📦 Chunk Size: {self.chunk_size} candidates")
         print(f"🔄 Starting from index: {self.last_processed_index}")
         
@@ -60,7 +59,7 @@ class ChunkedProcessor:
             }, f)
     
     def graceful_shutdown(self, signum, frame):
-        print(f"\n🛑 Graceful shutdown initiated...")
+        print("\n🛑 Graceful shutdown initiated...")
         print(f"📊 Processed: {self.processed_count}, Failed: {self.failed_count}")
         self.save_progress(self.last_processed_index)
         print(f"💾 Progress saved. Will resume from index {self.last_processed_index}")
@@ -147,7 +146,7 @@ class ChunkedProcessor:
                     self.failed_count += 1
             else:
                 self.failed_count += 1
-                print(f"    ❌ Analysis failed")
+                print("    ❌ Analysis failed")
         
         return processed
     
@@ -266,7 +265,7 @@ Provide a JSON analysis with these fields:
         with open(self.nas_file, 'w') as f:
             json.dump(all_candidates, f, indent=2)
         
-        print(f"✅ NAS database updated")
+        print("✅ NAS database updated")
     
     def run(self):
         """Main processing loop"""

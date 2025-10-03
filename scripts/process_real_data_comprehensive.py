@@ -12,12 +12,10 @@ Combines ALL data sources for rich candidate profiles:
 import csv
 import json
 import os
-import sys
 import re
 import logging
 from datetime import datetime
-from typing import Dict, List, Any, Optional, Set
-from pathlib import Path
+from typing import Dict, List, Any
 import glob
 
 # PDF text extraction (optional, will gracefully handle if not available)
@@ -597,7 +595,7 @@ class ComprehensiveDataProcessor:
             self.logger.error("❌ No candidates loaded - cannot proceed")
             return []
         
-        self.logger.info(f"✅ Data loading complete:")
+        self.logger.info("✅ Data loading complete:")
         self.logger.info(f"   • Candidates: {len(candidates)}")
         self.logger.info(f"   • Candidates with comments: {len(comments)}")
         self.logger.info(f"   • Jobs: {len(jobs_data)}")
@@ -629,8 +627,8 @@ class ComprehensiveDataProcessor:
                 self.logger.error(f"❌ Error processing candidate {candidate_id}: {e}")
                 continue
         
-        self.logger.info(f"\n🎉 Comprehensive processing complete!")
-        self.logger.info(f"📊 Processing Statistics:")
+        self.logger.info("\n🎉 Comprehensive processing complete!")
+        self.logger.info("📊 Processing Statistics:")
         for key, value in self.stats.items():
             self.logger.info(f"   • {key.replace('_', ' ').title()}: {value}")
         
@@ -677,7 +675,7 @@ def main():
         print(f"   {output_file}")
         
         # Generate comprehensive statistics
-        print(f"\n📊 Comprehensive Processing Report:")
+        print("\n📊 Comprehensive Processing Report:")
         print("-" * 50)
         
         total_candidates = len(processed_candidates)
@@ -690,7 +688,7 @@ def main():
         avg_completeness = sum(c['processing_metadata']['data_completeness_score'] 
                               for c in processed_candidates) / total_candidates
         
-        print(f"📈 Profile Quality:")
+        print("📈 Profile Quality:")
         print(f"   • Total profiles created: {total_candidates}")
         print(f"   • With technical skills: {with_skills} ({with_skills/total_candidates*100:.1f}%)")
         print(f"   • With leadership experience: {with_leadership} ({with_leadership/total_candidates*100:.1f}%)")
@@ -705,13 +703,13 @@ def main():
             level = candidate['resume_analysis']['career_trajectory']['current_level']
             levels[level] = levels.get(level, 0) + 1
         
-        print(f"\n🎯 Experience Level Distribution:")
+        print("\n🎯 Experience Level Distribution:")
         for level, count in sorted(levels.items(), key=lambda x: x[1], reverse=True):
             print(f"   • {level}: {count} ({count/total_candidates*100:.1f}%)")
         
         # Show sample profile
         if processed_candidates:
-            print(f"\n📋 Sample Enhanced Profile:")
+            print("\n📋 Sample Enhanced Profile:")
             print("-" * 40)
             sample = processed_candidates[0]
             print(f"Name: {sample['name']}")
@@ -722,8 +720,8 @@ def main():
             print(f"Overall Score: {sample['overall_score']:.2f}")
             print(f"Data Completeness: {sample['processing_metadata']['data_completeness_score']:.2f}")
             
-        print(f"\n✅ Comprehensive processing complete!")
-        print(f"🔄 Next steps:")
+        print("\n✅ Comprehensive processing complete!")
+        print("🔄 Next steps:")
         print("1. Upload enhanced profiles to Firestore")  
         print("2. Generate embeddings for rich search")
         print("3. Test advanced search functionality")
@@ -737,7 +735,7 @@ def main():
 if __name__ == "__main__":
     result = main()
     if result:
-        print(f"\n🎯 Success! Enhanced candidate data saved to:")
+        print("\n🎯 Success! Enhanced candidate data saved to:")
         print(f"   {result}")
     else:
         print("\n❌ Processing failed - check logs for details")

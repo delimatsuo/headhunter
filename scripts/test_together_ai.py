@@ -73,7 +73,7 @@ async def test_together_ai():
                         # Usage stats
                         if 'usage' in result:
                             usage = result['usage']
-                            print(f"\n📊 Token Usage:")
+                            print("\n📊 Token Usage:")
                             print(f"   Prompt tokens: {usage.get('prompt_tokens', 0)}")
                             print(f"   Completion tokens: {usage.get('completion_tokens', 0)}")
                             print(f"   Total tokens: {usage.get('total_tokens', 0)}")
@@ -114,7 +114,7 @@ async def main():
         total_tokens = 29000 * avg_tokens_per_candidate
         estimated_cost = (total_tokens / 1_000_000) * 0.10
         
-        print(f"\n💰 Cost Estimate for 29,000 candidates:")
+        print("\n💰 Cost Estimate for 29,000 candidates:")
         print(f"   Average tokens per candidate: {avg_tokens_per_candidate:,}")
         print(f"   Total estimated tokens: {total_tokens:,}")
         print(f"   Estimated cost: ${estimated_cost:.2f}")

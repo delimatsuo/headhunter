@@ -7,10 +7,9 @@ This script migrates existing candidate embeddings from Firestore to Cloud SQL p
 while maintaining data integrity and implementing idempotent operations.
 """
 import asyncio
-import json
 import os
 import logging
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from datetime import datetime, timezone
 import numpy as np
 

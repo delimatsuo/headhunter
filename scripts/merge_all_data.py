@@ -8,7 +8,6 @@ import json
 import csv
 import os
 from pathlib import Path
-from typing import Dict, List, Any
 from datetime import datetime
 import time
 

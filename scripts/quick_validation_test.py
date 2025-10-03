@@ -11,8 +11,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 import subprocess
-import sys
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

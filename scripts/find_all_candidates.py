@@ -7,7 +7,6 @@ import csv
 import json
 import os
 from pathlib import Path
-from typing import Dict, Set
 
 from data_paths import csv_dir, repo_root
 
@@ -148,7 +147,7 @@ def deep_scan_for_ids():
     
     print("\n" + "=" * 80)
     print(f"FINAL COUNT: {len(all_unique_ids):,} unique candidate IDs")
-    print(f"TARGET: 29,176")
+    print("TARGET: 29,176")
     print(f"DIFFERENCE: {29176 - len(all_unique_ids):,}")
     print("=" * 80)
     

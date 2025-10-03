@@ -185,7 +185,7 @@ Respond with valid JSON only:"""
     print(f"Successful: {successful}")
     print(f"Failed: {failed}")
     print(f"Success rate: {successful/len(candidates)*100:.1f}%")
-    print(f"\nTiming Analysis:")
+    print("\nTiming Analysis:")
     print(f"  Total batch time: {total_time:.2f} seconds ({total_time/60:.1f} minutes)")
     print(f"  Average per candidate: {avg_time:.2f} seconds")
     print(f"  Fastest: {min(r['processing_time'] for r in results):.2f}s")
@@ -195,7 +195,7 @@ Respond with valid JSON only:"""
     with_comments = sum(1 for c in candidates if c.get('comments'))
     avg_comments = sum(len(c.get('comments', [])) for c in candidates) / len(candidates)
     
-    print(f"\nData Complexity:")
+    print("\nData Complexity:")
     print(f"  Candidates with comments: {with_comments}/{len(candidates)} ({with_comments/len(candidates)*100:.1f}%)")
     print(f"  Average comments per candidate: {avg_comments:.1f}")
     
@@ -213,11 +213,11 @@ Respond with valid JSON only:"""
     print(f"  Running 8hr/day: {estimated_days_8hr:.1f} work days")
     
     # Resource usage estimates
-    print(f"\n💻 RESOURCE REQUIREMENTS:")
-    print(f"  CPU usage: High (Ollama is CPU-intensive)")
-    print(f"  Memory: 8-12 GB (for Llama 3.1:8b)")
-    print(f"  Disk space: ~5-10 GB for output JSON files")
-    print(f"  Network: None (all local processing)")
+    print("\n💻 RESOURCE REQUIREMENTS:")
+    print("  CPU usage: High (Ollama is CPU-intensive)")
+    print("  Memory: 8-12 GB (for Llama 3.1:8b)")
+    print("  Disk space: ~5-10 GB for output JSON files")
+    print("  Network: None (all local processing)")
     
     print(f"\n💾 Results saved to: {output_file}")
     print(f"File size: {output_file.stat().st_size / (1024*1024):.1f} MB")

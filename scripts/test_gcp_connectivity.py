@@ -236,7 +236,7 @@ def main():
     
     if passed == total:
         print("\n🎉 All tests passed! Infrastructure is ready.")
-        print(f"\nEnvironment variables for local development:")
+        print("\nEnvironment variables for local development:")
         print(f"export GOOGLE_APPLICATION_CREDENTIALS='{os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')}'")
         print(f"export GOOGLE_CLOUD_PROJECT='{project_id}'")
         return True

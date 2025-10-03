@@ -5,11 +5,9 @@ Upload processed candidates to Production Firestore
 
 import json
 import os
-import sys
 from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, firestore
-import time
 
 def upload_to_production_firestore():
     """Upload processed candidates to production Firestore"""
@@ -29,7 +27,7 @@ def upload_to_production_firestore():
         candidates_file = 'comprehensive_candidates_processed.json'
     
     if not os.path.exists(candidates_file):
-        print(f"❌ No processed candidates file found")
+        print("❌ No processed candidates file found")
         return False
     
     print(f"📂 Loading candidates from: {candidates_file}")

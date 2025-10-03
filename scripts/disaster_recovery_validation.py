@@ -21,14 +21,13 @@ Validates:
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import random
 import time
 from dataclasses import dataclass, asdict
 from typing import Any, Dict, List, Optional
 
-from scripts.utils.reporting import _log as _base_log, ensure_reports_dir, save_json_report
+from scripts.utils.reporting import _log as _base_log, save_json_report
 
 NAME = "disaster_recovery_validation"
 

@@ -6,7 +6,6 @@ This simulates the data processing pipeline output
 
 import json
 import os
-import sys
 from datetime import datetime
 
 def create_sample_candidates():

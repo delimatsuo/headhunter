@@ -4,9 +4,7 @@ Upload processed candidates to Firestore
 """
 
 import json
-import os
 import sys
-from datetime import datetime
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -100,7 +98,7 @@ class FirestoreUploader:
                 failed_uploads += 1
                 print(f"❌ Error processing candidate {i+1}: {e}")
         
-        print(f"\n📊 Upload Results:")
+        print("\n📊 Upload Results:")
         print(f"   Successful uploads: {successful_uploads}")
         print(f"   Failed uploads: {failed_uploads}")
         print(f"   Total candidates: {len(candidates)}")

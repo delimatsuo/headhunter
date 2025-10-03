@@ -26,7 +26,6 @@ from __future__ import annotations
 
 import argparse
 import importlib
-import json
 import os
 import random
 import sys
@@ -35,7 +34,7 @@ import time
 from dataclasses import dataclass, asdict
 from typing import Any, Dict, List, Optional
 
-from scripts.utils.reporting import _log as _base_log, ensure_reports_dir, save_json_report
+from scripts.utils.reporting import _log as _base_log, save_json_report
 
 NAME = "comprehensive_integration_test_suite"
 
@@ -90,7 +89,8 @@ def try_run_module(module_name: str, function_name: Optional[str] = None, args: 
         if callable(fn):
             try:
                 # Support async callables transparently
-                import inspect, asyncio
+                import inspect
+                import asyncio
                 if inspect.iscoroutinefunction(fn):
                     out = asyncio.run(fn(**(args or {})))
                 else:

@@ -10,7 +10,7 @@ import argparse
 import json
 import time
 from collections import deque
-from typing import Deque, Dict, Any, Optional
+from typing import Deque, Optional
 
 import requests
 

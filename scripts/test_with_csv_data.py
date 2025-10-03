@@ -104,7 +104,7 @@ def main():
     # Use first candidate for testing
     test_candidate = candidates[0]
     
-    print(f"Testing with ACTUAL candidate from database:")
+    print("Testing with ACTUAL candidate from database:")
     print(f"  Name: {test_candidate['name']}")
     print(f"  Headline: {test_candidate['headline'][:100] if test_candidate['headline'] else 'Not specified'}...")
     print()

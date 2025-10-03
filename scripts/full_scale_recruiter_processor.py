@@ -32,7 +32,7 @@ class FullScaleRecruiterProcessor:
         signal.signal(signal.SIGTERM, self.graceful_shutdown)
         
     def graceful_shutdown(self, signum, frame):
-        print(f"\n🛑 Graceful shutdown initiated...")
+        print("\n🛑 Graceful shutdown initiated...")
         print(f"📊 Processed: {self.processed_count}, Failed: {self.failed_count}")
         elapsed = (datetime.now() - self.start_time).total_seconds()
         print(f"⏱️ Runtime: {elapsed/60:.1f} minutes")
@@ -66,7 +66,7 @@ class FullScaleRecruiterProcessor:
     
     def load_nas_data(self):
         """Load the NAS database"""
-        print(f"📂 Loading NAS database...")
+        print("📂 Loading NAS database...")
         with open(self.nas_file, 'r') as f:
             return json.load(f)
     
@@ -77,7 +77,7 @@ class FullScaleRecruiterProcessor:
         with open(backup_file, 'w') as f:
             json.dump(data, f, indent=2)
         
-        print(f"💾 Updating NAS database...")
+        print("💾 Updating NAS database...")
         with open(self.nas_file, 'w') as f:
             json.dump(data, f, indent=2)
     
@@ -489,7 +489,7 @@ IMPORTANT: Base analysis on ACTUAL data provided. Return ONLY valid JSON."""
             if batch_processed > 0:
                 self.save_nas_data(candidates)
                 print(f"  ✓ Batch {batch_num}: {batch_processed} processed, {batch_failed} failed")
-                print(f"  💾 Database updated")
+                print("  💾 Database updated")
             
             # Remove processed candidates
             candidates_to_process = candidates_to_process[len(batch):]
@@ -511,7 +511,7 @@ IMPORTANT: Base analysis on ACTUAL data provided. Return ONLY valid JSON."""
             
             # Brief pause between batches
             if candidates_to_process:
-                print(f"  ⏸️ Brief pause before next batch...")
+                print("  ⏸️ Brief pause before next batch...")
                 time.sleep(3)
         
         # Final report
@@ -527,7 +527,7 @@ IMPORTANT: Base analysis on ACTUAL data provided. Return ONLY valid JSON."""
         print(f"⏱️ Total time: {elapsed/3600:.1f} hours")
         if self.processed_count > 0:
             print(f"📈 Average time per candidate: {elapsed/self.processed_count:.1f} seconds")
-        print(f"💾 All results saved to NAS")
+        print("💾 All results saved to NAS")
 
 def main():
     try:

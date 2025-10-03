@@ -5,21 +5,19 @@ Tests the complete headhunter pipeline with 50 candidates and model bake-offs
 """
 
 import asyncio
-import csv
 import json
 import time
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 import statistics
 import pandas as pd
 
 # Import our modules
-from embedding_service import EmbeddingService, EmbeddingResult
+from embedding_service import EmbeddingService
 from llm_processor import LLMProcessor
 from together_ai_processor import TogetherAIProcessor
-from firebase_streaming_processor import FirebaseStreamingProcessor
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -165,7 +163,7 @@ class WorkflowValidator:
         results["average_quality_score"] = statistics.mean(results["enrichment_quality_scores"]) if results["enrichment_quality_scores"] else 0
         results["throughput_per_minute"] = results["successful_enrichments"] / (total_time / 60)
         
-        logger.info(f"=== WORKFLOW TEST COMPLETE ===")
+        logger.info("=== WORKFLOW TEST COMPLETE ===")
         logger.info(f"Success Rate: {results['success_rate']:.1f}%")
         logger.info(f"Average Processing Time: {results['average_processing_time']:.2f}s")
         logger.info(f"Throughput: {results['throughput_per_minute']:.1f} candidates/minute")

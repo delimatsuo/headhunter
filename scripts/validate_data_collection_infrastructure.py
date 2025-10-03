@@ -44,7 +44,6 @@ def main() -> int:
     ok = True
     try:
         from scripts.eco_scraper import pipelines  # type: ignore
-        from scripts.eco_scraper import settings as _settings  # type: ignore
         checks.append({"name": "import_scrapy_modules", "ok": True})
     except Exception as e:
         checks.append({"name": "import_scrapy_modules", "ok": False, "error": str(e)})

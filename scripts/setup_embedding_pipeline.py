@@ -21,7 +21,7 @@ import signal
 import sys
 import time
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Dict, Iterable, List, Optional, Tuple
+from typing import Any, AsyncIterator, Dict, List, Tuple
 
 
 # Trusting references per plan; do not re-verify.

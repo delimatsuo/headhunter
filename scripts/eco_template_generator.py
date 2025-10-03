@@ -7,7 +7,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from typing import Any, Dict, Mapping, Optional, Sequence
 
 from scripts.evidence_tracking_system import EvidenceTracker, EvidenceTrackerConfig
 

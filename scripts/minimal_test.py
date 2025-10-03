@@ -7,7 +7,6 @@ import json
 import time
 import requests
 from pathlib import Path
-from datetime import datetime
 
 # Constants
 NAS_DIR = Path("/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project")

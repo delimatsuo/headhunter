@@ -14,7 +14,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import threading
 import signal
 import sys
 
@@ -262,10 +261,10 @@ Provide ONLY valid JSON output, no additional text."""
             return None
             
         except subprocess.TimeoutExpired:
-            print(f"⏱️ Timeout processing candidate")
+            print("⏱️ Timeout processing candidate")
             return None
         except json.JSONDecodeError:
-            print(f"❌ Invalid JSON response")
+            print("❌ Invalid JSON response")
             return None
         except Exception as e:
             print(f"❌ Error: {e}")

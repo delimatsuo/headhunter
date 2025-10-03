@@ -6,9 +6,8 @@ Simplified but high-performance version
 
 import json
 import subprocess
-import time
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Optional
 from datetime import datetime, timedelta
 import re
 import signal
@@ -36,7 +35,7 @@ class AcceleratedProcessor:
         self.progress_file = Path("accelerated_progress.json")
         self.last_processed_index = self.load_progress()
         
-        print(f"🚀 ACCELERATED PROCESSOR STARTED")
+        print("🚀 ACCELERATED PROCESSOR STARTED")
         print(f"🏁 Will run until {self.end_time.strftime('%I:%M %p tomorrow')}")
         print(f"⚡ Starting from index: {self.last_processed_index}")
         print(f"⏰ Timeout: {self.timeout}s per candidate")
@@ -168,12 +167,12 @@ JSON only."""
                 print(f"⏱️ ETA: {eta_hours:.1f} hours | CPU: {psutil.cpu_percent()}%")
                 print(f"🧠 RAM: {psutil.virtual_memory().percent}%\n")
         
-        print(f"\n🏁 PROCESSING COMPLETE!")
+        print("\n🏁 PROCESSING COMPLETE!")
         print(f"📊 Final: {self.processed_count} processed, {self.failed_count} failed")
         self.save_progress(total)
     
     def graceful_shutdown(self, signum, frame):
-        print(f"\n🛑 Graceful shutdown...")
+        print("\n🛑 Graceful shutdown...")
         print(f"📊 Processed: {self.processed_count}, Failed: {self.failed_count}")
         self.save_progress(self.last_processed_index)
         sys.exit(0)

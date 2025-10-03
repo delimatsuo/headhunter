@@ -113,13 +113,13 @@ def test_enrichment_direct():
             
             if 'career_analysis' in enrichment:
                 career = enrichment['career_analysis']
-                print(f"\\n📊 Career Analysis:")
+                print("\\n📊 Career Analysis:")
                 print(f"   Growth Potential: {career.get('growth_potential', 'N/A')[:100]}...")
                 print(f"   Leadership Ready: {career.get('leadership_readiness', 'N/A')[:100]}...")
             
             if 'strategic_fit' in enrichment:
                 strategic = enrichment['strategic_fit']
-                print(f"\\n🎯 Strategic Fit:")
+                print("\\n🎯 Strategic Fit:")
                 print(f"   Alignment Score: {strategic.get('role_alignment_score', 'N/A')}")
                 print(f"   Cultural Indicators: {len(strategic.get('cultural_match_indicators', []))}")
                 print(f"   Recommendations: {len(strategic.get('development_recommendations', []))}")
@@ -231,7 +231,7 @@ def main():
     success = test_enrichment_direct()
     
     if success:
-        print(f"\\n🎉 ALL TESTS PASSED!")
+        print("\\n🎉 ALL TESTS PASSED!")
         print("The Vertex AI enrichment system is working correctly:")
         print("✅ Gemini API integration functional")
         print("✅ Enrichment data structure correct")
@@ -239,7 +239,7 @@ def main():
         print("✅ Vector embeddings generated")
         print("\\n🚀 Ready for production deployment!")
     else:
-        print(f"\\n❌ TESTS FAILED!")
+        print("\\n❌ TESTS FAILED!")
         print("Issues need to be resolved before production use.")
     
     return success

@@ -8,9 +8,6 @@ import asyncio
 import logging
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, List, Any
-import firebase_admin
-from firebase_admin import credentials, firestore
 from enhanced_together_ai_processor import EnhancedTogetherAIProcessor
 
 # Setup logging
@@ -57,7 +54,7 @@ async def main():
         print("❌ No suitable candidates found")
         return
     
-    print(f"📋 SELECTED CANDIDATES FOR QUALITY TEST:")
+    print("📋 SELECTED CANDIDATES FOR QUALITY TEST:")
     print("-" * 45)
     for i, candidate in enumerate(quality_candidates, 1):
         name = candidate.get('name', 'N/A')
@@ -102,7 +99,7 @@ async def main():
                 
                 print(f"   ✅ SUCCESS - Rating: {rating}/100, Level: {level}")
             else:
-                print(f"   ❌ FAILED - No enhanced analysis generated")
+                print("   ❌ FAILED - No enhanced analysis generated")
                 
         except Exception as e:
             print(f"   ❌ FAILED - Error: {e}")

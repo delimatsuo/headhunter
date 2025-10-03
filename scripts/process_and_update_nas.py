@@ -18,7 +18,7 @@ class NASProcessor:
         
     def load_nas_data(self):
         """Load the NAS database"""
-        print(f"📂 Loading NAS database...")
+        print("📂 Loading NAS database...")
         with open(self.nas_file, 'r') as f:
             return json.load(f)
     
@@ -29,7 +29,7 @@ class NASProcessor:
         with open(backup_file, 'w') as f:
             json.dump(data, f, indent=2)
         
-        print(f"💾 Updating NAS database...")
+        print("💾 Updating NAS database...")
         with open(self.nas_file, 'w') as f:
             json.dump(data, f, indent=2)
     
@@ -204,7 +204,7 @@ Return ONLY valid JSON with ALL these fields:
             self.save_nas_data(candidates)
             print(f"\n✅ Successfully processed {processed_count} candidates")
             print(f"❌ Failed: {failed_count}")
-            print(f"💾 NAS database updated!")
+            print("💾 NAS database updated!")
         else:
             print("\n⚠️ No candidates were successfully processed")
         

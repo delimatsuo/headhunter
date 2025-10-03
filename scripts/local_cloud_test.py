@@ -221,7 +221,7 @@ def test_vector_embeddings(firestore_client, candidate_profiles):
                     embeddings_generated.append(embedding_data)
                     print(f"    ✅ Success (dimensions: {len(embedding_data.get('embedding_vector', []))})")
                 except json.JSONDecodeError:
-                    print(f"    ❌ Failed to parse embedding result")
+                    print("    ❌ Failed to parse embedding result")
             else:
                 print(f"    ❌ Embedding generation failed: {result.stderr}")
                 
@@ -265,7 +265,7 @@ def main():
     print("✅ TypeScript build successful")
     
     # Test enrichment with first 10 candidates
-    print(f"\\n🧠 Testing Cloud Enrichment...")
+    print("\\n🧠 Testing Cloud Enrichment...")
     enriched_profiles = []
     
     for i, candidate in enumerate(candidates[:10], 1):
@@ -288,7 +288,7 @@ def main():
                 enrichment_version = enrichment_result.get('enrichment_version', 'unknown')
                 print(f"    ✅ Success - stored in Firestore (version: {enrichment_version})")
             else:
-                print(f"    ⚠️ Enriched but failed to store in Firestore")
+                print("    ⚠️ Enriched but failed to store in Firestore")
         else:
             print(f"    ❌ Enrichment failed: {enrichment_result.get('error', 'Unknown error')}")
         
@@ -333,7 +333,7 @@ def main():
         json.dump(report, f, indent=2)
     
     # Print results
-    print(f"\\n📊 TEST RESULTS SUMMARY")
+    print("\\n📊 TEST RESULTS SUMMARY")
     print("=" * 40)
     print(f"Candidates Tested: {len(candidates)}")
     print(f"Successfully Enriched: {len(enriched_profiles)}")
@@ -345,15 +345,15 @@ def main():
     print(f"Report saved to: {report_path}")
     
     if len(enriched_profiles) > 0:
-        print(f"\\n🎉 CLOUD ENRICHMENT TEST SUCCESSFUL!")
+        print("\\n🎉 CLOUD ENRICHMENT TEST SUCCESSFUL!")
         print(f"    - {gemini_count} candidates enriched with real Gemini AI")
         print(f"    - {fallback_count} candidates used enhanced fallback")
         print(f"    - {len(embeddings_generated)} vector embeddings generated")
-        print(f"    - All data stored in Firestore for production use")
+        print("    - All data stored in Firestore for production use")
         return True
     else:
-        print(f"\\n❌ CLOUD ENRICHMENT TEST FAILED")
-        print(f"    No candidates were successfully enriched")
+        print("\\n❌ CLOUD ENRICHMENT TEST FAILED")
+        print("    No candidates were successfully enriched")
         return False
 
 if __name__ == "__main__":

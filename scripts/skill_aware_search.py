@@ -4,11 +4,9 @@ Skill-Aware Search Ranking Algorithm for Headhunter AI
 Combines vector similarity with skill probability assessment for intelligent candidate ranking
 """
 
-import numpy as np
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Any
 from dataclasses import dataclass
 import logging
-from collections import defaultdict
 import json
 
 from skill_assessment_service import SkillAssessmentService

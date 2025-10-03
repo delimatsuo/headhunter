@@ -404,11 +404,11 @@ async def main():
     # Generate realistic test candidates
     candidates = generate_realistic_test_candidates(20)
     print(f"✅ Generated {len(candidates)} realistic test candidates")
-    print(f"   - Role types: Frontend, Backend, Full-stack, Data, DevOps, Mobile, AI/ML")
-    print(f"   - Company tiers: FAANG, Enterprise, Growth, Startup")
-    print(f"   - Experience range: 3-14 years")
+    print("   - Role types: Frontend, Backend, Full-stack, Data, DevOps, Mobile, AI/ML")
+    print("   - Company tiers: FAANG, Enterprise, Growth, Startup")
+    print("   - Experience range: 3-14 years")
     
-    print(f"\\n🔄 Processing candidates with comprehensive AI analysis:")
+    print("\\n🔄 Processing candidates with comprehensive AI analysis:")
     
     # Process each candidate
     start_time = time.time()
@@ -428,7 +428,7 @@ async def main():
     total_time = time.time() - start_time
     
     # Analyze profile quality
-    print(f"\\n" + "=" * 80)
+    print("\\n" + "=" * 80)
     print("📊 QUALITY ANALYSIS RESULTS")
     print("=" * 80)
     
@@ -445,13 +445,13 @@ async def main():
         print(f"⏱️  Average per candidate: {total_time/len(candidates):.2f}s")
         print(f"💰 Total cost: ${total_cost:.4f}")
         print(f"💰 Average cost per candidate: ${total_cost/len(candidates):.4f}")
-        print(f"\\n📊 PROFILE QUALITY METRICS:")
+        print("\\n📊 PROFILE QUALITY METRICS:")
         print(f"   - Average total fields: {avg_total_fields:.1f}")
         print(f"   - Average populated fields: {avg_populated_fields:.1f}")
         print(f"   - Average completeness: {avg_completeness:.1%}")
         
         # Show section completeness
-        print(f"\\n📋 SECTION COMPLETENESS:")
+        print("\\n📋 SECTION COMPLETENESS:")
         section_scores = {}
         for qa in quality_analyses:
             for section, score in qa['field_completeness'].items():
@@ -465,7 +465,7 @@ async def main():
         
         # Sample profile analysis
         if successful_profiles:
-            print(f"\\n🔍 SAMPLE PROFILE ANALYSIS (Candidate 1):")
+            print("\\n🔍 SAMPLE PROFILE ANALYSIS (Candidate 1):")
             sample_profile = successful_profiles[0]
             sample_quality = quality_analyses[0]
             
@@ -479,31 +479,31 @@ async def main():
         
         # Quality assessment
         if avg_completeness >= 0.9:
-            print(f"\\n🎉 EXCELLENT PROFILE QUALITY!")
+            print("\\n🎉 EXCELLENT PROFILE QUALITY!")
             print(f"✅ Profiles have {avg_completeness:.1%} field completeness")
-            print(f"✅ Rich, detailed candidate data suitable for recruiter search")
-            print(f"✅ Ready for vector embedding and semantic search")
+            print("✅ Rich, detailed candidate data suitable for recruiter search")
+            print("✅ Ready for vector embedding and semantic search")
             
             return 0
         elif avg_completeness >= 0.8:
-            print(f"\\n✅ GOOD PROFILE QUALITY")
+            print("\\n✅ GOOD PROFILE QUALITY")
             print(f"⚠️ Profiles have {avg_completeness:.1%} field completeness")
-            print(f"✅ Suitable for basic search functionality")
-            print(f"⚠️ May need prompt tuning for optimal results")
+            print("✅ Suitable for basic search functionality")
+            print("⚠️ May need prompt tuning for optimal results")
             
             return 0
         else:
-            print(f"\\n❌ INSUFFICIENT PROFILE QUALITY")
+            print("\\n❌ INSUFFICIENT PROFILE QUALITY")
             print(f"❌ Profiles have only {avg_completeness:.1%} field completeness") 
-            print(f"❌ Not suitable for effective recruiter search")
-            print(f"❌ Requires prompt improvement and model tuning")
+            print("❌ Not suitable for effective recruiter search")
+            print("❌ Requires prompt improvement and model tuning")
             
             return 1
     
     else:
-        print(f"\\n❌ QUALITY TEST FAILED!")
-        print(f"❌ No successful profile generations")
-        print(f"❌ System not ready for production use")
+        print("\\n❌ QUALITY TEST FAILED!")
+        print("❌ No successful profile generations")
+        print("❌ System not ready for production use")
         return 1
 
 if __name__ == "__main__":

@@ -5,16 +5,14 @@ Provides skill probability assessment, confidence scoring, and skill-aware analy
 """
 
 import json
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Any
 from dataclasses import dataclass
 from datetime import datetime
 import logging
 from collections import defaultdict, Counter
 
 from schemas import (
-    IntelligentAnalysis, ExplicitSkills, InferredSkills, SkillWithEvidence,
-    InferredSkillItem, CompositeSkillProfile, SkillWithMarketDemand,
-    SkillCategories, TransferableSkill, SkillTimelineItem, SkillDepthAnalysis
+    IntelligentAnalysis
 )
 
 # Configure logging

@@ -2,7 +2,7 @@ import asyncio
 import json
 import csv
 import psutil
-from typing import List, Dict, Any, Optional, Callable, Union
+from typing import List, Dict, Any, Optional, Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 import logging

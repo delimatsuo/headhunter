@@ -11,7 +11,6 @@ This pipeline processes candidates through all stages systematically.
 """
 
 import asyncio
-import json
 import time
 from typing import Dict, List, Any, Optional
 from datetime import datetime
@@ -100,10 +99,10 @@ class MultiStageEnhancementPipeline:
             enhanced_profile = await self.basic_processor.process_candidate_async(candidate_data)
             
             if enhanced_profile and 'enhanced_analysis' in enhanced_profile:
-                logger.info(f"✓ Stage 1 complete: Generated enhanced_analysis structure")
+                logger.info("✓ Stage 1 complete: Generated enhanced_analysis structure")
                 return enhanced_profile
             else:
-                logger.error(f"✗ Stage 1 failed: No enhanced_analysis in result")
+                logger.error("✗ Stage 1 failed: No enhanced_analysis in result")
                 return None
                 
         except Exception as e:
@@ -141,7 +140,7 @@ class MultiStageEnhancementPipeline:
                 'timestamp': datetime.utcnow().isoformat()
             }
             
-            logger.info(f"✓ Stage 2 complete: Added contextual intelligence")
+            logger.info("✓ Stage 2 complete: Added contextual intelligence")
             return enhanced_profile
             
         except Exception as e:
@@ -164,10 +163,10 @@ class MultiStageEnhancementPipeline:
                     'timestamp': datetime.utcnow().isoformat()
                 }
                 
-                logger.info(f"✓ Stage 3 complete: Generated 768-dim embedding vector")
+                logger.info("✓ Stage 3 complete: Generated 768-dim embedding vector")
                 return enhanced_profile
             else:
-                logger.error(f"✗ Stage 3 failed: No embedding generated")
+                logger.error("✗ Stage 3 failed: No embedding generated")
                 return None
                 
         except Exception as e:
@@ -314,14 +313,14 @@ async def test_pipeline():
     result = await pipeline.process_candidate(test_candidate)
     
     if result:
-        print(f"✅ Pipeline Success!")
-        print(f"📊 Stages completed:")
+        print("✅ Pipeline Success!")
+        print("📊 Stages completed:")
         print(f"   - Stage 1 (Basic Enhancement): {'✓' if 'enhanced_analysis' in result else '✗'}")
         print(f"   - Stage 2 (Skills Inference): {'✓' if 'contextual_intelligence' in result else '✗'}")
         print(f"   - Stage 3 (Vector Generation): {'✓' if 'vector_data' in result else '✗'}")
         
         # Show metrics
-        print(f"\n📈 Pipeline Metrics:")
+        print("\n📈 Pipeline Metrics:")
         for key, value in pipeline.metrics.items():
             print(f"   - {key}: {value}")
             

@@ -4,10 +4,8 @@ Direct Cloud Function Test - Test deployed functions directly via HTTP
 """
 
 import json
-import os
 import sys
 import time
-import random
 from pathlib import Path
 import requests
 from datetime import datetime
@@ -261,7 +259,7 @@ def main():
     report, report_path = generate_test_report(health_status, enrichment_results, search_results, embeddings_status)
     
     # Print summary
-    print(f"\n📊 TEST RESULTS SUMMARY")
+    print("\n📊 TEST RESULTS SUMMARY")
     print("=" * 30)
     print(f"Health Check: {'✅ PASS' if health_status else '❌ FAIL'}")
     print(f"Enrichment Success Rate: {report['enrichment_test']['success_rate']:.1f}%")

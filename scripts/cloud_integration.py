@@ -9,10 +9,9 @@ import json
 import logging
 import time
 from datetime import datetime
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional, Any
 import httpx
 from pathlib import Path
-import base64
 import hashlib
 import hmac
 
@@ -314,7 +313,6 @@ class CloudAPIClient:
         try:
             # Extract bucket and blob name from URL
             # Format: https://firebasestorage.googleapis.com/v0/b/bucket/o/path%2Fto%2Ffile.pdf
-            import urllib.parse
             from urllib.parse import unquote
             
             # Simple parsing - this might need adjustment based on actual URL format

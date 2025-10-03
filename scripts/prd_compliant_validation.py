@@ -8,14 +8,12 @@ Tests the ACTUAL architecture specified in the PRD:
 """
 
 import asyncio
-import csv
 import json
 import time
 import logging
 import os
 from datetime import datetime
-from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

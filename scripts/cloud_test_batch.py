@@ -11,7 +11,6 @@ import random
 from pathlib import Path
 from google.cloud import storage, firestore
 from datetime import datetime
-import requests
 
 def setup_gcp():
     """Initialize GCP clients"""
@@ -256,7 +255,7 @@ def main():
     print(f"✅ Selected {len(candidates)} candidates for testing")
     
     # Upload to Cloud Storage to trigger processing
-    print(f"\n☁️ Uploading candidates to Cloud Storage...")
+    print("\n☁️ Uploading candidates to Cloud Storage...")
     uploaded_ids = []
     
     for i, candidate in enumerate(candidates, 1):
@@ -271,7 +270,7 @@ def main():
     print(f"✅ Successfully uploaded {len(uploaded_ids)} candidates")
     
     # Wait for enrichment processing
-    print(f"\n⏳ Waiting for Cloud Functions to process enrichments...")
+    print("\n⏳ Waiting for Cloud Functions to process enrichments...")
     enriched_profiles = check_enrichment_status(firestore_client, uploaded_ids, max_wait=600)
     
     # Test vector search
@@ -282,7 +281,7 @@ def main():
     report, report_path = generate_test_report(enriched_profiles, vector_search_results, start_time, end_time)
     
     # Print summary
-    print(f"\n📊 TEST RESULTS SUMMARY")
+    print("\n📊 TEST RESULTS SUMMARY")
     print("=" * 40)
     print(f"Total Candidates Tested: {len(candidates)}")
     print(f"Successfully Uploaded: {len(uploaded_ids)}")

@@ -9,7 +9,7 @@ import subprocess
 import json
 import os
 import sys
-from typing import Dict, Any, List
+from typing import Dict, Any
 import logging
 
 

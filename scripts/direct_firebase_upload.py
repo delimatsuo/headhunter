@@ -7,7 +7,7 @@ import json
 import logging
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, List, Any
+from typing import Dict, Any
 import firebase_admin
 from firebase_admin import credentials, firestore
 import asyncio
@@ -220,7 +220,7 @@ async def main():
             except Exception as e:
                 print(f"   ❌ UPLOAD FAILED: {e}")
         else:
-            print(f"   ❌ PROCESSING FAILED")
+            print("   ❌ PROCESSING FAILED")
         
         print()
     

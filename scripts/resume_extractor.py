@@ -5,16 +5,13 @@ Extract text from various resume file formats (PDF, DOCX, images) for LLM analys
 """
 
 import os
-import io
 import logging
-from typing import Dict, Optional, Union, List
+from typing import Dict, Optional, List
 from pathlib import Path
 from dataclasses import dataclass
-import tempfile
 import subprocess
 
 # Built-in libraries for text extraction
-import re
 import zipfile
 
 
@@ -402,21 +399,21 @@ def main():
     
     # Print summary
     summary = extractor.get_extraction_summary(results)
-    print(f"\nExtraction Summary:")
+    print("\nExtraction Summary:")
     print(f"Total Files: {summary['total_files']}")
     print(f"Successful: {summary['successful']}")
     print(f"Failed: {summary['failed']}")
     print(f"Success Rate: {summary['success_rate']:.1f}%")
     
     # Print file type breakdown
-    print(f"\nBy File Type:")
+    print("\nBy File Type:")
     for file_type, stats in summary['file_types'].items():
         print(f"  {file_type}: {stats['successful']}/{stats['total']} successful")
     
     # Print failed extractions
     failed_results = [r for r in results if not r.success]
     if failed_results:
-        print(f"\nFailed Extractions:")
+        print("\nFailed Extractions:")
         for i, result in enumerate(failed_results):
             file_path = [f for j, f in enumerate(args.files) if results[j] == result][0]
             print(f"  {Path(file_path).name}: {result.error_message}")

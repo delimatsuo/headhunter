@@ -5,14 +5,11 @@ Provides JSON schema validation, quality scoring, and consistency checks for LLM
 """
 
 import json
-import re
 import logging
 from typing import Dict, List, Optional, Any, Tuple, Union
 from dataclasses import dataclass, field
 from pathlib import Path
-import jsonschema
 from jsonschema import validate, ValidationError
-from datetime import datetime
 import statistics
 
 # Import our analysis classes
@@ -525,7 +522,7 @@ def main():
             for warning in result.warnings:
                 print(f"  ⚠️  {warning}")
         
-        print(f"\nQuality Metrics:")
+        print("\nQuality Metrics:")
         for metric, score in result.metrics.items():
             print(f"  {metric.title()}: {score:.3f}")
         

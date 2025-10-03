@@ -1,9 +1,5 @@
-import json
-import logging
-import random
-import time
 from datetime import datetime
-from typing import Iterable, Dict, Any
+from typing import Dict, Any
 
 import scrapy
 

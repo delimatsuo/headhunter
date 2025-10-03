@@ -6,15 +6,12 @@ Tests quality, performance, and cost metrics
 """
 
 import asyncio
-import csv
 import json
 import time
 import logging
 import statistics
-import math
 from datetime import datetime
-from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 import random
 import numpy as np

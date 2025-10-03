@@ -209,7 +209,7 @@ async def main():
     candidates = generate_test_candidates(5)
     print(f"✅ Generated {len(candidates)} test candidates")
     
-    print(f"\n🔄 Processing candidates through AI → Database pipeline:")
+    print("\n🔄 Processing candidates through AI → Database pipeline:")
     
     # Process each candidate
     start_time = time.time()
@@ -226,7 +226,7 @@ async def main():
     total_time = time.time() - start_time
     
     # Results
-    print(f"\n" + "=" * 50)
+    print("\n" + "=" * 50)
     print("📊 AI → DATABASE PIPELINE RESULTS")
     print("=" * 50)
     
@@ -236,24 +236,24 @@ async def main():
     print(f"⏱️  Average per Candidate: {total_time/len(candidates):.2f}s")
     
     if FIRESTORE_AVAILABLE:
-        print(f"💾 Data Saved to Firestore: enhanced_candidates collection")
-        print(f"🔍 Check Firebase Console to see the new entries")
+        print("💾 Data Saved to Firestore: enhanced_candidates collection")
+        print("🔍 Check Firebase Console to see the new entries")
     else:
-        print(f"⚠️ AI processing successful but no database saves (library not available)")
+        print("⚠️ AI processing successful but no database saves (library not available)")
     
     # Final assessment
     if success_rate >= 80:
-        print(f"\n🎉 AI → DATABASE PIPELINE TEST PASSED!")
-        print(f"✅ Together AI processing is working")
+        print("\n🎉 AI → DATABASE PIPELINE TEST PASSED!")
+        print("✅ Together AI processing is working")
         
         if FIRESTORE_AVAILABLE:
-            print(f"✅ Data is being saved to Firestore")
-            print(f"✅ Your database now has fresh processed candidates")
+            print("✅ Data is being saved to Firestore")
+            print("✅ Your database now has fresh processed candidates")
         
         return 0
     else:
-        print(f"\n❌ AI → DATABASE PIPELINE TEST FAILED!")
-        print(f"❌ Success rate below 80%")
+        print("\n❌ AI → DATABASE PIPELINE TEST FAILED!")
+        print("❌ Success rate below 80%")
         return 1
 
 if __name__ == "__main__":

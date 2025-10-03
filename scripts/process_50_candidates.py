@@ -92,7 +92,7 @@ def process_batch(candidates: List[Dict], ollama_client: OllamaAPIClient) -> Dic
             }
             
             # Process with LLM
-            print(f"  Sending to Llama 3.1:8b...")
+            print("  Sending to Llama 3.1:8b...")
             llm_result = process_candidate_with_llm(candidate_data, ollama_client)
             
             # Calculate processing time
@@ -193,7 +193,7 @@ def main():
     print(f"Failed: {metrics['failed']}")
     print(f"Candidates with comments: {metrics['candidates_with_comments']}")
     print(f"Total comments processed: {metrics['total_comments_processed']}")
-    print(f"\nTiming:")
+    print("\nTiming:")
     print(f"  Total time: {metrics['total_time_seconds']} seconds")
     print(f"  Average per candidate: {metrics['avg_time_per_candidate']} seconds")
     

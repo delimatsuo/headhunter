@@ -9,7 +9,7 @@ import time
 import requests
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, List, Any
+from typing import Dict, List
 
 # Constants
 NAS_DIR = Path("/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project")
@@ -270,7 +270,7 @@ def main():
     print(f"Failed: {metrics['failed']}")
     print(f"Candidates with comments: {metrics['candidates_with_comments']}")
     print(f"Total comments processed: {metrics['total_comments_processed']}")
-    print(f"\nTiming:")
+    print("\nTiming:")
     print(f"  Total time: {total_time:.2f} seconds")
     print(f"  Average per candidate: {avg_time:.2f} seconds")
     

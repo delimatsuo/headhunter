@@ -421,10 +421,10 @@ async def main():
     # Generate realistic test candidates (smaller batch for testing)
     candidates = generate_realistic_test_candidates(10)
     print(f"✅ Generated {len(candidates)} realistic test candidates")
-    print(f"   - Testing original enhanced_analysis structure")
-    print(f"   - Focus on nested career analysis and recruiter insights")
+    print("   - Testing original enhanced_analysis structure")
+    print("   - Focus on nested career analysis and recruiter insights")
     
-    print(f"\\n🔄 Processing candidates with enhanced analysis structure:")
+    print("\\n🔄 Processing candidates with enhanced analysis structure:")
     
     # Process each candidate
     start_time = time.time()
@@ -444,7 +444,7 @@ async def main():
     total_time = time.time() - start_time
     
     # Analyze enhanced structure quality
-    print(f"\\n" + "=" * 80)
+    print("\\n" + "=" * 80)
     print("📊 ENHANCED STRUCTURE QUALITY ANALYSIS")
     print("=" * 80)
     
@@ -462,13 +462,13 @@ async def main():
         print(f"⏱️  Average per candidate: {total_time/len(candidates):.2f}s")
         print(f"💰 Total cost: ${total_cost:.4f}")
         
-        print(f"\\n📊 ENHANCED ANALYSIS STRUCTURE METRICS:")
+        print("\\n📊 ENHANCED ANALYSIS STRUCTURE METRICS:")
         print(f"   - Average nested sections: {avg_nested_sections:.1f}/9")
         print(f"   - Structure completeness: {avg_completeness:.1%}")
         
         # Sample enhanced analysis
         if successful_profiles and successful_profiles[0].get('enhanced_analysis'):
-            print(f"\\n🔍 SAMPLE ENHANCED ANALYSIS STRUCTURE:")
+            print("\\n🔍 SAMPLE ENHANCED ANALYSIS STRUCTURE:")
             sample = successful_profiles[0]
             enhanced = sample.get('enhanced_analysis', {})
             
@@ -486,28 +486,28 @@ async def main():
         
         # Quality assessment
         if avg_completeness >= 0.9 and has_enhanced == len(successful_profiles):
-            print(f"\\n🎉 EXCELLENT - ORIGINAL STRUCTURE RESTORED!")
-            print(f"✅ All profiles have proper enhanced_analysis structure")
+            print("\\n🎉 EXCELLENT - ORIGINAL STRUCTURE RESTORED!")
+            print("✅ All profiles have proper enhanced_analysis structure")
             print(f"✅ Deep nested analysis with {avg_completeness:.1%} completeness")
-            print(f"✅ Ready for production use with enhanced profiles")
+            print("✅ Ready for production use with enhanced profiles")
             
             return 0
         elif avg_completeness >= 0.7:
-            print(f"\\n✅ GOOD STRUCTURE QUALITY")
+            print("\\n✅ GOOD STRUCTURE QUALITY")
             print(f"⚠️ {avg_completeness:.1%} structure completeness")
-            print(f"✅ Enhanced analysis structure is working")
+            print("✅ Enhanced analysis structure is working")
             
             return 0
         else:
-            print(f"\\n❌ STRUCTURE QUALITY ISSUES")
+            print("\\n❌ STRUCTURE QUALITY ISSUES")
             print(f"❌ Only {avg_completeness:.1%} structure completeness")
-            print(f"❌ May need prompt refinement")
+            print("❌ May need prompt refinement")
             
             return 1
     
     else:
-        print(f"\\n❌ CORRECTED QUALITY TEST FAILED!")
-        print(f"❌ No successful profile generations")
+        print("\\n❌ CORRECTED QUALITY TEST FAILED!")
+        print("❌ No successful profile generations")
         return 1
 
 if __name__ == "__main__":

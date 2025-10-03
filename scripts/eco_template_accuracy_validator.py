@@ -9,7 +9,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Mapping
 
 logger = logging.getLogger(__name__)
 if not logger.handlers:

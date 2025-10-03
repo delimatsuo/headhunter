@@ -7,10 +7,9 @@ Direct processing without complex dependencies
 import csv
 import json
 import os
-import sys
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CSV_DIR = REPO_ROOT / "CSV files/505039_Ella_Executive_Search_CSVs_1"
@@ -269,7 +268,7 @@ def main():
         total_with_leadership = sum(1 for c in processed_candidates if c['resume_analysis']['leadership_scope']['has_leadership'])
         avg_score = sum(c['overall_score'] for c in processed_candidates) / len(processed_candidates)
         
-        print(f"\n📊 Processing Statistics:")
+        print("\n📊 Processing Statistics:")
         print(f"   Total candidates: {len(processed_candidates)}")
         print(f"   With technical skills: {total_with_skills}")
         print(f"   With leadership: {total_with_leadership}")

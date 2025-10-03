@@ -217,7 +217,7 @@ def process_candidates_enhanced(limit=10):
                             print(f"          Trajectory: {trajectory}")
                             
                     else:
-                        print(f"          ⚠ No JSON found in response")
+                        print("          ⚠ No JSON found in response")
                         enhanced_analysis = {'parsing_error': llm_response[:200]}
                         
                 except json.JSONDecodeError as e:

@@ -7,10 +7,8 @@ NO MOCK DATA - Only real candidate profiles with resumes and recruiter comments.
 """
 
 import csv
-import json
 import asyncio
 import time
-from pathlib import Path
 from typing import Dict, List, Any, Optional
 import sys
 import os
@@ -198,7 +196,7 @@ class RealCandidateEndToEndTest:
                 
                 return enhanced_profile
             else:
-                print(f"   ❌ FAILED: No enhanced profile generated")
+                print("   ❌ FAILED: No enhanced profile generated")
                 return None
                 
         except Exception as e:
@@ -209,7 +207,7 @@ class RealCandidateEndToEndTest:
     async def run_end_to_end_test(self, num_candidates: int = 5):
         """Run complete end-to-end test with REAL candidate data"""
         
-        print(f"\n🚀 STARTING REAL END-TO-END TEST")
+        print("\n🚀 STARTING REAL END-TO-END TEST")
         print(f"📊 Processing {num_candidates} REAL candidates")
         print("-" * 50)
         
@@ -249,15 +247,15 @@ class RealCandidateEndToEndTest:
         total_processed = len(results['successful']) + len(results['failed'])
         success_rate = (len(results['successful']) / total_processed) * 100 if total_processed > 0 else 0
         
-        print(f"\n" + "=" * 60)
-        print(f"🎯 REAL CANDIDATE END-TO-END TEST RESULTS")
-        print(f"=" * 60)
+        print("\n" + "=" * 60)
+        print("🎯 REAL CANDIDATE END-TO-END TEST RESULTS")
+        print("=" * 60)
         print(f"✅ Successfully processed: {len(results['successful'])}/{total_processed} ({success_rate:.1f}%)")
         print(f"❌ Failed: {len(results['failed'])}")
         print(f"💰 Estimated cost: ${results['total_cost']:.4f}")
         
         if results['successful']:
-            print(f"\n📋 SAMPLE REAL CANDIDATE ANALYSIS:")
+            print("\n📋 SAMPLE REAL CANDIDATE ANALYSIS:")
             sample = results['successful'][0]
             print(f"   👤 Name: {sample['name']}")
             
@@ -272,7 +270,7 @@ class RealCandidateEndToEndTest:
             print(f"   📝 Pitch: {summary.get('one_line_pitch', 'N/A')}")
             
         if results['failed']:
-            print(f"\n⚠️ FAILED CANDIDATES:")
+            print("\n⚠️ FAILED CANDIDATES:")
             for failed in results['failed']:
                 print(f"   - {failed['name']} ({failed['candidate_id']})")
                 
@@ -305,8 +303,8 @@ class RealCandidateEndToEndTest:
                 saved_count += 1
                 
             print(f"✅ Saved {saved_count} real profiles to Firestore")
-            print(f"🔍 Check collection: enhanced_candidates")
-            print(f"📋 Document IDs start with: real_[candidate_id]")
+            print("🔍 Check collection: enhanced_candidates")
+            print("📋 Document IDs start with: real_[candidate_id]")
             
         except Exception as e:
             print(f"❌ Error saving to Firestore: {e}")
@@ -323,10 +321,10 @@ async def main():
     # Run with 5 real candidates
     await tester.run_end_to_end_test(num_candidates=5)
     
-    print(f"\n✅ REAL END-TO-END TEST COMPLETED")
-    print(f"🔍 Review results in Firestore console:")
-    print(f"   Collection: enhanced_candidates")
-    print(f"   Look for documents starting with: real_")
+    print("\n✅ REAL END-TO-END TEST COMPLETED")
+    print("🔍 Review results in Firestore console:")
+    print("   Collection: enhanced_candidates")
+    print("   Look for documents starting with: real_")
 
 if __name__ == "__main__":
     asyncio.run(main())

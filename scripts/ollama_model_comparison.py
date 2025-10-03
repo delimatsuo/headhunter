@@ -9,7 +9,6 @@ import time
 import subprocess
 from pathlib import Path
 from datetime import datetime
-import random
 
 # Models to test (will install if not present)
 MODELS_TO_TEST = [

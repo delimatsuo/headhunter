@@ -9,8 +9,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
-from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Mapping
+from typing import Any, Dict, Iterable, Mapping
 
 PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "headhunter-local")
 FIRESTORE_HOST = os.getenv("FIRESTORE_EMULATOR_HOST", "localhost:8080")

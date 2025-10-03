@@ -39,13 +39,13 @@ def monitor():
                 print(f"📊 PROGRESS UPDATE - {datetime.now().strftime('%I:%M:%S %p')}")
                 print(f"{'='*60}")
                 
-                print(f"\n📈 PROCESSING STATUS:")
+                print("\n📈 PROCESSING STATUS:")
                 print(f"  Last Index: {progress.get('last_index', 0):,} / 29,138")
                 print(f"  Batch Number: {progress.get('batch_number', 0)}")
                 print(f"  Completion: {100 * progress.get('last_index', 0) / 29138:.1f}%")
                 print(f"  Files Created: {files_count:,}")
                 
-                print(f"\n📊 SESSION STATISTICS:")
+                print("\n📊 SESSION STATISTICS:")
                 print(f"  Total Processed: {progress.get('total_processed', 0):,}")
                 print(f"  Total Failed: {progress.get('total_failed', 0)}")
                 print(f"  Success Rate: {100 * progress.get('total_processed', 0) / max(progress.get('total_processed', 0) + progress.get('total_failed', 0), 1):.1f}%")
@@ -58,7 +58,7 @@ def monitor():
                     
                     if 'overall' in metrics:
                         overall = metrics['overall']
-                        print(f"\n⚡ PERFORMANCE METRICS:")
+                        print("\n⚡ PERFORMANCE METRICS:")
                         print(f"  Total Batches: {overall.get('total_batches', 0)}")
                         print(f"  Avg Rate: {overall.get('avg_rate_per_minute', 0):.2f} candidates/minute")
                         print(f"  Total Time: {overall.get('total_time_seconds', 0)/60:.1f} minutes")
@@ -80,7 +80,7 @@ def monitor():
                     # Show recent batches
                     if 'batches' in metrics and metrics['batches']:
                         recent = metrics['batches'][-3:]
-                        print(f"\n📋 RECENT BATCHES:")
+                        print("\n📋 RECENT BATCHES:")
                         for batch in recent:
                             print(f"  Batch {batch['batch_number']}: {batch['rate_per_minute']:.1f}/min ({batch['processing_time']/60:.1f} min)")
                 
@@ -90,10 +90,10 @@ def monitor():
                 import subprocess
                 result = subprocess.run(['ps', 'aux'], capture_output=True, text=True)
                 if 'continuous_quality_processor' in result.stdout:
-                    print(f"✅ Processor Status: RUNNING")
+                    print("✅ Processor Status: RUNNING")
                 else:
-                    print(f"⚠️ Processor Status: STOPPED")
-                    print(f"   Run: cd scripts && python3 continuous_quality_processor.py")
+                    print("⚠️ Processor Status: STOPPED")
+                    print("   Run: cd scripts && python3 continuous_quality_processor.py")
             
             else:
                 print("⚠️ No progress file found yet...")

@@ -388,7 +388,7 @@ def generate_test_candidates(num_candidates: int = 10) -> List[Dict[str, Any]]:
 
 async def run_complete_end_to_end_test(num_candidates: int = 10):
     """Run complete end-to-end test with real data persistence"""
-    print(f"🚀 Starting COMPLETE End-to-End Test")
+    print("🚀 Starting COMPLETE End-to-End Test")
     print("   - Together AI Processing")
     print("   - Firestore Storage") 
     print("   - VertexAI Embeddings")
@@ -427,7 +427,7 @@ async def run_complete_end_to_end_test(num_candidates: int = 10):
     successful = [r for r in results if r['success']]
     failed = [r for r in results if not r['success']]
     
-    print(f"\n" + "=" * 60)
+    print("\n" + "=" * 60)
     print("📊 COMPLETE END-TO-END TEST RESULTS")
     print("=" * 60)
     
@@ -442,7 +442,7 @@ async def run_complete_end_to_end_test(num_candidates: int = 10):
         avg_emb_time = sum(r['embedding_processing_time'] for r in successful) / len(successful)
         total_tokens = sum(r['tokens_used'] for r in successful)
         
-        print(f"\n📊 Performance Breakdown:")
+        print("\n📊 Performance Breakdown:")
         print(f"   - AI Processing: {avg_ai_time:.2f}s average")
         print(f"   - Firestore Save: {avg_db_time:.2f}s average")
         print(f"   - Embedding Gen: {avg_emb_time:.2f}s average")
@@ -454,7 +454,7 @@ async def run_complete_end_to_end_test(num_candidates: int = 10):
         embeddings_generated = len([r for r in successful if r.get('embedding_dimensions', 0) > 0])
         vectors_stored = len([r for r in successful if r.get('vector_stored')])
         
-        print(f"\n💾 Data Persistence:")
+        print("\n💾 Data Persistence:")
         print(f"   - Firestore Documents: {firestore_stored}/{len(successful)}")
         print(f"   - Embeddings Generated: {embeddings_generated}/{len(successful)}")
         print(f"   - Vectors Stored: {vectors_stored}/{len(successful)}")
@@ -496,17 +496,17 @@ async def run_complete_end_to_end_test(num_candidates: int = 10):
     
     # Final assessment
     if len(successful) >= len(candidates) * 0.9:  # 90% success rate
-        print(f"\n🎉 COMPLETE END-TO-END TEST PASSED!")
-        print(f"✅ The entire pipeline is working correctly")
+        print("\n🎉 COMPLETE END-TO-END TEST PASSED!")
+        print("✅ The entire pipeline is working correctly")
         
         if CLOUD_AVAILABLE and firestore_stored > 0:
-            print(f"✅ Data is being saved to Firestore")
+            print("✅ Data is being saved to Firestore")
         if embeddings_generated > 0:
-            print(f"✅ Embeddings are being generated")
+            print("✅ Embeddings are being generated")
         
         return 0
     else:
-        print(f"\n⚠️ END-TO-END TEST ISSUES - Success rate below 90%")
+        print("\n⚠️ END-TO-END TEST ISSUES - Success rate below 90%")
         return 1
 
 async def main():

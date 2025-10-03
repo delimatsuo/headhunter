@@ -6,11 +6,8 @@ Generates embeddings from enhanced candidate profiles using VertexAI text-embedd
 for semantic similarity search in the recruitment system.
 """
 
-import json
-import os
 import sys
 import asyncio
-import time
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 import logging
@@ -397,7 +394,7 @@ class VertexEmbeddingsGenerator:
             }
         }
         
-        logger.info(f"🎉 Embedding generation completed!")
+        logger.info("🎉 Embedding generation completed!")
         logger.info(f"   - Success rate: {success_rate:.1f}% ({self.stats.embedded}/{self.stats.total_profiles})")
         logger.info(f"   - Total time: {total_time:.2f}s")
         logger.info(f"   - Average per profile: {total_time/self.stats.total_profiles:.2f}s")

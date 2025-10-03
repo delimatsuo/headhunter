@@ -19,7 +19,7 @@ import time
 # Import our analysis modules
 from llm_prompts import ResumeAnalyzer, ResumeAnalysis
 from recruiter_prompts import RecruiterCommentAnalyzer, RecruiterInsights
-from resume_extractor import ResumeTextExtractor, ExtractionResult
+from resume_extractor import ResumeTextExtractor
 from quality_validator import LLMOutputValidator, ValidationResult, QualityMetrics
 
 
@@ -561,7 +561,7 @@ def main():
                 limit=args.limit
             )
         
-            print(f"\nProcessing Summary:")
+            print("\nProcessing Summary:")
             print(f"Total Records: {stats.total_records}")
             print(f"Successful: {stats.successful}")
             print(f"Failed: {stats.failed}")

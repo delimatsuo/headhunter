@@ -14,7 +14,6 @@ import sys
 import time
 from datetime import datetime
 from typing import Dict, List, Any
-import random
 
 # Add cloud_run_worker to path
 sys.path.append('cloud_run_worker')
@@ -349,7 +348,7 @@ async def main():
     candidates = generate_test_candidates(50)
     print(f"✅ Generated {len(candidates)} test candidates")
     
-    print(f"\\n🔄 Processing with proven enhanced analysis prompt:")
+    print("\\n🔄 Processing with proven enhanced analysis prompt:")
     
     # Process candidates in smaller batches
     start_time = time.time()
@@ -372,13 +371,13 @@ async def main():
         
         # Longer delay between batches
         if batch_end < len(candidates):
-            print(f"   ⏸️ Cooling down for 3 seconds...")
+            print("   ⏸️ Cooling down for 3 seconds...")
             await asyncio.sleep(3)
     
     total_time = time.time() - start_time
     
     # Results analysis
-    print(f"\\n" + "=" * 60)
+    print("\\n" + "=" * 60)
     print("📊 FIXED BATCH TEST RESULTS") 
     print("=" * 60)
     
@@ -406,7 +405,7 @@ async def main():
         # Sample analysis
         sample = successful_profiles[0]
         enhanced = sample.get('enhanced_analysis', {})
-        print(f"\\n🔍 SAMPLE ANALYSIS:")
+        print("\\n🔍 SAMPLE ANALYSIS:")
         print(f"   - Name: {sample.get('name')}")
         print(f"   - Current Level: {enhanced.get('career_trajectory_analysis', {}).get('current_level')}")
         print(f"   - Performance Tier: {enhanced.get('performance_indicators', {}).get('estimated_performance_tier')}")
@@ -420,14 +419,14 @@ async def main():
     
     # Final assessment
     if success_rate >= 80 and len(successful_profiles) > 0:
-        print(f"\\n🎉 FIXED BATCH TEST PASSED!")
+        print("\\n🎉 FIXED BATCH TEST PASSED!")
         print(f"✅ High success rate: {success_rate:.1f}%")
-        print(f"✅ Enhanced analysis structure working")
-        print(f"✅ Ready for production batch processing")
+        print("✅ Enhanced analysis structure working")
+        print("✅ Ready for production batch processing")
         
         return 0
     else:
-        print(f"\\n❌ BATCH TEST NEEDS MORE WORK")
+        print("\\n❌ BATCH TEST NEEDS MORE WORK")
         print(f"⚠️ Success rate: {success_rate:.1f}% (target: 80%+)")
         
         return 1

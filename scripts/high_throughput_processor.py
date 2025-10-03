@@ -37,18 +37,18 @@ class HighThroughputProcessor:
         self.start_time = datetime.now()
         self.lock = threading.Lock()
         
-        print(f"🚀 QUALITY HIGH THROUGHPUT MODE INITIALIZED")
+        print("🚀 QUALITY HIGH THROUGHPUT MODE INITIALIZED")
         print(f"💻 CPU Cores: {self.cpu_cores}")
         print(f"🔥 Max Workers: {self.max_workers}")
         print(f"📦 Batch Size: {self.batch_size}")
-        print(f"⚡ Using comprehensive prompts for complete data extraction")
+        print("⚡ Using comprehensive prompts for complete data extraction")
         
         # Setup graceful shutdown
         signal.signal(signal.SIGINT, self.graceful_shutdown)
         signal.signal(signal.SIGTERM, self.graceful_shutdown)
         
     def graceful_shutdown(self, signum, frame):
-        print(f"\n🛑 Graceful shutdown initiated...")
+        print("\n🛑 Graceful shutdown initiated...")
         print(f"📊 Processed: {self.processed_count}, Failed: {self.failed_count}")
         elapsed = (datetime.now() - self.start_time).total_seconds()
         print(f"⏱️ Runtime: {elapsed/60:.1f} minutes")
@@ -69,7 +69,7 @@ class HighThroughputProcessor:
     
     def load_nas_data(self):
         """Load the NAS database"""
-        print(f"📂 Loading NAS database...")
+        print("📂 Loading NAS database...")
         with open(self.nas_file, 'r') as f:
             return json.load(f)
     
@@ -531,7 +531,7 @@ IMPORTANT: Base ALL analysis on the ACTUAL data provided. Use your knowledge abo
             if batches_since_save >= self.save_frequency or not candidates_to_process:
                 self.save_nas_data(candidates)
                 batches_since_save = 0
-                print(f"  💾 Database updated")
+                print("  💾 Database updated")
             
             # Batch performance metrics
             batch_time = time.time() - batch_start

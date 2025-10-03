@@ -23,7 +23,7 @@ import asyncio
 import os
 import random
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 try:
     from scripts.pgvector_store import PgVectorStore, create_pgvector_store  # type: ignore

@@ -7,7 +7,6 @@ Uses Firebase Admin SDK for authentication
 
 import json
 import os
-import time
 import asyncio
 import aiohttp
 from pathlib import Path

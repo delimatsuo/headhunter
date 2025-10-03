@@ -7,7 +7,7 @@ Including orphaned candidates only found in comments
 import json
 import csv
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, Set
 from datetime import datetime
 import time
 import os
@@ -400,7 +400,7 @@ def match_resume_files(candidates: Dict):
 
 def analyze_missing_candidates(total_found: int, target_count: int = 29176):
     """Analyze why we might be missing candidates"""
-    print(f"\n🔍 Step 5: Analyzing missing candidates...")
+    print("\n🔍 Step 5: Analyzing missing candidates...")
     print(f"  Target count: {target_count:,}")
     print(f"  Found count: {total_found:,}")
     print(f"  Difference: {target_count - total_found:,}")
@@ -532,7 +532,7 @@ def comprehensive_merge():
     print(f"Still missing: {stats['missing_count']:,}")
     
     if stats['total_candidates'] > 0:
-        print(f"\nData completeness:")
+        print("\nData completeness:")
         print(f"  With name: {stats['candidates_with_name']:,} ({stats['candidates_with_name']*100//stats['total_candidates']}%)")
         print(f"  With email: {stats['candidates_with_email']:,} ({stats['candidates_with_email']*100//stats['total_candidates']}%)")
         print(f"  With comments: {stats['candidates_with_comments']:,} ({stats['candidates_with_comments']*100//stats['total_candidates']}%)")

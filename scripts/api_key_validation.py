@@ -5,7 +5,6 @@ Simple validation test for Together AI API key configuration
 
 import asyncio
 import aiohttp
-import json
 import os
 import sys
 
@@ -18,7 +17,7 @@ async def test_together_ai_api():
     """Test Together AI API connectivity with the configured API key"""
     try:
         config = Config()
-        print(f"✅ Configuration loaded successfully")
+        print("✅ Configuration loaded successfully")
         print(f"   - API key length: {len(config.together_ai_api_key)}")
         print(f"   - Model: {config.together_ai_model}")
         print(f"   - Base URL: {config.together_ai_base_url}")
@@ -36,7 +35,7 @@ async def test_together_ai_api():
             'temperature': 0.1
         }
         
-        print(f"🔄 Testing API connectivity...")
+        print("🔄 Testing API connectivity...")
         
         async with aiohttp.ClientSession() as session:
             async with session.post(
@@ -48,7 +47,7 @@ async def test_together_ai_api():
                 if response.status == 200:
                     result = await response.json()
                     message = result.get('choices', [{}])[0].get('message', {}).get('content', '')
-                    print(f"✅ API test successful!")
+                    print("✅ API test successful!")
                     print(f"   - Response: {message.strip()}")
                     print(f"   - Status: {response.status}")
                     return True

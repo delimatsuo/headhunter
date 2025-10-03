@@ -24,11 +24,10 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-import random
 import statistics
 import time
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 try:
     from scripts.pgvector_store import PgVectorStore, create_pgvector_store  # type: ignore

@@ -8,15 +8,13 @@ import json
 import subprocess
 import time
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Dict, Optional, List
 from datetime import datetime, timedelta
 import re
 import signal
 import sys
-import os
-from concurrent.futures import ProcessPoolExecutor, as_completed, TimeoutError
+from concurrent.futures import ProcessPoolExecutor, TimeoutError
 from multiprocessing import cpu_count, Manager
-import threading
 import psutil
 
 class TurboParallelProcessor:
@@ -48,7 +46,7 @@ class TurboParallelProcessor:
         self.shared_processed = self.manager.Value('i', 0)
         self.shared_failed = self.manager.Value('i', 0)
         
-        print(f"🚀 TURBO PARALLEL PROCESSOR INITIALIZED")
+        print("🚀 TURBO PARALLEL PROCESSOR INITIALIZED")
         print(f"⚡ CPU Cores: {cpu_count()} | Workers: {self.num_workers}")
         print(f"🕐 Schedule: {self.start_time.strftime('%I:%M %p')} - {self.end_time.strftime('%I:%M %p tomorrow')}")
         print(f"📦 Batch Size: {self.batch_size} candidates per worker")
@@ -220,8 +218,8 @@ Return ONLY valid JSON, no explanations."""
     
     def run_parallel_processing(self):
         """Main parallel processing loop"""
-        print(f"\n⚡ STARTING TURBO PARALLEL PROCESSING")
-        print(f"=" * 60)
+        print("\n⚡ STARTING TURBO PARALLEL PROCESSING")
+        print("=" * 60)
         
         # Load candidates
         print("📊 Loading database...")
@@ -284,7 +282,7 @@ Return ONLY valid JSON, no explanations."""
                     eta_time = datetime.now() + timedelta(minutes=eta_minutes)
                     print(f"⏱️ ETA: {eta_time.strftime('%I:%M %p')} ({eta_minutes/60:.1f} hours)")
         
-        print(f"\n✅ Processing session completed!")
+        print("\n✅ Processing session completed!")
         print(f"📊 Final stats: Processed {self.shared_processed.value}, Failed {self.shared_failed.value}")
     
     def graceful_shutdown(self, signum, frame):

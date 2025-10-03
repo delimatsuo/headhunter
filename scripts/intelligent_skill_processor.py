@@ -9,7 +9,7 @@ import json
 import os
 import asyncio
 import aiohttp
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from datetime import datetime
 import logging

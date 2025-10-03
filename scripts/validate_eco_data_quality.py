@@ -4,8 +4,7 @@ Validate ECO data quality and generate a concise report.
 import json
 import os
 from collections import Counter
-from dataclasses import dataclass
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable
 
 
 def iter_jsonl(path: str) -> Iterable[Dict]:

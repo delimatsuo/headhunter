@@ -9,7 +9,7 @@ import re
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence, Tuple
+from typing import Any, Awaitable, Callable, Dict, List, Mapping, MutableMapping, Optional, Sequence, Tuple
 
 import importlib
 

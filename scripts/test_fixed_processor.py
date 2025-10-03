@@ -4,9 +4,6 @@ Test script to verify the fixed high-throughput processor
 """
 
 import json
-import subprocess
-import time
-from pathlib import Path
 from high_throughput_processor import HighThroughputProcessor
 
 def test_fixed_processor():
@@ -76,7 +73,7 @@ def test_fixed_processor():
                 ('executive_summary', analysis.get('executive_summary'))
             ]
             
-            print(f"  📊 Data completeness check:")
+            print("  📊 Data completeness check:")
             for field_name, field_data in checks:
                 if field_data and isinstance(field_data, dict) and any(str(v).strip() for v in field_data.values() if v):
                     print(f"    ✅ {field_name}: Complete")
@@ -88,7 +85,7 @@ def test_fixed_processor():
             ats_keywords = analysis.get('searchability', {}).get('ats_keywords', [])
             salary_range = analysis.get('market_insights', {}).get('current_market_value', {}).get('estimated_salary_range', '')
             
-            print(f"  🎯 Key field validation:")
+            print("  🎯 Key field validation:")
             print(f"    Primary skills: {len(primary_skills)} items - {'✅' if primary_skills else '❌'}")
             print(f"    ATS keywords: {len(ats_keywords)} items - {'✅' if ats_keywords else '❌'}")
             print(f"    Salary range: {'✅' if salary_range and salary_range != '' else '❌'}")
@@ -96,8 +93,8 @@ def test_fixed_processor():
         else:
             print(f"  ❌ Failed to process {candidate_name}")
     
-    print(f"\n" + "=" * 60)
-    print(f"🏆 TEST RESULTS:")
+    print("\n" + "=" * 60)
+    print("🏆 TEST RESULTS:")
     print(f"✅ Successful: {success_count}/{len(test_candidates)}")
     print(f"❌ Failed: {len(test_candidates) - success_count}/{len(test_candidates)}")
     

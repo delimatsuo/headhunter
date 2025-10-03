@@ -12,12 +12,12 @@ import csv
 import json
 import logging
 import statistics
-from collections import Counter, defaultdict
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Mapping, MutableMapping, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, Iterator, List, Mapping, MutableMapping, Optional, Sequence
 
 import importlib
 

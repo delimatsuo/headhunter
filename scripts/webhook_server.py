@@ -6,9 +6,7 @@ and processes them using local Ollama LLM pipeline
 """
 
 import asyncio
-import json
 import logging
-import time
 import traceback
 import uuid
 from datetime import datetime
@@ -17,12 +15,11 @@ from typing import Dict, List, Optional, Any, Union
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request, BackgroundTasks, Depends, Security
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, validator
-import httpx
 
 # Import existing processing components
 import sys
@@ -31,9 +28,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(REPO_ROOT / 'scripts'))
 sys.path.append(str(REPO_ROOT / 'config'))
 
-from llm_processor import LLMProcessor, CandidateProfile, ProcessingStats
+from llm_processor import LLMProcessor
 from cloud_integration import CloudAPIClient
-from webhook_config import get_config, WebhookIntegrationConfig, Environment
+from webhook_config import get_config, WebhookIntegrationConfig
 from queue import Queue, Empty
 import threading
 from dataclasses import dataclass, asdict

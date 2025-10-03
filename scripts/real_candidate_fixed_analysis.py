@@ -12,9 +12,7 @@ import asyncio
 import time
 import aiohttp
 from typing import Dict, List, Any, Optional
-from datetime import datetime
 import sys
-import os
 
 # Add cloud_run_worker to path
 sys.path.append('cloud_run_worker')
@@ -315,9 +313,9 @@ async def process_candidate_with_real_analysis(candidate: Dict[str, Any], config
                         # Check for placeholder text
                         response_text = json.dumps(analysis)
                         if any(phrase in response_text for phrase in ['List ', 'Infer ', 'Based on ', 'Provide ']):
-                            print(f"   ⚠️ WARNING: Still contains placeholder text")
+                            print("   ⚠️ WARNING: Still contains placeholder text")
                         else:
-                            print(f"   ✓ GOOD: Contains real analysis")
+                            print("   ✓ GOOD: Contains real analysis")
                         
                         return analysis
                         
@@ -355,7 +353,7 @@ async def save_to_firestore(profiles: List[Dict[str, Any]]):
             saved_count += 1
             
         print(f"✅ Saved {saved_count} REAL ANALYSIS profiles to Firestore")
-        print(f"📋 Document IDs start with: fixed_analysis_")
+        print("📋 Document IDs start with: fixed_analysis_")
         
     except Exception as e:
         print(f"❌ Error saving to Firestore: {e}")
@@ -398,24 +396,24 @@ async def main():
             await asyncio.sleep(2)
     
     # Results
-    print(f"\\n" + "=" * 50)
-    print(f"🎯 REAL ANALYSIS TEST RESULTS")
-    print(f"=" * 50)
+    print("\\n" + "=" * 50)
+    print("🎯 REAL ANALYSIS TEST RESULTS")
+    print("=" * 50)
     print(f"✅ Successfully processed: {len(successful_profiles)}/{len(real_candidates)}")
     print(f"💰 Estimated cost: ${len(successful_profiles) * 0.0006:.4f}")
     
     if successful_profiles:
-        print(f"\\n💾 Saving REAL ANALYSIS profiles to Firestore...")
+        print("\\n💾 Saving REAL ANALYSIS profiles to Firestore...")
         await save_to_firestore(successful_profiles)
         
-        print(f"\\n🎉 SUCCESS: REAL analysis with job hopping assessment!")
-        print(f"🔍 Check Firestore collection: enhanced_candidates")
-        print(f"📋 Look for documents: fixed_analysis_[id]")
-        print(f"📊 These should contain ACTUAL analysis, not placeholder text")
+        print("\\n🎉 SUCCESS: REAL analysis with job hopping assessment!")
+        print("🔍 Check Firestore collection: enhanced_candidates")
+        print("📋 Look for documents: fixed_analysis_[id]")
+        print("📊 These should contain ACTUAL analysis, not placeholder text")
         
         # Show sample analysis
         sample = successful_profiles[0]
-        print(f"\\n📋 SAMPLE REAL ANALYSIS:")
+        print("\\n📋 SAMPLE REAL ANALYSIS:")
         job_stability = sample.get('job_stability_intelligence', {})
         compensation = sample.get('compensation_intelligence', {})
         placement = sample.get('placement_intelligence', {})
@@ -428,7 +426,7 @@ async def main():
         print(f"   ⭐ Overall Rating: {summary.get('overall_rating', 'N/A')}/100")
         print(f"   ⭐ Quality Check: {sample.get('analysis_quality', 'N/A')}")
     else:
-        print(f"\\n❌ No successful analyses")
+        print("\\n❌ No successful analyses")
 
 if __name__ == "__main__":
     asyncio.run(main())

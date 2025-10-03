@@ -22,7 +22,7 @@ class RecruiterEnhancedProcessor:
         
     def load_nas_data(self):
         """Load the NAS database"""
-        print(f"📂 Loading NAS database...")
+        print("📂 Loading NAS database...")
         with open(self.nas_file, 'r') as f:
             return json.load(f)
     
@@ -33,7 +33,7 @@ class RecruiterEnhancedProcessor:
         with open(backup_file, 'w') as f:
             json.dump(data, f, indent=2)
         
-        print(f"💾 Updating NAS database...")
+        print("💾 Updating NAS database...")
         with open(self.nas_file, 'w') as f:
             json.dump(data, f, indent=2)
     
@@ -380,7 +380,7 @@ IMPORTANT: Base ALL analysis on the ACTUAL data provided. Use your knowledge abo
                     analysis.get('experience_analysis')):
                     return analysis
                 else:
-                    print(f"    ⚠️ Incomplete analysis, retrying...")
+                    print("    ⚠️ Incomplete analysis, retrying...")
                     if retry_count < self.max_retries:
                         time.sleep(3)
                         return self.process_with_ollama(prompt, retry_count + 1)
@@ -389,7 +389,7 @@ IMPORTANT: Base ALL analysis on the ACTUAL data provided. Use your knowledge abo
             return None
             
         except subprocess.TimeoutExpired:
-            print(f"    ⏱️ Timeout, retrying...")
+            print("    ⏱️ Timeout, retrying...")
             if retry_count < self.max_retries:
                 time.sleep(3)
                 return self.process_with_ollama(prompt, retry_count + 1)
@@ -457,7 +457,7 @@ IMPORTANT: Base ALL analysis on the ACTUAL data provided. Use your knowledge abo
             prompt = self.create_recruiter_prompt(candidate)
             
             # Process with Ollama
-            print(f"  🤖 Generating recruiter-level analysis...", end="")
+            print("  🤖 Generating recruiter-level analysis...", end="")
             analysis = self.process_with_ollama(prompt)
             
             if analysis:

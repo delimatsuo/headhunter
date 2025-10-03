@@ -5,7 +5,6 @@ Takes processed results from enhanced_analysis files and merges them into the ma
 """
 
 import json
-import os
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any, Optional
@@ -29,7 +28,7 @@ class EnhancedResultsMerger:
         with open(backup_file, 'w') as f:
             json.dump(data, f, indent=2)
         
-        print(f"💾 Updating NAS database...")
+        print("💾 Updating NAS database...")
         with open(self.nas_file, 'w') as f:
             json.dump(data, f, indent=2)
     
@@ -171,11 +170,11 @@ class EnhancedResultsMerger:
             self.save_nas_data(candidates)
             
             final_count = sum(1 for c in candidates if c.get('enhanced_analysis'))
-            print(f"\n✅ Merge complete!")
+            print("\n✅ Merge complete!")
             print(f"📈 New enhancements added: {merged_count}")
             print(f"🔄 Existing enhancements updated: {updated_count}")
             print(f"📊 Total enhanced candidates: {final_count} (was {existing_count})")
-            print(f"💾 NAS database updated!")
+            print("💾 NAS database updated!")
         else:
             print("\n⚠️ No changes made to database")
 

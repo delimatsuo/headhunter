@@ -25,7 +25,7 @@ import signal
 import sys
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 try:
     from scripts.pgvector_store import PgVectorStore, create_pgvector_store  # type: ignore

@@ -4,9 +4,7 @@ Test script for Job Search API functionality
 """
 
 import sys
-import os
 import json
-import time
 from datetime import datetime
 from pathlib import Path
 
@@ -157,21 +155,21 @@ def test_job_search_api():
     for job in job_descriptions:
         # Format for Firebase Functions shell
         print(f"\n// Test: {job['title']}")
-        print(f"searchJobCandidates({{")
-        print(f"  jobDescription: {{")
+        print("searchJobCandidates({")
+        print("  jobDescription: {")
         print(f"    title: \"{job['title']}\",")
         print(f"    company: \"{job['company']}\",")
         print(f"    description: `{job['description'].strip()}`")
-        print(f"  }},")
-        print(f"  limit: 10")
-        print(f"}})")
+        print("  },")
+        print("  limit: 10")
+        print("})")
         print()
         
         # Quick match version
-        print(f"// Quick match version:")
-        print(f"quickMatch({{")
+        print("// Quick match version:")
+        print("quickMatch({")
         print(f"  description: `{job['title']} - {job['description'][:100].strip()}...`")
-        print(f"}})")
+        print("})")
         print()
     
     return job_descriptions
@@ -341,7 +339,7 @@ def main():
     validation_steps = create_deployment_test()
     
     print("\n✅ Job Search API Test Setup Complete!")
-    print(f"\nNext Steps:")
+    print("\nNext Steps:")
     print("1. Deploy functions: cd functions && npm run deploy")
     print("2. Test with Firebase shell: cd functions && npm run shell")
     print("3. Run the test queries above")

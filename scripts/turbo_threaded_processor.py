@@ -7,15 +7,13 @@ import json
 import subprocess
 import time
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Dict, Optional
 from datetime import datetime, timedelta
 import re
 import signal
 import sys
-import os
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import queue
 import psutil
 
 class TurboThreadedProcessor:
@@ -43,7 +41,7 @@ class TurboThreadedProcessor:
         self.progress_file = Path("turbo_threaded_progress.json")
         self.last_processed_index = self.load_progress()
         
-        print(f"🚀 TURBO THREADED PROCESSOR INITIALIZED")
+        print("🚀 TURBO THREADED PROCESSOR INITIALIZED")
         print(f"⚡ Threads: {self.num_threads}")
         print(f"🕐 Schedule: {self.start_time.strftime('%I:%M %p')} - {self.end_time.strftime('%I:%M %p tomorrow')}")
         print(f"📦 Batch Size: {self.batch_size}")
@@ -207,8 +205,8 @@ ONLY JSON response."""
         return prompt
     
     def run_threaded_processing(self):
-        print(f"\n⚡ STARTING TURBO THREADED PROCESSING")
-        print(f"=" * 60)
+        print("\n⚡ STARTING TURBO THREADED PROCESSING")
+        print("=" * 60)
         
         # Load candidates
         print("📊 Loading database...")
@@ -265,7 +263,7 @@ ONLY JSON response."""
                     eta_time = datetime.now() + timedelta(minutes=eta_minutes)
                     print(f"  ⏱️ ETA: {eta_time.strftime('%I:%M %p')} ({eta_minutes/60:.1f}h remaining)")
         
-        print(f"\n✅ Processing completed!")
+        print("\n✅ Processing completed!")
         print(f"📊 Final: Processed {self.processed_count}, Failed {self.failed_count}")
     
     def graceful_shutdown(self, signum, frame):

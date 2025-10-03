@@ -249,7 +249,7 @@ async def process_real_candidate_comprehensive(candidate: Dict[str, Any], config
     candidate_id = candidate['id']
     name = candidate['name']
     
-    print(f"🔄 Processing REAL candidate with COMPREHENSIVE enrichment:")
+    print("🔄 Processing REAL candidate with COMPREHENSIVE enrichment:")
     print(f"   👤 Name: {name}")
     print(f"   💼 Experience: {candidate['experience']} years")
     print(f"   🏢 Companies: {', '.join(candidate['companies'])}")
@@ -370,8 +370,8 @@ async def save_to_firestore(profiles: List[Dict[str, Any]]):
             print(f"   💾 Saved {profile['personal_info']['name']} to Firestore")
             
         print(f"✅ Saved {saved_count} COMPREHENSIVE real profiles to Firestore")
-        print(f"🔍 Check collection: enhanced_candidates")
-        print(f"📋 Document IDs start with: comprehensive_real_")
+        print("🔍 Check collection: enhanced_candidates")
+        print("📋 Document IDs start with: comprehensive_real_")
         
     except Exception as e:
         print(f"❌ Error saving to Firestore: {e}")
@@ -421,24 +421,24 @@ async def main():
     total = len(real_candidates)
     success_rate = (len(successful_profiles) / total) * 100 if total > 0 else 0
     
-    print(f"\\n" + "=" * 60)
-    print(f"🎯 COMPREHENSIVE REAL CANDIDATE TEST RESULTS")
-    print(f"=" * 60)
+    print("\\n" + "=" * 60)
+    print("🎯 COMPREHENSIVE REAL CANDIDATE TEST RESULTS")
+    print("=" * 60)
     print(f"✅ Successfully processed: {len(successful_profiles)}/{total} ({success_rate:.1f}%)")
     print(f"❌ Failed: {failed_count}")
     print(f"💰 Estimated cost: ${len(successful_profiles) * 0.0007:.4f}")
     
     # Save to Firestore
     if successful_profiles:
-        print(f"\\n💾 Saving COMPREHENSIVE real profiles to Firestore...")
+        print("\\n💾 Saving COMPREHENSIVE real profiles to Firestore...")
         await save_to_firestore(successful_profiles)
         
-        print(f"\\n🎉 SUCCESS: Real candidates with COMPREHENSIVE enrichment!")
-        print(f"🔍 Review in Firestore: enhanced_candidates collection")
-        print(f"📋 Look for documents: comprehensive_real_[id]")
-        print(f"📊 These should have 15+ detailed sections with high completeness")
+        print("\\n🎉 SUCCESS: Real candidates with COMPREHENSIVE enrichment!")
+        print("🔍 Review in Firestore: enhanced_candidates collection")
+        print("📋 Look for documents: comprehensive_real_[id]")
+        print("📊 These should have 15+ detailed sections with high completeness")
     else:
-        print(f"\\n❌ No successful profiles to save")
+        print("\\n❌ No successful profiles to save")
 
 if __name__ == "__main__":
     asyncio.run(main())

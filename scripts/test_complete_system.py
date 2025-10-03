@@ -4,10 +4,8 @@ Complete System Test for Headhunter AI
 Tests the full pipeline from data processing to search functionality
 """
 
-import json
 import requests
 import time
-import os
 from typing import Dict, List, Any
 
 class HeadhunterSystemTest:
@@ -197,7 +195,7 @@ class HeadhunterSystemTest:
             
             if response.status_code == 200:
                 results = response.json()
-                print(f"✅ Job search successful!")
+                print("✅ Job search successful!")
                 print(f"📊 Found {len(results.get('matches', []))} candidates")
                 
                 # Display top matches
@@ -235,7 +233,7 @@ class HeadhunterSystemTest:
             
             if response.status_code == 200:
                 results = response.json()
-                print(f"✅ Semantic search successful!")
+                print("✅ Semantic search successful!")
                 print(f"📊 Found {results.get('total', 0)} results")
                 return True
             else:

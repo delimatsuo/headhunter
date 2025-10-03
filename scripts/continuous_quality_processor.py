@@ -8,7 +8,7 @@ import json
 import subprocess
 import time
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Dict, Optional, List
 from datetime import datetime
 import re
 import sys
@@ -37,8 +37,8 @@ class ContinuousQualityProcessor:
         self.total_failed = 0
         self.batch_times = []
         
-        print(f"🔄 CONTINUOUS QUALITY PROCESSOR")
-        print(f"=" * 60)
+        print("🔄 CONTINUOUS QUALITY PROCESSOR")
+        print("=" * 60)
         print(f"📦 Batch Size: {self.batch_size} candidates")
         print(f"🔄 Starting from index: {self.last_processed_index}")
         print(f"📁 Output: {self.enhanced_dir}")
@@ -347,7 +347,7 @@ Return ONLY the JSON, no additional text."""
             self.save_progress(current_index, batch_num)
             
             # Overall statistics
-            print(f"\n📊 OVERALL PROGRESS:")
+            print("\n📊 OVERALL PROGRESS:")
             print(f"  Total Processed: {self.total_processed}/{total_candidates}")
             print(f"  Completion: {100*current_index/total_candidates:.1f}%")
             
@@ -364,17 +364,17 @@ Return ONLY the JSON, no additional text."""
             
             # Short pause between batches
             if current_index < total_candidates:
-                print(f"\n⏸️ Pausing 5 seconds before next batch...")
+                print("\n⏸️ Pausing 5 seconds before next batch...")
                 time.sleep(5)
         
-        print(f"\n🎉 ALL PROCESSING COMPLETE!")
+        print("\n🎉 ALL PROCESSING COMPLETE!")
         print(f"Total time: {datetime.now() - self.session_start}")
         print(f"Total processed: {self.total_processed}")
         print(f"Total failed: {self.total_failed}")
     
     def graceful_shutdown(self, signum, frame):
         """Handle shutdown gracefully"""
-        print(f"\n🛑 Graceful shutdown...")
+        print("\n🛑 Graceful shutdown...")
         print(f"📊 Session processed: {self.total_processed}")
         print(f"📊 Session failed: {self.total_failed}")
         if hasattr(self, 'current_index'):

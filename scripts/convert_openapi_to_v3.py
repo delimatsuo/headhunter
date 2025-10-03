@@ -210,12 +210,12 @@ def main():
         yaml.dump(openapi_spec, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
 
     print("✓ Conversion complete!")
-    print(f"\nConverted spec:")
+    print("\nConverted spec:")
     print(f"  - OpenAPI version: {openapi_spec['openapi']}")
     print(f"  - Servers: {len(openapi_spec.get('servers', []))}")
     print(f"  - Paths: {len(openapi_spec.get('paths', {}))}")
     if 'components' in openapi_spec:
-        print(f"  - Components:")
+        print("  - Components:")
         for component_type, items in openapi_spec['components'].items():
             print(f"    - {component_type}: {len(items)}")
 

@@ -9,7 +9,7 @@ import json
 import csv
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 from datetime import datetime
 
 from data_paths import csv_dir, repo_root, resumes_dir
