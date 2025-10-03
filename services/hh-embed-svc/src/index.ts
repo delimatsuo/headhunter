@@ -39,6 +39,7 @@ async function bootstrap(): Promise<void> {
     logger.info('Registering routes (with lazy dependencies)...');
     await registerRoutes(server, dependencies);
     console.log('[BOOTSTRAP] Routes registered successfully');
+    console.log('[BOOTSTRAP] Fastify routes:', JSON.stringify(server.printRoutes()));
     logger.info('Routes registered');
 
     // Start listening IMMEDIATELY
