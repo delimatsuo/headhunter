@@ -27,44 +27,41 @@ $ curl https://headhunter-api-gateway-production-d735p8t6.uc.gateway.dev/health
 - Redis connection details correct
 - All environment variables set properly
 
-### 4. hh-embed-svc Deployed and Serving ✅
-- Service deploys successfully with lazy init pattern
-- Passes Cloud Run startup probes
-- Responds via API Gateway (auth required)
-- PgVectorClient defers DB connection until first use
-- Retry logic fixed to avoid port conflicts
+### 4. All 8 Services Deployed and Serving ✅
+Services successfully deployed with lazy init pattern:
+- hh-admin-svc (revision 00004-7k5)
+- hh-embed-svc (revision 00014-qdg)
+- hh-search-svc (revision 00007-6lv)
+- hh-rerank-svc (revision 00006-cjv)
+- hh-evidence-svc (revision 00006-bmj)
+- hh-eco-svc (revision 00004-r7f)
+- hh-msgs-svc (revision 00005-9nn)
+- hh-enrich-svc (revision 00006-9fk)
+
+All services:
+- Pass Cloud Run startup probes immediately
+- Initialize dependencies in background
+- Retry failed initialization automatically
+- Respond via API Gateway (auth required)
 
 ## What's Remaining
 
-### 1. Apply Lazy Init to Other Services (6 services)
-Need to refactor bootstrap pattern for:
-- hh-search-svc
-- hh-rerank-svc
-- hh-evidence-svc
-- hh-eco-svc
-- hh-msgs-svc
-- hh-enrich-svc
+### 1. Update API Gateway OpenAPI Spec
+Add missing endpoints if needed (search, rerank, etc.)
 
-### 2. Fix Health Endpoint Logic
-Current health endpoint returns "unhealthy" when dependencies aren't ready, causing 503 responses. Should return "initializing" status with 200 OK.
+### 2. Configure Authentication
+Set up API keys or OAuth for gateway access
 
-### 3. Build and Deploy All Services
-Once lazy init applied, need to:
-- Build new images for all 7 services
-- Tag as `latest-production`
-- Deploy to Cloud Run
-- Test each service via gateway
-
-### 4. Update API Gateway OpenAPI Spec
-Add missing endpoints if needed (like `/admin/tenants`)
+### 3. End-to-End Testing
+Test complete request flows through all services
 
 ## Success Metrics
 
 - ✅ Gateway URL accessible
 - ✅ Gateway routes to backend
-- ✅ Two services responding (hh-admin-svc, hh-embed-svc)
-- ⏳ All 8 services responding (2/8 complete)
+- ✅ All 8 services responding and deployed
 - ⏳ All endpoints defined in OpenAPI spec working
+- ⏳ Authentication configured
 - ⏳ End-to-end request flow working
 
 ## Key Learnings
