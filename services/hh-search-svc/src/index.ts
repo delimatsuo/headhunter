@@ -42,7 +42,7 @@ async function bootstrap(): Promise<void> {
     await server.listen({ port, host });
     logger.info({ port, service: config.base.runtime.serviceName }, 'hh-search-svc listening (initializing dependencies...)');
 
-    setImmediate(async () => {
+    const initializeDependencies = async () => {
       try {
         logger.info('Initializing pgvector client...');
         pgClient = new PgVectorClient(config.pgvector, getLogger({ module: 'pgvector-client' }));
@@ -107,8 +107,16 @@ async function bootstrap(): Promise<void> {
         isReady = true;
         logger.info('hh-search-svc fully initialized and ready');
       } catch (error) {
-        logger.error({ error }, 'Failed to initialize dependencies');
+        logger.error({ error }, 'Failed to initialize dependencies, will retry in 5 seconds...');
+        setTimeout(() => {
+          logger.info('Retrying dependency initialization...');
+          void initializeDependencies();
+        }, 5000);
       }
+    };
+
+    setImmediate(() => {
+      void initializeDependencies();
     });
 
     const shutdown = async () => {

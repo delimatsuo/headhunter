@@ -41,7 +41,7 @@ async function bootstrap(): Promise<void> {
     await server.listen({ port, host });
     logger.info({ port }, 'hh-enrich-svc listening (initializing dependencies...)');
 
-    setImmediate(async () => {
+    const initializeDependencies = async () => {
       try {
         logger.info('Initializing metrics exporter...');
         const metricsExporter = MetricsExporter.fromEnv(
@@ -74,8 +74,16 @@ async function bootstrap(): Promise<void> {
         isReady = true;
         logger.info('hh-enrich-svc fully initialized and ready');
       } catch (error) {
-        logger.error({ error }, 'Failed to initialize dependencies');
+        logger.error({ error }, 'Failed to initialize dependencies, will retry in 5 seconds...');
+        setTimeout(() => {
+          logger.info('Retrying dependency initialization...');
+          void initializeDependencies();
+        }, 5000);
       }
+    };
+
+    setImmediate(() => {
+      void initializeDependencies();
     });
 
     const shutdown = async () => {

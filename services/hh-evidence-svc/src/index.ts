@@ -23,12 +23,7 @@ async function bootstrap(): Promise<void> {
     let redisClient: EvidenceRedisClient | null = null;
     let firestoreClient: EvidenceFirestoreClient | null = null;
 
-    const port = Number(process.env.PORT ?? 8080);
-    const host = '0.0.0.0';
-
-    await server.listen({ port, host });
-    logger.info({ port, service: config.base.runtime.serviceName }, 'hh-evidence-svc listening (initializing dependencies...)');
-
+    // Register health endpoint BEFORE listening (critical for Cloud Run probes)
     server.get('/health', async () => {
       if (!isReady) {
         return { status: 'initializing', service: config.base.runtime.serviceName };
@@ -36,8 +31,13 @@ async function bootstrap(): Promise<void> {
       return { status: 'ok', service: config.base.runtime.serviceName };
     });
 
+    const port = Number(process.env.PORT ?? 8080);
+    const host = '0.0.0.0';
 
-    setImmediate(async () => {
+    await server.listen({ port, host });
+    logger.info({ port, service: config.base.runtime.serviceName }, 'hh-evidence-svc listening (initializing dependencies...)');
+
+    const initializeDependencies = async () => {
       try {
         logger.info('Initializing Redis client...');
         redisClient = new EvidenceRedisClient(config.redis, getLogger({ module: 'evidence-redis-client' }));
@@ -105,8 +105,16 @@ async function bootstrap(): Promise<void> {
         isReady = true;
         logger.info('hh-evidence-svc fully initialized and ready');
       } catch (error) {
-        logger.error({ error }, 'Failed to initialize dependencies');
+        logger.error({ error }, 'Failed to initialize dependencies, will retry in 5 seconds...');
+        setTimeout(() => {
+          logger.info('Retrying dependency initialization...');
+          void initializeDependencies();
+        }, 5000);
       }
+    };
+
+    setImmediate(() => {
+      void initializeDependencies();
     });
 
     const shutdown = async () => {

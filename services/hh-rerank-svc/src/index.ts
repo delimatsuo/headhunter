@@ -23,21 +23,21 @@ async function bootstrap(): Promise<void> {
     let redisClient: RerankRedisClient | null = null;
     let togetherClient: TogetherClient | null = null;
 
+    // Register health endpoint BEFORE listening (critical for Cloud Run probes)
+    server.get('/health', async () => {
+      if (!isReady) {
+        return { status: 'initializing', service: 'hh-rerank-svc' };
+      }
+      return { status: 'ok', service: 'hh-rerank-svc' };
+    });
+
     const port = Number(process.env.PORT ?? 8080);
     const host = '0.0.0.0';
 
     await server.listen({ port, host });
     logger.info({ port }, 'hh-rerank-svc listening (initializing dependencies...)');
 
-    server.get('/health', async () => {
-      if (!isReady) {
-        return { status: 'initializing' };
-      }
-      return { status: 'ok' };
-    });
-
-
-    setImmediate(async () => {
+    const initializeDependencies = async () => {
       try {
         logger.info('Initializing Redis client...');
         redisClient = new RerankRedisClient(config.redis, getLogger({ module: 'redis-client' }));
@@ -103,8 +103,16 @@ async function bootstrap(): Promise<void> {
         isReady = true;
         logger.info('hh-rerank-svc fully initialized and ready');
       } catch (error) {
-        logger.error({ error }, 'Failed to initialize dependencies');
+        logger.error({ error }, 'Failed to initialize dependencies, will retry in 5 seconds...');
+        setTimeout(() => {
+          logger.info('Retrying dependency initialization...');
+          void initializeDependencies();
+        }, 5000);
       }
+    };
+
+    setImmediate(() => {
+      void initializeDependencies();
     });
 
     const shutdown = async () => {
