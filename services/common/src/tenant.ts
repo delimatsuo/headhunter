@@ -74,13 +74,18 @@ export const tenantValidationPlugin: FastifyPluginAsync = fp(async (fastify) => 
       throw badRequestError('Missing X-Tenant-ID header.');
     }
 
-    if (!request.user?.orgId) {
-      logger.warn('User payload missing orgId claim.');
-      throw forbiddenError('Authenticated user is missing organization context.');
-    }
-
-    if (tenantId !== request.user.orgId) {
-      throw forbiddenError('Tenant header does not match authenticated user organization.');
+    // For gateway tokens (no orgId), trust X-Tenant-ID header since API Gateway validated it
+    // For Firebase tokens, validate orgId matches X-Tenant-ID header
+    if (request.user?.orgId) {
+      if (tenantId !== request.user.orgId) {
+        throw forbiddenError('Tenant header does not match authenticated user organization.');
+      }
+    } else {
+      // Gateway token without orgId claim - verify it came through auth plugin successfully
+      if (!request.user) {
+        logger.warn('Missing user context in request with tenant header.');
+        throw forbiddenError('Authentication required for tenant context.');
+      }
     }
 
     const tenant = await fetchTenant(tenantId);
