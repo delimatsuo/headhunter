@@ -311,7 +311,7 @@ export class EnrichmentWorker {
     });
   }
 
-  private async invokePython(record: EnrichmentJobRecord, attempt: number, jobLogger: Logger): Promise<Record<string, any>> {
+  private async invokePython(record: EnrichmentJobRecord, attempt: number, _jobLogger: Logger): Promise<Record<string, any>> {
     if (!this.pythonBreaker.canExecute()) {
       throw new WorkerError('python_circuit_open', 'Python processor circuit breaker is open.', false);
     }
