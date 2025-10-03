@@ -1,5 +1,4 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-
 import { badRequestError, getLogger } from '@hh/common';
 
 import type { EnrichServiceConfig } from './config';

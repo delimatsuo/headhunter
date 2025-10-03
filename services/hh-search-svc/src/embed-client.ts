@@ -1,6 +1,5 @@
 import axios, { type AxiosInstance } from 'axios';
 import type { Logger } from 'pino';
-
 import { getIdTokenManager } from '@hh/common';
 
 import type { EmbedServiceConfig } from './config';

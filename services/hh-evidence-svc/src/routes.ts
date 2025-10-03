@@ -1,5 +1,4 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-
 import { badRequestError, getLogger, notFoundError } from '@hh/common';
 
 import type { EvidenceServiceConfig } from './config';

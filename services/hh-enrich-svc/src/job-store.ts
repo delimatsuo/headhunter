@@ -1,8 +1,6 @@
 import { createHash } from 'node:crypto';
-
-import { getLogger } from '@hh/common';
+import { getLogger , getRedisClient } from '@hh/common';
 import type { RedisClientType } from 'redis';
-import { getRedisClient } from '@hh/common';
 
 import type { EnrichServiceConfig } from './config';
 import type { EnrichmentJobRecord, EnrichmentJobResult } from './types';

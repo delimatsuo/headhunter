@@ -3,6 +3,7 @@ import { MetricServiceClient } from '@google-cloud/monitoring';
 import { Connector, IpAddressTypes } from '@google-cloud/cloud-sql-connector';
 import { getLogger } from '@hh/common';
 import { Pool } from 'pg';
+import type { protos as monitoringProtos } from '@google-cloud/monitoring';
 
 import type { AdminMonitoringConfig } from './config';
 import type {
@@ -13,7 +14,6 @@ import type {
   SnapshotTenantLag,
   TenantSnapshotSourceResult
 } from './types';
-import type { protos as monitoringProtos } from '@google-cloud/monitoring';
 
 const logger = getLogger({ module: 'admin-monitoring-client' });
 

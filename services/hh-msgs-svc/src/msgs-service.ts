@@ -135,6 +135,7 @@ export class MsgsService {
     options: { bypassCache?: boolean } = {}
   ): Promise<SkillExpandResponse> {
     const topK = Math.max(1, Math.min(request.topK ?? 10, 25));
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { skillId: _ignoredSkillId, ...fingerprintSource } = request;
     const fingerprint = this.buildFingerprint({
       ...fingerprintSource,

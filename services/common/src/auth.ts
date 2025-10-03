@@ -1,5 +1,4 @@
 import { readFileSync } from 'fs';
-
 import type { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 import type { ServiceAccount } from 'firebase-admin';

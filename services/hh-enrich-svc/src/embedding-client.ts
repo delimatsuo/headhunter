@@ -2,7 +2,6 @@ import { request as httpRequest } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 import { URL } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
-
 import type { Logger } from 'pino';
 import { getIdTokenManager, getLogger } from '@hh/common';
 

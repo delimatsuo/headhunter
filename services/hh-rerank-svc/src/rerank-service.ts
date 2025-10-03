@@ -1,5 +1,4 @@
 import { createHash } from 'crypto';
-
 import { badRequestError, getLogger } from '@hh/common';
 import type { Logger } from 'pino';
 

@@ -59,6 +59,7 @@ class VertexAiProvider implements EmbeddingProvider {
     private readonly settings: EmbeddingProviderSettings['vertex'],
     runtime: EmbeddingRuntimeSettings
   ) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const vertex = require('@google-cloud/aiplatform');
     const { PredictionServiceClient } = vertex.v1;
     this.predictionClient = new PredictionServiceClient({

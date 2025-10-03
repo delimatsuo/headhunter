@@ -1,5 +1,4 @@
 import { randomUUID } from 'crypto';
-
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
 import pino, { type Logger } from 'pino';

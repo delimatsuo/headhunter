@@ -1,6 +1,5 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-
 import { getConfig as getBaseConfig, type ServiceConfig } from '@hh/common';
 
 export interface EnrichmentQueueConfig {

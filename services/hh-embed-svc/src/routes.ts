@@ -1,5 +1,4 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-
 import { badRequestError } from '@hh/common';
 
 import type { EmbeddingsServiceConfig } from './config';

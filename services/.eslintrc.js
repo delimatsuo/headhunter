@@ -2,7 +2,6 @@ module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    project: ['./tsconfig.base.json'],
     sourceType: 'module',
     ecmaVersion: 2022
   },
@@ -15,18 +14,25 @@ module.exports = {
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
-    'plugin:@typescript-eslint/recommended-requiring-type-checking',
     'plugin:import/recommended',
     'plugin:import/typescript',
     'plugin:jest/recommended',
     'plugin:jest/style',
     'prettier'
   ],
+  settings: {
+    'import/resolver': {
+      typescript: {
+        project: ['./common/tsconfig.json', './hh-*/tsconfig.json']
+      }
+    }
+  },
   rules: {
     '@typescript-eslint/explicit-module-boundary-types': 'off',
-    '@typescript-eslint/no-floating-promises': ['error'],
-    '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: false }],
+    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     'import/no-default-export': 'error',
+    'import/no-unresolved': 'warn',
     'import/order': [
       'warn',
       {

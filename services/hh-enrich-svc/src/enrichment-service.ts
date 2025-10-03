@@ -1,7 +1,5 @@
 import { createHash } from 'node:crypto';
-
 import type { Logger } from 'pino';
-
 import { getLogger } from '@hh/common';
 
 import type { EnrichServiceConfig } from './config';
