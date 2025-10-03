@@ -9,7 +9,7 @@ info:
     client-credentials grant and validated by downstream services.
 
     '
-host: hh-gateway-${ENVIRONMENT}-${REGION}.gateway.dev
+host: headhunter-api-gateway-production-d735p8t6.uc.gateway.dev
 basePath: /
 schemes:
 - https
@@ -26,7 +26,7 @@ consumes:
 produces:
 - application/json
 x-google-endpoints:
-- name: hh-gateway-${ENVIRONMENT}-${REGION}.gateway.dev
+- name: headhunter-api-gateway-production-d735p8t6.uc.gateway.dev
   allowCors: true
 paths:
   /health:
@@ -51,8 +51,8 @@ paths:
             required:
             - status
       x-google-backend:
-        address: https://hh-admin-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-admin-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        address: https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /ready:
     get:
@@ -77,8 +77,8 @@ paths:
             required:
             - status
       x-google-backend:
-        address: https://hh-admin-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-admin-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        address: https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/embeddings/generate:
     post:
@@ -110,8 +110,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://hh-embed-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-embed-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        address: https://hh-embed-svc-production-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-embed-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/embeddings/upsert:
     post:
@@ -143,8 +143,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://hh-embed-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-embed-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        address: https://hh-embed-svc-production-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-embed-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/embeddings/query:
     post:
@@ -176,8 +176,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://hh-embed-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-embed-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        address: https://hh-embed-svc-production-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-embed-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/search/hybrid:
     post:
@@ -209,8 +209,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://hh-search-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-search-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        address: https://hh-search-svc-production-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-search-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/search/rerank:
     post:
@@ -242,8 +242,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://hh-rerank-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-rerank-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        address: https://hh-rerank-svc-production-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-rerank-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/evidence/{candidateId}:
     get:
@@ -285,8 +285,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://hh-evidence-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-evidence-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        address: https://hh-evidence-svc-production-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-evidence-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/occupations/search:
     get:
@@ -344,8 +344,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://hh-eco-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-eco-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        address: https://hh-eco-svc-production-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-eco-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/occupations/{ecoId}:
     get:
@@ -394,8 +394,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://hh-eco-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-eco-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        address: https://hh-eco-svc-production-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-eco-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/enrich/profile:
     post:
@@ -427,8 +427,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://hh-enrich-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-enrich-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        address: https://hh-enrich-svc-production-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-enrich-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/enrich/status/{jobId}:
     get:
@@ -464,8 +464,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://hh-enrich-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-enrich-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        address: https://hh-enrich-svc-production-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-enrich-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/admin/refresh-postings:
     post:
@@ -501,8 +501,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://hh-admin-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-admin-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        address: https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/admin/refresh-profiles:
     post:
@@ -538,8 +538,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://hh-admin-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-admin-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        address: https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/admin/snapshots:
     get:
@@ -570,8 +570,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://hh-admin-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-admin-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        address: https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/skills/expand:
     post:
@@ -603,8 +603,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://hh-msgs-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-msgs-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        address: https://hh-msgs-svc-production-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-msgs-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/roles/template:
     post:
@@ -636,8 +636,8 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://hh-msgs-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-msgs-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        address: https://hh-msgs-svc-production-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-msgs-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/market/demand:
     get:
@@ -684,6 +684,6 @@ paths:
         default:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
-        address: https://hh-msgs-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-msgs-svc-${ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+        address: https://hh-msgs-svc-production-akcoqbr7sa-uc.a.run.app
+        jwt_audience: https://hh-msgs-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
