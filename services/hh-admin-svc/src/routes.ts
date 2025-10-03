@@ -18,6 +18,7 @@ interface RouteDependencies {
   jobs: AdminJobsClient;
   monitoring: MonitoringClient;
   iam: AdminIamValidator;
+  state: { isReady: boolean };
 }
 
 export async function registerRoutes(app: FastifyInstance, dependencies: RouteDependencies): Promise<void> {
@@ -28,6 +29,15 @@ export async function registerRoutes(app: FastifyInstance, dependencies: RouteDe
   }));
 
   const readinessHandler = async (_request: FastifyRequest, reply: FastifyReply) => {
+    // If not ready, dependencies are still null - return initializing
+    if (!dependencies.state.isReady) {
+      reply.status(503);
+      return {
+        status: 'initializing',
+        service: 'hh-admin-svc'
+      };
+    }
+
     const [pubsubHealthy, jobsHealthy, monitoringHealthy] = await Promise.all([
       dependencies.pubsub.healthCheck(),
       dependencies.jobs.healthCheck(),

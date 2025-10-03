@@ -25,29 +25,25 @@ async function bootstrap(): Promise<void> {
     logger.info('Fastify server built');
 
     // Track initialization state with mutable dependency container
-    let isReady = false;
+    const state = {
+      isReady: false
+    };
     const dependencies = {
       config,
       service: null as any,
       pubsub: null as any,
       jobs: null as any,
       monitoring: null as any,
-      iam: null as any
+      iam: null as any,
+      state  // Pass state to routes
     };
 
     // Register ALL routes BEFORE listen (required by Fastify)
     // Routes will use lazily-initialized dependencies via closure
+    // Routes module includes /health endpoint
     logger.info('Registering routes (with lazy dependencies)...');
     await registerRoutes(server, dependencies);
     logger.info('Routes registered');
-
-    // Simple health endpoint (registered BEFORE listen)
-    server.get('/health', async () => {
-      if (!isReady) {
-        return { status: 'initializing', service: 'hh-admin-svc' };
-      }
-      return { status: 'ok', service: 'hh-admin-svc' };
-    });
 
     // Start listening IMMEDIATELY (Cloud Run requires fast startup)
     const port = Number(process.env.PORT ?? 8080);
@@ -78,7 +74,7 @@ async function bootstrap(): Promise<void> {
         dependencies.service = new AdminService(config, dependencies.pubsub, dependencies.jobs, dependencies.monitoring);
         logger.info('Admin service initialized');
 
-        isReady = true;
+        state.isReady = true;
         logger.info('hh-admin-svc fully initialized and ready');
       } catch (error) {
         logger.error({ error }, 'Failed to initialize dependencies - service running in degraded mode');
