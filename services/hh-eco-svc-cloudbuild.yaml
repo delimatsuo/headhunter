@@ -1,0 +1,28 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--no-cache'
+      - '-f'
+      - 'hh-eco-svc/Dockerfile'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-eco-svc:latest'
+      - '.'
+    dir: 'services'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-eco-svc:latest'
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'hh-eco-svc-production'
+      - '--image=us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-eco-svc:latest'
+      - '--region=us-central1'
+      - '--platform=managed'
+
+images:
+  - 'us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-eco-svc:latest'

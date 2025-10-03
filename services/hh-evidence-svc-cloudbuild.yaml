@@ -1,0 +1,28 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--no-cache'
+      - '-f'
+      - 'hh-evidence-svc/Dockerfile'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-evidence-svc:latest'
+      - '.'
+    dir: 'services'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-evidence-svc:latest'
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'hh-evidence-svc-production'
+      - '--image=us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-evidence-svc:latest'
+      - '--region=us-central1'
+      - '--platform=managed'
+
+images:
+  - 'us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-evidence-svc:latest'
