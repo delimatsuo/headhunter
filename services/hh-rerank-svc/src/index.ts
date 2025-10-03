@@ -19,38 +19,45 @@ async function bootstrap(): Promise<void> {
     const server = await buildServer({ disableDefaultHealthRoute: true });
     logger.info('Fastify server built');
 
-    let isReady = false;
-    let redisClient: RerankRedisClient | null = null;
-    let togetherClient: TogetherClient | null = null;
+    // Track initialization state with mutable dependency container
+    const state = {
+      isReady: false
+    };
+    const dependencies = {
+      config,
+      service: null as RerankService | null,
+      redisClient: null as RerankRedisClient | null,
+      togetherClient: null as TogetherClient | null,
+      state  // Pass state to routes
+    };
 
-    // Register health endpoint BEFORE listening (critical for Cloud Run probes)
-    server.get('/health', async () => {
-      if (!isReady) {
-        return { status: 'initializing', service: 'hh-rerank-svc' };
-      }
-      return { status: 'ok', service: 'hh-rerank-svc' };
-    });
+    // Register ALL routes BEFORE listen (required by Fastify)
+    // Routes will use lazily-initialized dependencies via closure
+    logger.info('Registering routes (with lazy dependencies)...');
+    await registerRoutes(server, dependencies);
+    logger.info('Routes registered');
 
+    // Start listening IMMEDIATELY (Cloud Run requires fast startup)
     const port = Number(process.env.PORT ?? 8080);
     const host = '0.0.0.0';
-
     await server.listen({ port, host });
     logger.info({ port }, 'hh-rerank-svc listening (initializing dependencies...)');
 
-    const initializeDependencies = async () => {
+    // Initialize real dependencies in background (after listen)
+    setImmediate(async () => {
       try {
         logger.info('Initializing Redis client...');
-        redisClient = new RerankRedisClient(config.redis, getLogger({ module: 'redis-client' }));
+        dependencies.redisClient = new RerankRedisClient(config.redis, getLogger({ module: 'redis-client' }));
         logger.info('Redis client initialized');
 
         logger.info('Initializing Together AI client...');
-        togetherClient = new TogetherClient(config.together, getLogger({ module: 'together-client' }));
+        dependencies.togetherClient = new TogetherClient(config.together, getLogger({ module: 'together-client' }));
         logger.info('Together AI client initialized');
 
         logger.info('Initializing rerank service...');
-        const rerankService = new RerankService({
+        dependencies.service = new RerankService({
           config,
-          togetherClient,
+          togetherClient: dependencies.togetherClient,
           logger: getLogger({ module: 'rerank-service' })
         });
         logger.info('Rerank service initialized');
@@ -62,9 +69,11 @@ async function bootstrap(): Promise<void> {
           maxHeapUsedBytes: 1_024 * 1_024 * 1024,
           maxRssBytes: 1_536 * 1_024 * 1024,
           healthCheck: async () => {
+            if (!dependencies.redisClient || !dependencies.togetherClient) return true;
+
             const [redisHealth, togetherHealth] = await Promise.all([
-              redisClient!.healthCheck(),
-              togetherClient!.healthCheck()
+              dependencies.redisClient.healthCheck(),
+              dependencies.togetherClient.healthCheck()
             ]);
 
             const unhealthy = [];
@@ -85,42 +94,28 @@ async function bootstrap(): Promise<void> {
         });
         logger.info('Under-pressure plugin registered');
 
-        logger.info('Registering routes...');
-        await registerRoutes(server, {
-          service: rerankService,
-          config,
-          redisClient,
-          togetherClient
-        });
-        logger.info('Routes registered');
-
         logger.info('Registering shutdown hooks...');
         server.addHook('onClose', async () => {
-          await Promise.all([redisClient!.close(), togetherClient!.close()]);
+          if (dependencies.redisClient && dependencies.togetherClient) {
+            await Promise.all([dependencies.redisClient.close(), dependencies.togetherClient.close()]);
+          }
         });
         logger.info('Shutdown hooks registered');
 
-        isReady = true;
+        state.isReady = true;
         logger.info('hh-rerank-svc fully initialized and ready');
       } catch (error) {
-        logger.error({ error }, 'Failed to initialize dependencies, will retry in 5 seconds...');
-        setTimeout(() => {
-          logger.info('Retrying dependency initialization...');
-          void initializeDependencies();
-        }, 5000);
+        logger.error({ error }, 'Failed to initialize dependencies - service running in degraded mode');
+        // Service stays up but routes will fail when accessed
       }
-    };
-
-    setImmediate(() => {
-      void initializeDependencies();
     });
 
     const shutdown = async () => {
       logger.info('Received shutdown signal.');
       try {
         await server.close();
-        if (redisClient && togetherClient) {
-          await Promise.all([redisClient.close(), togetherClient.close()]);
+        if (dependencies.redisClient && dependencies.togetherClient) {
+          await Promise.all([dependencies.redisClient.close(), dependencies.togetherClient.close()]);
         }
         logger.info('hh-rerank-svc closed gracefully.');
         process.exit(0);

@@ -19,44 +19,49 @@ async function bootstrap(): Promise<void> {
     const server = await buildServer({ disableDefaultHealthRoute: true });
     logger.info('Fastify server built');
 
-    let isReady = false;
-    let redisClient: MsgsRedisClient | null = null;
-    let cloudSqlClient: MsgsCloudSqlClient | null = null;
+    // Track initialization state with mutable dependency container
+    const state = {
+      isReady: false
+    };
+    const dependencies = {
+      config,
+      service: null as MsgsService | null,
+      redisClient: null as MsgsRedisClient | null,
+      cloudSqlClient: null as MsgsCloudSqlClient | null,
+      state  // Pass state to routes
+    };
 
-    // Register health endpoints BEFORE listening (critical for Cloud Run probes)
-    server.get('/health', async () => {
-      if (!isReady) {
-        return { status: 'initializing', service: config.base.runtime.serviceName };
-      }
-      return { status: 'ok', service: config.base.runtime.serviceName };
-    });
+    // Register ALL routes BEFORE listen (required by Fastify)
+    // Routes will use lazily-initialized dependencies via closure
+    logger.info('Registering routes (with lazy dependencies)...');
+    await registerRoutes(server, dependencies);
+    logger.info('Routes registered');
 
-
-    // Start listening AFTER registering health endpoints
+    // Start listening IMMEDIATELY (Cloud Run requires fast startup)
     const port = Number(process.env.PORT ?? 8080);
     const host = '0.0.0.0';
-
     await server.listen({ port, host });
     logger.info({ port, service: config.base.runtime.serviceName }, 'hh-msgs-svc listening (initializing dependencies...)');
 
-    const initializeDependencies = async () => {
+    // Initialize real dependencies in background (after listen)
+    setImmediate(async () => {
       try {
         logger.info('Initializing Redis client...');
-        redisClient = new MsgsRedisClient(config.redis, getLogger({ module: 'msgs-redis-client' }));
+        dependencies.redisClient = new MsgsRedisClient(config.redis, getLogger({ module: 'msgs-redis-client' }));
         logger.info('Redis client initialized');
 
         logger.info('Initializing Cloud SQL client...');
-        cloudSqlClient = new MsgsCloudSqlClient(
+        dependencies.cloudSqlClient = new MsgsCloudSqlClient(
           config.database,
           getLogger({ module: 'msgs-cloudsql-client' })
         );
         logger.info('Cloud SQL client initialized');
 
         logger.info('Initializing msgs service...');
-        const service = new MsgsService({
+        dependencies.service = new MsgsService({
           config,
-          redisClient,
-          dbClient: cloudSqlClient,
+          redisClient: dependencies.redisClient,
+          dbClient: dependencies.cloudSqlClient,
           logger: getLogger({ module: 'msgs-service' })
         });
         logger.info('Msgs service initialized');
@@ -69,11 +74,11 @@ async function bootstrap(): Promise<void> {
           maxRssBytes: 1_536 * 1_024 * 1024,
           healthCheckInterval: 10000,
           healthCheck: async () => {
-            if (!redisClient || !cloudSqlClient) return true;
+            if (!dependencies.redisClient || !dependencies.cloudSqlClient) return true;
 
             const [redis, cloudSql] = await Promise.all([
-              redisClient.healthCheck(),
-              cloudSqlClient.healthCheck()
+              dependencies.redisClient.healthCheck(),
+              dependencies.cloudSqlClient.healthCheck()
             ]);
 
             if (!['healthy', 'disabled'].includes(redis.status)) {
@@ -96,42 +101,26 @@ async function bootstrap(): Promise<void> {
         });
         logger.info('Under-pressure plugin registered');
 
-        logger.info('Registering routes...');
-        await registerRoutes(server, {
-          service,
-          config,
-          redisClient,
-          cloudSqlClient
-        });
-        logger.info('Routes registered');
-
         server.addHook('onClose', async () => {
-          if (redisClient && cloudSqlClient) {
-            await Promise.all([redisClient.close(), cloudSqlClient.close()]);
+          if (dependencies.redisClient && dependencies.cloudSqlClient) {
+            await Promise.all([dependencies.redisClient.close(), dependencies.cloudSqlClient.close()]);
           }
         });
 
-        isReady = true;
+        state.isReady = true;
         logger.info('hh-msgs-svc fully initialized and ready');
       } catch (error) {
-        logger.error({ error }, 'Failed to initialize dependencies, will retry in 5 seconds...');
-        setTimeout(() => {
-          logger.info('Retrying dependency initialization...');
-          void initializeDependencies();
-        }, 5000);
+        logger.error({ error }, 'Failed to initialize dependencies - service running in degraded mode');
+        // Service stays up but routes will fail when accessed
       }
-    };
-
-    setImmediate(() => {
-      void initializeDependencies();
     });
 
     const shutdown = async () => {
       logger.info('Received shutdown signal.');
       try {
         await server.close();
-        if (redisClient && cloudSqlClient) {
-          await Promise.all([redisClient.close(), cloudSqlClient.close()]);
+        if (dependencies.redisClient && dependencies.cloudSqlClient) {
+          await Promise.all([dependencies.redisClient.close(), dependencies.cloudSqlClient.close()]);
         }
         logger.info('Server closed gracefully.');
         process.exit(0);

@@ -13,15 +13,21 @@ import type {
 } from './types';
 
 interface RegisterRoutesOptions {
-  service: EmbeddingsService;
+  service: EmbeddingsService | null;
   config: EmbeddingsServiceConfig;
-  pgClient: PgVectorClient;
+  pgClient: PgVectorClient | null;
+  state: { isReady: boolean };
 }
 
-export async function registerRoutes(app: FastifyInstance, { service, pgClient }: RegisterRoutesOptions): Promise<void> {
-  // Detailed health endpoint (basic /health is registered in index.ts before listen())
-  app.get('/health/detailed', async (_request, reply: FastifyReply) => {
-    const health = await pgClient.healthCheck();
+export async function registerRoutes(app: FastifyInstance, dependencies: RegisterRoutesOptions): Promise<void> {
+  // Health endpoint (responds even during initialization)
+  app.get('/health', async (_request, reply: FastifyReply) => {
+    if (!dependencies.state.isReady || !dependencies.pgClient) {
+      reply.status(503);
+      return { status: 'initializing', service: 'hh-embed-svc' };
+    }
+
+    const health = await dependencies.pgClient.healthCheck();
     if (health.status !== 'healthy') {
       reply.status(503);
       return {
@@ -31,7 +37,7 @@ export async function registerRoutes(app: FastifyInstance, { service, pgClient }
       };
     }
 
-    return { status: 'ok' };
+    return { status: 'ok', service: 'hh-embed-svc' };
   });
 
   app.post(
@@ -39,7 +45,12 @@ export async function registerRoutes(app: FastifyInstance, { service, pgClient }
     {
       schema: generateEmbeddingSchema
     },
-    async (request: FastifyRequest<{ Body: GenerateEmbeddingRequest }>) => {
+    async (request: FastifyRequest<{ Body: GenerateEmbeddingRequest }>, reply: FastifyReply) => {
+      if (!dependencies.service) {
+        reply.status(503);
+        return { error: 'Service initializing, please retry' };
+      }
+
       if (!request.tenant) {
         throw badRequestError('Tenant context is required.');
       }
@@ -47,7 +58,7 @@ export async function registerRoutes(app: FastifyInstance, { service, pgClient }
       const body = request.body;
       const requestId = request.requestContext.requestId;
 
-      return service.generateEmbedding({
+      return dependencies.service.generateEmbedding({
         tenant: request.tenant,
         user: request.user,
         requestId,

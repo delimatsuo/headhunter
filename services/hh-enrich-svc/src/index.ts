@@ -22,26 +22,32 @@ async function bootstrap(): Promise<void> {
     const server = await buildServer({ disableDefaultHealthRoute: true });
     logger.info('Fastify server built');
 
-    let isReady = false;
-    let worker: EnrichmentWorker | null = null;
+    // Track initialization state with mutable dependency container
+    const state = {
+      isReady: false
+    };
+    const dependencies = {
+      config,
+      service: null as EnrichmentService | null,
+      jobStore: null as EnrichmentJobStore | null,
+      worker: null as EnrichmentWorker | null,
+      state  // Pass state to routes
+    };
 
-    // Register health endpoints BEFORE listening (critical for Cloud Run probes)
-    server.get('/health', async () => {
-      if (!isReady) {
-        return { status: 'initializing' };
-      }
-      return { status: 'ok' };
-    });
+    // Register ALL routes BEFORE listen (required by Fastify)
+    // Routes will use lazily-initialized dependencies via closure
+    logger.info('Registering routes (with lazy dependencies)...');
+    await registerRoutes(server, dependencies);
+    logger.info('Routes registered');
 
-
-    // Start listening AFTER registering health endpoints
+    // Start listening IMMEDIATELY (Cloud Run requires fast startup)
     const port = Number(process.env.PORT ?? 8080);
     const host = '0.0.0.0';
-
     await server.listen({ port, host });
     logger.info({ port }, 'hh-enrich-svc listening (initializing dependencies...)');
 
-    const initializeDependencies = async () => {
+    // Initialize real dependencies in background (after listen)
+    setImmediate(async () => {
       try {
         logger.info('Initializing metrics exporter...');
         const metricsExporter = MetricsExporter.fromEnv(
@@ -52,45 +58,34 @@ async function bootstrap(): Promise<void> {
         logger.info('Metrics exporter initialized');
 
         logger.info('Initializing job store...');
-        const jobStore = new EnrichmentJobStore(config);
+        dependencies.jobStore = new EnrichmentJobStore(config);
         logger.info('Job store initialized');
 
         logger.info('Initializing enrichment service...');
-        const service = new EnrichmentService(config, jobStore, metricsExporter);
+        dependencies.service = new EnrichmentService(config, dependencies.jobStore, metricsExporter);
         logger.info('Enrichment service initialized');
 
         logger.info('Initializing enrichment worker...');
-        worker = new EnrichmentWorker(config, jobStore, service, metricsExporter);
+        dependencies.worker = new EnrichmentWorker(config, dependencies.jobStore, dependencies.service, metricsExporter);
         logger.info('Enrichment worker initialized');
 
-        logger.info('Registering routes...');
-        await registerRoutes(server, { config, jobStore, service, worker });
-        logger.info('Routes registered');
-
         logger.info('Starting enrichment worker...');
-        await worker.start();
+        await dependencies.worker.start();
         logger.info('Enrichment worker started');
 
-        isReady = true;
+        state.isReady = true;
         logger.info('hh-enrich-svc fully initialized and ready');
       } catch (error) {
-        logger.error({ error }, 'Failed to initialize dependencies, will retry in 5 seconds...');
-        setTimeout(() => {
-          logger.info('Retrying dependency initialization...');
-          void initializeDependencies();
-        }, 5000);
+        logger.error({ error }, 'Failed to initialize dependencies - service running in degraded mode');
+        // Service stays up but routes will fail when accessed
       }
-    };
-
-    setImmediate(() => {
-      void initializeDependencies();
     });
 
     const shutdown = async () => {
       logger.info('Received shutdown signal.');
       try {
-        if (worker) {
-          await worker.stop();
+        if (dependencies.worker) {
+          await dependencies.worker.stop();
         }
         await server.close();
         logger.info('hh-enrich-svc closed gracefully.');

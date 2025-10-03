@@ -9,60 +9,84 @@ import type { EvidenceQuerystring, EvidenceRequestParams, EvidenceResponse, Evid
 import { EvidenceService } from './evidence-service';
 
 interface RegisterRoutesOptions {
-  service: EvidenceService;
+  service: EvidenceService | null;
   config: EvidenceServiceConfig;
-  redisClient: EvidenceRedisClient;
-  firestoreClient: EvidenceFirestoreClient;
+  redisClient: EvidenceRedisClient | null;
+  firestoreClient: EvidenceFirestoreClient | null;
+  state: { isReady: boolean };
 }
 
 export async function registerRoutes(
   app: FastifyInstance,
-  { service, config, redisClient, firestoreClient }: RegisterRoutesOptions
+  dependencies: RegisterRoutesOptions
 ): Promise<void> {
   const logger = getLogger({ module: 'evidence-routes' });
 
-    // Detailed health endpoint (basic /health is registered in index.ts before listen())
-  app.get(
-    '/health/detailed',
-    { schema: healthSchema },
-    async (_request: FastifyRequest, reply: FastifyReply) => {
-      const [redisHealth, firestoreHealth] = await Promise.all([
-        redisClient.healthCheck(),
-        firestoreClient.healthCheck()
-      ]);
-
-      const degraded: Record<string, unknown> = {};
-      if (!['healthy', 'disabled'].includes(redisHealth.status)) {
-        degraded.redis = redisHealth;
-      }
-      if (firestoreHealth.status !== 'healthy') {
-        degraded.firestore = firestoreHealth;
-      }
-
-      if (Object.keys(degraded).length > 0) {
-        reply.code(503);
-        return {
-          status: 'degraded',
-          ...degraded
-        } satisfies Record<string, unknown>;
-      }
-
+  const readinessHandler = async (_request: FastifyRequest, reply: FastifyReply) => {
+    // If not ready, dependencies are still null - return initializing
+    if (!dependencies.state.isReady) {
+      reply.status(503);
       return {
-        status: 'ok',
-        redis: redisHealth,
-        firestore: firestoreHealth
+        status: 'initializing',
+        service: 'hh-evidence-svc'
+      };
+    }
+
+    if (!dependencies.redisClient || !dependencies.firestoreClient) {
+      reply.status(503);
+      return {
+        status: 'initializing',
+        service: 'hh-evidence-svc'
+      };
+    }
+
+    const [redisHealth, firestoreHealth] = await Promise.all([
+      dependencies.redisClient.healthCheck(),
+      dependencies.firestoreClient.healthCheck()
+    ]);
+
+    const degraded: Record<string, unknown> = {};
+    if (!['healthy', 'disabled'].includes(redisHealth.status)) {
+      degraded.redis = redisHealth;
+    }
+    if (firestoreHealth.status !== 'healthy') {
+      degraded.firestore = firestoreHealth;
+    }
+
+    if (Object.keys(degraded).length > 0) {
+      reply.code(503);
+      return {
+        status: 'degraded',
+        ...degraded
       } satisfies Record<string, unknown>;
     }
-  );
+
+    return {
+      status: 'ok',
+      redis: redisHealth,
+      firestore: firestoreHealth
+    } satisfies Record<string, unknown>;
+  };
+
+  app.get('/healthz', readinessHandler);
+  app.get('/readyz', readinessHandler);
+  app.get('/health', readinessHandler);
+  app.get('/health/detailed', readinessHandler);
 
   app.get(
     '/v1/evidence/:candidateId',
     { schema: evidenceRouteSchema },
     async (
-      request: FastifyRequest<{ Params: EvidenceRequestParams; Querystring: EvidenceQuerystring }>
+      request: FastifyRequest<{ Params: EvidenceRequestParams; Querystring: EvidenceQuerystring }>,
+      reply: FastifyReply
     ) => {
       if (!request.tenant) {
         throw badRequestError('Tenant context is required.');
+      }
+
+      if (!dependencies.service) {
+        reply.status(503);
+        return { error: 'Service initializing' };
       }
 
       const { candidateId } = request.params;
@@ -75,14 +99,14 @@ export async function registerRoutes(
         : undefined;
 
       if (includeSections && includeSections.length > 0) {
-        const invalid = includeSections.filter((value) => !config.runtime.allowedSections.includes(value));
+        const invalid = includeSections.filter((value) => !dependencies.config.runtime.allowedSections.includes(value));
         if (invalid.length > 0) {
           throw badRequestError(`Unknown evidence sections requested: ${invalid.join(', ')}`);
         }
       }
 
       try {
-        const response = await service.getEvidence({
+        const response = await dependencies.service.getEvidence({
           candidateId,
           includeSections,
           tenant: request.tenant

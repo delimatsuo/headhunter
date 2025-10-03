@@ -15,73 +15,56 @@ async function bootstrap(): Promise<void> {
     const config = getEmbeddingsServiceConfig();
     logger.info('Configuration loaded');
 
-    // Build server immediately (no dependencies yet)
     const server = await buildServer({ disableDefaultHealthRoute: true });
     logger.info('Fastify server built');
 
-    // Track initialization state
-    let isReady = false;
-    let pgClient: PgVectorClient | null = null;
-    let embeddingsService: EmbeddingsService | null = null;
+    // Mutable dependency container - routes will reference this object
+    const state = { isReady: false };
+    const dependencies = {
+      config,
+      pgClient: null as PgVectorClient | null,
+      service: null as EmbeddingsService | null,
+      state
+    };
 
-    // Register health endpoints BEFORE listening (critical for Cloud Run probes)
-    server.get('/health', async () => {
-      if (!isReady) {
-        return { status: 'initializing', service: config.base.runtime.serviceName };
-      }
-      return { status: 'ok', service: config.base.runtime.serviceName };
-    });
+    // Register ALL routes BEFORE listen (required by Fastify)
+    logger.info('Registering routes (with lazy dependencies)...');
+    await registerRoutes(server, dependencies);
+    logger.info('Routes registered');
 
-    // Note: /ready endpoint is already registered by buildServer in @hh/common
-
-    // Start listening AFTER registering health endpoints
+    // Start listening IMMEDIATELY
     const port = Number(process.env.PORT ?? 8080);
     const host = '0.0.0.0';
-
     await server.listen({ port, host });
-    logger.info({ port, service: config.base.runtime.serviceName }, 'hh-embed-svc listening (initializing dependencies...)');
+    logger.info({ port }, 'hh-embed-svc listening (initializing dependencies...)');
 
-    // Initialize heavy dependencies in background
-    const initializeDependencies = async () => {
+    // Initialize real dependencies in background (after listen)
+    setImmediate(async () => {
       try {
         logger.info('Initializing pgvector client...');
-        pgClient = new PgVectorClient(config.pgvector, getLogger({ module: 'pgvector-client' }));
-        await pgClient.initialize();
+        dependencies.pgClient = new PgVectorClient(config.pgvector, getLogger({ module: 'pgvector-client' }));
+        await dependencies.pgClient.initialize();
         logger.info('pgvector client initialized');
 
         logger.info('Initializing embeddings service...');
-        embeddingsService = new EmbeddingsService({
+        dependencies.service = new EmbeddingsService({
           config,
-          pgClient,
+          pgClient: dependencies.pgClient,
           logger: getLogger({ module: 'embeddings-service' })
         });
         logger.info('Embeddings service initialized');
 
-        logger.info('Registering routes...');
-        await registerRoutes(server, { service: embeddingsService, config, pgClient });
-        logger.info('Routes registered');
-
         server.addHook('onClose', async () => {
-          if (pgClient) {
-            await pgClient.close();
+          if (dependencies.pgClient) {
+            await dependencies.pgClient.close();
           }
         });
 
-        isReady = true;
+        state.isReady = true;
         logger.info('hh-embed-svc fully initialized and ready');
       } catch (error) {
-        logger.error({ error }, 'Failed to initialize dependencies, will retry in 5 seconds...');
-        // Don't exit - server is still running and can report errors via /health
-        // Retry initialization after a delay
-        setTimeout(() => {
-          logger.info('Retrying dependency initialization...');
-          void initializeDependencies();
-        }, 5000);
+        logger.error({ error }, 'Failed to initialize dependencies - service running in degraded mode');
       }
-    };
-
-    setImmediate(() => {
-      void initializeDependencies();
     });
 
     const shutdown = async () => {

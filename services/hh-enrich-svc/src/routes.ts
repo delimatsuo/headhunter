@@ -10,18 +10,35 @@ import { EnrichmentWorker } from './worker';
 
 interface RegisterRoutesOptions {
   config: EnrichServiceConfig;
-  jobStore: EnrichmentJobStore;
-  service: EnrichmentService;
-  worker: EnrichmentWorker;
+  jobStore: EnrichmentJobStore | null;
+  service: EnrichmentService | null;
+  worker: EnrichmentWorker | null;
+  state: { isReady: boolean };
 }
 
-export async function registerRoutes(app: FastifyInstance, options: RegisterRoutesOptions): Promise<void> {
+export async function registerRoutes(app: FastifyInstance, dependencies: RegisterRoutesOptions): Promise<void> {
   const logger = getLogger({ module: 'enrich-routes' });
 
-  // Detailed health endpoint (basic /health is registered in index.ts before listen())
-  app.get('/health/detailed', async (_request, reply) => {
+  const readinessHandler = async (_request: FastifyRequest, reply: FastifyReply) => {
+    // If not ready, dependencies are still null - return initializing
+    if (!dependencies.state.isReady) {
+      reply.status(503);
+      return {
+        status: 'initializing',
+        service: 'hh-enrich-svc'
+      };
+    }
+
+    if (!dependencies.jobStore) {
+      reply.status(503);
+      return {
+        status: 'initializing',
+        service: 'hh-enrich-svc'
+      };
+    }
+
     try {
-      const redis = await options.jobStore.getRedis();
+      const redis = await dependencies.jobStore.getRedis();
       await redis.ping();
       return { status: 'ok' };
     } catch (error) {
@@ -29,7 +46,12 @@ export async function registerRoutes(app: FastifyInstance, options: RegisterRout
       reply.status(503);
       return { status: 'unhealthy' };
     }
-  });
+  };
+
+  app.get('/healthz', readinessHandler);
+  app.get('/readyz', readinessHandler);
+  app.get('/health', readinessHandler);
+  app.get('/health/detailed', readinessHandler);
 
   app.post(
     '/v1/enrich/profile',
@@ -39,8 +61,13 @@ export async function registerRoutes(app: FastifyInstance, options: RegisterRout
         throw badRequestError('Tenant context is required.');
       }
 
+      if (!dependencies.service) {
+        reply.status(503);
+        return { error: 'Service initializing' };
+      }
+
       const asyncMode = request.body.async !== false;
-      const { job, created } = await options.service.submitJob(
+      const { job, created } = await dependencies.service.submitJob(
         {
           tenant: request.tenant,
           user: request.user,
@@ -54,7 +81,7 @@ export async function registerRoutes(app: FastifyInstance, options: RegisterRout
       }
 
       if (!asyncMode) {
-        const completed = await options.service.waitForCompletion(job.jobId, options.config.queue.jobTimeoutMs);
+        const completed = await dependencies.service.waitForCompletion(job.jobId, dependencies.config.queue.jobTimeoutMs);
         reply.status(completed?.status === 'completed' ? 200 : 202);
         return { job: completed ?? job };
       }
@@ -67,8 +94,13 @@ export async function registerRoutes(app: FastifyInstance, options: RegisterRout
   app.get(
     '/v1/enrich/status/:jobId',
     { schema: enrichmentStatusSchema },
-    async (request: FastifyRequest<{ Params: { jobId: string } }>) => {
-      const job = await options.service.getStatus(request.params.jobId);
+    async (request: FastifyRequest<{ Params: { jobId: string } }>, reply: FastifyReply) => {
+      if (!dependencies.service) {
+        reply.status(503);
+        return { error: 'Service initializing' };
+      }
+
+      const job = await dependencies.service.getStatus(request.params.jobId);
       if (!job) {
         return { job: null };
       }
@@ -77,6 +109,8 @@ export async function registerRoutes(app: FastifyInstance, options: RegisterRout
   );
 
   app.addHook('onClose', async () => {
-    await options.worker.stop();
+    if (dependencies.worker) {
+      await dependencies.worker.stop();
+    }
   });
 }

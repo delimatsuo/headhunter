@@ -10,24 +10,41 @@ import type { HybridSearchRequest, HybridSearchResponse } from './types';
 import { SearchService } from './search-service';
 
 interface RegisterRoutesOptions {
-  service: SearchService;
+  service: SearchService | null;
   config: SearchServiceConfig;
-  redisClient: SearchRedisClient;
-  pgClient: PgVectorClient;
-  embedClient: EmbedClient;
+  redisClient: SearchRedisClient | null;
+  pgClient: PgVectorClient | null;
+  embedClient: EmbedClient | null;
+  state: { isReady: boolean };
 }
 
 export async function registerRoutes(
   app: FastifyInstance,
-  { service, config, redisClient, pgClient, embedClient }: RegisterRoutesOptions
+  dependencies: RegisterRoutesOptions
 ): Promise<void> {
 
-  // Detailed health endpoint (basic /health is registered in index.ts before listen())
-  app.get('/health/detailed', async (_request: FastifyRequest, reply: FastifyReply) => {
+  const readinessHandler = async (_request: FastifyRequest, reply: FastifyReply) => {
+    // If not ready, dependencies are still null - return initializing
+    if (!dependencies.state.isReady) {
+      reply.status(503);
+      return {
+        status: 'initializing',
+        service: 'hh-search-svc'
+      };
+    }
+
+    if (!dependencies.pgClient || !dependencies.redisClient || !dependencies.embedClient) {
+      reply.status(503);
+      return {
+        status: 'initializing',
+        service: 'hh-search-svc'
+      };
+    }
+
     const [pgHealth, redisHealth, embedHealth] = await Promise.all([
-      pgClient.healthCheck(),
-      redisClient.healthCheck(),
-      embedClient.healthCheck()
+      dependencies.pgClient.healthCheck(),
+      dependencies.redisClient.healthCheck(),
+      dependencies.embedClient.healthCheck()
     ]);
 
     const degraded: string[] = [];
@@ -59,25 +76,35 @@ export async function registerRoutes(
       redis: redisHealth,
       embeddings: embedHealth
     } satisfies Record<string, unknown>;
-  });
+  };
+
+  app.get('/healthz', readinessHandler);
+  app.get('/readyz', readinessHandler);
+  app.get('/health', readinessHandler);
+  app.get('/health/detailed', readinessHandler);
 
   app.post(
     '/v1/search/hybrid',
     {
       schema: hybridSearchSchema
     },
-    async (request: FastifyRequest<{ Body: HybridSearchRequest }>) => {
+    async (request: FastifyRequest<{ Body: HybridSearchRequest }>, reply: FastifyReply) => {
       if (!request.tenant) {
         throw badRequestError('Tenant context is required.');
       }
 
-      const cacheToken = service.computeCacheToken(request.body);
-      const cacheKey = redisClient.buildHybridKey(request.tenant.id, cacheToken);
+      if (!dependencies.service || !dependencies.redisClient) {
+        reply.status(503);
+        return { error: 'Service initializing' };
+      }
+
+      const cacheToken = dependencies.service.computeCacheToken(request.body);
+      const cacheKey = dependencies.redisClient.buildHybridKey(request.tenant.id, cacheToken);
 
       const cacheStart = Date.now();
       let cached: HybridSearchResponse | null = null;
-      if (!config.redis.disable) {
-        cached = await redisClient.get<HybridSearchResponse>(cacheKey);
+      if (!dependencies.config.redis.disable) {
+        cached = await dependencies.redisClient.get<HybridSearchResponse>(cacheKey);
       }
 
       if (cached) {
@@ -98,12 +125,12 @@ export async function registerRoutes(
         requestId: request.requestContext.requestId
       };
 
-      const response = await service.hybridSearch(context, request.body);
+      const response = await dependencies.service.hybridSearch(context, request.body);
 
       response.timings.cacheMs = Date.now() - cacheStart;
 
-      if (!config.redis.disable && response.results.length > 0) {
-        await redisClient.set(cacheKey, response);
+      if (!dependencies.config.redis.disable && response.results.length > 0) {
+        await dependencies.redisClient.set(cacheKey, response);
       }
 
       return response;

@@ -9,25 +9,37 @@ import { TogetherClient } from './together-client.js';
 import { RerankService } from './rerank-service.js';
 
 interface RegisterRoutesOptions {
-  service: RerankService;
+  service: RerankService | null;
   config: RerankServiceConfig;
-  redisClient: RerankRedisClient;
-  togetherClient: TogetherClient;
+  redisClient: RerankRedisClient | null;
+  togetherClient: TogetherClient | null;
+  state: { isReady: boolean };
 }
 
 export async function registerRoutes(
   app: FastifyInstance,
-  { service, config, redisClient, togetherClient }: RegisterRoutesOptions
+  dependencies: RegisterRoutesOptions
 ): Promise<void> {
 
-  app.get('/healthz', async (_request: FastifyRequest, reply: FastifyReply) => {
-    reply.code(200);
-    return { status: 'ok' } as const;
-  });
+  const readinessHandler = async (_request: FastifyRequest, reply: FastifyReply) => {
+    // If not ready, dependencies are still null - return initializing
+    if (!dependencies.state.isReady) {
+      reply.status(503);
+      return {
+        status: 'initializing',
+        service: 'hh-rerank-svc'
+      };
+    }
 
-  // Detailed health endpoint (basic /health is registered in index.ts before listen())
-  app.get('/health/detailed', async (_request: FastifyRequest, reply: FastifyReply) => {
-    const [redisHealth, togetherHealth] = await Promise.all([redisClient.healthCheck(), togetherClient.healthCheck()]);
+    if (!dependencies.redisClient || !dependencies.togetherClient) {
+      reply.status(503);
+      return {
+        status: 'initializing',
+        service: 'hh-rerank-svc'
+      };
+    }
+
+    const [redisHealth, togetherHealth] = await Promise.all([dependencies.redisClient.healthCheck(), dependencies.togetherClient.healthCheck()]);
 
     const degraded: Record<string, unknown> = {};
     if (!['healthy', 'disabled'].includes(redisHealth.status)) {
@@ -53,26 +65,36 @@ export async function registerRoutes(
       redis: redisHealth,
       together: togetherHealth
     } satisfies Record<string, unknown>;
-  });
+  };
+
+  app.get('/healthz', readinessHandler);
+  app.get('/readyz', readinessHandler);
+  app.get('/health', readinessHandler);
+  app.get('/health/detailed', readinessHandler);
 
   app.post(
     '/v1/search/rerank',
     {
       schema: rerankSchema
     },
-    async (request: FastifyRequest<{ Body: RerankRequest }>) => {
+    async (request: FastifyRequest<{ Body: RerankRequest }>, reply: FastifyReply) => {
       if (!request.tenant) {
         throw badRequestError('Tenant context is required.');
       }
 
+      if (!dependencies.service || !dependencies.redisClient) {
+        reply.status(503);
+        return { error: 'Service initializing' };
+      }
+
       const cacheStart = Date.now();
-      const disableCache = config.redis.disable || request.body.disableCache === true;
-      const normalizedCandidates = request.body.candidates.slice(0, config.runtime.maxCandidates);
-      const descriptor = service.buildCacheDescriptor({ ...request.body, candidates: normalizedCandidates });
-      const cacheKey = redisClient.buildKey(request.tenant.id, descriptor);
+      const disableCache = dependencies.config.redis.disable || request.body.disableCache === true;
+      const normalizedCandidates = request.body.candidates.slice(0, dependencies.config.runtime.maxCandidates);
+      const descriptor = dependencies.service.buildCacheDescriptor({ ...request.body, candidates: normalizedCandidates });
+      const cacheKey = dependencies.redisClient.buildKey(request.tenant.id, descriptor);
 
       if (!disableCache) {
-        const cached = await redisClient.get<RerankResponse>(cacheKey);
+        const cached = await dependencies.redisClient.get<RerankResponse>(cacheKey);
         if (cached) {
           const cacheHitResponse: RerankResponse = {
             ...cached,
@@ -92,11 +114,11 @@ export async function registerRoutes(
         requestId: request.requestContext.requestId
       };
 
-      const response = await service.rerank({ context, request: request.body });
+      const response = await dependencies.service.rerank({ context, request: request.body });
       response.timings.cacheMs = Date.now() - cacheStart;
 
       if (!disableCache && !response.usedFallback && response.results.length > 0) {
-        await redisClient.set(cacheKey, response);
+        await dependencies.redisClient.set(cacheKey, response);
       }
 
       return response;

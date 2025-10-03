@@ -13,56 +13,74 @@ import type {
 import { MsgsService } from './msgs-service';
 
 interface RegisterMsgsRoutesOptions {
-  service: MsgsService;
+  service: MsgsService | null;
   config: MsgsServiceConfig;
-  redisClient: MsgsRedisClient;
-  cloudSqlClient: MsgsCloudSqlClient;
+  redisClient: MsgsRedisClient | null;
+  cloudSqlClient: MsgsCloudSqlClient | null;
+  state: { isReady: boolean };
 }
 
 export async function registerRoutes(
   app: FastifyInstance,
-  { service, config, redisClient, cloudSqlClient }: RegisterMsgsRoutesOptions
+  dependencies: RegisterMsgsRoutesOptions
 ): Promise<void> {
   const logger = getLogger({ module: 'msgs-routes' });
 
-    // Detailed health endpoint (basic /health is registered in index.ts before listen())
-  app.get(
-    '/health/detailed',
-    { schema: msgsHealthSchema },
-    async (_request: FastifyRequest, reply: FastifyReply) => {
-      const [redis, cloudSql] = await Promise.all([
-        redisClient.healthCheck(),
-        cloudSqlClient.healthCheck()
-      ]);
+  const readinessHandler = async (_request: FastifyRequest, reply: FastifyReply) => {
+    // If not ready, dependencies are still null - return initializing
+    if (!dependencies.state.isReady) {
+      reply.status(503);
+      return {
+        status: 'initializing',
+        service: 'hh-msgs-svc'
+      };
+    }
 
-      const degraded: Record<string, unknown> = {};
-      const usingSeedData = config.runtime.useSeedData;
+    if (!dependencies.redisClient || !dependencies.cloudSqlClient) {
+      reply.status(503);
+      return {
+        status: 'initializing',
+        service: 'hh-msgs-svc'
+      };
+    }
 
-      if (!['healthy', 'disabled'].includes(redis.status)) {
-        degraded.redis = redis;
-      }
+    const [redis, cloudSql] = await Promise.all([
+      dependencies.redisClient.healthCheck(),
+      dependencies.cloudSqlClient.healthCheck()
+    ]);
 
-      if (cloudSql.status !== 'healthy' && !usingSeedData) {
-        degraded.cloudSql = cloudSql;
-      }
+    const degraded: Record<string, unknown> = {};
+    const usingSeedData = dependencies.config.runtime.useSeedData;
 
-      const responsePayload: Record<string, unknown> = {
-        status: 'ok',
-        redis,
-        cloudSql,
-        mode: usingSeedData ? 'seed' : 'cloudsql'
-      } satisfies Record<string, unknown>;
+    if (!['healthy', 'disabled'].includes(redis.status)) {
+      degraded.redis = redis;
+    }
 
-      if (Object.keys(degraded).length > 0) {
-        responsePayload.status = 'degraded';
-        responsePayload.degraded = degraded;
-        reply.code(503);
-        return responsePayload;
-      }
+    if (cloudSql.status !== 'healthy' && !usingSeedData) {
+      degraded.cloudSql = cloudSql;
+    }
 
+    const responsePayload: Record<string, unknown> = {
+      status: 'ok',
+      redis,
+      cloudSql,
+      mode: usingSeedData ? 'seed' : 'cloudsql'
+    } satisfies Record<string, unknown>;
+
+    if (Object.keys(degraded).length > 0) {
+      responsePayload.status = 'degraded';
+      responsePayload.degraded = degraded;
+      reply.code(503);
       return responsePayload;
     }
-  );
+
+    return responsePayload;
+  };
+
+  app.get('/healthz', readinessHandler);
+  app.get('/readyz', readinessHandler);
+  app.get('/health', readinessHandler);
+  app.get('/health/detailed', readinessHandler);
 
   app.post(
     '/v1/skills/expand',
@@ -75,12 +93,17 @@ export async function registerRoutes(
         throw badRequestError('Tenant context is required.');
       }
 
+      if (!dependencies.service) {
+        reply.status(503);
+        return { error: 'Service initializing' };
+      }
+
       const { skillId } = request.body;
       if (!skillId || skillId.trim().length === 0) {
         throw badRequestError('skillId is required.');
       }
 
-      const response = await service.expandSkills(request.tenant.id, request.body);
+      const response = await dependencies.service.expandSkills(request.tenant.id, request.body);
 
       logger.info(
         {
@@ -107,7 +130,12 @@ export async function registerRoutes(
         throw badRequestError('Tenant context is required.');
       }
 
-      const response = await service.getRoleTemplate(request.tenant.id, request.body);
+      if (!dependencies.service) {
+        reply.status(503);
+        return { error: 'Service initializing' };
+      }
+
+      const response = await dependencies.service.getRoleTemplate(request.tenant.id, request.body);
       if (!response) {
         throw notFoundError('Role template not found.');
       }
@@ -137,12 +165,17 @@ export async function registerRoutes(
         throw badRequestError('Tenant context is required.');
       }
 
+      if (!dependencies.service) {
+        reply.status(503);
+        return { error: 'Service initializing' };
+      }
+
       const { skillId } = request.query;
       if (!skillId || skillId.trim().length === 0) {
         throw badRequestError('skillId query parameter is required.');
       }
 
-      const response = await service.getMarketDemand(request.tenant.id, request.query);
+      const response = await dependencies.service.getMarketDemand(request.tenant.id, request.query);
       if (!response) {
         throw notFoundError('Demand analytics not found.');
       }

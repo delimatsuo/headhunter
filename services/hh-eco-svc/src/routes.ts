@@ -14,58 +14,81 @@ import type {
 import { EcoService } from './eco-service.js';
 
 interface RegisterEcoRoutesOptions {
-  service: EcoService;
+  service: EcoService | null;
   config: EcoServiceConfig;
-  redisClient: EcoRedisClient;
-  firestoreClient: EcoFirestoreClient;
+  redisClient: EcoRedisClient | null;
+  firestoreClient: EcoFirestoreClient | null;
+  state: { isReady: boolean };
 }
 
 export async function registerRoutes(
   app: FastifyInstance,
-  { service, config: _config, redisClient, firestoreClient }: RegisterEcoRoutesOptions
+  dependencies: RegisterEcoRoutesOptions
 ): Promise<void> {
   const logger = getLogger({ module: 'eco-routes' });
 
-  // Detailed health endpoint (basic /health is registered in index.ts before listen())
-  app.get(
-    '/health/detailed',
-    { schema: ecoHealthSchema },
-    async (_request: FastifyRequest, reply: FastifyReply) => {
-      const [redisHealth, firestoreHealth] = await Promise.all([
-        redisClient.healthCheck(),
-        firestoreClient.healthCheck()
-      ]);
-
-      const degraded: Record<string, unknown> = {};
-      if (!['healthy', 'disabled'].includes(redisHealth.status)) {
-        degraded.redis = redisHealth;
-      }
-      if (firestoreHealth.status !== 'healthy') {
-        degraded.firestore = firestoreHealth;
-      }
-
-      if (Object.keys(degraded).length > 0) {
-        reply.code(503);
-        return {
-          status: 'degraded',
-          ...degraded
-        } satisfies Record<string, unknown>;
-      }
-
+  const readinessHandler = async (_request: FastifyRequest, reply: FastifyReply) => {
+    // If not ready, dependencies are still null - return initializing
+    if (!dependencies.state.isReady) {
+      reply.status(503);
       return {
-        status: 'ok',
-        redis: redisHealth,
-        firestore: firestoreHealth
+        status: 'initializing',
+        service: 'hh-eco-svc'
+      };
+    }
+
+    if (!dependencies.redisClient || !dependencies.firestoreClient) {
+      reply.status(503);
+      return {
+        status: 'initializing',
+        service: 'hh-eco-svc'
+      };
+    }
+
+    const [redisHealth, firestoreHealth] = await Promise.all([
+      dependencies.redisClient.healthCheck(),
+      dependencies.firestoreClient.healthCheck()
+    ]);
+
+    const degraded: Record<string, unknown> = {};
+    if (!['healthy', 'disabled'].includes(redisHealth.status)) {
+      degraded.redis = redisHealth;
+    }
+    if (firestoreHealth.status !== 'healthy') {
+      degraded.firestore = firestoreHealth;
+    }
+
+    if (Object.keys(degraded).length > 0) {
+      reply.code(503);
+      return {
+        status: 'degraded',
+        ...degraded
       } satisfies Record<string, unknown>;
     }
-  );
+
+    return {
+      status: 'ok',
+      redis: redisHealth,
+      firestore: firestoreHealth
+    } satisfies Record<string, unknown>;
+  };
+
+  app.get('/healthz', readinessHandler);
+  app.get('/readyz', readinessHandler);
+  app.get('/health', readinessHandler);
+  app.get('/health/detailed', readinessHandler);
 
   app.get(
     '/v1/occupations/search',
     { schema: occupationSearchSchema },
-    async (request: FastifyRequest<{ Querystring: OccupationSearchQuerystring }>) => {
+    async (request: FastifyRequest<{ Querystring: OccupationSearchQuerystring }>, reply: FastifyReply) => {
       if (!request.tenant) {
         throw badRequestError('Tenant context is required.');
+      }
+
+      if (!dependencies.service) {
+        reply.status(503);
+        return { error: 'Service initializing' };
       }
 
       const { title, locale, country, limit, useCache } = request.query;
@@ -76,7 +99,7 @@ export async function registerRoutes(
       const parsedLimit = typeof limit === 'string' ? Number(limit) : limit;
       const bypassCache = useCache === 'false';
 
-      const response = await service.search(
+      const response = await dependencies.service.search(
         request.tenant.id,
         {
           title,
@@ -105,17 +128,23 @@ export async function registerRoutes(
     '/v1/occupations/:ecoId',
     { schema: occupationDetailSchema },
     async (
-      request: FastifyRequest<{ Params: OccupationDetailParams; Querystring: OccupationDetailQuerystring }>
+      request: FastifyRequest<{ Params: OccupationDetailParams; Querystring: OccupationDetailQuerystring }>,
+      reply: FastifyReply
     ) => {
       if (!request.tenant) {
         throw badRequestError('Tenant context is required.');
+      }
+
+      if (!dependencies.service) {
+        reply.status(503);
+        return { error: 'Service initializing' };
       }
 
       const { ecoId } = request.params;
       const { locale, country } = request.query;
 
       try {
-        const response = await service.detail(
+        const response = await dependencies.service.detail(
           request.tenant.id,
           ecoId,
           {

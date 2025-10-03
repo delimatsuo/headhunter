@@ -19,32 +19,39 @@ async function bootstrap(): Promise<void> {
     const server = await buildServer({ disableDefaultHealthRoute: true });
     logger.info('Fastify server built');
 
-    let isReady = false;
-    let redisClient: EcoRedisClient | null = null;
-    let firestoreClient: EcoFirestoreClient | null = null;
+    // Track initialization state with mutable dependency container
+    const state = {
+      isReady: false
+    };
+    const dependencies = {
+      config,
+      service: null as EcoService | null,
+      redisClient: null as EcoRedisClient | null,
+      firestoreClient: null as EcoFirestoreClient | null,
+      state  // Pass state to routes
+    };
 
-    // Register health endpoint BEFORE listening (critical for Cloud Run probes)
-    server.get('/health', async () => {
-      if (!isReady) {
-        return { status: 'initializing', service: config.base.runtime.serviceName };
-      }
-      return { status: 'ok', service: config.base.runtime.serviceName };
-    });
+    // Register ALL routes BEFORE listen (required by Fastify)
+    // Routes will use lazily-initialized dependencies via closure
+    logger.info('Registering routes (with lazy dependencies)...');
+    await registerRoutes(server, dependencies);
+    logger.info('Routes registered');
 
+    // Start listening IMMEDIATELY (Cloud Run requires fast startup)
     const port = Number(process.env.PORT ?? 8080);
     const host = '0.0.0.0';
-
     await server.listen({ port, host });
     logger.info({ port, service: config.base.runtime.serviceName }, 'hh-eco-svc listening (initializing dependencies...)');
 
-    const initializeDependencies = async () => {
+    // Initialize real dependencies in background (after listen)
+    setImmediate(async () => {
       try {
         logger.info('Initializing Redis client...');
-        redisClient = new EcoRedisClient(config.redis, getLogger({ module: 'redis-client' }));
+        dependencies.redisClient = new EcoRedisClient(config.redis, getLogger({ module: 'redis-client' }));
         logger.info('Redis client initialized');
 
         logger.info('Initializing Firestore client...');
-        firestoreClient = new EcoFirestoreClient(
+        dependencies.firestoreClient = new EcoFirestoreClient(
           getFirestore(),
           config.firestore,
           getLogger({ module: 'firestore-client' })
@@ -52,10 +59,10 @@ async function bootstrap(): Promise<void> {
         logger.info('Firestore client initialized');
 
         logger.info('Initializing ECO service...');
-        const ecoService = new EcoService({
+        dependencies.service = new EcoService({
           config,
-          firestoreClient,
-          redisClient,
+          firestoreClient: dependencies.firestoreClient,
+          redisClient: dependencies.redisClient,
           logger: getLogger({ module: 'eco-service' })
         });
         logger.info('ECO service initialized');
@@ -68,10 +75,10 @@ async function bootstrap(): Promise<void> {
           maxRssBytes: 1_536 * 1_024 * 1024,
           healthCheckInterval: 10000,
           healthCheck: async () => {
-            if (!redisClient || !firestoreClient) return true;
+            if (!dependencies.redisClient || !dependencies.firestoreClient) return true;
             const [redis, firestore] = await Promise.all([
-              redisClient.healthCheck(),
-              firestoreClient.healthCheck()
+              dependencies.redisClient.healthCheck(),
+              dependencies.firestoreClient.healthCheck()
             ]);
 
             if (!['healthy', 'disabled'].includes(redis.status)) {
@@ -86,42 +93,26 @@ async function bootstrap(): Promise<void> {
         });
         logger.info('Under-pressure plugin registered');
 
-        logger.info('Registering routes...');
-        await registerRoutes(server, {
-          service: ecoService,
-          config,
-          redisClient,
-          firestoreClient
-        });
-        logger.info('Routes registered');
-
         server.addHook('onClose', async () => {
-          if (redisClient) {
-            await redisClient.close();
+          if (dependencies.redisClient) {
+            await dependencies.redisClient.close();
           }
         });
 
-        isReady = true;
+        state.isReady = true;
         logger.info('hh-eco-svc fully initialized and ready');
       } catch (error) {
-        logger.error({ error }, 'Failed to initialize dependencies, will retry in 5 seconds...');
-        setTimeout(() => {
-          logger.info('Retrying dependency initialization...');
-          void initializeDependencies();
-        }, 5000);
+        logger.error({ error }, 'Failed to initialize dependencies - service running in degraded mode');
+        // Service stays up but routes will fail when accessed
       }
-    };
-
-    setImmediate(() => {
-      void initializeDependencies();
     });
 
     const shutdown = async () => {
       logger.info('Received shutdown signal.');
       try {
         await server.close();
-        if (redisClient) {
-          await redisClient.close();
+        if (dependencies.redisClient) {
+          await dependencies.redisClient.close();
         }
         logger.info('Server closed gracefully.');
         process.exit(0);
