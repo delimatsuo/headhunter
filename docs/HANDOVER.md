@@ -7,61 +7,63 @@ This runbook is the single source of truth for resuming work or restoring local 
 
 ## 🚨 CRITICAL: Production Deployment Status (2025-10-03)
 
-**CURRENT STATE: API GATEWAY ROUTING FAILURE**
+**CURRENT STATE: API GATEWAY ROUTING FIXED ✅**
 
-All 8 Fastify services are **DEPLOYED AND HEALTHY** in production, but API Gateway returns **404 on all authenticated routes**.
+All 8 Fastify services are **DEPLOYED AND HEALTHY** in production. API Gateway routing issue has been **RESOLVED**.
 
 ### Current Deployment Status
 
 | Component | Status | Details |
 |-----------|--------|---------|
 | Fastify Services (8) | ✅ HEALTHY | All services deployed, passing health checks |
+| Cloud Run Ingress | ✅ FIXED | All services now accept API Gateway traffic |
 | Service Authentication | ✅ CONFIGURED | Gateway token support enabled on hh-embed-svc |
 | Tenant Validation | ✅ FIXED | Code supports both Firebase and gateway JWTs |
-| API Gateway Config | ⚠️ DEPLOYED | Config active but routes not working |
-| Gateway /health | ✅ WORKS | Returns 200 OK (no auth required) |
-| Authenticated Routes | ❌ BROKEN | All return 404 (embeddings, search, etc.) |
+| API Gateway Config | ✅ DEPLOYED | Config using correct managed service name |
+| Gateway Routing | ✅ FIXED | All routes now reach backend services |
+| Authenticated Routes | ⚠️ PARTIAL | Routes reach backends (need gateway token config) |
 
-### Active Blocking Issue: API Gateway 404s
+### Resolved Issue: API Gateway 404s (2025-10-03)
 
-**Problem:** API Gateway returns HTML 404 "Page not found" for all routes requiring API key authentication. Unauthenticated routes (`/health`, `/ready`) work correctly.
+**Root Cause Identified and Fixed:**
 
-**Affected Routes (404):**
-- `/v1/embeddings/generate`
-- `/v1/embeddings/upsert`
-- `/v1/embeddings/query`
-- `/v1/search/hybrid`
-- All other authenticated endpoints
+The 404 errors were caused by **TWO separate issues**:
 
-**What Works:**
-- ✅ Gateway `/health` endpoint (has `security: []` in OpenAPI spec)
-- ✅ Backend services are healthy and running
-- ✅ OpenAPI spec has all routes with correct `x-google-backend` configuration
-- ✅ Gateway service account has `roles/run.invoker` on all services
-- ✅ API Gateway using latest config: `gateway-config-20251003-231022`
-- ✅ Merged OpenAPI spec includes `jwt_audience` and `path_translation` for all routes
+1. **OpenAPI Spec - Wrong Managed Service Name** ✅ FIXED
+   - Problem: Spec used gateway hostname instead of managed service name
+   - Impact: API Gateway couldn't validate API keys against correct service
+   - Fix: Updated specs to use `${MANAGED_SERVICE_NAME}` placeholder
+   - Deploy script now fetches and injects correct managed service name
+   - Validation added to ensure correct injection
 
-**What's Broken:**
-- ❌ No requests reaching backend services (verified in Cloud Run logs)
-- ❌ 404 originates from API Gateway itself, not backends
-- ❌ All routes with `security: [TenantApiKey]` fail
+2. **Cloud Run Ingress Settings** ✅ FIXED
+   - Problem: Services had `ingress: internal-and-cloud-load-balancing`
+   - Impact: API Gateway (ESPv2) traffic was blocked at infrastructure level
+   - Fix: Changed all services to `ingress: all`
+   - Security: IAM `roles/run.invoker` still enforced
 
-**Investigation Needed:**
-1. Why do authenticated routes fail while `/health` (no auth) succeeds?
-2. Is there an issue with how API Gateway processes `security` definitions?
-3. Does the gateway's managed service config match our deployed API config?
-4. Could there be a propagation delay beyond 30+ seconds we've already waited?
+**Evidence:**
+- Before fix: Authenticated routes → 404 "Page not found"
+- After fix: Authenticated routes → 401 "Invalid gateway token" (reaches backend)
+- Health endpoint: Always worked (routes to hh-admin-svc with `ingress: all`)
 
 ### Recent Completions (2025-10-03)
 
-1. **✅ Tenant Validation Fix** (Commit: 67c1090)
+1. **✅ API Gateway Routing Fix** (Commit: 565861b)
+   - Updated OpenAPI specs with managed service name placeholder
+   - Enhanced deploy script with managed service name resolution
+   - Added validation for Swagger 2.0 and OpenAPI 3.0 specs
+   - Fixed Cloud Run ingress settings for all 7 affected services
+   - Deployed config: `gateway-config-20251003-195253`
+
+2. **✅ Tenant Validation Fix** (Commit: 67c1090)
    - Modified `services/common/src/tenant.ts:77-89`
    - Supports gateway-issued JWTs without `orgId` claims
    - For Firebase tokens: validates `orgId` matches `X-Tenant-ID` (existing behavior)
    - For gateway tokens: trusts `X-Tenant-ID` since API Gateway validated API key
    - Code built, tested, committed, and pushed to main
 
-2. **✅ hh-embed-svc Gateway Token Configuration**
+3. **✅ hh-embed-svc Gateway Token Configuration**
    - Revision: `hh-embed-svc-production-00032-x97` (100% traffic)
    - Environment variables:
      ```
@@ -72,37 +74,32 @@ All 8 Fastify services are **DEPLOYED AND HEALTHY** in production, but API Gatew
      ISSUER_CONFIGS=gateway-production@headhunter-ai-0088.iam.gserviceaccount.com|https://www.googleapis.com/service_accounts/v1/jwk/gateway-production@headhunter-ai-0088.iam.gserviceaccount.com
      ```
 
-3. **✅ API Gateway Configuration**
-   - Created merged OpenAPI spec with inlined schemas
-   - Script location: `/Volumes/Extreme Pro/myprojects/headhunter/scripts/deploy_api_gateway.sh:95-163`
-   - Deployed config: `gateway-config-20251003-231022`
-   - Gateway state: ACTIVE (updated at 2025-10-03T23:14:41Z)
+### Next Operator Actions
 
-### Recovery Task
+**Priority 1: Configure Gateway Tokens on Remaining Services**
 
-**Next Operator Actions:**
+All services now receive API Gateway requests but need gateway token authentication:
+- hh-search-svc
+- hh-rerank-svc
+- hh-evidence-svc
+- hh-eco-svc
+- hh-msgs-svc
+- hh-admin-svc
+- hh-enrich-svc
 
-1. **Diagnose API Gateway Routing Issue**
-   - Use specialized agent to investigate why authenticated routes fail
-   - Compare working `/health` config vs failing `/v1/embeddings/generate` config
-   - Check if there's a mismatch between API config and managed service
-   - Verify API Gateway logs for routing errors
-   - Test if issue is specific to `TenantApiKey` security definition
+For each service, deploy with these environment variables:
+```bash
+ENABLE_GATEWAY_TOKENS=true
+AUTH_MODE=hybrid
+GATEWAY_AUDIENCE=https://{service-name}-production-akcoqbr7sa-uc.a.run.app
+ALLOWED_TOKEN_ISSUERS=gateway-production@headhunter-ai-0088.iam.gserviceaccount.com/
+ISSUER_CONFIGS=gateway-production@headhunter-ai-0088.iam.gserviceaccount.com|https://www.googleapis.com/service_accounts/v1/jwk/gateway-production@headhunter-ai-0088.iam.gserviceaccount.com
+```
 
-2. **Apply Gateway Token Config to All Services**
-   - Once routing is fixed, remaining services need gateway token config:
-     - hh-search-svc
-     - hh-rerank-svc
-     - hh-evidence-svc
-     - hh-eco-svc
-     - hh-msgs-svc
-     - hh-admin-svc
-     - hh-enrich-svc
-
-3. **Run End-to-End Tests**
-   - Execute: `./scripts/comprehensive_smoke_test.sh`
-   - Generate embeddings for test candidates
-   - Validate search pipeline: embed → search → rerank → evidence
+**Priority 2: Run End-to-End Tests**
+- Execute: `./scripts/comprehensive_smoke_test.sh`
+- Generate embeddings for test candidates
+- Validate search pipeline: embed → search → rerank → evidence
 
 ### Key Files for Investigation
 
