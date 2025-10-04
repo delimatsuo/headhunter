@@ -255,7 +255,7 @@ export function loadConfig(): ServiceConfig {
   const tokenClockSkewSeconds = parseNumber(process.env.TOKEN_CLOCK_SKEW_SECONDS, 30);
   const tokenCacheTtlSeconds = parseNumber(process.env.TOKEN_CACHE_TTL_SECONDS, 300);
   const tokenCacheEnabled = parseBoolean(process.env.ENABLE_TOKEN_CACHE, true);
-  const issuerConfigs = parseIssuerConfigs(process.env.ALLOWED_TOKEN_ISSUERS);
+  const issuerConfigs = parseIssuerConfigs(process.env.ISSUER_CONFIGS || process.env.ALLOWED_TOKEN_ISSUERS);
   const allowedIssuers = buildAllowedIssuers(projectId, issuerConfigs, authMode !== 'gateway');
   const gatewayAudiences = parseGatewayAudiences();
   const hybridRps = parseNumber(process.env.GATEWAY_HYBRID_RPS, 30);
