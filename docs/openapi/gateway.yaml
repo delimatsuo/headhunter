@@ -9,7 +9,7 @@ info:
     client-credentials grant and validated by downstream services.
 
     '
-host: headhunter-api-gateway-production-d735p8t6.uc.gateway.dev
+host: ${MANAGED_SERVICE_NAME}
 basePath: /
 schemes:
 - https
@@ -26,7 +26,7 @@ consumes:
 produces:
 - application/json
 x-google-endpoints:
-- name: headhunter-api-gateway-production-d735p8t6.uc.gateway.dev
+- name: ${MANAGED_SERVICE_NAME}
   allowCors: true
 paths:
   /health:

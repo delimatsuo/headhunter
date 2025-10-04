@@ -10,7 +10,7 @@ info:
 
     '
 servers:
-- url: https://hh-gateway-${ENVIRONMENT}-${REGION}.gateway.dev/
+- url: https://${MANAGED_SERVICE_NAME}/
 components:
   securitySchemes:
     OAuth2ClientCredentials:
@@ -61,7 +61,7 @@ x-google-quota:
     values:
       STANDARD: 50
 x-google-endpoints:
-- name: hh-gateway-${ENVIRONMENT}-${REGION}.gateway.dev
+- name: ${MANAGED_SERVICE_NAME}
   allowCors: true
 paths:
   /health:
