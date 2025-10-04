@@ -34,7 +34,7 @@ export interface AuthConfig {
   enableGatewayTokens: boolean;
   tokenClockSkewSeconds: number;
   tokenCacheTtlSeconds: number;
-  mode: 'firebase' | 'gateway' | 'hybrid';
+  mode: 'firebase' | 'gateway' | 'hybrid' | 'none';
   tokenCacheEnabled: boolean;
 }
 
@@ -74,14 +74,14 @@ const DEFAULTS = {
   requestIdHeader: process.env.REQUEST_ID_HEADER ?? 'X-Request-ID'
 };
 
-function resolveAuthMode(): 'firebase' | 'gateway' | 'hybrid' {
+function resolveAuthMode(): 'firebase' | 'gateway' | 'hybrid' | 'none' {
   const value = process.env.AUTH_MODE?.trim().toLowerCase();
   if (!value) {
     return 'hybrid';
   }
 
-  if (value === 'firebase' || value === 'gateway' || value === 'hybrid') {
-    return value;
+  if (value === 'firebase' || value === 'gateway' || value === 'hybrid' || value === 'none') {
+    return value as 'firebase' | 'gateway' | 'hybrid' | 'none';
   }
 
   return 'hybrid';

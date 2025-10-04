@@ -312,6 +312,13 @@ export const authenticationPlugin: FastifyPluginAsync = fp(async (fastify) => {
       return;
     }
 
+    const config = getConfig();
+
+    // Skip authentication if mode is 'none' (relies on API Gateway + Cloud Run IAM)
+    if (config.auth.mode === 'none') {
+      return;
+    }
+
     const token = getTokenFromRequest(request.headers as Record<string, unknown>);
     if (!token) {
       throw unauthorizedError('Missing bearer token.');

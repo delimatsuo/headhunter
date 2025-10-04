@@ -68,15 +68,19 @@ export const tenantValidationPlugin: FastifyPluginAsync = fp(async (fastify) => 
       return;
     }
 
+    const config = getConfig();
     const tenantHeader = request.headers['x-tenant-id'];
     const tenantId = typeof tenantHeader === 'string' ? tenantHeader.trim() : '';
     if (tenantId.length === 0) {
       throw badRequestError('Missing X-Tenant-ID header.');
     }
 
-    // For gateway tokens (no orgId), trust X-Tenant-ID header since API Gateway validated it
-    // For Firebase tokens, validate orgId matches X-Tenant-ID header
-    if (request.user?.orgId) {
+    // AUTH_MODE=none: Trust X-Tenant-ID header (API Gateway + Cloud Run IAM provide security)
+    // Firebase tokens: Validate orgId matches X-Tenant-ID header
+    // Gateway tokens (no orgId): Trust X-Tenant-ID header since API Gateway validated it
+    if (config.auth.mode === 'none') {
+      // No user context - API Gateway and Cloud Run IAM already validated the request
+    } else if (request.user?.orgId) {
       if (tenantId !== request.user.orgId) {
         throw forbiddenError('Tenant header does not match authenticated user organization.');
       }
