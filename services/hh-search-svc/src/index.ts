@@ -39,6 +39,32 @@ async function bootstrap(): Promise<void> {
     await registerRoutes(server, dependencies);
     logger.info('Routes registered');
 
+    // Register under-pressure plugin BEFORE listen (required by Fastify)
+    logger.info('Registering under-pressure plugin...');
+    const underPressure = await import('@fastify/under-pressure');
+    await server.register(underPressure.default, {
+      maxEventLoopDelay: 2000,
+      maxHeapUsedBytes: 1_024 * 1_024 * 1024,
+      maxRssBytes: 1_536 * 1_024 * 1024,
+      healthCheck: async () => {
+        if (!dependencies.pgClient) return true;
+        const health = await dependencies.pgClient.healthCheck();
+        if (health.status !== 'healthy') {
+          throw new Error(health.message ?? 'pgvector degraded');
+        }
+        return true;
+      },
+      healthCheckInterval: 10000
+    });
+    logger.info('Under-pressure plugin registered');
+
+    // Register cleanup hook BEFORE listen (required by Fastify)
+    server.addHook('onClose', async () => {
+      if (dependencies.pgClient && dependencies.redisClient) {
+        await Promise.all([dependencies.pgClient.close(), dependencies.redisClient.close()]);
+      }
+    });
+
     // Start listening IMMEDIATELY (Cloud Run requires fast startup)
     const port = Number(process.env.PORT ?? 8080);
     const host = '0.0.0.0';
@@ -73,30 +99,6 @@ async function bootstrap(): Promise<void> {
           dependencies.service.setFirestore(getFirestore());
         }
         logger.info('Search service initialized');
-
-        logger.info('Registering under-pressure plugin...');
-        const underPressure = await import('@fastify/under-pressure');
-        await server.register(underPressure.default, {
-          maxEventLoopDelay: 2000,
-          maxHeapUsedBytes: 1_024 * 1_024 * 1024,
-          maxRssBytes: 1_536 * 1_024 * 1024,
-          healthCheck: async () => {
-            if (!dependencies.pgClient) return true;
-            const health = await dependencies.pgClient.healthCheck();
-            if (health.status !== 'healthy') {
-              throw new Error(health.message ?? 'pgvector degraded');
-            }
-            return true;
-          },
-          healthCheckInterval: 10000
-        });
-        logger.info('Under-pressure plugin registered');
-
-        server.addHook('onClose', async () => {
-          if (dependencies.pgClient && dependencies.redisClient) {
-            await Promise.all([dependencies.pgClient.close(), dependencies.redisClient.close()]);
-          }
-        });
 
         state.isReady = true;
         logger.info('hh-search-svc fully initialized and ready');

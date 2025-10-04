@@ -31,6 +31,13 @@ async function bootstrap(): Promise<void> {
     await registerRoutes(server, dependencies);
     logger.info('Routes registered');
 
+    // Register cleanup hook BEFORE listen (required by Fastify)
+    server.addHook('onClose', async () => {
+      if (dependencies.pgClient) {
+        await dependencies.pgClient.close();
+      }
+    });
+
     // Start listening IMMEDIATELY
     const port = Number(process.env.PORT ?? 8080);
     const host = '0.0.0.0';
@@ -52,12 +59,6 @@ async function bootstrap(): Promise<void> {
           logger: getLogger({ module: 'embeddings-service' })
         });
         logger.info('Embeddings service initialized');
-
-        server.addHook('onClose', async () => {
-          if (dependencies.pgClient) {
-            await dependencies.pgClient.close();
-          }
-        });
 
         state.isReady = true;
         logger.info('hh-embed-svc fully initialized and ready');

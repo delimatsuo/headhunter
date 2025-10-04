@@ -37,6 +37,40 @@ async function bootstrap(): Promise<void> {
     await registerRoutes(server, dependencies);
     logger.info('Routes registered');
 
+    // Register under-pressure plugin BEFORE listen (required by Fastify)
+    logger.info('Registering under-pressure plugin...');
+    const underPressure = await import('@fastify/under-pressure');
+    await server.register(underPressure.default, {
+      maxEventLoopDelay: 2000,
+      maxHeapUsedBytes: 1_024 * 1_024 * 1024,
+      maxRssBytes: 1_536 * 1_024 * 1024,
+      healthCheckInterval: 10000,
+      healthCheck: async () => {
+        if (!dependencies.redisClient || !dependencies.firestoreClient) return true;
+        const [redis, firestore] = await Promise.all([
+          dependencies.redisClient.healthCheck(),
+          dependencies.firestoreClient.healthCheck()
+        ]);
+
+        if (!['healthy', 'disabled'].includes(redis.status)) {
+          throw new Error(redis.message ?? 'Redis degraded.');
+        }
+
+        if (firestore.status !== 'healthy') {
+          throw new Error(firestore.message ?? 'Firestore degraded.');
+        }
+        return true;
+      }
+    });
+    logger.info('Under-pressure plugin registered');
+
+    // Register cleanup hook BEFORE listen (required by Fastify)
+    server.addHook('onClose', async () => {
+      if (dependencies.redisClient) {
+        await dependencies.redisClient.close();
+      }
+    });
+
     // Start listening IMMEDIATELY (Cloud Run requires fast startup)
     const port = Number(process.env.PORT ?? 8080);
     const host = '0.0.0.0';
@@ -66,38 +100,6 @@ async function bootstrap(): Promise<void> {
           logger: getLogger({ module: 'eco-service' })
         });
         logger.info('ECO service initialized');
-
-        logger.info('Registering under-pressure plugin...');
-        const underPressure = await import('@fastify/under-pressure');
-        await server.register(underPressure.default, {
-          maxEventLoopDelay: 2000,
-          maxHeapUsedBytes: 1_024 * 1_024 * 1024,
-          maxRssBytes: 1_536 * 1_024 * 1024,
-          healthCheckInterval: 10000,
-          healthCheck: async () => {
-            if (!dependencies.redisClient || !dependencies.firestoreClient) return true;
-            const [redis, firestore] = await Promise.all([
-              dependencies.redisClient.healthCheck(),
-              dependencies.firestoreClient.healthCheck()
-            ]);
-
-            if (!['healthy', 'disabled'].includes(redis.status)) {
-              throw new Error(redis.message ?? 'Redis degraded.');
-            }
-
-            if (firestore.status !== 'healthy') {
-              throw new Error(firestore.message ?? 'Firestore degraded.');
-            }
-            return true;
-          }
-        });
-        logger.info('Under-pressure plugin registered');
-
-        server.addHook('onClose', async () => {
-          if (dependencies.redisClient) {
-            await dependencies.redisClient.close();
-          }
-        });
 
         state.isReady = true;
         logger.info('hh-eco-svc fully initialized and ready');

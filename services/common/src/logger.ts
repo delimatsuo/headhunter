@@ -290,8 +290,6 @@ export const requestLoggingPlugin: FastifyPluginAsync = fp(async (fastify) => {
         {
           path: request.url,
           method: request.method,
-          tenant_id: tenantId,
-          trace_id: traceContext?.traceId,
           client_id: gatewayMetadata.clientId,
           route_id: gatewayMetadata.routeId,
           backend_service: gatewayMetadata.backendService,
@@ -316,7 +314,6 @@ export const requestLoggingPlugin: FastifyPluginAsync = fp(async (fastify) => {
     const start = (request as unknown as Record<symbol, bigint>)[REQUEST_START];
     const durationMs = start ? Number(process.hrtime.bigint() - start) / 1_000_000 : undefined;
 
-    const tenantId = request.requestContext?.tenant?.id ?? request.headers['x-tenant-id'];
     const auth = request.requestContext?.auth;
     const gatewayMetadata = (request.requestContext?.gateway ?? {}) as Record<string, unknown>;
 
@@ -324,7 +321,6 @@ export const requestLoggingPlugin: FastifyPluginAsync = fp(async (fastify) => {
       {
         status_code: reply.statusCode,
         duration_ms: durationMs,
-        tenant_id: tenantId,
         token_type: auth?.tokenType,
         issuer: auth?.issuer,
         audience: auth?.audience,

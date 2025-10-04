@@ -37,6 +37,46 @@ async function bootstrap(): Promise<void> {
     await registerRoutes(server, dependencies);
     logger.info('Routes registered');
 
+    // Register under-pressure plugin BEFORE listen (required by Fastify)
+    logger.info('Registering under-pressure plugin...');
+    const underPressure = await import('@fastify/under-pressure');
+    await server.register(underPressure.default, {
+      maxEventLoopDelay: 1500,
+      maxHeapUsedBytes: 1_024 * 1_024 * 1024,
+      maxRssBytes: 1_536 * 1_024 * 1024,
+      healthCheck: async () => {
+        if (!dependencies.redisClient || !dependencies.togetherClient) return true;
+
+        const [redisHealth, togetherHealth] = await Promise.all([
+          dependencies.redisClient.healthCheck(),
+          dependencies.togetherClient.healthCheck()
+        ]);
+
+        const unhealthy = [];
+        if (!['healthy', 'disabled'].includes(redisHealth.status)) {
+          unhealthy.push('redis');
+        }
+        if (!['healthy', 'disabled'].includes(togetherHealth.status)) {
+          unhealthy.push('together');
+        }
+
+        if (unhealthy.length > 0) {
+          throw new Error(`Dependent services degraded: ${unhealthy.join(', ')}`);
+        }
+
+        return true;
+      },
+      healthCheckInterval: 10000
+    });
+    logger.info('Under-pressure plugin registered');
+
+    // Register cleanup hook BEFORE listen (required by Fastify)
+    server.addHook('onClose', async () => {
+      if (dependencies.redisClient && dependencies.togetherClient) {
+        await Promise.all([dependencies.redisClient.close(), dependencies.togetherClient.close()]);
+      }
+    });
+
     // Start listening IMMEDIATELY (Cloud Run requires fast startup)
     const port = Number(process.env.PORT ?? 8080);
     const host = '0.0.0.0';
@@ -61,46 +101,6 @@ async function bootstrap(): Promise<void> {
           logger: getLogger({ module: 'rerank-service' })
         });
         logger.info('Rerank service initialized');
-
-        logger.info('Registering under-pressure plugin...');
-        const underPressure = await import('@fastify/under-pressure');
-        await server.register(underPressure.default, {
-          maxEventLoopDelay: 1500,
-          maxHeapUsedBytes: 1_024 * 1_024 * 1024,
-          maxRssBytes: 1_536 * 1_024 * 1024,
-          healthCheck: async () => {
-            if (!dependencies.redisClient || !dependencies.togetherClient) return true;
-
-            const [redisHealth, togetherHealth] = await Promise.all([
-              dependencies.redisClient.healthCheck(),
-              dependencies.togetherClient.healthCheck()
-            ]);
-
-            const unhealthy = [];
-            if (!['healthy', 'disabled'].includes(redisHealth.status)) {
-              unhealthy.push('redis');
-            }
-            if (!['healthy', 'disabled'].includes(togetherHealth.status)) {
-              unhealthy.push('together');
-            }
-
-            if (unhealthy.length > 0) {
-              throw new Error(`Dependent services degraded: ${unhealthy.join(', ')}`);
-            }
-
-            return true;
-          },
-          healthCheckInterval: 10000
-        });
-        logger.info('Under-pressure plugin registered');
-
-        logger.info('Registering shutdown hooks...');
-        server.addHook('onClose', async () => {
-          if (dependencies.redisClient && dependencies.togetherClient) {
-            await Promise.all([dependencies.redisClient.close(), dependencies.togetherClient.close()]);
-          }
-        });
-        logger.info('Shutdown hooks registered');
 
         state.isReady = true;
         logger.info('hh-rerank-svc fully initialized and ready');
