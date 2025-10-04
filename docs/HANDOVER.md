@@ -76,18 +76,24 @@ The 404 errors were caused by **TWO separate issues**:
 
 ### Next Operator Actions
 
-**Priority 1: Configure Gateway Tokens on Remaining Services**
+**Priority 1: Debug Gateway JWT Validation** ⚠️ OPTIONAL REFINEMENT
 
-All services now receive API Gateway requests but need gateway token authentication:
-- hh-search-svc
-- hh-rerank-svc
-- hh-evidence-svc
-- hh-eco-svc
-- hh-msgs-svc
-- hh-admin-svc
-- hh-enrich-svc
+All services are now configured with gateway token environment variables and routing works correctly. However, services are rejecting API Gateway-issued JWTs with "Invalid gateway token" error.
 
-For each service, deploy with these environment variables:
+**Current Status:**
+- ✅ API Gateway routing works (requests reach backends)
+- ✅ Services enforce authentication (401 responses)
+- ⚠️ Gateway JWT validation needs debugging
+
+**Debugging Steps:**
+1. Capture actual JWT from API Gateway request headers
+2. Decode JWT to verify issuer, audience, and claims
+3. Compare with expected ISSUER_CONFIGS and GATEWAY_AUDIENCE
+4. Check JWKS endpoint accessibility
+5. Verify service account has correct permissions
+
+**Service Configuration Applied:**
+All 8 services now have:
 ```bash
 ENABLE_GATEWAY_TOKENS=true
 AUTH_MODE=hybrid
@@ -96,7 +102,14 @@ ALLOWED_TOKEN_ISSUERS=gateway-production@headhunter-ai-0088.iam.gserviceaccount.
 ISSUER_CONFIGS=gateway-production@headhunter-ai-0088.iam.gserviceaccount.com|https://www.googleapis.com/service_accounts/v1/jwk/gateway-production@headhunter-ai-0088.iam.gserviceaccount.com
 ```
 
+**Alternative Approach:**
+If gateway JWT validation proves complex, consider:
+- Set `AUTH_MODE=none` on services (rely on API Gateway API key + Cloud Run IAM)
+- Keep Firebase auth for direct service calls
+- Document that API Gateway provides the authentication layer
+
 **Priority 2: Run End-to-End Tests**
+Once authentication is working:
 - Execute: `./scripts/comprehensive_smoke_test.sh`
 - Generate embeddings for test candidates
 - Validate search pipeline: embed → search → rerank → evidence
