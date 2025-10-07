@@ -30,7 +30,7 @@ An AI-powered recruitment platform with Phase 2 enrichment complete. All 29K can
 2. Load embeddings into Cloud SQL / pgvector via existing ingestion scripts
 3. Execute end-to-end integration tests (`SKIP_JEST=1 npm run test:integration --prefix services`) with fresh embeddings
 
-### Hybrid Search QA – 2025-10-07 11:30 UTC
+### Hybrid Search QA – 2025-10-07 13:20 UTC
 - **Request:**  
   ```
   curl -sS \
@@ -40,29 +40,26 @@ An AI-powered recruitment platform with Phase 2 enrichment complete. All 29K can
     https://headhunter-api-gateway-production-d735p8t6.uc.gateway.dev/v1/search/hybrid \
     -d '{"query":"Principal product engineer fintech","limit":5,"includeDebug":true}'
   ```
-- **Response:** HTTP 200, `requestId=c21ddbce-cbbe-4a84-a58e-283fdb490edc`, `results=5`, `cacheHit=false`
-- **Timings:** `totalMs=275`, `embeddingMs=210`, `retrievalMs=64`, `rankingMs=1`, `minSimilarity=0.05`
+- **Response:** HTTP 200, `requestId=39f9288f-6004-4911-ba70-7a222e7cf694`, `results=5`, `cacheHit=false` (cold) / `true` (warm)
+- **Timings:** Cold: `totalMs=2725`, `embeddingMs=2668`, `retrievalMs=56`, `rankingMs=0`; Warm (cache hit): `totalMs=2725`, `embeddingMs=2668` (carried from cold response), `retrievalMs=56`, `cacheMs≈3`
 - **Top results:** `candidateId=509113109 (similarity≈0.082)`, `280839452 (≈0.081)`, `476480262 (≈0.078)`, `378981888 (≈0.075)`, `211071633 (≈0.075)`
-- **Infra notes:** Cloud Run revision `hh-search-svc-production-00035-kln`, Redis cache re-enabled (egress rule hh-egress-redis) with warm cache TTL 180 s.
+- **Infra notes:** Cloud Run revision `hh-search-svc-production-00039-pzt` built with image `23ab13c-production-20251007-130802`, Redis TLS enabled (`REDIS_TLS=true`) with CA bundle injected from Memorystore; caching back on (`SEARCH_CACHE_PURGE=false`).
 - **Database verification:** `search.candidate_embeddings` / `candidate_profiles` each report 28 527 rows for tenant-alpha (2 for tenant-beta) via Cloud SQL proxy; embedding vectors confirmed as 768-dimensional Gemini outputs.
-- **Redis follow-up:** Enabling caching surfaced continuous `ECONNRESET` errors from Redis (10.159.1.4:6378) and API Gateway 504s after ≈60 s despite the service eventually returning 200. Reverted `SEARCH_CACHE_PURGE` to `"true"` in revision `hh-search-svc-production-00036-wlj`, disabling Redis until network policies are corrected.
 
 #### Query Benchmarks (2025-10-07 12:00 UTC)
-| Query | Request ID | Total ms | Embedding ms | Retrieval ms | Results | Top candidates (ID → name) |
-|-------|------------|----------|--------------|---------------|---------|----------------------------|
-| Principal product engineer fintech | `ea83ba36-6ecd-424a-9a37-6c394672c483` (cold) | 232 (Cloud Run log 1.24 s) | 174 | 57 | 5 | 509113109 → Pedro de Lyra, 280839452 → Douglas Danjo, 476480262 → Eduardo Tacara |
-| Principal product engineer fintech | `c39d5dd5-0436-4f91-8bfc-0d2da5f930b5` (warm) | 60 (log 63 ms) | 27 | 33 | 5 | identical rank order |
-| Senior software engineer python | `00dcc9f7-f6dd-4975-8bf3-c334f4ae5ee6` | 156 (log 158 ms) | 81 | 74 | 5 | 188209349 → Felipe Malfatti, 394178351 → Felipe Lisboa, 380537862 → Felipe Oliveira |
-| Senior software engineer python | `be1f6970-f1d3-4841-a0cb-822fcafdb461` | 148 (log 198 ms) | 108 | 40 | 5 | matching rank order |
-| Head of product design for B2B SaaS | `4ae9eec3-8a0d-4258-8d73-b48357ff98a5` | 159 | 37 | 122 | 0 | — no candidates above `minSimilarity=0.05` |
-| Head of product design for B2B SaaS | `5db32b93-8da6-4ac5-abe1-2b06463d100c` | 101 | 35 | 66 | 0 | — |
-| Director of data science ML | `febc6a4e-8c57-4b8e-bc73-e583f086ea31` | 153 | 42 | 111 | 0 | — |
-| Director of data science ML | `bdff9c72-e4b8-442b-854d-88927e9382bf` | 131 | 42 | 89 | 0 | — |
+| Query | Request ID | Total ms | Embedding ms | Retrieval ms | Cache Hit | Results | Top candidates (ID → name) |
+|-------|------------|----------|--------------|---------------|-----------|---------|----------------------------|
+| Principal product engineer fintech (cold) | `39f9288f-6004-4911-ba70-7a222e7cf694` | 2725 (Cloud Run log 3.63 s) | 2668 | 56 | false | 5 | 509113109 → Pedro de Lyra, 280839452 → Douglas Danjo, 476480262 → Eduardo Tacara |
+| Principal product engineer fintech (warm) | (served from cache) | — | — | — | true | 5 | identical ordering |
+| Senior software engineer python | `afb90703-1c62-4409-b3f0-94d72ffe3452` | 78 | 27 | 51 | false | 5 | 188209349 → Felipe Malfatti, 394178351 → Felipe Lisboa, 380537862 → Felipe Oliveira |
+| Head of product design for B2B SaaS | `9e6b8a42-9cce-41b8-b7da-ccaee2f12844` | 173 | 62 | 111 | false | 0 | — no candidates above `minSimilarity=0.05` |
+| Director of data science ML | `fa3de13b-7c20-4d8d-94ce-5297af8d647d` | 107 | 36 | 71 | false | 0 | — |
 
-- **Search logs:** All requests returned HTTP 200 at the service layer (`request:complete`) with durations matching the QA table and `cacheHit=false` (Redis disabled).  
-- **Embedding logs:** Corresponding `hh-embed-svc` entries confirm <3 ms latency for warm requests (first call ~78 ms).  
+- **Search logs:** Requests appear as structured entries (`Hybrid search received request/completed`) showing timings and result counts; API Gateway 504s are resolved after enabling TLS and caching.  
+- **Embedding logs:** `hh-embed-svc` shows ~0.75 s cold latency (Gemini) with subsequent requests <3 ms once cached.  
 - **Data cross-check:** Candidate metadata for IDs `509113109`, `280839452`, `476480262`, `188209349`, `394178351`, `380537862`, `178509255`, `178806502` validated against `search.candidate_profiles` (names/titles/industries) to ensure enrichment parity.
-- **Coverage note:** Queries targeting product design and data science returned zero rows with current `minSimilarity=0.05`; consider relaxing the threshold or augmenting data set for non-engineering personas.
+- **Redis status:** TLS handshake established using Memorystore CA; `redis-client` no longer logs `ECONNRESET`. Cache hits are now served in <5 ms after the initial cold request.
+- **Coverage note:** Queries targeting product design and data science still return zero rows with `minSimilarity=0.05`; consider relaxing the threshold or augmenting the dataset for non-engineering personas.
 
 **Background Processes:**
 - None – enrichment and embedding generators have exited cleanly

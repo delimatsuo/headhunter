@@ -80,6 +80,7 @@ export class SearchService {
 
   async hybridSearch(context: SearchContext, request: HybridSearchRequest): Promise<HybridSearchResponse> {
     const totalStart = Date.now();
+    this.logger.info({ requestId: context.requestId, tenantId: context.tenant.id }, 'Hybrid search received request.');
 
     if (
       !request.query &&
@@ -182,6 +183,10 @@ export class SearchService {
     }
 
     timings.totalMs = Date.now() - totalStart;
+    this.logger.info(
+      { requestId: context.requestId, tenantId: context.tenant.id, timings, resultCount: response.results.length },
+      'Hybrid search completed.'
+    );
 
     return response;
   }

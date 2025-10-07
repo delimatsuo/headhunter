@@ -28,23 +28,36 @@ export class SearchRedisClient {
     }
 
     const hosts = this.config.host.split(',').map((value) => value.trim()).filter(Boolean);
+    const tlsOptions = this.config.tls
+      ? (() => {
+          const options: Record<string, unknown> = {
+            rejectUnauthorized: this.config.tlsRejectUnauthorized
+          };
+          if (this.config.caCert) {
+            options.ca = [this.config.caCert];
+          }
+          return options;
+        })()
+      : undefined;
 
     if (hosts.length > 1) {
       const nodes: ClusterNode[] = hosts.map((host) => ({ host, port: this.config.port }));
       const options: ClusterOptions = {
         redisOptions: {
           password: this.config.password,
-          tls: this.config.tls ? {} : undefined
+          tls: tlsOptions
         }
       };
+      this.logger.info({ tls: tlsOptions ?? null, cluster: true }, 'Initializing Redis cluster client.');
       this.client = new Cluster(nodes, options);
     } else {
       const options: RedisOptions = {
         host: hosts[0] ?? this.config.host,
         port: this.config.port,
         password: this.config.password,
-        tls: this.config.tls ? {} : undefined
+        tls: tlsOptions
       };
+      this.logger.info({ tls: tlsOptions ?? null, cluster: false, host: options.host, port: options.port }, 'Initializing Redis client.');
       this.client = new Redis(options);
     }
 
@@ -54,6 +67,14 @@ export class SearchRedisClient {
 
     this.client.on('reconnecting', () => {
       this.logger.warn('Redis reconnecting.');
+    });
+
+    this.client.on('ready', () => {
+      this.logger.info('Redis client connection ready.');
+    });
+
+    this.client.on('connect', () => {
+      this.logger.info('Redis client connected.');
     });
 
     return this.client;
