@@ -65,7 +65,7 @@ spec:
             - name: SEARCH_CACHE_TTL_SECONDS
               value: "180"
             - name: SEARCH_CACHE_PURGE
-              value: "false"
+              value: "true"
             - name: SEARCH_MIN_SIMILARITY
               value: "0.05"
             - name: SEARCH_FIRESTORE_FALLBACK
