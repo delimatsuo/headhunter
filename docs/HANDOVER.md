@@ -30,6 +30,22 @@ An AI-powered recruitment platform with Phase 2 enrichment complete. All 29K can
 2. Load embeddings into Cloud SQL / pgvector via existing ingestion scripts
 3. Execute end-to-end integration tests (`SKIP_JEST=1 npm run test:integration --prefix services`) with fresh embeddings
 
+### Hybrid Search QA – 2025-10-07 11:30 UTC
+- **Request:**  
+  ```
+  curl -sS \
+    -H 'x-api-key: AIzaSyD4fwoF0SMDVsA4A1Ip0_dT-qfP1OYPODs' \
+    -H 'X-Tenant-ID: tenant-alpha' \
+    -H 'Content-Type: application/json' \
+    https://headhunter-api-gateway-production-d735p8t6.uc.gateway.dev/v1/search/hybrid \
+    -d '{"query":"Principal product engineer fintech","limit":5,"includeDebug":true}'
+  ```
+- **Response:** HTTP 200, `requestId=c21ddbce-cbbe-4a84-a58e-283fdb490edc`, `results=5`, `cacheHit=false`
+- **Timings:** `totalMs=275`, `embeddingMs=210`, `retrievalMs=64`, `rankingMs=1`, `minSimilarity=0.05`
+- **Top results:** `candidateId=509113109 (similarity≈0.082)`, `280839452 (≈0.081)`, `476480262 (≈0.078)`, `378981888 (≈0.075)`, `211071633 (≈0.075)`
+- **Infra notes:** Cloud Run revision `hh-search-svc-production-00035-kln`, Redis cache re-enabled (egress rule hh-egress-redis) with warm cache TTL 180 s.
+- **Database verification:** `search.candidate_embeddings` / `candidate_profiles` each report 28 527 rows for tenant-alpha (2 for tenant-beta) via Cloud SQL proxy; embedding vectors confirmed as 768-dimensional Gemini outputs.
+
 **Background Processes:**
 - None – enrichment and embedding generators have exited cleanly
 

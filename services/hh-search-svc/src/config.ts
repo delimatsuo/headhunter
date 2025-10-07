@@ -165,7 +165,7 @@ export function getSearchServiceConfig(): SearchServiceConfig {
     port: parseNumber(process.env.PGVECTOR_PORT, 5432),
     database: process.env.PGVECTOR_DATABASE ?? 'headhunter',
     user: process.env.PGVECTOR_USER ?? 'postgres',
-    password: process.env.PGVECTOR_PASSWORD ?? '',
+    password: (process.env.PGVECTOR_PASSWORD ?? '').trim(),
     ssl: parseBoolean(process.env.PGVECTOR_SSL, false),
     schema: process.env.PGVECTOR_SCHEMA ?? 'search',
     embeddingsTable: process.env.PGVECTOR_EMBEDDINGS_TABLE ?? 'candidate_embeddings',

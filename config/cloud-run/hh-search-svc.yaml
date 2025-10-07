@@ -6,7 +6,7 @@ metadata:
     app: hh-search-svc
     environment: ${SERVICE_ENVIRONMENT}
   annotations:
-    run.googleapis.com/ingress: internal-and-cloud-load-balancing
+    run.googleapis.com/ingress: all
     run.googleapis.com/launch-stage: GA
 spec:
   template:
@@ -16,7 +16,7 @@ spec:
         autoscaling.knative.dev/maxScale: "${SERVICE_MAX_SCALE}"
         autoscaling.knative.dev/minScale: "${SERVICE_MIN_SCALE}"
         run.googleapis.com/vpc-access-connector: projects/${SERVICE_PROJECT_ID}/locations/${SERVICE_REGION}/connectors/${VPC_CONNECTOR}
-        run.googleapis.com/vpc-access-egress: all-traffic
+        run.googleapis.com/vpc-access-egress: private-ranges-only
         run.googleapis.com/cloudsql-instances: ${SERVICE_PROJECT_ID}:${SERVICE_REGION}:${SQL_INSTANCE}
     spec:
       serviceAccountName: ${SERVICE_ACCOUNT}
@@ -38,7 +38,7 @@ spec:
             - name: REDIS_PORT
               value: "6378"
             - name: PGVECTOR_HOST
-              value: /cloudsql/${SERVICE_PROJECT_ID}:${SERVICE_REGION}:${SQL_INSTANCE}
+              value: 10.159.0.2
             - name: PGVECTOR_PORT
               value: "5432"
             - name: PGVECTOR_DATABASE
@@ -51,23 +51,29 @@ spec:
                   name: ${SECRET_DB_ANALYTICS}
                   key: latest
             - name: EMBED_SERVICE_URL
-              value: ${EMBED_SERVICE_URL}
+              value: https://hh-embed-svc-${SERVICE_ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+            - name: EMBED_SERVICE_AUDIENCE
+              value: https://hh-embed-svc-${SERVICE_ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
             - name: RERANK_SERVICE_URL
-              value: ${RERANK_SERVICE_URL}
+              value: https://hh-rerank-svc-${SERVICE_ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
             - name: EVIDENCE_SERVICE_URL
-              value: ${EVIDENCE_SERVICE_URL}
+              value: https://hh-evidence-svc-${SERVICE_ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
             - name: HEALTH_TENANT_ID
               value: tenant-alpha
             - name: ENABLE_REQUEST_LOGGING
               value: "true"
             - name: SEARCH_CACHE_TTL_SECONDS
               value: "180"
+            - name: SEARCH_CACHE_PURGE
+              value: "false"
+            - name: SEARCH_MIN_SIMILARITY
+              value: "0.05"
             - name: SEARCH_FIRESTORE_FALLBACK
               value: "true"
             - name: ENABLE_GATEWAY_TOKENS
               value: "false"
             - name: AUTH_MODE
-              value: "firebase"
+              value: "none"
           resources:
             limits:
               cpu: "${SERVICE_CPU}"
