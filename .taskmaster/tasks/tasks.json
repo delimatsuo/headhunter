@@ -9,7 +9,7 @@
         "testStrategy": "Unit tests for API configuration validation, integration tests for Together AI connectivity, mock API responses for development testing, verify rate limiting and error handling with actual API calls",
         "priority": "high",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -18,7 +18,8 @@
             "dependencies": [],
             "details": "Create environment configuration module to handle TOGETHER_API_KEY setup and TOGETHER_MODEL_STAGE1 configuration for Qwen 2.5 32B Instruct model. Implement validation functions to verify API key format and accessibility. Add configuration loading with proper error handling for missing or invalid environment variables. Include secure key management practices and validation logging.\n<info added on 2025-09-13T20:19:23.512Z>\nTDD Progress Update: Successfully implemented comprehensive environment configuration validation with focused test coverage (9/9 tests passing in tests/test_env_config.py). Key validations now enforce REGION restriction to us-central1, EMBEDDING_PROVIDER allowlist (gemini default, vertex/local options), RERANK_PROVIDER policy requiring together, and strict TOGETHER_API_KEY requirement in non-test environments. Configuration module (cloud_run_worker/config.py) enhanced with region/provider fields, validate() method enforcement, and to_dict() exposure. Simplified API key retrieval to directly require TOGETHER_API_KEY without Secret Manager fallback per PRD specifications. Next development phase: implement Together client connectivity health-check unit tests and rate limiter/circuit breaker behavior validation using aiohttp mocks.\n</info added on 2025-09-13T20:19:23.512Z>",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -29,7 +30,8 @@
             ],
             "details": "Implement async HTTP client using aiohttp for Together AI chat completions API (https://api.together.xyz/v1/chat/completions). Add rate limiting mechanism to respect API limits and prevent throttling. Implement circuit breaker pattern for handling API failures gracefully. Include retry logic with exponential backoff, timeout handling, and proper error classification for transient vs permanent failures.\n<info added on 2025-09-14T14:40:35.920Z>\nCompleted TDD implementation for Together client resiliency with comprehensive test coverage in tests/test_together_client_resilience.py. Tests validate sliding window rate limiting behavior, retry logic with exponential backoff, circuit breaker threshold activation, and basic success path functionality. Fixed critical issues in scripts/together_client.py including proper metrics/logging initialization in __init__, corrected exponential backoff placement within retry loop, and removed misaligned code block. All 3 new resilience tests pass successfully, confirming robust error handling and API reliability patterns are working as designed.\n</info added on 2025-09-14T14:40:35.920Z>",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -39,8 +41,10 @@
               "66.2"
             ],
             "details": "Create comprehensive configuration validation module that tests Together AI API connectivity and Qwen 2.5 32B model availability. Implement health check functions that verify API endpoints, authentication, and model access. Add validation tests for configuration completeness and correctness. Include diagnostic logging and error reporting for configuration issues.",
-            "status": "pending",
-            "testStrategy": ""
+            "status": "done",
+            "testStrategy": "",
+            "updatedAt": "2025-10-07T13:56:36.883Z",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -50,10 +54,13 @@
               "66.1"
             ],
             "details": "Configure GCP region settings to use us-central1 across all services and resources. Update configuration files and environment variables to enforce regional consistency. Implement region validation checks to ensure all GCP resources are created in the correct region. Add configuration management for regional settings that can be easily maintained and updated.",
-            "status": "pending",
-            "testStrategy": ""
+            "status": "done",
+            "testStrategy": "",
+            "parentId": "undefined",
+            "updatedAt": "2025-10-07T14:37:21.018Z"
           }
-        ]
+        ],
+        "updatedAt": "2025-10-07T14:37:21.018Z"
       },
       {
         "id": 67,
@@ -63,9 +70,9 @@
         "testStrategy": "Database connectivity tests, pgvector extension verification, HNSW index performance tests, FTS configuration validation for Portuguese text, hybrid search query performance benchmarks",
         "priority": "high",
         "dependencies": [
-          66
+          "66"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -73,8 +80,10 @@
             "description": "Set up Cloud SQL PostgreSQL instance in us-central1 region with pgvector extension enabled for vector similarity search capabilities",
             "dependencies": [],
             "details": "Create Cloud SQL PostgreSQL instance with appropriate machine type and storage configuration. Enable pgvector extension through database flags or manual installation. Configure network access, SSL certificates, and backup policies. Set up database users and permissions for application access.",
-            "status": "pending",
-            "testStrategy": ""
+            "status": "done",
+            "testStrategy": "",
+            "parentId": "undefined",
+            "updatedAt": "2025-10-08T12:58:10.110Z"
           },
           {
             "id": 2,
@@ -84,8 +93,10 @@
               "67.1"
             ],
             "details": "Create candidate_embeddings table with vector column for embeddings storage. Implement HNSW index configuration for cosine similarity search optimization. Define primary keys, foreign key relationships, and appropriate data types. Create migration scripts for schema deployment and version control.",
-            "status": "pending",
-            "testStrategy": ""
+            "status": "done",
+            "testStrategy": "",
+            "parentId": "undefined",
+            "updatedAt": "2025-10-07T14:46:13.210Z"
           },
           {
             "id": 3,
@@ -95,8 +106,10 @@
               "67.2"
             ],
             "details": "Configure Portuguese text search configuration with appropriate dictionaries and stemming rules. Create GIN indexes for full-text search columns. Set up text search vectors and ranking functions. Test search accuracy with Portuguese text samples and optimize search performance.",
-            "status": "pending",
-            "testStrategy": ""
+            "status": "done",
+            "testStrategy": "",
+            "parentId": "undefined",
+            "updatedAt": "2025-10-07T14:46:19.123Z"
           },
           {
             "id": 4,
@@ -106,8 +119,10 @@
               "67.1"
             ],
             "details": "Configure asyncpg connection pool with appropriate pool size, timeout settings, and connection lifecycle management. Implement connection health checks and automatic reconnection logic. Set up connection monitoring and metrics collection. Create database service layer with proper error handling and retry mechanisms.",
-            "status": "pending",
-            "testStrategy": ""
+            "status": "done",
+            "testStrategy": "",
+            "parentId": "undefined",
+            "updatedAt": "2025-10-08T15:29:17.280Z"
           },
           {
             "id": 5,
@@ -117,8 +132,10 @@
               "67.2"
             ],
             "details": "Add compliance fields (legal_basis, consent_record, transfer_mechanism) to candidate_embeddings and related tables. Create appropriate constraints, default values, and validation rules. Implement audit trail columns for tracking data processing activities. Update migration scripts to include compliance field additions.",
-            "status": "pending",
-            "testStrategy": ""
+            "status": "done",
+            "testStrategy": "",
+            "parentId": "undefined",
+            "updatedAt": "2025-10-07T14:46:24.651Z"
           },
           {
             "id": 6,
@@ -129,11 +146,13 @@
               "67.3",
               "67.4"
             ],
-            "details": "Create performance test suite for hybrid search queries combining vector similarity and full-text search. Benchmark HNSW index performance with various vector dimensions and dataset sizes. Optimize query execution plans and index configurations. Monitor and tune connection pool settings, query caching, and database parameters to achieve p95 ≤ 1.2s performance target.",
-            "status": "pending",
-            "testStrategy": ""
+            "details": "Create performance test suite for hybrid search queries combining vector similarity and full-text search. Benchmark HNSW index performance with various vector dimensions and dataset sizes. Optimize query execution plans and index configurations. Monitor and tune connection pool settings, query caching, and database parameters to achieve p95 ≤ 1.2s performance target.\n<info added on 2025-10-08T23:05:05.672Z>\n**Production Deployment Completed Successfully**\n\nFixed three critical production issues during deployment:\n\n1. **Missing ENABLE_RERANK environment variable**: Added to hh-search-svc.yaml config (line 103-104)\n\n2. **Lazy initialization race condition**: Updated index.ts (lines 81-142) to properly track initialization state and clean up partial failures. The under-pressure health check was failing against partially-initialized pgClient instances.\n\n3. **Portuguese FTS schema validation**: Updated pgvector-client.ts (lines 411-460) to accept EITHER a DEFAULT expression OR a TRIGGER that maintains Portuguese FTS. The Oct 7 schema migration uses triggers instead of defaults.\n\n**Current Production Status**:\n- Revision hh-search-svc-production-00051-s9x: HEALTHY, fully initialized at 22:58:53 UTC\n- Service responding successfully to hybrid search queries via API Gateway\n- Returns 5 results for test query \"Principal product engineer fintech\"\n\n**Configuration Updates Applied**:\n- Added ENABLE_RERANK=true\n- Added PGVECTOR_CONNECTION_TIMEOUT_MS=15000\n- Schema validation now trigger-aware\n\n**Performance Testing Status**:\n- Performance benchmark scripts identified issue: using incorrect API Gateway path (/v1/search instead of /v1/search/hybrid)\n- Once path corrected, can proceed with p95 ≤ 1.2s requirement validation\n- All code changes ready for commit\n</info added on 2025-10-08T23:05:05.672Z>",
+            "status": "in-progress",
+            "testStrategy": "",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2025-10-08T15:29:17.280Z"
       },
       {
         "id": 68,
@@ -143,7 +162,7 @@
         "testStrategy": "Unit tests for prompt generation, JSON schema validation tests, integration tests with Together AI API, performance tests for single-pass processing, validation of PII minimization in prompts",
         "priority": "high",
         "dependencies": [
-          66
+          "66"
         ],
         "status": "pending",
         "subtasks": [
@@ -154,7 +173,8 @@
             "dependencies": [],
             "details": "Create prompt templates for Together AI Qwen 2.5 32B that focus on skills, experience patterns, and qualifications while avoiding direct PII references. Implement templates for personal_details, education_analysis, experience_analysis, technical_assessment, market_insights, cultural_assessment, and executive_summary sections. Ensure prompts guide the model to return structured JSON responses with confidence scores and evidence extraction.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -165,7 +185,8 @@
             ],
             "details": "Implement async HTTP client using aiohttp for Together AI chat completions API calls. Create connection pooling, timeout handling, and concurrent request management. Integrate with existing intelligent_skill_processor.py structure and ensure proper async/await patterns throughout the processing pipeline. Include rate limiting and circuit breaker patterns for API reliability.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -176,7 +197,8 @@
             ],
             "details": "Create comprehensive JSON schema validation for all response sections (personal_details, education_analysis, experience_analysis, technical_assessment, market_insights, cultural_assessment, executive_summary, skill_inference). Implement auto-repair logic for common JSON formatting issues, retry mechanisms for failed parsing, and fallback strategies. Target <1% quarantine rate through intelligent error recovery and response cleaning.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -187,7 +209,8 @@
             ],
             "details": "Build skill inference engine that analyzes candidate profiles and extracts technical and soft skills with confidence scores. Implement evidence extraction to support skill assessments with specific examples from candidate data. Include analysis_confidence scoring system and quality_flags for assessment reliability. Integrate with existing skill taxonomy and ensure structured output format.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -198,7 +221,8 @@
             ],
             "details": "Implement processing_metadata tracking system that captures processing timestamps, API response times, retry attempts, confidence scores, and quality metrics. Add quality_flags system for identifying potential issues in processed data. Create logging and monitoring capabilities for tracking processing success rates, performance metrics, and error patterns. Ensure metadata supports debugging and quality assurance processes.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           }
         ]
       },
@@ -210,8 +234,8 @@
         "testStrategy": "Provider switching tests, embedding generation validation, fallback mechanism testing, performance benchmarks for different providers, vector similarity accuracy tests",
         "priority": "medium",
         "dependencies": [
-          67,
-          68
+          "67",
+          "68"
         ],
         "status": "pending",
         "subtasks": [
@@ -222,7 +246,8 @@
             "dependencies": [],
             "details": "Modify embedding-provider.ts interface to include Gemini provider type. Update EMBEDDING_PROVIDER environment variable validation to accept 'gemini' option. Ensure provider interface supports Gemini-specific configuration parameters and authentication methods. Update provider factory pattern to instantiate Gemini provider when selected.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -233,7 +258,8 @@
             ],
             "details": "Implement GeminiEmbeddingProvider class following the established provider interface. Configure Gemini API authentication and endpoint connections. Implement text embedding generation using Gemini's embedding models. Add proper error handling and response validation. Ensure compatibility with existing embedding pipeline and vector dimensions expected by pgvector storage.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -244,7 +270,8 @@
             ],
             "details": "Create fallback logic that automatically switches to Vertex AI text-embedding-004 when Gemini provider encounters errors or timeouts. Implement deterministic fallback behavior for development environments to ensure consistent testing. Add logging and monitoring for fallback events. Ensure seamless transition between providers without data loss or processing interruption. Configure retry policies and circuit breaker patterns.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -255,7 +282,8 @@
             ],
             "details": "Create embedding generation pipeline that reads enriched candidate profiles and generates embeddings using the configured provider (Gemini with Vertex fallback). Implement batch processing for efficient embedding generation. Store generated embeddings in candidate_embeddings PostgreSQL collection with proper pgvector formatting. Update HNSW indexes for optimal vector similarity search performance. Add pipeline monitoring and error handling for production reliability.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           }
         ]
       },
@@ -267,8 +295,8 @@
         "testStrategy": "Hybrid search accuracy tests, reranking performance benchmarks, latency validation for p95 ≤ 1.2s requirement, Portuguese FTS functionality tests, explainability evidence validation",
         "priority": "high",
         "dependencies": [
-          67,
-          69
+          "67",
+          "69"
         ],
         "status": "pending",
         "subtasks": [
@@ -279,7 +307,8 @@
             "dependencies": [],
             "details": "Configure pgvector extension in PostgreSQL database. Create HNSW index on candidate embedding vectors for cosine similarity search. Implement search query functions with configurable similarity thresholds and result limits. Optimize index parameters (m, ef_construction) for performance. Add database migration scripts for pgvector setup and index creation.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -288,7 +317,8 @@
             "dependencies": [],
             "details": "Configure PostgreSQL FTS with Portuguese text search configuration (portuguese). Create GIN indexes on tsvector columns for job descriptions and candidate profiles. Implement text preprocessing for Portuguese stemming and stop words. Add search ranking functions using ts_rank_cd. Create database schema updates for FTS columns and indexes.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -300,7 +330,8 @@
             ],
             "details": "Develop score fusion algorithm using weighted combination of vector similarity scores and FTS ranking scores. Implement score normalization to ensure comparable ranges between different search methods. Create configurable weight parameters for vector vs text search importance. Add result deduplication logic for candidates appearing in both search results. Implement top-K candidate selection from fused results.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -311,7 +342,8 @@
             ],
             "details": "Integrate Together AI reranking service using Qwen 2.5 32B model. Implement async API calls with proper error handling and timeout controls. Create reranking prompt templates for job-candidate matching context. Add latency monitoring to ensure ≤350ms rerank performance. Implement fallback mechanism when reranking service is unavailable. Add rate limiting and circuit breaker patterns for API reliability.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -322,7 +354,8 @@
             ],
             "details": "Implement skill extraction and matching logic for both candidates and job descriptions. Create evidence generation system that identifies specific skill overlaps and experience relevance. Build explanation templates for different match types (exact skill match, related experience, domain expertise). Add confidence scoring for each explanation. Support both English and Portuguese explanation generation.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -333,7 +366,8 @@
             ],
             "details": "Implement composite scoring algorithm incorporating skill_match score, confidence level, vector_similarity score, and experience relevance factors. Create configurable weight parameters for each scoring component. Add normalization logic to ensure consistent score ranges. Implement score explanation breakdown for transparency. Add A/B testing framework for score weight optimization.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -344,7 +378,8 @@
             ],
             "details": "Implement performance monitoring and optimization for hybrid search pipeline. Add database query optimization with proper indexing strategies. Implement parallel processing for vector and FTS searches. Add caching layers for frequently accessed data. Create performance benchmarking suite and load testing framework. Implement latency monitoring with alerts for SLA violations. Optimize Together AI API calls with request batching and connection pooling.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           }
         ]
       },
@@ -356,7 +391,7 @@
         "testStrategy": "Container deployment tests, Pub/Sub message processing validation, idempotency testing, scaling behavior verification, error handling and retry logic tests",
         "priority": "medium",
         "dependencies": [
-          68
+          "68"
         ],
         "status": "pending",
         "subtasks": [
@@ -367,7 +402,8 @@
             "dependencies": [],
             "details": "Complete the existing Dockerfile with multi-stage build, install required dependencies (aiohttp, google-cloud-pubsub, google-cloud-firestore, google-cloud-storage), set proper environment variables, configure health checks, and optimize for Cloud Run with proper port configuration and startup commands",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -378,7 +414,8 @@
             ],
             "details": "Enhance existing pubsub_handler.py to subscribe to candidate-process-requests topic, implement message parsing and validation, add proper message acknowledgment/nack logic, integrate with the enrichment processor from Task 68, and include structured logging for message processing events",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -389,7 +426,8 @@
             ],
             "details": "Create idempotency mechanism using candidate_id as unique key, implement upsert logic for Firestore document updates, add processing state tracking to prevent duplicate enrichment, include timestamp-based freshness checks, and ensure atomic operations for data consistency",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -400,7 +438,8 @@
             ],
             "details": "Configure Cloud Run service YAML with appropriate CPU/memory limits, set max instances and concurrency per instance, implement graceful shutdown handling, configure request timeout settings, and set up proper health check endpoints for scaling decisions",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -411,7 +450,8 @@
             ],
             "details": "Set up Cloud Scheduler for nightly batch processing jobs, create dead letter queue topic for failed messages, implement exponential backoff retry logic, configure maximum retry attempts, add monitoring and alerting for DLQ messages, and create batch processing endpoints for scheduled operations",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           }
         ]
       },
@@ -432,7 +472,8 @@
             "dependencies": [],
             "details": "Configure Firebase Auth settings in Firebase Console to enable Google Sign-In provider. Implement domain restriction logic in authentication flow to validate user email domains against allowed list (@ella.com.br). Update existing Auth components in headhunter-ui/src/components/Auth/ to enforce domain validation. Set up proper error handling for unauthorized domain attempts.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -443,7 +484,8 @@
             ],
             "details": "Create allowed_users collection schema with fields: email, role (admin/recruiter), created_at, updated_at, created_by. Set up proper indexing for efficient queries. Initialize collection with initial admin users. Implement data validation rules for role assignments and email format validation.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -454,7 +496,8 @@
             ],
             "details": "Write security rules that check user authentication and role permissions from allowed_users collection. Implement rules for admin-only access to user management functions and recruiter access to candidate data. Ensure proper read/write permissions based on user roles. Test security rules thoroughly to prevent unauthorized access.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -466,7 +509,8 @@
             ],
             "details": "Enhance existing admin-users.ts Cloud Functions with addAllowedUser, removeAllowedUser, listAllowedUsers, and setAllowedUserRole operations. Build admin-only UI components for user management interface with proper role-based routing. Implement real-time updates for user list changes. Add proper error handling and success notifications for all user management operations.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           }
         ]
       },
@@ -478,8 +522,8 @@
         "testStrategy": "Component unit tests, integration tests with search API, accessibility testing, responsive design validation, user flow testing for search and candidate detail views",
         "priority": "high",
         "dependencies": [
-          70,
-          72
+          "70",
+          "72"
         ],
         "status": "pending",
         "subtasks": [
@@ -490,7 +534,8 @@
             "dependencies": [],
             "details": "Build JobDescriptionInput.tsx component with textarea for job description, language selector (EN/PT-BR), character count, validation feedback, and submit functionality. Include form state management, input sanitization, and responsive design. Add placeholder text and help tooltips in both languages. Implement debounced validation and error handling for API integration.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -501,7 +546,8 @@
             ],
             "details": "Create SearchResults.tsx component extending existing SkillAwareCandidateCard.tsx. Display candidate cards with basic info, match scores, and preview of 'Why match' bullets. Implement pagination controls, results counter, and loading states. Add search filters for experience level, location, and skills. Include sort options and empty state handling. Integrate with skillAwareSearch Cloud Function.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -512,7 +558,8 @@
             ],
             "details": "Build CandidateDetail.tsx component with skill visualization charts, confidence score indicators, experience timeline, education details, and contact information. Include LinkedIn URL integration, resume freshness indicators, and downloadable resume access. Implement skill mapping with visual confidence levels and evidence tooltips. Add navigation breadcrumbs and back-to-results functionality.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -523,7 +570,8 @@
             ],
             "details": "Create ExplainabilityPanel.tsx component displaying 'Why match' evidence bullets with skill-specific reasoning. Show match confidence scores, evidence sources, and detailed explanations for each skill match. Include expandable sections for different match categories (technical skills, experience, education). Implement evidence highlighting and cross-references to candidate profile sections.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -534,7 +582,8 @@
             ],
             "details": "Create ResumeAccess.tsx component with secure download functionality using signed URLs from GCS. Implement authentication checks, URL generation requests, and secure file access. Add resume preview modal, download progress indicators, and error handling for expired or invalid URLs. Include file type validation and virus scanning integration. Ensure proper cleanup of temporary URLs.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -549,7 +598,8 @@
             ],
             "details": "Implement responsive breakpoints for mobile, tablet, and desktop views across all components. Add ARIA labels, keyboard navigation support, screen reader compatibility, and focus management. Include high contrast mode support, font scaling options, and touch-friendly interactions. Perform accessibility audits using axe-core and implement WCAG 2.1 AA compliance. Add loading states and error boundaries for better UX.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           }
         ]
       },
@@ -561,8 +611,8 @@
         "testStrategy": "Function unit tests, API endpoint testing, error handling validation, security testing for callable functions, integration tests with frontend, performance testing for function cold starts",
         "priority": "medium",
         "dependencies": [
-          70,
-          72
+          "70",
+          "72"
         ],
         "status": "pending",
         "subtasks": [
@@ -573,7 +623,8 @@
             "dependencies": [],
             "details": "Enhance existing CRUD functions in functions/src/ to include robust input validation, support for compliance fields (exportable processing register requirements), proper error responses, and standardized data formatting. Ensure functions handle create, read, update, delete operations for both candidates and jobs collections with appropriate Firestore security rules integration.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -582,7 +633,8 @@
             "dependencies": [],
             "details": "Build Cloud Function triggered by GCS uploads to process candidate profile documents. Implement secure file validation, virus scanning integration, metadata extraction, and trigger downstream enrichment processes. Include support for multiple file formats (PDF, DOC, DOCX) and proper error handling for corrupted or invalid files.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -591,7 +643,8 @@
             "dependencies": [],
             "details": "Implement vector search functionality using Firestore vector search capabilities and generate embeddings for candidate profiles and job descriptions. Include similarity scoring, relevance ranking, and integration with the enrichment pipeline. Ensure functions support batch processing and efficient vector operations.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -603,7 +656,8 @@
             ],
             "details": "Create callable Cloud Functions for skill-aware candidate search and detailed skill assessments. Include admin user management functions for user role assignment and permissions. Implement proper authentication, authorization checks, and rate limiting. Ensure functions return structured skill analysis with confidence scores and recommendations.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -617,7 +671,8 @@
             ],
             "details": "Implement centralized error handling with proper HTTP status codes, structured error responses, and retry mechanisms. Add audit logging for all sensitive operations including data access, modifications, and admin actions. Include monitoring hooks, performance metrics collection, and integration with Cloud Logging for observability.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           }
         ]
       },
@@ -629,7 +684,7 @@
         "testStrategy": "GCS encryption validation, signed URL generation and expiration tests, LinkedIn URL extraction accuracy tests, resume versioning functionality tests, file upload security testing",
         "priority": "medium",
         "dependencies": [
-          71
+          "71"
         ],
         "status": "pending",
         "subtasks": [
@@ -640,7 +695,8 @@
             "dependencies": [],
             "details": "Configure three GCS buckets with appropriate naming conventions. Enable server-side encryption with customer-managed encryption keys (CMEK) or Google-managed keys. Set up proper IAM roles and permissions for service accounts. Configure bucket lifecycle policies for data retention. Implement proper access controls and security policies.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -651,7 +707,8 @@
             ],
             "details": "Build signed URL generation service that creates time-limited access URLs for resume files. Implement configurable expiration times (e.g., 1 hour for viewing, 24 hours for downloads). Add URL validation and revocation capabilities. Integrate with existing file-upload-pipeline.ts. Include proper error handling and logging for URL generation failures.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -660,7 +717,8 @@
             "dependencies": [],
             "details": "Develop regex patterns to extract LinkedIn URLs from various formats (linkedin.com/in/, linkedin.com/pub/, etc.). Implement extraction logic for both CSV import data and resume text content. Add linkedin_url field to candidate profile schema. Create validation for extracted URLs and handle edge cases. Integrate with existing resume_extractor.py for text-based extraction.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -671,7 +729,8 @@
             ],
             "details": "Add resume_updated_at timestamp field to track resume upload/update times. Implement freshness categorization logic (Recent: <30 days, Stale: 30-90 days, Very stale: >90 days). Create UI badge components to display freshness status. Build re-upload functionality with version control to maintain resume history. Add automatic timestamp updates on file uploads and manual profile updates.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           }
         ]
       },
@@ -683,8 +742,8 @@
         "testStrategy": "Analysis generation accuracy tests, caching mechanism validation, TTL and invalidation testing, JSON schema validation, performance testing for on-demand generation",
         "priority": "low",
         "dependencies": [
-          68,
-          74
+          "68",
+          "74"
         ],
         "status": "pending",
         "subtasks": [
@@ -695,7 +754,8 @@
             "dependencies": [],
             "details": "Create preInterviewAnalysis.generate function that interfaces with Together AI API. Implement prompt engineering to extract structured insights from candidate profiles. Handle API rate limits, retries, and error scenarios. Ensure robust JSON parsing and validation of AI responses. Target ≥99% valid JSON output through prompt optimization and response validation.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -704,7 +764,8 @@
             "dependencies": [],
             "details": "Create comprehensive schema for analysis output including summary, strengths array, potential_red_flags array, and signal analysis (promotion_velocity, company_pedigree, stability_pattern, promotion_pattern, academics_strength). Design evidence array structure with source references. Implement JSON schema validation and type definitions. Ensure schema supports interview preparation requirements and maintains consistency across analyses.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -716,7 +777,8 @@
             ],
             "details": "Implement caching layer storing analyses under candidates/{id}.pre_interview_analysis path. Add metadata fields including model_version, generated_at timestamp, and TTL expiration. Create cache retrieval logic that checks expiration and validity. Implement automatic cleanup of expired cache entries. Ensure cache performance meets p95 ≤ 1.2s requirement.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -727,7 +789,8 @@
             ],
             "details": "Create profile change detection system that monitors candidate data updates. Implement cache invalidation triggers for relevant profile changes (work experience, education, skills updates). Design selective invalidation to avoid unnecessary cache clearing. Add logging for cache invalidation events for monitoring and debugging. Ensure invalidation happens atomically with profile updates.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -741,7 +804,8 @@
             ],
             "details": "Create preInterviewAnalysis.generate callable function with input validation, rate limiting, and error handling. Implement preInterviewAnalysis.get function for cached analysis retrieval with fallback to generation. Add comprehensive error handling for API failures, invalid inputs, and system errors. Implement logging and monitoring for function usage and performance. Ensure functions integrate seamlessly with existing authentication and authorization systems.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           }
         ]
       },
@@ -753,9 +817,9 @@
         "testStrategy": "Compliance field validation, processing register export testing, performance monitoring accuracy, audit log completeness testing, data retention policy validation, alerting system testing",
         "priority": "medium",
         "dependencies": [
-          67,
-          71,
-          74
+          "67",
+          "71",
+          "74"
         ],
         "status": "pending",
         "subtasks": [
@@ -766,7 +830,8 @@
             "dependencies": [],
             "details": "Update database schemas to include GDPR compliance fields. Modify API response structures to include compliance metadata. Ensure all data processing operations capture and store required compliance information.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -777,7 +842,8 @@
             ],
             "details": "Implement processing register data collection and aggregation. Create export functionality supporting multiple formats (CSV, JSON, PDF). Include all required GDPR processing register fields and metadata.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -786,7 +852,8 @@
             "dependencies": [],
             "details": "Implement latency measurement across all API endpoints. Set up p95 percentile calculation and tracking. Create performance dashboards and historical trend analysis. Configure automated performance reporting.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -795,7 +862,8 @@
             "dependencies": [],
             "details": "Implement JSON validation monitoring across all data processing pipelines. Track validation success rates, auto-repair attempts, and quarantine events. Create metrics collection and reporting for data quality monitoring.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -806,7 +874,8 @@
             ],
             "details": "Enhance existing audit-logger.ts with comprehensive logging capabilities. Implement audit trails for all data access, modifications, and processing operations. Ensure audit logs include user context, timestamps, and operation details.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -818,7 +887,8 @@
             ],
             "details": "Create data retention policy configuration and enforcement mechanisms. Implement automated data deletion workflows based on retention periods. Build data subject deletion capabilities for GDPR right to erasure compliance.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -830,7 +900,8 @@
             ],
             "details": "Configure alerting rules for performance threshold violations, error rate spikes, and compliance issues. Implement multi-channel alerting (email, Slack, SMS). Create escalation policies and alert fatigue prevention mechanisms.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           }
         ]
       },
@@ -850,8 +921,9 @@
             "description": "Correct the placement of autoscaling.knative.dev/maxScale annotation from Service resource to Revision template in Cloud Run deployment configurations for all 8 Fastify services",
             "dependencies": [],
             "details": "Update deployment YAML/configuration files to move maxScale annotation from metadata.annotations at Service level to spec.template.metadata.annotations at Revision template level. Test with admin service first to validate annotation applies correctly. Verify Cloud Run console shows proper autoscaling configuration after deployment.",
-            "status": "pending",
-            "testStrategy": "Deploy single service with corrected annotation, verify in Cloud Run console that maxScale appears in revision template, confirm autoscaling behavior works as expected"
+            "status": "done",
+            "testStrategy": "Deploy single service with corrected annotation, verify in Cloud Run console that maxScale appears in revision template, confirm autoscaling behavior works as expected",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -859,8 +931,9 @@
             "description": "Review and correct PORT environment variable configuration in all 8 service Dockerfiles and application code to ensure proper binding to Cloud Run injected PORT",
             "dependencies": [],
             "details": "Audit Dockerfiles for all services (admin, enrich, search, msgs, vector, eco, embeddings, rerank) to ensure PORT environment variable is properly configured. Update Fastify application code to use Fastify.listen(process.env.PORT || 8080, '0.0.0.0') pattern. Verify Cloud Run PORT injection mechanism works correctly with container startup.",
-            "status": "pending",
-            "testStrategy": "Test container locally with PORT=8080 environment variable, verify Fastify binds to correct port, test Cloud Run deployment with health check endpoints responding"
+            "status": "done",
+            "testStrategy": "Test container locally with PORT=8080 environment variable, verify Fastify binds to correct port, test Cloud Run deployment with health check endpoints responding",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -869,7 +942,8 @@
             "dependencies": [],
             "details": "Access Secret Manager and update OAuth configuration secret to change token_uri from https://auth.headhunter.ai/oauth2/token to https://idp.production.ella.jobs/oauth2/token. Verify domain routing and SSL certificate validity for idp.production.ella.jobs. Ensure all services pick up updated secret configuration.",
             "status": "pending",
-            "testStrategy": "Test OAuth token endpoint accessibility, verify SSL certificate validity, test authentication flow with updated endpoint configuration"
+            "testStrategy": "Test OAuth token endpoint accessibility, verify SSL certificate validity, test authentication flow with updated endpoint configuration",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -877,8 +951,9 @@
             "description": "Modify deployment script to implement proper service health validation instead of reporting success based on submission alone",
             "dependencies": [],
             "details": "Update deployment script to poll actual service health endpoints after deployment. Implement retry logic with exponential backoff (initial 5s, max 60s, 10 retries). Add timeout mechanism (5 minutes per service). Script should fail deployment if services don't reach healthy state within timeout period. Include detailed logging of health check results.",
-            "status": "pending",
-            "testStrategy": "Test deployment script with intentionally failing service to verify proper failure detection, test with healthy services to confirm success detection, validate retry logic and timeout behavior"
+            "status": "done",
+            "testStrategy": "Test deployment script with intentionally failing service to verify proper failure detection, test with healthy services to confirm success detection, validate retry logic and timeout behavior",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -891,8 +966,9 @@
               "78.4"
             ],
             "details": "Phase 1: Deploy foundational services (admin, enrich) and validate health endpoints respond correctly. Phase 2: Deploy core services (search, msgs, vector) after Phase 1 validation. Phase 3: Deploy remaining services (eco, embeddings, rerank) after Phase 2 validation. Use enhanced deployment script for each phase with proper health validation.",
-            "status": "pending",
-            "testStrategy": "Validate each service health endpoint after deployment, test service dependencies between phases, confirm all 8 services report healthy status before proceeding to next subtask"
+            "status": "done",
+            "testStrategy": "Validate each service health endpoint after deployment, test service dependencies between phases, confirm all 8 services report healthy status before proceeding to next subtask",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -902,8 +978,9 @@
               "78.5"
             ],
             "details": "Verify all 8 backend service URLs are reachable and responding to health checks. Deploy API Gateway with routes configured to point to healthy service endpoints. Configure gateway routing rules for admin, enrich, search, msgs, vector, eco, embeddings, and rerank services. Test gateway routing to each service endpoint.",
-            "status": "pending",
-            "testStrategy": "Test API Gateway routing to each of the 8 services, verify proper request forwarding and response handling, test authentication flow through gateway"
+            "status": "done",
+            "testStrategy": "Test API Gateway routing to each of the 8 services, verify proper request forwarding and response handling, test authentication flow through gateway",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -914,7 +991,8 @@
             ],
             "details": "Update deployment report to reflect actual service status rather than planned status. Document root causes: annotation placement, PORT binding, OAuth misconfiguration, and lack of health validation. Create remediation steps documentation. Add validation checklist to deployment process to prevent recurrence of these issues.",
             "status": "pending",
-            "testStrategy": "Review documentation accuracy against actual deployment state, validate remediation steps can be followed by other team members, test validation checklist effectiveness"
+            "testStrategy": "Review documentation accuracy against actual deployment state, validate remediation steps can be followed by other team members, test validation checklist effectiveness",
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -925,15 +1003,75 @@
             ],
             "details": "Test OAuth authentication flow end-to-end with corrected idp.production.ella.jobs endpoint. Verify each of the 8 service endpoints responds correctly to sample requests. Run load tests to confirm system stability under normal traffic patterns. Set up monitoring for first 24 hours to catch any errors or performance issues. Validate all tenant operations are functional.",
             "status": "pending",
-            "testStrategy": "End-to-end authentication testing, individual service endpoint testing, load testing with gradual traffic increase, 24-hour monitoring with error rate and performance metrics tracking"
+            "testStrategy": "End-to-end authentication testing, individual service endpoint testing, load testing with gradual traffic increase, 24-hour monitoring with error rate and performance metrics tracking",
+            "parentId": "undefined"
           }
         ]
+      },
+      {
+        "title": "Restore Cloud Run search service connectivity to Cloud SQL",
+        "description": "Ensure hh-search-svc-production connects to sql-hh-core via Cloud SQL connector with correct credentials and VPC settings.",
+        "details": "Reconfigure hh-search-svc to use the Cloud SQL connector (`/cloudsql/headhunter-ai-0088:us-central1:sql-hh-core`) with the embed/search service accounts. Verify env vars (`PGVECTOR_*`) match the production schema and that IAM roles include `roles/cloudsql.client` and `roles/cloudsql.instanceUser`. Redeploy after updating service configuration.",
+        "testStrategy": "Deploy updated configuration to staging, perform health check on /health and run smoke search via Cloud Run logs to confirm successful DB connections.",
+        "priority": "high",
+        "dependencies": [
+          "66"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "id": 79
+      },
+      {
+        "title": "Validate hybrid search pipeline with Gemini embeddings",
+        "description": "End-to-end verification of hybrid search once Cloud SQL connectivity is restored, capturing latency and relevance metrics.",
+        "details": "After hh-search-svc is back online, run production gateway requests using tenant-alpha API key with representative JDs. Capture vector + rerank timings and confirm top results contain expected evidence fields. Document findings in docs/HANDOVER.md and monitoring dashboards.",
+        "testStrategy": "Use curl/API client to fetch /v1/search/hybrid responses; ensure HTTP 200, inspect `timings` fields, and compare results to manual SQL queries for consistency.",
+        "priority": "high",
+        "dependencies": [
+          "79"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "id": 80
+      },
+      {
+        "title": "Repair quarantined enrichment payloads and re-ingest",
+        "description": "Resolve the 423 quarantined enrichment outputs and backfill Firestore/pgvector so coverage reaches 100%.",
+        "details": "Analyze `.quarantine/` payloads, apply prompt repairs or manual corrections, rerun `run_full_processing_with_local_storage.py` for the affected candidate IDs, and update Firestore plus pgvector. Track success/failure rate and archive logs in data/enriched/archive/.",
+        "testStrategy": "Spot-check repaired candidates in Firestore and verify new embeddings appear in search.candidate_embeddings; run targeted searches to ensure repaired profiles surface.",
+        "priority": "medium",
+        "dependencies": [
+          "80"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "id": 81
+      },
+      {
+        "title": "Stabilize service test harness for workspace Jest runs",
+        "description": "Update Jest configuration and test helpers so `npm test --prefix services` runs under CI/local automation without missing env vars.",
+        "details": "Provide default env shim for GOOGLE_CLOUD_PROJECT/FIREBASE emulators, supply mock issuer configuration for gateway token tests, and enable Node `--experimental-vm-modules` when invoking Jest. Document required env vars in services/README.",
+        "testStrategy": "Run `npm test --prefix services` locally and in CI pipeline to ensure suites complete successfully.",
+        "priority": "medium",
+        "dependencies": [
+          "81"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "id": 82
       }
     ],
     "metadata": {
-      "created": "2025-09-05T18:18:48.859Z",
-      "updated": "2025-10-01T20:31:24.456Z",
-      "description": "Tasks for master context"
+      "version": "1.0.0",
+      "lastModified": "2025-10-08T15:29:17.280Z",
+      "taskCount": 17,
+      "completedCount": 1,
+      "tags": [
+        "master"
+      ],
+      "created": "2025-10-08T20:08:03.513Z",
+      "description": "Tasks for master context",
+      "updated": "2025-10-08T20:08:03.516Z"
     }
   }
 }

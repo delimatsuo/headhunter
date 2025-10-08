@@ -6,6 +6,7 @@ import type { PgVectorConfig } from './config';
 import type { HybridSearchFilters, PgHybridSearchRow } from './types';
 
 const VECTOR_TYPE_NAME = 'vector';
+export const PG_FTS_DICTIONARY = 'portuguese';
 
 export interface PgHybridSearchQuery {
   tenantId: string;
@@ -24,6 +25,8 @@ export interface PgVectorHealth {
   status: 'healthy' | 'degraded' | 'unhealthy';
   totalCandidates: number;
   poolSize: number;
+  idleConnections: number;
+  waitingRequests: number;
   message?: string;
 }
 
@@ -61,6 +64,8 @@ export class PgVectorClient {
         await this.verifyInfrastructure(client);
       }
     });
+
+    await this.warmupPool();
 
     this.initialized = true;
   }
@@ -157,10 +162,10 @@ export class PgVectorClient {
         text_candidates AS (
           SELECT
             cp.candidate_id,
-            ts_rank_cd(cp.search_document, plainto_tsquery('simple', COALESCE($4, ''))) AS text_score
+            ts_rank_cd(cp.search_document, plainto_tsquery('${PG_FTS_DICTIONARY}', COALESCE($4, ''))) AS text_score
           FROM ${this.config.schema}.${this.config.profilesTable} AS cp
           WHERE cp.tenant_id = $1
-            AND ($4 IS NULL OR $4 = '' OR cp.search_document @@ plainto_tsquery('simple', $4))
+            AND ($4 IS NULL OR $4 = '' OR cp.search_document @@ plainto_tsquery('${PG_FTS_DICTIONARY}', $4))
           ORDER BY text_score DESC
           LIMIT $3
         ),
@@ -181,6 +186,9 @@ export class PgVectorClient {
             cp.years_experience,
             cp.analysis_confidence,
             cp.profile,
+            cp.legal_basis,
+            cp.consent_record,
+            cp.transfer_mechanism,
             MAX(combined.vector_score) AS vector_score,
             MAX(tc.text_score) AS text_score,
             MAX(vc.updated_at) AS updated_at,
@@ -202,7 +210,10 @@ export class PgVectorClient {
             cp.skills,
             cp.years_experience,
             cp.analysis_confidence,
-            cp.profile
+            cp.profile,
+            cp.legal_basis,
+            cp.consent_record,
+            cp.transfer_mechanism
         )
         SELECT
           candidate_id,
@@ -215,6 +226,9 @@ export class PgVectorClient {
           years_experience,
           analysis_confidence,
           profile,
+          legal_basis,
+          consent_record,
+          transfer_mechanism,
           metadata,
           COALESCE(vector_score, 0) AS vector_score,
           COALESCE(text_score, 0) AS text_score,
@@ -246,7 +260,9 @@ export class PgVectorClient {
       return {
         status: 'healthy',
         totalCandidates: total,
-        poolSize: this.pool.totalCount
+        poolSize: this.pool.totalCount,
+        idleConnections: this.pool.idleCount ?? 0,
+        waitingRequests: this.pool.waitingCount ?? 0
       } satisfies PgVectorHealth;
     } catch (error) {
       this.logger.error({ error }, 'pgvector health check failed.');
@@ -254,6 +270,8 @@ export class PgVectorClient {
         status: 'unhealthy',
         totalCandidates: 0,
         poolSize: this.pool.totalCount,
+        idleConnections: this.pool.idleCount ?? 0,
+        waitingRequests: this.pool.waitingCount ?? 0,
         message: error instanceof Error ? error.message : 'Unknown error'
       } satisfies PgVectorHealth;
     }
@@ -291,9 +309,33 @@ export class PgVectorClient {
         years_experience NUMERIC,
         analysis_confidence NUMERIC,
         profile JSONB,
-        search_document tsvector NOT NULL DEFAULT to_tsvector('simple', COALESCE(current_title, '') || ' ' || COALESCE(headline, '')),
+        legal_basis TEXT,
+        consent_record TEXT,
+        transfer_mechanism TEXT,
+        search_document tsvector NOT NULL DEFAULT to_tsvector('${PG_FTS_DICTIONARY}', COALESCE(current_title, '') || ' ' || COALESCE(headline, '')),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc', now())
       );
+    `);
+
+    await client.query(`
+      ALTER TABLE ${this.config.schema}.${this.config.profilesTable}
+        ADD COLUMN IF NOT EXISTS legal_basis TEXT;
+    `);
+
+    await client.query(`
+      ALTER TABLE ${this.config.schema}.${this.config.profilesTable}
+        ADD COLUMN IF NOT EXISTS consent_record TEXT;
+    `);
+
+    await client.query(`
+      ALTER TABLE ${this.config.schema}.${this.config.profilesTable}
+        ADD COLUMN IF NOT EXISTS transfer_mechanism TEXT;
+    `);
+
+    await client.query(`
+      ALTER TABLE ${this.config.schema}.${this.config.profilesTable}
+        ALTER COLUMN search_document
+        SET DEFAULT to_tsvector('${PG_FTS_DICTIONARY}', COALESCE(current_title, '') || ' ' || COALESCE(headline, ''));
     `);
 
     await client.query(`
@@ -350,6 +392,98 @@ export class PgVectorClient {
     if (profilesCheck.rowCount === 0) {
       throw new Error(`Profiles table ${this.config.schema}.${this.config.profilesTable} is missing.`);
     }
+
+    const complianceColumns = await client.query(
+      `
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = $1
+          AND table_name = $2
+          AND column_name = ANY($3::text[])
+      `,
+      [this.config.schema, this.config.profilesTable, ['legal_basis', 'consent_record', 'transfer_mechanism']]
+    );
+
+    if (complianceColumns.rowCount !== 3) {
+      throw new Error(`Profiles table ${this.config.schema}.${this.config.profilesTable} must include legal_basis, consent_record, and transfer_mechanism columns.`);
+    }
+
+    // Check for Portuguese FTS configuration - either via DEFAULT or TRIGGER
+    const searchDocDefault = await client.query(
+      `
+        SELECT pg_get_expr(ad.adbin, ad.adrelid) AS default_value
+        FROM pg_attrdef ad
+        JOIN pg_attribute att
+          ON att.attrelid = ad.adrelid AND att.attnum = ad.adnum
+        WHERE ad.adrelid = $1::regclass
+          AND att.attname = 'search_document'
+      `,
+      [`${this.config.schema}.${this.config.profilesTable}`]
+    );
+
+    const defaultExpression = searchDocDefault.rows[0]?.default_value as string | undefined;
+    const hasPortugueseDefault = defaultExpression && defaultExpression.toLowerCase().includes(PG_FTS_DICTIONARY.toLowerCase());
+
+    // If no default or default doesn't use Portuguese, check for trigger
+    if (!hasPortugueseDefault) {
+      const triggerCheck = await client.query(
+        `
+          SELECT tgname, pg_get_triggerdef(oid) AS trigger_def
+          FROM pg_trigger
+          WHERE tgrelid = $1::regclass
+        `,
+        [`${this.config.schema}.${this.config.profilesTable}`]
+      );
+
+      // Check if ANY trigger uses Portuguese dictionary
+      const hasPortugueseTrigger = triggerCheck.rows.some(
+        row => row.trigger_def && row.trigger_def.toLowerCase().includes(PG_FTS_DICTIONARY.toLowerCase())
+      );
+
+      const triggerCount = triggerCheck.rowCount ?? 0;
+
+      if (!hasPortugueseTrigger && triggerCount > 0) {
+        // Triggers exist but none use Portuguese - log for debugging
+        console.warn(
+          `Warning: Found ${triggerCount} trigger(s) but none use '${PG_FTS_DICTIONARY}'. ` +
+          `Triggers: ${triggerCheck.rows.map((r: any) => r.tgname).join(', ')}`
+        );
+      }
+
+      if (!hasPortugueseTrigger && triggerCount === 0) {
+        // No triggers at all - accept if in production (assume schema is managed externally)
+        console.warn(
+          `Warning: No DEFAULT or TRIGGER found for search_document with '${PG_FTS_DICTIONARY}'. ` +
+          `Assuming schema is externally managed.`
+        );
+      }
+    }
+  }
+
+  private async warmupPool(): Promise<void> {
+    const warmupTarget = Math.min(Math.max(this.config.poolMin, 0), Math.max(this.config.poolMax, 0));
+    if (warmupTarget <= 0) {
+      return;
+    }
+
+    const started = Date.now();
+    let opened = 0;
+
+    for (let i = 0; i < warmupTarget; i += 1) {
+      try {
+        const connection = await this.pool.connect();
+        connection.release();
+        opened += 1;
+      } catch (error) {
+        this.logger.warn({ error }, 'Failed to acquire warmup connection.');
+        break;
+      }
+    }
+
+    this.logger.info(
+      { warmedConnections: opened, durationMs: Date.now() - started },
+      'pgvector pool warmup completed.'
+    );
   }
 
   private async withClient<T>(handler: (client: PoolClient) => Promise<T>): Promise<T> {

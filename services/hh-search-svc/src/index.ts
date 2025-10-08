@@ -6,6 +6,8 @@ import { PgVectorClient } from './pgvector-client';
 import { registerRoutes } from './routes';
 import { SearchRedisClient } from './redis-client';
 import { SearchService } from './search-service';
+import { RerankClient } from './rerank-client';
+import { PerformanceTracker } from './performance-tracker';
 
 async function bootstrap(): Promise<void> {
   process.env.SERVICE_NAME = process.env.SERVICE_NAME ?? 'hh-search-svc';
@@ -20,6 +22,8 @@ async function bootstrap(): Promise<void> {
     const server = await buildServer({ disableDefaultHealthRoute: true });
     logger.info('Fastify server built');
 
+    const performanceTracker = new PerformanceTracker();
+
     // Track initialization state with mutable dependency container
     const state = {
       isReady: false
@@ -30,6 +34,8 @@ async function bootstrap(): Promise<void> {
       redisClient: null as SearchRedisClient | null,
       pgClient: null as PgVectorClient | null,
       embedClient: null as EmbedClient | null,
+      rerankClient: null as RerankClient | null,
+      performanceTracker,
       state  // Pass state to routes
     };
 
@@ -73,25 +79,45 @@ async function bootstrap(): Promise<void> {
 
     // Initialize real dependencies in background (after listen)
     setImmediate(async () => {
+      let pgClient: PgVectorClient | null = null;
+      let redisClient: SearchRedisClient | null = null;
+      let embedClient: EmbedClient | null = null;
+      let rerankClient: RerankClient | null = null;
+
       try {
         logger.info('Initializing pgvector client...');
-        dependencies.pgClient = new PgVectorClient(config.pgvector, getLogger({ module: 'pgvector-client' }));
-        await dependencies.pgClient.initialize();
+        pgClient = new PgVectorClient(config.pgvector, getLogger({ module: 'pgvector-client' }));
+        await pgClient.initialize();
+        dependencies.pgClient = pgClient;
         logger.info('pgvector client initialized');
 
         logger.info('Initializing Redis client...');
-        dependencies.redisClient = new SearchRedisClient(config.redis, getLogger({ module: 'redis-client' }));
+        redisClient = new SearchRedisClient(config.redis, getLogger({ module: 'redis-client' }));
+        dependencies.redisClient = redisClient;
         logger.info('Redis client initialized');
 
         logger.info('Initializing embed client...');
-        dependencies.embedClient = new EmbedClient(config.embed, getLogger({ module: 'embed-client' }));
+        embedClient = new EmbedClient(config.embed, getLogger({ module: 'embed-client' }));
+        dependencies.embedClient = embedClient;
         logger.info('Embed client initialized');
+
+        if (config.rerank.enabled) {
+          logger.info('Initializing rerank client...');
+          rerankClient = new RerankClient(config.rerank, getLogger({ module: 'rerank-client' }));
+          dependencies.rerankClient = rerankClient;
+          logger.info('Rerank client initialized');
+        } else {
+          logger.info('Rerank disabled via configuration.');
+        }
 
         logger.info('Initializing search service...');
         dependencies.service = new SearchService({
           config,
           pgClient: dependencies.pgClient,
           embedClient: dependencies.embedClient,
+          redisClient: dependencies.redisClient ?? undefined,
+          rerankClient: dependencies.rerankClient ?? undefined,
+          performanceTracker,
           logger: getLogger({ module: 'search-service' })
         });
 
@@ -103,7 +129,14 @@ async function bootstrap(): Promise<void> {
         state.isReady = true;
         logger.info('hh-search-svc fully initialized and ready');
       } catch (error) {
-        logger.error({ error }, 'Failed to initialize dependencies - service running in degraded mode');
+        const errorDetails = error instanceof Error
+          ? { name: error.name, message: error.message, stack: error.stack }
+          : { raw: String(error) };
+        logger.error({ error: errorDetails }, 'Failed to initialize dependencies - service running in degraded mode');
+        // Clean up any partially initialized resources
+        if (pgClient && !dependencies.pgClient) {
+          await pgClient.close().catch(() => {});
+        }
         // Service stays up but routes will fail when accessed
       }
     });

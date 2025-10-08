@@ -68,7 +68,7 @@ spec:
                 2w==
                 -----END CERTIFICATE-----
             - name: PGVECTOR_HOST
-              value: 10.159.0.2
+              value: /cloudsql/${SERVICE_PROJECT_ID}:${SERVICE_REGION}:${SQL_INSTANCE}
             - name: PGVECTOR_PORT
               value: "5432"
             - name: PGVECTOR_DATABASE
@@ -100,6 +100,12 @@ spec:
               value: "0.05"
             - name: SEARCH_FIRESTORE_FALLBACK
               value: "true"
+            - name: ENABLE_RERANK
+              value: "true"
+            - name: PGVECTOR_CONNECTION_TIMEOUT_MS
+              value: "15000"
+            - name: ENABLE_AUTO_MIGRATE
+              value: "false"
             - name: ENABLE_GATEWAY_TOKENS
               value: "false"
             - name: AUTH_MODE
