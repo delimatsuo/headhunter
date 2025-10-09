@@ -5,6 +5,8 @@ export interface RerankRedisConfig {
   port: number;
   password?: string;
   tls: boolean;
+  tlsRejectUnauthorized: boolean;
+  caCert?: string;
   keyPrefix: string;
   ttlSeconds: number;
   disable: boolean;
@@ -97,6 +99,8 @@ export function getRerankServiceConfig(): RerankServiceConfig {
     port: parseNumber(process.env.REDIS_PORT, base.redis.port),
     password: process.env.REDIS_PASSWORD ?? base.redis.password,
     tls: parseBoolean(process.env.REDIS_TLS, false),
+    tlsRejectUnauthorized: parseBoolean(process.env.REDIS_TLS_REJECT_UNAUTHORIZED, true),
+    caCert: process.env.REDIS_TLS_CA,
     keyPrefix: process.env.RERANK_REDIS_PREFIX ?? 'hh:rerank',
     ttlSeconds: parseNumber(
       process.env.RERANK_CACHE_TTL_SECONDS,

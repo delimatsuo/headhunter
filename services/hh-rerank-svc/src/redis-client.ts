@@ -33,12 +33,24 @@ export class RerankRedisClient {
       .map((value) => value.trim())
       .filter(Boolean);
 
+    const tlsOptions = this.config.tls
+      ? (() => {
+          const options: Record<string, unknown> = {
+            rejectUnauthorized: this.config.tlsRejectUnauthorized
+          };
+          if (this.config.caCert) {
+            options.ca = [this.config.caCert];
+          }
+          return options;
+        })()
+      : undefined;
+
     if (hosts.length > 1) {
       const nodes: ClusterNode[] = hosts.map((host) => ({ host, port: this.config.port }));
       const clusterOptions: ClusterOptions = {
         redisOptions: {
           password: this.config.password,
-          tls: this.config.tls ? {} : undefined
+          tls: tlsOptions
         }
       };
       this.client = new Cluster(nodes, clusterOptions);
@@ -47,7 +59,7 @@ export class RerankRedisClient {
         host: hosts[0] ?? this.config.host,
         port: this.config.port,
         password: this.config.password,
-        tls: this.config.tls ? {} : undefined
+        tls: tlsOptions
       };
       this.client = new Redis(redisOptions);
     }
