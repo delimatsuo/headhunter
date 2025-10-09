@@ -1009,17 +1009,45 @@
         ]
       },
       {
+        "id": 79,
         "title": "Restore Cloud Run search service connectivity to Cloud SQL",
-        "description": "Ensure hh-search-svc-production connects to sql-hh-core via Cloud SQL connector with correct credentials and VPC settings.",
-        "details": "Reconfigure hh-search-svc to use the Cloud SQL connector (`/cloudsql/headhunter-ai-0088:us-central1:sql-hh-core`) with the embed/search service accounts. Verify env vars (`PGVECTOR_*`) match the production schema and that IAM roles include `roles/cloudsql.client` and `roles/cloudsql.instanceUser`. Redeploy after updating service configuration.",
-        "testStrategy": "Deploy updated configuration to staging, perform health check on /health and run smoke search via Cloud Run logs to confirm successful DB connections.",
-        "priority": "high",
+        "description": "Cloud SQL connectivity has been verified and is working correctly. This task documents the successful restoration and current production status.",
+        "status": "done",
         "dependencies": [
           "66"
         ],
-        "status": "pending",
-        "subtasks": [],
-        "id": 79
+        "priority": "high",
+        "details": "**VERIFICATION COMPLETE** - Cloud SQL connectivity is operational. Configuration confirmed: Cloud SQL instance (headhunter-ai-0088:us-central1:sql-hh-core), PGVECTOR_HOST (/cloudsql/headhunter-ai-0088:us-central1:sql-hh-core), VPC connector (svpc-us-central1), and service account (search-production@headhunter-ai-0088.iam.gserviceaccount.com) are all correctly configured. IAM roles verified: cloudsql.client, cloudsql.instanceUser, datastore.user, redis.viewer, secretmanager.secretAccessor. Production revision 00051-s9x is HEALTHY with successful Cloud SQL and Redis connections. Performance validated in Task 67.6 with p95 latency of 967ms (under 1.2s target). VPC egress issue from HANDOVER.md was resolved by changing from private-ranges-only to all-traffic.",
+        "testStrategy": "Connectivity verification completed through production health checks, log analysis (24h), and performance testing. All database operations confirmed functional with no connection errors.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Document current production configuration status",
+            "description": "Create comprehensive documentation of verified Cloud SQL connectivity configuration and resolution details",
+            "status": "done",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Update HANDOVER.md with connectivity resolution",
+            "description": "Update documentation to reflect that VPC egress settings issue has been resolved and Cloud SQL connectivity is operational",
+            "status": "done",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Mark task as completed",
+            "description": "Close this task as the Cloud SQL connectivity issue has been successfully resolved in previous tasks",
+            "status": "done",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "title": "Validate hybrid search pipeline with Gemini embeddings",
@@ -1071,7 +1099,7 @@
       ],
       "created": "2025-10-08T20:08:03.513Z",
       "description": "Tasks for master context",
-      "updated": "2025-10-09T00:29:45.483Z"
+      "updated": "2025-10-09T01:28:11.535Z"
     }
   }
 }

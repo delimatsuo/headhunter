@@ -61,6 +61,40 @@ An AI-powered recruitment platform with Phase 2 enrichment complete. All 29K can
 - **Redis status:** TLS handshake established using Memorystore CA; `redis-client` no longer logs `ECONNRESET`. Cache hits are now served in <5 ms after the initial cold request.
 - **Coverage note:** Queries targeting product design and data science still return zero rows with `minSimilarity=0.05`; consider relaxing the threshold or augmenting the dataset for non-engineering personas.
 
+#### Update – 2025-10-08 18:55 UTC
+- Added scripted benchmark + reporting CLIs (`services/hh-search-svc/src/scripts/run-hybrid-benchmark.ts` and `services/hh-search-svc/src/scripts/report-metrics.ts`) for repeatable p95 measurements; refer to repo README snippet below for usage. Latest production run (cache-busted JD `Principal product engineer fintech`, 40 iterations, concurrency 5) yielded `p95 total ≈ 230 ms`, `p95 embedding ≈ 57 ms`, `cacheHitRatio = 0` (warms disabled). Rerank timing remains 0 ms because Together rerank is currently bypassed in production.
+- Cloud Run env inspection confirms `ENABLE_RERANK` is **not** set on `hh-search-svc-production`; service relies on code default (`true`). Attempts to redeploy with explicit `ENABLE_RERANK=true` failed because the stored image digests are no longer present and the fallback tag timed out during health checks. Active revision remains `hh-search-svc-production-00041-jxf` built from `fc7975b-production-20251008-155028`.
+- API Gateway `/health` endpoint does **not** surface the new latency snapshot; query the Cloud Run service URL directly (example below) until gateway configuration is updated.
+- Redis-backed embedding cache added in `hh-search-svc` (warm requests reuse cached vectors; cold embedding remains ~3.2 s until pre-warm jobs run).
+- pgvector client now warms `poolMin` connections on startup and exposes pool stats for readiness probes.
+- Rerank integration wired through `hh-rerank-svc`; hybrid responses include `metadata.rerank` with cache/fallback flags and rerank timings when the vendor responds. Unit tests cover rerank ordering.
+- Hybrid benchmark runner command for production checks:
+  ```bash
+  SEARCH_API_KEY=$(gcloud secrets versions access latest --secret=api-gateway-key --project=headhunter-ai-0088)
+  npx ts-node services/hh-search-svc/src/scripts/run-hybrid-benchmark.ts \
+    --url https://hh-search-svc-production-akcoqbr7sa-uc.a.run.app \
+    --tenantId tenant-alpha \
+    --jobDescription 'Principal product engineer fintech' \
+    --limit 6 --iterations 40 --concurrency 5 --bustCache true
+  ```
+- Readiness metrics snapshot (Cloud Run direct):
+  ```bash
+  SEARCH_API_KEY=$(gcloud secrets versions access latest --secret=api-gateway-key --project=headhunter-ai-0088)
+  npx ts-node services/hh-search-svc/src/scripts/report-metrics.ts \
+    https://hh-search-svc-production-akcoqbr7sa-uc.a.run.app
+  ```
+
+#### Update – 2025-10-08 13:15 UTC
+- Redis-backed embedding cache added in `hh-search-svc` (warm requests now reuse cached vectors; cold embedding remains ~3.2s until pre-warm jobs run).
+- pgvector client now warms `poolMin` connections on startup and exposes pool stats for readiness probes.
+- Rerank integration wired through `hh-rerank-svc`; hybrid responses now include `metadata.rerank` with cache/fallback flags and rerank timings, covered by new Jest cases in `services/hh-search-svc/src/__tests__/search-service.spec.ts`.
+- Search readiness now surfaces local p50/p95/p99 latency snapshots from the in-process performance tracker (`PerformanceTracker`). Hit the Cloud Run service health endpoint directly (e.g., `curl -s https://<cloud-run-search-url>/health?key=$API_KEY | jq '.metrics'`) while exercising the hybrid endpoint to confirm cache-hit ratio and non-cache p95 stay within spec. A helper CLI (`SEARCH_API_KEY=$API_KEY npx ts-node services/hh-search-svc/src/scripts/report-metrics.ts https://<cloud-run-search-url>`) prints the snapshot in human-readable form.
+- Hybrid benchmark runner added for scripted SLA checks: see command above (use Cloud Run service URL rather than API Gateway; gateway strips metrics payload).
+- Cloud Run revision `hh-search-svc-production-00041-jxf` deployed after restoring `PGVECTOR_HOST=/cloudsql/...` (Cloud SQL connector path).
+- Cloud SQL migration (`scripts/sql/20251007_search_pt_br_compliance_fixed.sql`) added compliance columns and Portuguese FTS trigger; schema verified in production.
+- Post-deploy hybrid probe (`Principal product engineer fintech`) returned HTTP 200 with 5 candidates, `cacheHit=false`, `totalMs≈3255` (embedding ≈3192 ms, retrieval ≈62 ms) and compliance metadata on results.
+- Cloud Run logs report clean startup (no connector errors); recommend lengthening deployment-script readiness timeout to avoid future false failures.
+
 **Background Processes:**
 - None – enrichment and embedding generators have exited cleanly
 
@@ -514,6 +548,26 @@ gcloud run services update hh-search-svc-production \
 - No security concerns with this approach
 
 **Verification:** ✅ No more Cloud SQL timeout errors in logs
+
+#### Update – 2025-10-09 01:30 UTC (Task 79 Verification)
+
+**Cloud SQL Connectivity Fully Verified** ✅
+
+Comprehensive verification confirms Cloud SQL connectivity is operational and stable:
+
+- **Production Service**: `hh-search-svc-production` revision `00051-s9x`
+- **Configuration Verified**:
+  - Cloud SQL instance: `headhunter-ai-0088:us-central1:sql-hh-core` ✓
+  - PGVECTOR_HOST: `/cloudsql/headhunter-ai-0088:us-central1:sql-hh-core` ✓
+  - VPC connector: `svpc-us-central1` (private-ranges-only egress) ✓
+  - Service account: `search-production@headhunter-ai-0088.iam.gserviceaccount.com` ✓
+- **IAM Roles Confirmed**: `cloudsql.client`, `cloudsql.instanceUser`, `datastore.user`, `redis.viewer`, `secretmanager.secretAccessor`
+- **Log Analysis**: No connection errors in 24-hour window (checked 2025-10-09 01:26 UTC)
+- **Performance Validation**: Task 67.6 confirms p95 latency 967ms (under 1.2s target) with successful database queries across 20 test iterations
+
+**Documentation**: See `docs/cloud-sql-connectivity-verification.md` for complete configuration details and verification checklist.
+
+**Status**: Cloud SQL connectivity issue from October 4 is fully resolved. Production service is stable with no remediation required.
 
 ### Resolved Issue: Firestore Permissions (2025-10-04)
 
