@@ -1,12 +1,12 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: hh-admin-svc-${SERVICE_ENVIRONMENT}
+  name: hh-eco-svc-${SERVICE_ENVIRONMENT}
   labels:
-    app: hh-admin-svc
+    app: hh-eco-svc
     environment: ${SERVICE_ENVIRONMENT}
   annotations:
-    run.googleapis.com/ingress: all
+    run.googleapis.com/ingress: internal-and-cloud-load-balancing
 spec:
   template:
     metadata:
@@ -19,7 +19,7 @@ spec:
         run.googleapis.com/cloudsql-instances: ${SERVICE_PROJECT_ID}:${SERVICE_REGION}:${SQL_INSTANCE}
     spec:
       serviceAccountName: ${SERVICE_ACCOUNT}
-      timeoutSeconds: 120
+      timeoutSeconds: 45
       containerConcurrency: ${SERVICE_CONCURRENCY}
       containers:
         - image: ${SERVICE_IMAGE}
@@ -32,32 +32,22 @@ spec:
               value: ${SERVICE_ENVIRONMENT}
             - name: FIREBASE_PROJECT_ID
               value: ${SERVICE_PROJECT_ID}
-            - name: ADMIN_POSTINGS_TOPIC
-              value: projects/${SERVICE_PROJECT_ID}/topics/postings-refresh-${SERVICE_ENVIRONMENT}
-            - name: ADMIN_PROFILES_TOPIC
-              value: projects/${SERVICE_PROJECT_ID}/topics/profiles-refresh-${SERVICE_ENVIRONMENT}
-            - name: ADMIN_POSTINGS_JOB
-              value: projects/${SERVICE_PROJECT_ID}/locations/${SERVICE_REGION}/jobs/postings-refresh-${SERVICE_ENVIRONMENT}
-            - name: ADMIN_PROFILES_JOB
-              value: projects/${SERVICE_PROJECT_ID}/locations/${SERVICE_REGION}/jobs/profiles-refresh-${SERVICE_ENVIRONMENT}
-            - name: ADMIN_SCHEDULER_PROJECT
-              value: ${SERVICE_PROJECT_ID}
-            - name: ADMIN_SCHEDULER_LOCATION
-              value: ${SERVICE_REGION}
-            - name: ADMIN_SCHEDULER_SERVICE_ACCOUNT
-              value: admin-scheduler@${SERVICE_PROJECT_ID}.iam.gserviceaccount.com
-            - name: ADMIN_MONITORING_PROJECT
-              value: ${SERVICE_PROJECT_ID}
-            - name: ADMIN_MONITORING_ENABLED
-              value: "true"
-            - name: ADMIN_REFRESH_DEFAULT_PRIORITY
-              value: normal
-            - name: ENABLE_REQUEST_LOGGING
-              value: "true"
+            - name: ECO_REDIS_HOST
+              value: 10.159.1.4
+            - name: ECO_REDIS_PORT
+              value: "6378"
+            - name: ECO_SEARCH_LIMIT
+              value: "10"
+            - name: ECO_SEARCH_THRESHOLD
+              value: "0.45"
+            - name: ECO_DEFAULT_COUNTRY
+              value: BR
+            - name: ECO_DEFAULT_LOCALE
+              value: pt-BR
             - name: ENABLE_GATEWAY_TOKENS
               value: "false"
             - name: AUTH_MODE
-              value: "none"
+              value: "firebase"
           resources:
             limits:
               cpu: "${SERVICE_CPU}"

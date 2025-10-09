@@ -1,12 +1,13 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: hh-admin-svc-${SERVICE_ENVIRONMENT}
+  name: hh-search-svc-${SERVICE_ENVIRONMENT}
   labels:
-    app: hh-admin-svc
+    app: hh-search-svc
     environment: ${SERVICE_ENVIRONMENT}
   annotations:
-    run.googleapis.com/ingress: all
+    run.googleapis.com/ingress: internal-and-cloud-load-balancing
+    run.googleapis.com/launch-stage: GA
 spec:
   template:
     metadata:
@@ -19,7 +20,7 @@ spec:
         run.googleapis.com/cloudsql-instances: ${SERVICE_PROJECT_ID}:${SERVICE_REGION}:${SQL_INSTANCE}
     spec:
       serviceAccountName: ${SERVICE_ACCOUNT}
-      timeoutSeconds: 120
+      timeoutSeconds: 90
       containerConcurrency: ${SERVICE_CONCURRENCY}
       containers:
         - image: ${SERVICE_IMAGE}
@@ -32,32 +33,41 @@ spec:
               value: ${SERVICE_ENVIRONMENT}
             - name: FIREBASE_PROJECT_ID
               value: ${SERVICE_PROJECT_ID}
-            - name: ADMIN_POSTINGS_TOPIC
-              value: projects/${SERVICE_PROJECT_ID}/topics/postings-refresh-${SERVICE_ENVIRONMENT}
-            - name: ADMIN_PROFILES_TOPIC
-              value: projects/${SERVICE_PROJECT_ID}/topics/profiles-refresh-${SERVICE_ENVIRONMENT}
-            - name: ADMIN_POSTINGS_JOB
-              value: projects/${SERVICE_PROJECT_ID}/locations/${SERVICE_REGION}/jobs/postings-refresh-${SERVICE_ENVIRONMENT}
-            - name: ADMIN_PROFILES_JOB
-              value: projects/${SERVICE_PROJECT_ID}/locations/${SERVICE_REGION}/jobs/profiles-refresh-${SERVICE_ENVIRONMENT}
-            - name: ADMIN_SCHEDULER_PROJECT
-              value: ${SERVICE_PROJECT_ID}
-            - name: ADMIN_SCHEDULER_LOCATION
-              value: ${SERVICE_REGION}
-            - name: ADMIN_SCHEDULER_SERVICE_ACCOUNT
-              value: admin-scheduler@${SERVICE_PROJECT_ID}.iam.gserviceaccount.com
-            - name: ADMIN_MONITORING_PROJECT
-              value: ${SERVICE_PROJECT_ID}
-            - name: ADMIN_MONITORING_ENABLED
-              value: "true"
-            - name: ADMIN_REFRESH_DEFAULT_PRIORITY
-              value: normal
+            - name: REDIS_HOST
+              value: 10.159.1.4
+            - name: REDIS_PORT
+              value: "6378"
+            - name: PGVECTOR_HOST
+              value: /cloudsql/${SERVICE_PROJECT_ID}:${SERVICE_REGION}:${SQL_INSTANCE}
+            - name: PGVECTOR_PORT
+              value: "5432"
+            - name: PGVECTOR_DATABASE
+              value: ${SQL_DATABASE}
+            - name: PGVECTOR_USER
+              value: ${SQL_USER_ANALYTICS}
+            - name: PGVECTOR_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ${SECRET_DB_ANALYTICS}
+                  key: latest
+            - name: EMBED_SERVICE_URL
+              value: ${EMBED_SERVICE_URL}
+            - name: RERANK_SERVICE_URL
+              value: ${RERANK_SERVICE_URL}
+            - name: EVIDENCE_SERVICE_URL
+              value: ${EVIDENCE_SERVICE_URL}
+            - name: HEALTH_TENANT_ID
+              value: tenant-alpha
             - name: ENABLE_REQUEST_LOGGING
+              value: "true"
+            - name: SEARCH_CACHE_TTL_SECONDS
+              value: "180"
+            - name: SEARCH_FIRESTORE_FALLBACK
               value: "true"
             - name: ENABLE_GATEWAY_TOKENS
               value: "false"
             - name: AUTH_MODE
-              value: "none"
+              value: "firebase"
           resources:
             limits:
               cpu: "${SERVICE_CPU}"

@@ -6,7 +6,7 @@ metadata:
     app: hh-admin-svc
     environment: ${SERVICE_ENVIRONMENT}
   annotations:
-    run.googleapis.com/ingress: all
+    run.googleapis.com/ingress: internal-and-cloud-load-balancing
 spec:
   template:
     metadata:
@@ -57,7 +57,7 @@ spec:
             - name: ENABLE_GATEWAY_TOKENS
               value: "false"
             - name: AUTH_MODE
-              value: "none"
+              value: "firebase"
           resources:
             limits:
               cpu: "${SERVICE_CPU}"
