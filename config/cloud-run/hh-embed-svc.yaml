@@ -6,7 +6,7 @@ metadata:
     app: hh-embed-svc
     environment: ${SERVICE_ENVIRONMENT}
   annotations:
-    run.googleapis.com/ingress: internal-and-cloud-load-balancing
+    run.googleapis.com/ingress: all
     run.googleapis.com/launch-stage: GA
 spec:
   template:
@@ -37,6 +37,36 @@ spec:
               value: 10.159.1.4
             - name: REDIS_PORT
               value: "6378"
+            - name: REDIS_TLS
+              value: "true"
+            - name: REDIS_TLS_REJECT_UNAUTHORIZED
+              value: "true"
+            - name: REDIS_TLS_CA
+              value: |-
+                -----BEGIN CERTIFICATE-----
+                MIID7TCCAtWgAwIBAgIBADANBgkqhkiG9w0BAQsFADCBhTEtMCsGA1UELhMkN2M5
+                YjAxNzgtYTQ1NC00YzI0LTg2YjUtZDlhMTVkNGU5OWYzMTEwLwYDVQQDEyhHb29n
+                bGUgQ2xvdWQgTWVtb3J5c3RvcmUgUmVkaXMgU2VydmVyIENBMRQwEgYDVQQKEwtH
+                b29nbGUsIEluYzELMAkGA1UEBhMCVVMwHhcNMjUwOTMwMjA1ODQ1WhcNMzUwOTI4
+                MjA1OTQ1WjCBhTEtMCsGA1UELhMkN2M5YjAxNzgtYTQ1NC00YzI0LTg2YjUtZDlh
+                MTVkNGU5OWYzMTEwLwYDVQQDEyhHb29nbGUgQ2xvdWQgTWVtb3J5c3RvcmUgUmVk
+                aXMgU2VydmVyIENBMRQwEgYDVQQKEwtHb29nbGUsIEluYzELMAkGA1UEBhMCVVMw
+                ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDHTHxg02qnSRLqlwSzwo3b
+                /2nVSzRBn1juRAgjwoU8JsD+Y75nz3VDz+u6MQ24srp75pcyDKDJjfOPYHb2LxZ3
+                qJzGj2tITZJixHtmDuYD/v5fq5b/nnlyWc1rcrZcdHe44jTitV5+kcI3M1aHxv7l
+                CC4nK5zahHCv5yi0khsacxX3J5ON6BsAPY5LUeoG1JAOqFUum7o4/1ncxyNOity3
+                6JADYSemaOc2YZHMaYsnMcByqOWZeKFr9bwRgvt6Q8qYtUWwuukOZ5QtzL91YDtc
+                oaowb1xkxsukz6TmaBhuPFgEwaOaJ12AxD8mfF15PQIUKALuMJshOHAdw5BfVMVl
+                AgMBAAGjZjBkMB8GA1UdIwQYMBaAFKxMr+7TMSYNachOdWv3/tIpOPEUMBIGA1Ud
+                EwEB/wQIMAYBAf8CAQAwDgYDVR0PAQH/BAQDAgEGMB0GA1UdDgQWBBSsTK/u0zEm
+                DWnITnVr9/7SKTjxFDANBgkqhkiG9w0BAQsFAAOCAQEAtxmfsbuO5XlD0KavD5GX
+                lWQPV5SX7dZmWKAxLyQGdEraiaTLAEkoa3zE0TPmWHsOUZCVYBs7Dpv4BrDStP9u
+                Aw9JnKaYgLkaD0hLstROgbYJUIpIgM/izYobHcvDItPYTNFsEquL4M/gH2YuMHlj
+                6A6czjLe23kPpDDLI+5WHZlMbv8MkDdzn3YMw2Cx4ls57IuJIEdl/v47g/wgykNG
+                PTA6UjdLX13xxn/s7nAQU76S+28C5TXz9zwpdtNiSLJhAwVC43vMtNY+ivNJG9lf
+                NRJp2qMfOu5ftNV17yJN7kL/3cL7Ua/RqwraQT0nfrOymIewuu44DlSAuFrmLLD4
+                2w==
+                -----END CERTIFICATE-----
             - name: PGVECTOR_HOST
               value: /cloudsql/${SERVICE_PROJECT_ID}:${SERVICE_REGION}:${SQL_INSTANCE}
             - name: PGVECTOR_PORT
@@ -66,7 +96,7 @@ spec:
             - name: ENABLE_GATEWAY_TOKENS
               value: "false"
             - name: AUTH_MODE
-              value: "firebase"
+              value: "none"
           resources:
             limits:
               cpu: "${SERVICE_CPU}"
