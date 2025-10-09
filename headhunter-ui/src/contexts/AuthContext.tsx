@@ -7,7 +7,8 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
 } from 'firebase/auth';
-import { auth, googleProvider, completeOnboarding } from '../config/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, googleProvider, completeOnboarding, db } from '../config/firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -19,6 +20,31 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Allowed email domains for authentication
+const ALLOWED_DOMAINS = ['ella.com.br'];
+
+/**
+ * Validates if the email domain is in the allowed list
+ */
+const isAllowedDomain = (email: string | null): boolean => {
+  if (!email) return false;
+  const domain = email.split('@')[1]?.toLowerCase();
+  return ALLOWED_DOMAINS.includes(domain);
+};
+
+/**
+ * Checks if user exists in the allowed_users collection
+ */
+const isUserAllowed = async (email: string): Promise<boolean> => {
+  try {
+    const userDoc = await getDoc(doc(db, 'allowed_users', email.toLowerCase()));
+    return userDoc.exists();
+  } catch (error) {
+    console.error('Error checking allowed users:', error);
+    return false;
+  }
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -42,14 +68,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    let result: any = null;
+
     try {
-      const result = await signInWithEmailAndPassword(auth, email, password);
-      
+      // Validate domain before attempting sign-in
+      if (!isAllowedDomain(email)) {
+        throw new Error(
+          `Access denied: Only @ella.com.br email addresses are allowed. Your domain: @${email.split('@')[1] || 'unknown'}`
+        );
+      }
+
+      result = await signInWithEmailAndPassword(auth, email, password);
+
+      // Check if user is in allowed_users collection
+      const isAllowed = await isUserAllowed(email);
+      if (!isAllowed) {
+        await firebaseSignOut(auth);
+        throw new Error(
+          'Access denied: Your email address is not authorized. Please contact your administrator to request access.'
+        );
+      }
+
       // Complete onboarding for users without org access
       try {
         const token = await result.user.getIdToken(true);
         const decodedToken = JSON.parse(atob(token.split('.')[1]));
-        
+
         // If user doesn't have org_id claim, complete onboarding
         if (!decodedToken.org_id) {
           console.log('Completing onboarding for existing user...');
@@ -57,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             displayName: result.user.displayName,
           });
           console.log('Onboarding completed:', onboardingResult.data);
-          
+
           // Force token refresh to get new custom claims
           await result.user.getIdToken(true);
         }
@@ -65,48 +109,102 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.warn('Onboarding error:', onboardingError);
         // Don't throw here - user is still authenticated
       }
-      
-    } catch (error) {
+
+    } catch (error: any) {
       console.error('Error signing in:', error);
+      // If user signed in but failed validation, ensure they're signed out
+      if (result && error.message.includes('Access denied')) {
+        try {
+          await firebaseSignOut(auth);
+        } catch (signOutError) {
+          console.error('Error signing out unauthorized user:', signOutError);
+        }
+      }
       throw error;
     }
   };
 
   const signInWithGoogle = async () => {
+    let userResult: any = null;
+
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      console.log('User signed in:', result.user.email);
-      
+      userResult = await signInWithPopup(auth, googleProvider);
+      const userEmail = userResult.user.email;
+      console.log('User signed in:', userEmail);
+
+      // Validate domain
+      if (!isAllowedDomain(userEmail)) {
+        await firebaseSignOut(auth);
+        throw new Error(
+          `Access denied: Only @ella.com.br email addresses are allowed. Your domain: @${userEmail?.split('@')[1] || 'unknown'}`
+        );
+      }
+
+      // Check if user is in allowed_users collection
+      if (userEmail) {
+        const isAllowed = await isUserAllowed(userEmail);
+        if (!isAllowed) {
+          await firebaseSignOut(auth);
+          throw new Error(
+            'Access denied: Your email address is not authorized. Please contact your administrator to request access.'
+          );
+        }
+      }
+
       // Complete onboarding for new or existing users without org access
       try {
-        const token = await result.user.getIdToken(true);
+        const token = await userResult.user.getIdToken(true);
         const decodedToken = JSON.parse(atob(token.split('.')[1]));
-        
+
         // If user doesn't have org_id claim, complete onboarding
         if (!decodedToken.org_id) {
-          console.log('Completing onboarding for new user...');
+          console.log('Completing onboarding for authorized user...');
           const onboardingResult = await completeOnboarding({
-            displayName: result.user.displayName,
+            displayName: userResult.user.displayName,
           });
           console.log('Onboarding completed:', onboardingResult.data);
-          
+
           // Force token refresh to get new custom claims
-          await result.user.getIdToken(true);
+          await userResult.user.getIdToken(true);
         }
       } catch (onboardingError) {
         console.warn('Onboarding error:', onboardingError);
         // Don't throw here - user is still authenticated
       }
-      
-    } catch (error) {
+
+    } catch (error: any) {
       console.error('Error signing in with Google:', error);
+      // If user signed in but failed validation, ensure they're signed out
+      if (userResult && error.message.includes('Access denied')) {
+        try {
+          await firebaseSignOut(auth);
+        } catch (signOutError) {
+          console.error('Error signing out unauthorized user:', signOutError);
+        }
+      }
       throw error;
     }
   };
 
   const signUp = async (email: string, password: string) => {
     try {
+      // Validate domain before attempting sign-up
+      if (!isAllowedDomain(email)) {
+        throw new Error(
+          `Access denied: Only @ella.com.br email addresses are allowed for registration. Your domain: @${email.split('@')[1] || 'unknown'}`
+        );
+      }
+
+      // Note: User must be added to allowed_users collection by an admin before they can actually sign in
+      // This creates the Firebase Auth account, but they won't pass the allowed_users check until added
       await createUserWithEmailAndPassword(auth, email, password);
+
+      // Sign out immediately after registration - they need admin approval
+      await firebaseSignOut(auth);
+
+      throw new Error(
+        'Registration successful! However, your account needs administrator approval before you can sign in. Please contact your administrator.'
+      );
     } catch (error) {
       console.error('Error signing up:', error);
       throw error;
