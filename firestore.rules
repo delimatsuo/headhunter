@@ -1,134 +1,311 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper functions
+    // ========================================================================
+    // Authentication and Authorization Helper Functions
+    // ========================================================================
+
+    /**
+     * Check if user is authenticated
+     */
     function isAuthenticated() {
       return request.auth != null;
     }
-    
+
+    /**
+     * Check if authenticated user is the document owner
+     */
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
-    
+
+    /**
+     * Get user's email from authentication token
+     */
+    function getUserEmail() {
+      return request.auth.token.email;
+    }
+
+    /**
+     * Convert email to allowed_users document ID format
+     * (lowercase with '/' replaced by '_')
+     */
+    function emailToDocId(email) {
+      return email.lower().replace('/', '_');
+    }
+
+    /**
+     * Get user's allowed_users document
+     * This is the source of truth for authentication and roles
+     */
+    function getAllowedUserData() {
+      let email = getUserEmail();
+      let docId = emailToDocId(email);
+      return get(/databases/$(database)/documents/allowed_users/$(docId));
+    }
+
+    /**
+     * Check if user is in allowed_users collection
+     * This is the primary authentication check
+     */
+    function isAllowedUser() {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/allowed_users/$(emailToDocId(getUserEmail())));
+    }
+
+    /**
+     * Get user's role from allowed_users collection
+     */
+    function getUserRole() {
+      return getAllowedUserData().data.role;
+    }
+
+    /**
+     * Get user's profile data from users collection
+     * This contains organization_id and other profile information
+     */
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid));
     }
-    
+
+    /**
+     * Check if user is member of a specific organization
+     */
     function isOrgMember(orgId) {
-      return isAuthenticated() && 
+      return isAllowedUser() &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
              getUserData().data.organization_id == orgId;
     }
-    
+
+    /**
+     * Check if user has admin role
+     */
     function isAdmin() {
-      return isAuthenticated() && 
-             getUserData().data.role in ['admin', 'super_admin'];
+      return isAllowedUser() &&
+             getUserRole() in ['admin', 'super_admin'];
     }
-    
+
+    /**
+     * Check if user has super_admin role
+     */
     function isSuperAdmin() {
-      return isAuthenticated() && 
-             getUserData().data.role == 'super_admin';
+      return isAllowedUser() &&
+             getUserRole() == 'super_admin';
     }
-    
-    // Organizations - read by members, write by admins only
+
+    /**
+     * Check if user has recruiter role (or higher)
+     */
+    function isRecruiter() {
+      return isAllowedUser() &&
+             getUserRole() in ['recruiter', 'admin', 'super_admin'];
+    }
+
+    // ========================================================================
+    // Organizations Collection
+    // ========================================================================
+    // Multi-tenant organization data
+
     match /organizations/{orgId} {
+      // Members can read their organization data
       allow read: if isOrgMember(orgId);
+
+      // Only admins within the organization can modify organization data
       allow write: if isAdmin() && isOrgMember(orgId);
     }
-    
-    // Users - read own profile and org members, write own profile only
+
+    // ========================================================================
+    // Users Collection (User Profiles)
+    // ========================================================================
+    // User profile data including organization membership
+    // Note: Role information comes from allowed_users collection
+
     match /users/{userId} {
-      allow read: if isOwner(userId) || 
-                     (isAuthenticated() && isOrgMember(resource.data.organization_id));
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || 
+      // Users can read their own profile
+      // Users can read profiles of other users in their organization
+      allow read: if isOwner(userId) ||
+                     (isAllowedUser() && isOrgMember(resource.data.organization_id));
+
+      // Users can create their own profile
+      // Must be in allowed_users to create profile
+      allow create: if isOwner(userId) && isAllowedUser();
+
+      // Users can update their own profile
+      // Admins can update profiles within their organization
+      allow update: if isOwner(userId) ||
                        (isAdmin() && isOrgMember(resource.data.organization_id));
+
+      // Only super admins can delete users
       allow delete: if isSuperAdmin();
     }
-    
-    // Candidates - organization-scoped access
+
+    // ========================================================================
+    // Candidates Collection
+    // ========================================================================
+    // Candidate data is organization-scoped
+    // Only allowed users (recruiters+) can read candidates in their org
+
     match /candidates/{candidateId} {
-      allow read: if isAuthenticated() && 
+      // Allowed users can read candidates in their organization
+      allow read: if isAllowedUser() &&
                      isOrgMember(resource.data.organization_id);
-      allow write: if false; // Only Cloud Functions can write
+
+      // Only Cloud Functions can write candidate data
+      allow write: if false;
     }
 
-    // Enriched profiles - organization-scoped access
+    // ========================================================================
+    // Enriched Profiles Collection
+    // ========================================================================
+    // AI-enriched candidate profiles (organization-scoped)
+
     match /enriched_profiles/{profileId} {
-      allow read: if isAuthenticated() &&
+      // Allowed users can read enriched profiles in their organization
+      allow read: if isAllowedUser() &&
                      isOrgMember(resource.data.organization_id);
-      allow write: if false; // Only Cloud Functions/processors write
+
+      // Only Cloud Functions/processors can write enriched profiles
+      allow write: if false;
     }
-    
-    // Jobs - organization-scoped access
+
+    // ========================================================================
+    // Jobs Collection
+    // ========================================================================
+    // Job descriptions and requirements (organization-scoped)
+
     match /jobs/{jobId} {
-      allow read: if isAuthenticated() && 
+      // Allowed users can read jobs in their organization
+      allow read: if isAllowedUser() &&
                      isOrgMember(resource.data.organization_id);
-      allow write: if false; // Only Cloud Functions can write
+
+      // Only Cloud Functions can write job data
+      allow write: if false;
     }
-    
-    // Candidate embeddings - admin-only read, no direct writes
+
+    // ========================================================================
+    // Candidate Embeddings Collection
+    // ========================================================================
+    // Vector embeddings for semantic search (admin-only access)
+
     match /candidate_embeddings/{embeddingId} {
+      // Only admins can read embeddings (for debugging/monitoring)
       allow read: if isAdmin();
-      allow write: if false; // Only backend pipelines write
+
+      // Only backend pipelines can write embeddings
+      allow write: if false;
     }
-    
-    // Processing queue - organization-scoped access
+
+    // ========================================================================
+    // Processing Queue Collection
+    // ========================================================================
+    // Candidate processing queue (organization-scoped)
+
     match /processing_queue/{queueId} {
-      allow read: if isAuthenticated() && 
+      // Allowed users can read queue items in their organization
+      allow read: if isAllowedUser() &&
                      isOrgMember(resource.data.organization_id);
-      allow write: if false; // Only Cloud Functions can write
+
+      // Only Cloud Functions can write to processing queue
+      allow write: if false;
     }
-    
-    // Search cache - organization-scoped access  
+
+    // ========================================================================
+    // Search Cache Collection
+    // ========================================================================
+    // Cached search results (organization-scoped)
+
     match /search_cache/{cacheId} {
-      allow read: if isAuthenticated() && 
+      // Allowed users can read cached searches in their organization
+      allow read: if isAllowedUser() &&
                      isOrgMember(resource.data.organization_id);
-      allow write: if false; // Only Cloud Functions can write
+
+      // Only Cloud Functions can write to search cache
+      allow write: if false;
     }
-    
-    // Activity logs - organization-scoped access
+
+    // ========================================================================
+    // Activity Logs Collection
+    // ========================================================================
+    // User activity tracking (organization-scoped)
+
     match /activity_logs/{logId} {
-      allow read: if isAuthenticated() && 
+      // Allowed users can read activity logs in their organization
+      allow read: if isAllowedUser() &&
                      isOrgMember(resource.data.organization_id);
-      allow write: if false; // Only Cloud Functions can write
+
+      // Only Cloud Functions can write activity logs
+      allow write: if false;
     }
 
-    // Audit logs (sensitive) - admin read only, no direct writes
+    // ========================================================================
+    // Audit Logs Collection (Sensitive)
+    // ========================================================================
+    // System audit trail (admin-only access)
+
     match /audit_logs/{logId} {
+      // Only admins can read audit logs
       allow read: if isAdmin();
-      allow write: if false; // Only Cloud Functions write
+
+      // Only Cloud Functions can write audit logs
+      allow write: if false;
     }
 
-    // Allowed users (admin allowlist management)
+    // ========================================================================
+    // Allowed Users Collection (Authentication Allowlist)
+    // ========================================================================
+    // This collection is the source of truth for authentication and roles.
+    // Only admins can read/write this collection.
+    // Cloud Functions bypass these rules using Admin SDK.
+
     match /allowed_users/{userKey} {
+      // Only admins can read the allowlist
       allow read: if isAdmin();
-      allow write: if isSuperAdmin() || isAdmin();
+
+      // Only admins can write to the allowlist
+      // Cloud Functions handle actual CRUD operations
+      allow write: if isAdmin();
+
+      // Prevent users from modifying their own roles
+      // (Admin SDK bypasses this, but client SDK does not)
     }
-    
-    // User subcollections - private access only
+
+    // ========================================================================
+    // User Subcollections (Private User Data)
+    // ========================================================================
+    // These collections are scoped to individual users and are private
+
+    // Search History - user's past searches (immutable)
     match /users/{userId}/search_history/{searchId} {
-      allow read: if isOwner(userId);
-      allow create: if isOwner(userId);
+      allow read: if isOwner(userId) && isAllowedUser();
+      allow create: if isOwner(userId) && isAllowedUser();
       allow update: if false; // Immutable once created
-      allow delete: if isOwner(userId);
+      allow delete: if isOwner(userId) && isAllowedUser();
     }
-    
+
+    // User Preferences - personalization settings
     match /users/{userId}/preferences/{preferenceId} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
+      allow read: if isOwner(userId) && isAllowedUser();
+      allow write: if isOwner(userId) && isAllowedUser();
     }
-    
+
+    // Saved Jobs - user's bookmarked job postings
     match /users/{userId}/saved_jobs/{jobId} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
+      allow read: if isOwner(userId) && isAllowedUser();
+      allow write: if isOwner(userId) && isAllowedUser();
     }
-    
+
+    // Notifications - user's notification queue
     match /users/{userId}/notifications/{notificationId} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
+      allow read: if isOwner(userId) && isAllowedUser();
+      allow write: if isOwner(userId) && isAllowedUser();
     }
-    
-    // Deny all other access by default
+
+    // ========================================================================
+    // Default Deny Rule
+    // ========================================================================
+    // Deny access to any collection not explicitly defined above
+    // This ensures security by default for new collections
+
     match /{document=**} {
       allow read: if false;
       allow write: if false;
