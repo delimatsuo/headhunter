@@ -35,18 +35,9 @@ service cloud.firestore {
     }
 
     /**
-     * Get user's allowed_users document
-     * This is the source of truth for authentication and roles
-     */
-    function getAllowedUserData() {
-      let email = getUserEmail();
-      let docId = emailToDocId(email);
-      return get(/databases/$(database)/documents/allowed_users/$(docId));
-    }
-
-    /**
      * Check if user is in allowed_users collection
      * This is the primary authentication check
+     * Uses exists() instead of get() to avoid circular dependencies
      */
     function isAllowedUser() {
       return isAuthenticated() &&
@@ -54,51 +45,43 @@ service cloud.firestore {
     }
 
     /**
-     * Get user's role from allowed_users collection
-     */
-    function getUserRole() {
-      return getAllowedUserData().data.role;
-    }
-
-    /**
-     * Get user's profile data from users collection
-     * This contains organization_id and other profile information
-     */
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid));
-    }
-
-    /**
-     * Check if user is member of a specific organization
-     */
-    function isOrgMember(orgId) {
-      return isAllowedUser() &&
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             getUserData().data.organization_id == orgId;
-    }
-
-    /**
      * Check if user has admin role
+     * Uses custom claims from Firebase Auth token (set by Cloud Functions)
+     * Custom claims are the recommended approach to avoid get() operations
      */
     function isAdmin() {
-      return isAllowedUser() &&
-             getUserRole() in ['admin', 'super_admin'];
+      return isAuthenticated() &&
+             request.auth.token.role != null &&
+             request.auth.token.role in ['admin', 'super_admin'];
     }
 
     /**
      * Check if user has super_admin role
+     * Uses custom claims from Firebase Auth token
      */
     function isSuperAdmin() {
-      return isAllowedUser() &&
-             getUserRole() == 'super_admin';
+      return isAuthenticated() &&
+             request.auth.token.role == 'super_admin';
     }
 
     /**
      * Check if user has recruiter role (or higher)
+     * Uses custom claims from Firebase Auth token
      */
     function isRecruiter() {
+      return isAuthenticated() &&
+             request.auth.token.role != null &&
+             request.auth.token.role in ['recruiter', 'admin', 'super_admin'];
+    }
+
+    /**
+     * Check if user is member of a specific organization
+     * Uses organization_id from custom claims in Firebase Auth token
+     */
+    function isOrgMember(orgId) {
       return isAllowedUser() &&
-             getUserRole() in ['recruiter', 'admin', 'super_admin'];
+             request.auth.token.organization_id != null &&
+             request.auth.token.organization_id == orgId;
     }
 
     // ========================================================================
@@ -254,19 +237,26 @@ service cloud.firestore {
     // Allowed Users Collection (Authentication Allowlist)
     // ========================================================================
     // This collection is the source of truth for authentication and roles.
-    // Only admins can read/write this collection.
+    // Users can read their own document (for isAllowedUser() check).
+    // Only admins can list/query the full collection.
     // Cloud Functions bypass these rules using Admin SDK.
 
     match /allowed_users/{userKey} {
-      // Only admins can read the allowlist
-      allow read: if isAdmin();
+      // Users can read their own document (for authentication verification)
+      // This breaks the circular dependency in isAllowedUser()
+      // IMPORTANT: Cannot use isAdmin() here due to circular dependency
+      allow get: if isAuthenticated() && userKey == emailToDocId(request.auth.token.email);
 
-      // Only admins can write to the allowlist
-      // Cloud Functions handle actual CRUD operations
-      allow write: if isAdmin();
+      // Only authenticated users in the allowlist can list the collection
+      // This is a simplified rule to avoid circular dependency
+      // In practice, Cloud Functions (Admin SDK) will be used for user management
+      allow list: if isAllowedUser();
 
-      // Prevent users from modifying their own roles
-      // (Admin SDK bypasses this, but client SDK does not)
+      // Nobody can write directly (Cloud Functions only via Admin SDK)
+      allow write: if false;
+
+      // Note: Admin UI will use Cloud Functions for all CRUD operations
+      // Cloud Functions bypass these rules using Admin SDK
     }
 
     // ========================================================================

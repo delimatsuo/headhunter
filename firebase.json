@@ -4,6 +4,9 @@
     "indexes": "firestore.indexes.json"
   },
   "emulators": {
+    "auth": {
+      "port": 9099
+    },
     "firestore": {
       "port": 8081
     },
@@ -11,7 +14,11 @@
       "port": 5001
     },
     "ui": {
-      "enabled": true
+      "enabled": true,
+      "port": 4040
+    },
+    "pubsub": {
+      "port": 8681
     }
   },
   "functions": [

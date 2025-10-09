@@ -33,7 +33,7 @@ const {
 
 // Firebase config for emulator
 const firebaseConfig = {
-  projectId: 'headhunter-local',
+  projectId: 'headhunter-ai-0088',
   apiKey: 'fake-api-key',
 };
 
@@ -43,10 +43,10 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 // Connect to emulators
-const FIRESTORE_HOST = process.env.FIRESTORE_EMULATOR_HOST || 'localhost:8080';
+const FIRESTORE_HOST = process.env.FIRESTORE_EMULATOR_HOST || 'localhost:8081';
 const AUTH_HOST = 'localhost:9099';
 
-connectFirestoreEmulator(db, 'localhost', 8080);
+connectFirestoreEmulator(db, 'localhost', 8081);
 connectAuthEmulator(auth, `http://${AUTH_HOST}`);
 
 console.log(`\n🔒 Testing Firestore Security Rules`);
@@ -144,7 +144,7 @@ async function testAdminRole() {
   console.log('📋 Test Suite: Admin Role');
   console.log('='.repeat(80));
 
-  // Sign in as admin
+  // Sign in with pre-configured test user (created by set_test_user_custom_claims.js)
   console.log(`\n🔐 Signing in as admin: ${ADMIN_EMAIL}`);
   try {
     await signInWithEmailAndPassword(auth, ADMIN_EMAIL, ADMIN_PASSWORD);
@@ -187,7 +187,7 @@ async function testRecruiterRole() {
   console.log('📋 Test Suite: Recruiter Role');
   console.log('='.repeat(80));
 
-  // Sign in as recruiter
+  // Sign in with pre-configured test user (created by set_test_user_custom_claims.js)
   console.log(`\n🔐 Signing in as recruiter: ${RECRUITER_EMAIL}`);
   try {
     await signInWithEmailAndPassword(auth, RECRUITER_EMAIL, RECRUITER_PASSWORD);
@@ -253,7 +253,7 @@ async function testUserSubcollections() {
   console.log('📋 Test Suite: User Subcollections');
   console.log('='.repeat(80));
 
-  // Sign in as recruiter
+  // Sign in as recruiter (pre-configured test user)
   console.log(`\n🔐 Signing in as recruiter: ${RECRUITER_EMAIL}`);
   try {
     await signInWithEmailAndPassword(auth, RECRUITER_EMAIL, RECRUITER_PASSWORD);
