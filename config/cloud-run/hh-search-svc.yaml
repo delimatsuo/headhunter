@@ -86,6 +86,8 @@ spec:
               value: https://hh-embed-svc-${SERVICE_ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
             - name: RERANK_SERVICE_URL
               value: https://hh-rerank-svc-${SERVICE_ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
+            - name: RERANK_SERVICE_AUDIENCE
+              value: https://hh-rerank-svc-${SERVICE_ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
             - name: EVIDENCE_SERVICE_URL
               value: https://hh-evidence-svc-${SERVICE_ENVIRONMENT}-akcoqbr7sa-uc.a.run.app
             - name: HEALTH_TENANT_ID

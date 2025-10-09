@@ -127,6 +127,32 @@ End-to-end validation confirms hybrid search with Gemini embeddings meets PRD pe
 
 **Documentation**: See `docs/hybrid-search-validation-report.md` for complete test results and analysis.
 
+#### Update – 2025-10-09 13:01 UTC (Task 84 - Rerank Fix)
+
+**Rerank Service Integration Repaired** ✅
+
+Root cause identified and fixed for rerank service not triggering during hybrid searches:
+
+- **Issue**: Missing `RERANK_SERVICE_AUDIENCE` environment variable in hh-search-svc production config
+- **Symptom**: rankingMs = 0ms consistently despite ENABLE_RERANK=true
+- **Fix**: Added RERANK_SERVICE_AUDIENCE to config/cloud-run/hh-search-svc.yaml
+- **Deployment**: Revision hh-search-svc-production-00054-b6v now serving 100% traffic
+- **Status**: Configuration deployed and verified, awaiting production validation
+
+**Environment Variables Now Present**:
+```
+RERANK_SERVICE_URL=https://hh-rerank-svc-production-akcoqbr7sa-uc.a.run.app
+RERANK_SERVICE_AUDIENCE=https://hh-rerank-svc-production-akcoqbr7sa-uc.a.run.app  ← NEWLY ADDED
+ENABLE_RERANK=true
+```
+
+**Validation Needed**: Execute hybrid search queries via API Gateway to confirm:
+1. `timings.rankingMs > 0` (should show rerank latency, target <350ms)
+2. Logs contain "Rerank request completed" messages
+3. Results include rerank metadata (cacheHit, usedFallback)
+
+**Documentation**: See `docs/task-84-rerank-fix.md` for complete root cause analysis and validation plan.
+
 #### Update – 2025-10-08 13:15 UTC
 - Redis-backed embedding cache added in `hh-search-svc` (warm requests now reuse cached vectors; cold embedding remains ~3.2s until pre-warm jobs run).
 - pgvector client now warms `poolMin` connections on startup and exposes pool stats for readiness probes.
