@@ -164,15 +164,15 @@
         "dependencies": [
           "66"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
             "title": "Create PII-Minimizing Prompt Templates for Together AI",
             "description": "Design and implement prompt templates that minimize personally identifiable information while maintaining analysis quality for candidate enrichment",
             "dependencies": [],
-            "details": "Create prompt templates for Together AI Qwen 2.5 32B that focus on skills, experience patterns, and qualifications while avoiding direct PII references. Implement templates for personal_details, education_analysis, experience_analysis, technical_assessment, market_insights, cultural_assessment, and executive_summary sections. Ensure prompts guide the model to return structured JSON responses with confidence scores and evidence extraction.",
-            "status": "pending",
+            "details": "Create prompt templates for Together AI Qwen 2.5 32B that focus on skills, experience patterns, and qualifications while avoiding direct PII references. Implement templates for personal_details, education_analysis, experience_analysis, technical_assessment, market_insights, cultural_assessment, and executive_summary sections. Ensure prompts guide the model to return structured JSON responses with confidence scores and evidence extraction.\n<info added on 2025-10-09T00:21:49.255Z>\n**PRD-Compliant PII-Minimizing Prompts Completed** ✅\n\nCreated three new modules for Together AI single-pass enrichment:\n\n**1. prd_schemas.py** - Pydantic schemas matching PRD requirements (lines 61-72):\n- PersonalDetails (name, seniority_level, years_of_experience, location)\n- EducationAnalysis (degrees, quality_score, relevance, institutions)\n- ExperienceAnalysis (companies, current_role, career_progression, industry_focus)\n- TechnicalAssessment (primary_skills, expertise_level, tech_stack, domain_expertise)\n- MarketInsights (salary_range, market_demand, placement_difficulty)\n- CulturalAssessment (strengths, red_flags, ideal_roles, target_companies)\n- ExecutiveSummary (one_line_pitch, overall_rating, recommendation)\n- SkillInference (explicit_skills with 100% confidence, inferred_skills with 0-100% confidence)\n- PRDCompliantProfile (complete structure with analysis_confidence 0-1)\n\n**2. prd_prompt_builder.py** - PII-minimizing prompt generator:\n- `build_single_pass_enrichment_prompt()` - Main method for comprehensive analysis\n- Limits experience text to 2000 chars, education to 1000 chars\n- Includes detailed skill inference guidelines with confidence scoring\n- Provides examples for high/medium/low confidence inferences\n- Explicitly requests JSON-only output (no markdown/code blocks)\n- Includes `build_minimal_pii_prompt()` for anonymized approach\n\n**3. test_prd_prompts.py** - Comprehensive unit tests (13 tests, all passing):\n- Validates all PRD sections are included in prompts\n- Verifies skill inference guidelines present\n- Tests PII minimization (text length limits)\n- Validates schema structure\n- Tests confidence scoring guidance\n- Validates Pydantic schema enforcement\n\n**PII Minimization Strategy**:\n- Name included (needed for personal_details per PRD)\n- Experience/education truncated to reasonable limits\n- Focus on roles, companies, skills (less sensitive)\n- Optional `build_minimal_pii_prompt()` for full anonymization\n- No unnecessary personal details in prompts\n\n**Key Features**:\n- Single-pass enrichment (aligned with PRD line 5)\n- Confidence scoring for all inferred skills (0-100)\n- Evidence and reasoning required for skill assessments\n- analysis_confidence field (0-1) for data quality tracking\n- Supports low_content demotion (PRD line 70)\n\nAll tests passing: `pytest scripts/test_prd_prompts.py -v` ✅\n</info added on 2025-10-09T00:21:49.255Z>",
+            "status": "done",
             "testStrategy": "",
             "parentId": "undefined"
           },
@@ -1071,7 +1071,7 @@
       ],
       "created": "2025-10-08T20:08:03.513Z",
       "description": "Tasks for master context",
-      "updated": "2025-10-08T23:14:37.889Z"
+      "updated": "2025-10-09T00:22:06.605Z"
     }
   }
 }
