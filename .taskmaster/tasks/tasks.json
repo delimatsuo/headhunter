@@ -1087,6 +1087,49 @@
         "status": "pending",
         "subtasks": [],
         "id": 82
+      },
+      {
+        "id": 83,
+        "title": "Fix Cold Start Latency in hh-search-svc Production",
+        "description": "Implement warmup mechanisms and eager initialization to reduce first query latency from 5.3s to under 1.2s target, matching subsequent query performance.",
+        "details": "IMPLEMENTATION APPROACH:\n\n1. **Add Service Warmup Mechanism**\n   - Create `/warmup` health check endpoint that pre-initializes all critical dependencies\n   - Implement eager connection pool initialization for pgvector database connections\n   - Pre-initialize Redis connection pools with proper connection limits\n   - Warm up embedding service connections (Gemini/Vertex AI providers)\n   - Load and cache frequently accessed configuration and metadata\n\n2. **Implement Connection Pool Optimization**\n   - Configure pgvector connection pool with min_connections=2, max_connections=10\n   - Set Redis connection pool with keepalive and connection validation\n   - Implement connection health checks and automatic reconnection logic\n   - Add connection pool metrics and monitoring\n\n3. **Cloud Run Configuration Updates**\n   - Set minimum instances to 1 to keep service warm during low traffic\n   - Configure CPU allocation to remain allocated during request processing\n   - Optimize container startup with multi-stage Docker builds\n   - Set appropriate concurrency limits to balance performance and cost\n\n4. **Performance Tracking and Monitoring**\n   - Add detailed timing instrumentation for each initialization phase\n   - Implement startup performance metrics collection\n   - Create dashboards for cold start vs warm start latency comparison\n   - Add alerting for first query latency exceeding 1.2s threshold\n\n5. **Initialization Sequence Optimization**\n   - Profile and identify slowest initialization components\n   - Implement parallel initialization where possible\n   - Add lazy loading for non-critical components\n   - Cache embedding model weights and tokenizers\n\n6. **Testing and Validation**\n   - Create load testing scenarios for cold start conditions\n   - Implement automated performance regression testing\n   - Add monitoring for p95 first query latency metrics",
+        "testStrategy": "1. **Cold Start Performance Testing**: Deploy service with zero instances, trigger first request, and verify latency is under 1.2s. Repeat test multiple times to ensure consistency.\n\n2. **Warmup Endpoint Validation**: Call `/warmup` endpoint and verify all connections are established, then measure first actual query latency to confirm pre-initialization effectiveness.\n\n3. **Connection Pool Testing**: Monitor connection pool metrics during load testing to ensure pools are properly initialized and maintained without connection drops.\n\n4. **Production Monitoring**: Set up alerts for first query latency >1.2s and monitor for 48 hours post-deployment to catch any regression in cold start performance.\n\n5. **Load Testing Scenarios**: Run tests simulating production traffic patterns including periods of zero traffic followed by sudden load to validate minimum instance configuration.\n\n6. **Performance Regression Testing**: Compare before/after metrics for first query latency, ensuring consistent sub-1.2s performance while maintaining subsequent query performance (713-961ms range).",
+        "status": "pending",
+        "dependencies": [
+          80,
+          69,
+          70
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 84,
+        "title": "Investigate and fix rerank service not triggering in hh-search-svc",
+        "description": "Debug and resolve the issue where hh-rerank-svc is not being invoked during searches despite being deployed and healthy, causing rankingMs to consistently show 0ms.",
+        "details": "**INVESTIGATION AND RESOLUTION APPROACH:**\n\n1. **Code Analysis - Search Service Integration**\n   - Review hh-search-svc source code to identify rerank service invocation logic\n   - Check conditional statements that determine when rerank is triggered\n   - Verify async/await patterns and error handling around rerank calls\n   - Examine request/response flow and timing measurement implementation\n\n2. **Environment Configuration Verification**\n   - Validate RERANK_SERVICE_URL environment variable is correctly set to hh-rerank-svc-production endpoint\n   - Confirm ENABLE_RERANK=true is properly loaded and parsed as boolean\n   - Check for any additional configuration flags or feature toggles affecting rerank\n   - Verify service discovery and internal networking configuration\n\n3. **Threshold and Trigger Conditions**\n   - Investigate minimum result count thresholds for rerank activation\n   - Check if query complexity or result quality scores affect rerank triggering\n   - Review any performance-based conditions (e.g., skip rerank if initial search is slow)\n   - Examine tenant-specific or API key-based rerank enablement logic\n\n4. **Service Communication Analysis**\n   - Monitor hh-rerank-svc logs during test queries to confirm no incoming requests\n   - Test direct HTTP calls to rerank service endpoint to verify functionality\n   - Check network connectivity, DNS resolution, and service mesh configuration\n   - Validate request payload format and authentication between services\n\n5. **Implementation Fixes**\n   - Fix identified bugs in rerank invocation logic\n   - Add proper error handling and fallback mechanisms\n   - Implement request/response logging for debugging\n   - Add timing measurements around rerank service calls\n   - Ensure rankingMs field is properly populated in response\n\n6. **Performance Optimization**\n   - Implement timeout controls (target <350ms as specified)\n   - Add circuit breaker pattern for rerank service failures\n   - Configure appropriate retry logic with exponential backoff\n   - Monitor and log rerank service performance metrics",
+        "testStrategy": "1. **Direct Service Testing**: Call hh-rerank-svc endpoint directly with sample payloads to confirm service functionality and response times.\n\n2. **Integration Testing**: Execute search queries through hh-search-svc with ENABLE_RERANK=true and monitor both services' logs to verify communication.\n\n3. **Timing Validation**: Perform multiple search queries and verify rankingMs field shows values >0 and <350ms in response JSON.\n\n4. **Load Testing**: Run concurrent search requests to ensure rerank service handles load appropriately and doesn't become a bottleneck.\n\n5. **Configuration Testing**: Test with various environment configurations and result set sizes to confirm rerank triggers under expected conditions.\n\n6. **Monitoring Verification**: Check that rerank service metrics appear in monitoring dashboards and logs show successful request/response cycles.\n\n7. **Regression Testing**: Verify that fixing rerank doesn't negatively impact overall search performance or introduce new issues.",
+        "status": "pending",
+        "dependencies": [
+          80,
+          83
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 85,
+        "title": "Enable and validate BM25 text scoring in hybrid search",
+        "description": "Fix the issue where textScore is always 0 in search results by implementing proper BM25 full-text search integration alongside vector search in the hybrid search pipeline.",
+        "details": "**IMPLEMENTATION APPROACH:**\n\n1. **PostgreSQL FTS Configuration Verification**\n   - Verify PostgreSQL full-text search indexes are properly created on relevant text fields (job descriptions, skills, etc.)\n   - Check if Portuguese text search configuration is set up correctly using `portuguese` dictionary\n   - Validate that tsvector columns are populated and maintained with proper triggers\n   - Ensure GIN indexes exist on tsvector columns for performance\n\n2. **BM25 Scoring Implementation in search-service.ts**\n   - Review current search query implementation to identify why textScore returns 0\n   - Implement proper PostgreSQL FTS query using `ts_rank_cd()` or custom BM25 scoring function\n   - Ensure text search query is executed alongside vector similarity search\n   - Add proper score normalization to make text scores comparable to vector similarity scores\n\n3. **Hybrid Query Integration**\n   - Modify search query to combine both vector similarity (pgvector) and text search results\n   - Implement score fusion algorithm that properly weights vector (0.65) and text (0.35) components\n   - Ensure both searches target the same candidate pool for consistent results\n   - Add debugging logs to track individual vector and text scores\n\n4. **Weight Balance Tuning and Validation**\n   - Test current weight configuration (vectorWeight: 0.65, textWeight: 0.35)\n   - Create test queries that should benefit from keyword matching vs semantic similarity\n   - Implement A/B testing framework to compare vector-only vs hybrid results\n   - Document optimal weight configurations for different query types\n\n5. **Query Performance Optimization**\n   - Ensure hybrid queries maintain p95 ≤ 1.2s performance requirement\n   - Optimize FTS query execution to avoid performance degradation\n   - Consider parallel execution of vector and text searches where possible",
+        "testStrategy": "1. **Direct Database Testing**: Execute raw PostgreSQL queries to verify FTS indexes and scoring functions work correctly, ensuring ts_rank_cd() returns non-zero scores for relevant text matches.\n\n2. **API Integration Testing**: Send test queries through hh-search-svc API and verify response includes non-zero textScore values alongside vectorScore in search results.\n\n3. **Keyword vs Semantic Testing**: Create test cases with exact keyword matches (should favor text scoring) vs conceptual matches (should favor vector scoring) to validate hybrid scoring balance.\n\n4. **Score Fusion Validation**: Compare search results from vector-only, text-only, and hybrid modes to ensure combined scores produce more relevant results than either method alone.\n\n5. **Performance Regression Testing**: Measure search latency before and after BM25 integration to ensure hybrid queries stay within p95 ≤ 1.2s requirement.\n\n6. **Portuguese Text Search Testing**: Validate that Portuguese job descriptions and candidate profiles are properly indexed and searchable using Portuguese-specific FTS configuration.",
+        "status": "pending",
+        "dependencies": [
+          80,
+          70
+        ],
+        "priority": "medium",
+        "subtasks": []
       }
     ],
     "metadata": {
@@ -1099,7 +1142,7 @@
       ],
       "created": "2025-10-08T20:08:03.513Z",
       "description": "Tasks for master context",
-      "updated": "2025-10-09T01:38:19.105Z"
+      "updated": "2025-10-09T12:42:13.225Z"
     }
   }
 }
