@@ -18,11 +18,33 @@ export async function getRedisClient(): Promise<any> {
   const config = getConfig();
   const logger = getLogger({ module: 'redis' });
 
-  const redisClient = createClient({
-    socket: {
+  // Check for TLS configuration from environment variables
+  const redisTls = process.env.REDIS_TLS === 'true';
+
+  logger.info(
+    {
       host: config.redis.host,
-      port: config.redis.port
+      port: config.redis.port,
+      tls: redisTls
     },
+    'Initializing Redis client...'
+  );
+
+  // Build socket configuration with optional TLS
+  const socketConfig: any = {
+    host: config.redis.host,
+    port: config.redis.port
+  };
+
+  if (redisTls) {
+    socketConfig.tls = {
+      rejectUnauthorized: process.env.REDIS_TLS_REJECT_UNAUTHORIZED !== 'false',
+      ca: process.env.REDIS_TLS_CA ? [process.env.REDIS_TLS_CA] : undefined
+    };
+  }
+
+  const redisClient = createClient({
+    socket: socketConfig,
     password: config.redis.password
   });
 
