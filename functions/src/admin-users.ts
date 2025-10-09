@@ -14,13 +14,53 @@ import {
 } from "./types/allowed-users";
 
 const firestore = admin.firestore();
+const auth = admin.auth();
 
+/**
+ * Assert that the authenticated user has admin or super_admin role
+ * Uses custom claims from Firebase Auth token
+ */
 async function assertAdmin(uid: string) {
-  const userDoc = await firestore.collection('users').doc(uid).get();
-  if (!userDoc.exists) throw new HttpsError("permission-denied", "User profile not found");
-  const role = userDoc.data()?.role;
+  const userRecord = await auth.getUser(uid);
+  const role = userRecord.customClaims?.role;
+
   if (role !== 'admin' && role !== 'super_admin') {
     throw new HttpsError("permission-denied", "Admin role required");
+  }
+}
+
+/**
+ * Set custom claims on Firebase Auth user
+ * This enables role-based security rules without database reads
+ */
+async function setUserCustomClaims(email: string, role: string, organizationId: string) {
+  try {
+    const userRecord = await auth.getUserByEmail(email);
+    await auth.setCustomUserClaims(userRecord.uid, {
+      role,
+      organization_id: organizationId,
+    });
+  } catch (error: any) {
+    // User doesn't exist in Firebase Auth yet - that's ok
+    // Custom claims will be set when they first sign in
+    if (error.code !== 'auth/user-not-found') {
+      throw error;
+    }
+  }
+}
+
+/**
+ * Clear custom claims from Firebase Auth user
+ */
+async function clearUserCustomClaims(email: string) {
+  try {
+    const userRecord = await auth.getUserByEmail(email);
+    await auth.setCustomUserClaims(userRecord.uid, {});
+  } catch (error: any) {
+    // User doesn't exist in Firebase Auth - that's ok
+    if (error.code !== 'auth/user-not-found') {
+      throw error;
+    }
   }
 }
 
@@ -28,7 +68,7 @@ export const addAllowedUser = onCall({ memory: "256MiB", timeoutSeconds: 60 }, a
   if (!request.auth) throw new HttpsError("unauthenticated", "Authentication required");
   await assertAdmin(request.auth.uid);
 
-  const { email, role } = request.data as AddAllowedUserInput || {};
+  const { email, role, organization_id } = request.data as AddAllowedUserInput || {};
   if (!email || typeof email !== 'string') {
     throw new HttpsError("invalid-argument", "email is required");
   }
@@ -43,6 +83,10 @@ export const addAllowedUser = onCall({ memory: "256MiB", timeoutSeconds: 60 }, a
   if (!isValidRole(userRole)) {
     throw new HttpsError("invalid-argument", "Invalid role. Must be 'admin', 'recruiter', or 'super_admin'");
   }
+
+  // Get organization_id from caller's custom claims or use provided value
+  // Phase I: Default to 'ella-org' for all Ella employees
+  const orgId = organization_id || request.auth.token.organization_id || 'ella-org';
 
   const normalizedEmail = normalizeEmail(email);
   const docId = emailToDocId(normalizedEmail);
@@ -67,6 +111,9 @@ export const addAllowedUser = onCall({ memory: "256MiB", timeoutSeconds: 60 }, a
     await firestore.collection('allowed_users').doc(docId).set(data, { merge: true });
   }
 
+  // Set custom claims on Firebase Auth user if they exist
+  await setUserCustomClaims(normalizedEmail, userRole, orgId);
+
   return { success: true };
 });
 
@@ -89,6 +136,10 @@ export const removeAllowedUser = onCall({ memory: "256MiB", timeoutSeconds: 60 }
   }
 
   await firestore.collection('allowed_users').doc(docId).delete();
+
+  // Clear custom claims from Firebase Auth user
+  await clearUserCustomClaims(normalizedEmail);
+
   return { success: true };
 });
 
@@ -132,6 +183,11 @@ export const setAllowedUserRole = onCall({ memory: "256MiB", timeoutSeconds: 60 
     updated_at: admin.firestore.FieldValue.serverTimestamp(),
   };
   await firestore.collection('allowed_users').doc(docId).set(data, { merge: true });
+
+  // Update custom claims on Firebase Auth user
+  const orgId = request.auth.token.organization_id || 'ella-org';
+  await setUserCustomClaims(normalizedEmail, role, orgId);
+
   return { success: true };
 });
 
