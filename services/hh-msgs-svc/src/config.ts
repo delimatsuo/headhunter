@@ -3,6 +3,8 @@ import { getConfig as getBaseConfig, type ServiceConfig } from '@hh/common';
 export interface MsgsRedisConfig {
   url: string;
   tls: boolean;
+  tlsRejectUnauthorized: boolean;
+  caCert?: string;
   keyPrefix: string;
   skillTtlSeconds: number;
   roleTtlSeconds: number;
@@ -86,7 +88,9 @@ export function getMsgsServiceConfig(): MsgsServiceConfig {
 
   const redis: MsgsRedisConfig = {
     url: process.env.MSGS_REDIS_URL ?? `redis://${base.redis.host}:${base.redis.port}`,
-    tls: parseBoolean(process.env.MSGS_REDIS_TLS, false),
+    tls: parseBoolean(process.env.MSGS_REDIS_TLS ?? process.env.REDIS_TLS, false),
+    tlsRejectUnauthorized: parseBoolean(process.env.MSGS_REDIS_TLS_REJECT_UNAUTHORIZED ?? process.env.REDIS_TLS_REJECT_UNAUTHORIZED, true),
+    caCert: process.env.MSGS_REDIS_TLS_CA ?? process.env.REDIS_TLS_CA,
     keyPrefix: process.env.MSGS_REDIS_KEY_PREFIX ?? 'hh:msgs',
     skillTtlSeconds: parseNumber(process.env.MSGS_CACHE_TTL_SKILLS, 3600, 60),
     roleTtlSeconds: parseNumber(process.env.MSGS_CACHE_TTL_ROLES, 7200, 60),

@@ -5,6 +5,8 @@ export interface EvidenceRedisConfig {
   port: number;
   password?: string;
   tls: boolean;
+  tlsRejectUnauthorized: boolean;
+  caCert?: string;
   keyPrefix: string;
   ttlSeconds: number;
   staleWhileRevalidateSeconds: number;
@@ -79,7 +81,9 @@ export function getEvidenceServiceConfig(): EvidenceServiceConfig {
     host: process.env.EVIDENCE_REDIS_HOST ?? base.redis.host,
     port: parseNumber(process.env.EVIDENCE_REDIS_PORT, base.redis.port),
     password: process.env.EVIDENCE_REDIS_PASSWORD ?? base.redis.password,
-    tls: parseBoolean(process.env.EVIDENCE_REDIS_TLS, false),
+    tls: parseBoolean(process.env.EVIDENCE_REDIS_TLS ?? process.env.REDIS_TLS, false),
+    tlsRejectUnauthorized: parseBoolean(process.env.EVIDENCE_REDIS_TLS_REJECT_UNAUTHORIZED ?? process.env.REDIS_TLS_REJECT_UNAUTHORIZED, true),
+    caCert: process.env.EVIDENCE_REDIS_TLS_CA ?? process.env.REDIS_TLS_CA,
     keyPrefix: process.env.EVIDENCE_REDIS_PREFIX ?? 'hh:evidence',
     ttlSeconds: Math.max(30, parseNumber(process.env.EVIDENCE_CACHE_TTL_SECONDS, base.runtime.cacheTtlSeconds ?? 300)),
     staleWhileRevalidateSeconds: Math.max(

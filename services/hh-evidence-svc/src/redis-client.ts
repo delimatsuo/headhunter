@@ -23,23 +23,36 @@ export class EvidenceRedisClient {
     }
 
     const hosts = this.config.host.split(',').map((host) => host.trim()).filter(Boolean);
+    const tlsOptions = this.config.tls
+      ? (() => {
+          const options: Record<string, unknown> = {
+            rejectUnauthorized: this.config.tlsRejectUnauthorized
+          };
+          if (this.config.caCert) {
+            options.ca = [this.config.caCert];
+          }
+          return options;
+        })()
+      : undefined;
 
     if (hosts.length > 1) {
       const nodes: ClusterNode[] = hosts.map((host) => ({ host, port: this.config.port }));
       const options: ClusterOptions = {
         redisOptions: {
           password: this.config.password,
-          tls: this.config.tls ? {} : undefined
+          tls: tlsOptions
         }
       };
+      this.logger.info({ tls: tlsOptions ?? null, cluster: true }, 'Initializing Evidence Redis cluster client.');
       this.client = new Cluster(nodes, options);
     } else {
       const options: RedisOptions = {
         host: hosts[0] ?? this.config.host,
         port: this.config.port,
         password: this.config.password,
-        tls: this.config.tls ? {} : undefined
+        tls: tlsOptions
       };
+      this.logger.info({ tls: tlsOptions ?? null, cluster: false, host: options.host, port: options.port }, 'Initializing Evidence Redis client.');
       this.client = new Redis(options);
     }
 

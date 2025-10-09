@@ -33,6 +33,18 @@ export class MsgsRedisClient {
       return new URL(normalized);
     });
 
+    const tlsOptions = this.config.tls
+      ? (() => {
+          const options: Record<string, unknown> = {
+            rejectUnauthorized: this.config.tlsRejectUnauthorized
+          };
+          if (this.config.caCert) {
+            options.ca = [this.config.caCert];
+          }
+          return options;
+        })()
+      : undefined;
+
     if (parsedUrls.length > 1) {
       const nodes: ClusterNode[] = parsedUrls.map((urlObj) => ({
         host: urlObj.hostname,
@@ -40,7 +52,7 @@ export class MsgsRedisClient {
       }));
 
       const redisOptions: ClusterOptions['redisOptions'] = {
-        tls: this.config.tls ? {} : undefined,
+        tls: tlsOptions,
         keyPrefix: `${this.config.keyPrefix}:`
       };
 
@@ -59,14 +71,16 @@ export class MsgsRedisClient {
         redisOptions.password = decodeURIComponent(passwords[0]);
       }
 
+      this.logger.info({ tls: tlsOptions ?? null, cluster: true }, 'Initializing MSGS Redis cluster client.');
       this.client = new Cluster(nodes, { redisOptions });
     } else {
       const url = parsedUrls[0] ?? new URL(this.config.url.startsWith('redis://') || this.config.url.startsWith('rediss://')
         ? this.config.url
         : `redis://${this.config.url}`);
 
+      this.logger.info({ tls: tlsOptions ?? null, cluster: false, url: url.host }, 'Initializing MSGS Redis client.');
       this.client = new Redis(url.toString(), {
-        tls: this.config.tls ? {} : undefined,
+        tls: tlsOptions,
         keyPrefix: `${this.config.keyPrefix}:`,
         username: url.username ? decodeURIComponent(url.username) : undefined,
         password: url.password ? decodeURIComponent(url.password) : undefined
