@@ -33,7 +33,20 @@ export async function getRedisClient(): Promise<any> {
   // Build socket configuration with optional TLS
   const socketConfig: any = {
     host: config.redis.host,
-    port: config.redis.port
+    port: config.redis.port,
+    // Critical: Enable TCP keepalive to prevent connection resets
+    keepAlive: 5000, // Send keepalive probes every 5 seconds
+    // Reconnection strategy
+    reconnectStrategy: (retries: number) => {
+      if (retries > 10) {
+        logger.error('Too many Redis reconnection attempts, giving up');
+        return new Error('Too many reconnection attempts');
+      }
+      // Exponential backoff: 100ms, 200ms, 400ms, 800ms, etc. (max 3s)
+      const delay = Math.min(100 * Math.pow(2, retries), 3000);
+      logger.info({ retries, delay }, 'Reconnecting to Redis...');
+      return delay;
+    }
   };
 
   if (redisTls) {
@@ -48,8 +61,23 @@ export async function getRedisClient(): Promise<any> {
     password: config.redis.password
   });
 
+  // Handle errors - clear cached client on fatal errors
   redisClient.on('error', (error) => {
     logger.error({ error }, 'Redis client encountered an error.');
+    // On connection errors, clear the cached client so next call creates a new one
+    if (error.code === 'ECONNRESET' || error.code === 'ECONNREFUSED') {
+      logger.warn('Clearing cached Redis client due to connection error');
+      client = null;
+    }
+  });
+
+  // Handle reconnection events
+  redisClient.on('reconnecting', () => {
+    logger.info('Redis client reconnecting...');
+  });
+
+  redisClient.on('ready', () => {
+    logger.info('Redis client ready');
   });
 
   connecting = redisClient
