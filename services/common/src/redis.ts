@@ -52,7 +52,10 @@ export async function getRedisClient(): Promise<any> {
   if (redisTls) {
     socketConfig.tls = {
       rejectUnauthorized: process.env.REDIS_TLS_REJECT_UNAUTHORIZED !== 'false',
-      ca: process.env.REDIS_TLS_CA ? [process.env.REDIS_TLS_CA] : undefined
+      ca: process.env.REDIS_TLS_CA ? [process.env.REDIS_TLS_CA] : undefined,
+      // Required for TLS verification to work with IP addresses
+      servername: config.redis.host,
+      checkServerIdentity: () => undefined  // Skip hostname verification for IP-based Redis
     };
   }
 
