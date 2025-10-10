@@ -138,7 +138,7 @@ export class EnrichmentWorker {
 
     const baseClient = await this.store.getRedis();
     this.queueClient = baseClient.duplicate();
-    await this.queueClient.connect();
+    // ioredis auto-connects on first command, no need to call connect()
 
     this.running = true;
     for (let i = 0; i < this.config.queue.maxConcurrency; i += 1) {
