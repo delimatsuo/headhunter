@@ -113,7 +113,7 @@ export function getRerankServiceConfig(): RerankServiceConfig {
     apiKey: process.env.TOGETHER_API_KEY ?? null,
     baseUrl: normalizeUrl(process.env.TOGETHER_API_BASE_URL, 'https://api.together.xyz/v1'),
     model: process.env.TOGETHER_MODEL ?? 'qwen2.5-32b-instruct',
-    timeoutMs: clamp(parseNumber(process.env.TOGETHER_TIMEOUT_MS, 320), { min: 150, max: 1000 }),
+    timeoutMs: clamp(parseNumber(process.env.TOGETHER_TIMEOUT_MS, 320), { min: 150, max: 10000 }),
     retries: clamp(parseNumber(process.env.TOGETHER_RERANK_RETRIES, 2), { min: 0, max: 5 }),
     retryDelayMs: clamp(parseNumber(process.env.TOGETHER_RERANK_RETRY_DELAY_MS, 50), { min: 0, max: 1000 }),
     circuitBreakerThreshold: clamp(parseNumber(process.env.TOGETHER_CB_FAILURES, 4), { min: 1, max: 20 }),

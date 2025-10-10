@@ -15,7 +15,7 @@ spec:
         autoscaling.knative.dev/maxScale: "${SERVICE_MAX_SCALE}"
         autoscaling.knative.dev/minScale: "${SERVICE_MIN_SCALE}"
         run.googleapis.com/vpc-access-connector: projects/${SERVICE_PROJECT_ID}/locations/${SERVICE_REGION}/connectors/${VPC_CONNECTOR}
-        run.googleapis.com/vpc-access-egress: all-traffic
+        run.googleapis.com/vpc-access-egress: private-ranges-only
         run.googleapis.com/cloudsql-instances: ${SERVICE_PROJECT_ID}:${SERVICE_REGION}:${SQL_INSTANCE}
     spec:
       serviceAccountName: ${SERVICE_ACCOUNT}
@@ -39,7 +39,7 @@ spec:
             - name: REDIS_TLS
               value: "true"
             - name: REDIS_TLS_REJECT_UNAUTHORIZED
-              value: "true"
+              value: "false"
             - name: REDIS_TLS_CA
               value: |-
                 -----BEGIN CERTIFICATE-----
@@ -76,13 +76,15 @@ spec:
             - name: TOGETHER_MODEL
               value: ${TOGETHER_AI_MODEL}
             - name: TOGETHER_TIMEOUT_MS
-              value: "900"
+              value: "5000"
             - name: RERANK_CACHE_TTL_SECONDS
               value: "180"
+            - name: RERANK_CACHE_DISABLE
+              value: "true"
             - name: RERANK_MAX_CANDIDATES
               value: "50"
             - name: RERANK_SLA_TARGET_MS
-              value: "${TOGETHER_AI_P95_TARGET_MS}"
+              value: "3000"
             - name: ENABLE_GATEWAY_TOKENS
               value: "false"
             - name: AUTH_MODE
