@@ -3,7 +3,7 @@ import { performance } from 'node:perf_hooks';
 import { setTimeout as delay } from 'node:timers/promises';
 import type { Logger } from 'pino';
 import { getLogger } from '@hh/common';
-import type { RedisClientType } from 'redis';
+import type { Redis } from 'ioredis';
 
 import type { EnrichServiceConfig } from './config';
 import { EnrichmentJobStore } from './job-store';
@@ -102,7 +102,7 @@ export class EnrichmentWorker {
   private readonly metricsLogger = this.logger.child({ component: 'worker-metrics' });
   private readonly embeddingClient: EmbeddingClient;
   private running = false;
-  private queueClient: RedisClientType | null = null;
+  private queueClient: Redis | null = null;
   private readonly completionSamples: number[] = [];
   private readonly pythonBreaker: CircuitBreaker;
   private activeJobs = 0;
@@ -164,11 +164,11 @@ export class EnrichmentWorker {
     while (this.running) {
       try {
         const timeoutSeconds = Math.max(1, Math.round(this.config.queue.pollIntervalMs / 1000));
-        const res = await this.queueClient.brPop(this.config.queue.queueKey, timeoutSeconds);
+        const res = await this.queueClient.brpop(this.config.queue.queueKey, timeoutSeconds);
         if (!res) {
           continue;
         }
-        const jobId = res.element;
+        const jobId = res[1];  // brpop returns [key, value]
         await this.processJob(jobId);
       } catch (error) {
         this.logger.error({ error }, 'Worker loop encountered an error.');
@@ -273,7 +273,7 @@ export class EnrichmentWorker {
   }
 
   private async runPythonWithRetries(
-    redis: RedisClientType,
+    redis: Redis,
     record: EnrichmentJobRecord,
     jobLogger: Logger
   ): Promise<PythonJobResult> {
