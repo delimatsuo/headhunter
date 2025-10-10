@@ -123,12 +123,12 @@ export class EmbeddingClient {
       return metrics;
     }
 
-    const text = typeof candidate?.resume_text === 'string' ? (candidate.resume_text as string) : undefined;
+    const text = this.buildSearchableProfile(candidate);
     if (!text || text.trim().length === 0) {
-      const message = 'Skipping embedding upsert because resume text is missing.';
+      const message = 'Skipping embedding upsert because searchable profile could not be built.';
       this.logger.warn({ jobId: job.jobId }, message);
       jobLogger?.warn({ jobId: job.jobId }, message);
-      const skipReason = 'missing_resume_text';
+      const skipReason = 'missing_searchable_data';
       const metrics: EmbeddingOperationMetrics = { success: false, durationMs: 0, attempts: 0, skipped: true, skipReason };
       this.metricsExporter?.recordEmbedOutcome({
         tenantId: job.tenantId,
@@ -261,6 +261,129 @@ export class EmbeddingClient {
     });
 
     return metrics;
+  }
+
+  /**
+   * Builds a searchable profile from enriched candidate data.
+   * Prioritizes structured enrichment fields over raw resume text.
+   */
+  private buildSearchableProfile(candidate: Record<string, unknown>): string {
+    const parts: string[] = [];
+
+    // Type-safe field extraction
+    const getField = (path: string): unknown => {
+      const keys = path.split('.');
+      let current: any = candidate;
+      for (const key of keys) {
+        if (current && typeof current === 'object') {
+          current = current[key];
+        } else {
+          return undefined;
+        }
+      }
+      return current;
+    };
+
+    const getArray = (path: string): string[] => {
+      const value = getField(path);
+      return Array.isArray(value) ? value.filter((v) => typeof v === 'string') : [];
+    };
+
+    const getString = (path: string): string | undefined => {
+      const value = getField(path);
+      return typeof value === 'string' ? value : undefined;
+    };
+
+    const getNumber = (path: string): number | undefined => {
+      const value = getField(path);
+      return typeof value === 'number' ? value : undefined;
+    };
+
+    // 1. Technical Skills (HIGHEST PRIORITY for technical roles)
+    const primarySkills = getArray('technical_assessment.primary_skills');
+    const coreCompetencies = getArray('skill_assessment.technical_skills.core_competencies');
+    const allSkills = [...new Set([...primarySkills, ...coreCompetencies])];
+    if (allSkills.length > 0) {
+      parts.push(`Technical Skills: ${allSkills.slice(0, 15).join(', ')}`);
+    }
+
+    // 2. Current Role and Title
+    const currentRole = getString('experience_analysis.current_role');
+    const currentTitle = getString('current_title');
+    if (currentRole) {
+      parts.push(`Current Role: ${currentRole}`);
+    } else if (currentTitle) {
+      parts.push(`Current Role: ${currentTitle}`);
+    }
+
+    // 3. Experience and Seniority
+    const totalYears = getNumber('experience_analysis.total_years');
+    const yearsExperience = getNumber('career_trajectory.years_experience');
+    const years = totalYears ?? yearsExperience;
+    if (years !== undefined) {
+      parts.push(`Experience: ${years} years`);
+    }
+
+    const seniorityLevel = getString('personal_details.seniority_level');
+    const currentLevel = getString('career_trajectory.current_level');
+    const seniority = seniorityLevel ?? currentLevel;
+    if (seniority) {
+      parts.push(`Seniority: ${seniority}`);
+    }
+
+    // 4. Domain Expertise
+    const domainExpertise = getArray('skill_assessment.domain_expertise');
+    if (domainExpertise.length > 0) {
+      parts.push(`Domain: ${domainExpertise.slice(0, 5).join(', ')}`);
+    }
+
+    // 5. Role Type (IC vs Leadership)
+    const hasLeadership = getField('leadership_scope.has_leadership');
+    const teamSize = getNumber('leadership_scope.team_size');
+    if (hasLeadership === true && teamSize) {
+      parts.push(`Leadership: Managing ${teamSize} people`);
+    } else if (hasLeadership === false) {
+      parts.push(`Role Type: Individual Contributor`);
+    }
+
+    // 6. Ideal Roles (from recruiter recommendations)
+    const idealRoles = getArray('recruiter_recommendations.ideal_roles');
+    const bestFitRoles = getArray('recruiter_insights.best_fit_roles');
+    const roles = [...new Set([...idealRoles, ...bestFitRoles])];
+    if (roles.length > 0) {
+      parts.push(`Best Fit: ${roles.slice(0, 5).join(', ')}`);
+    }
+
+    // 7. Executive Summary
+    const oneLiner = getString('executive_summary.one_line_pitch');
+    if (oneLiner) {
+      parts.push(`Summary: ${oneLiner}`);
+    }
+
+    // 8. Searchability Keywords
+    const keywords = getArray('searchability.keywords');
+    const searchTags = getArray('search_optimization.keywords');
+    const allKeywords = [...new Set([...keywords, ...searchTags])];
+    if (allKeywords.length > 0) {
+      parts.push(`Keywords: ${allKeywords.slice(0, 20).join(', ')}`);
+    }
+
+    // 9. Company Pedigree
+    const companyTier = getString('company_pedigree.company_tier');
+    if (companyTier) {
+      parts.push(`Company Tier: ${companyTier}`);
+    }
+
+    // 10. Fallback: use resume_text if no enriched data available
+    if (parts.length === 0) {
+      const resumeText = getString('resume_text');
+      if (resumeText) {
+        this.logger.warn('No enriched data found, falling back to resume_text');
+        return resumeText;
+      }
+    }
+
+    return parts.join('\n');
   }
 
   private async sendRequest(job: EnrichmentJobRecord, payload: string): Promise<{ statusCode: number }> {
