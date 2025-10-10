@@ -1,13 +1,13 @@
-import { createClient } from 'redis';
+import Redis from 'ioredis';
 
 import { getConfig } from './config';
 import { getLogger } from './logger';
 
-let client: any | null = null;
-let connecting: Promise<any> | null = null;
+let client: Redis | null = null;
+let connecting: Promise<Redis> | null = null;
 
-export async function getRedisClient(): Promise<any> {
-  if (client && client.isReady) {
+export async function getRedisClient(): Promise<Redis> {
+  if (client && client.status === 'ready') {
     return client;
   }
 
@@ -30,42 +30,35 @@ export async function getRedisClient(): Promise<any> {
     'Initializing Redis client...'
   );
 
-  // Build socket configuration with optional TLS
-  const socketConfig: any = {
+  // Build TLS options if enabled
+  const tlsOptions = redisTls
+    ? {
+        rejectUnauthorized: process.env.REDIS_TLS_REJECT_UNAUTHORIZED !== 'false',
+        ca: process.env.REDIS_TLS_CA ? [process.env.REDIS_TLS_CA] : undefined
+      }
+    : undefined;
+
+  const redisClient = new Redis({
     host: config.redis.host,
     port: config.redis.port,
-    // Critical: Enable TCP keepalive to prevent connection resets
-    keepAlive: 5000, // Send keepalive probes every 5 seconds
-    // Reconnection strategy
-    reconnectStrategy: (retries: number) => {
-      if (retries > 10) {
+    password: config.redis.password,
+    tls: tlsOptions,
+    retryStrategy: (times: number) => {
+      if (times > 10) {
         logger.error('Too many Redis reconnection attempts, giving up');
-        return new Error('Too many reconnection attempts');
+        return null;  // Stop retrying
       }
       // Exponential backoff: 100ms, 200ms, 400ms, 800ms, etc. (max 3s)
-      const delay = Math.min(100 * Math.pow(2, retries), 3000);
-      logger.info({ retries, delay }, 'Reconnecting to Redis...');
+      const delay = Math.min(100 * Math.pow(2, times), 3000);
+      logger.info({ retries: times, delay }, 'Reconnecting to Redis...');
       return delay;
-    }
-  };
-
-  if (redisTls) {
-    socketConfig.tls = {
-      rejectUnauthorized: process.env.REDIS_TLS_REJECT_UNAUTHORIZED !== 'false',
-      ca: process.env.REDIS_TLS_CA ? [process.env.REDIS_TLS_CA] : undefined,
-      // Required for TLS verification to work with IP addresses
-      servername: config.redis.host,
-      checkServerIdentity: () => undefined  // Skip hostname verification for IP-based Redis
-    };
-  }
-
-  const redisClient = createClient({
-    socket: socketConfig,
-    password: config.redis.password
+    },
+    // Enable TCP keepalive
+    keepAlive: 5000
   });
 
   // Handle errors - clear cached client on fatal errors
-  redisClient.on('error', (error) => {
+  redisClient.on('error', (error: any) => {
     logger.error({ error }, 'Redis client encountered an error.');
     // On connection errors, clear the cached client so next call creates a new one
     if (error.code === 'ECONNRESET' || error.code === 'ECONNREFUSED') {
@@ -83,19 +76,34 @@ export async function getRedisClient(): Promise<any> {
     logger.info('Redis client ready');
   });
 
-  connecting = redisClient
-    .connect()
-    .then(() => {
+  redisClient.on('connect', () => {
+    logger.info('Connected to Redis.');
+  });
+
+  connecting = new Promise((resolve, reject) => {
+    const readyHandler = () => {
       client = redisClient;
       connecting = null;
-      logger.info('Connected to Redis.');
-      return redisClient;
-    })
-    .catch((error) => {
+      logger.info('Redis connection established.');
+      cleanup();
+      resolve(redisClient);
+    };
+
+    const errorHandler = (error: Error) => {
       connecting = null;
       logger.error({ error }, 'Failed to connect to Redis.');
-      throw error;
-    });
+      cleanup();
+      reject(error);
+    };
+
+    const cleanup = () => {
+      redisClient.off('ready', readyHandler);
+      redisClient.off('error', errorHandler);
+    };
+
+    redisClient.once('ready', readyHandler);
+    redisClient.once('error', errorHandler);
+  });
 
   return connecting;
 }
@@ -105,7 +113,7 @@ export async function closeRedisClient(): Promise<void> {
     await connecting.catch(() => undefined);
   }
 
-  if (client && client.isReady) {
+  if (client && client.status === 'ready') {
     await client.quit();
   }
 
