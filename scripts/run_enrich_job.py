@@ -6,8 +6,20 @@ import argparse
 import asyncio
 import json
 import sys
+import logging
 from pathlib import Path
 from typing import Any, Dict
+
+# Ensure stdout is unbuffered for immediate log visibility
+sys.stdout.reconfigure(line_buffering=True)
+sys.stderr.reconfigure(line_buffering=True)
+
+# Configure logging to stdout
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
 
 # Ensure repository root is on path
 ROOT = Path(__file__).resolve().parents[1]

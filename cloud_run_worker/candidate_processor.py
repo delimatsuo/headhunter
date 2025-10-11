@@ -38,8 +38,14 @@ class CandidateProcessor:
         
     async def initialize(self):
         """Initialize processor components"""
+        logger.info("Initializing Together AI client...")
         await self.together_ai_client.initialize()
+        logger.info("Together AI client initialized")
+
+        logger.info("Initializing Firestore client...")
         await self.firestore_client.initialize()
+        logger.info("Firestore client initialized")
+
         logger.info("Candidate processor initialized")
     
     async def shutdown(self):
@@ -173,27 +179,35 @@ class CandidateProcessor:
     async def process_single_candidate(self, candidate_id: str) -> ProcessingResult:
         """
         Process a single candidate through the complete enrichment pipeline
-        
+
         Args:
             candidate_id: ID of candidate to process
-            
+
         Returns:
             ProcessingResult: Result of processing
         """
         start_time = datetime.now()
-        
+        logger.info(f"[DEBUG] Starting enrichment for candidate: {candidate_id}")
+
         try:
             # Update status
+            logger.info(f"[DEBUG] Updating status to IN_PROGRESS for: {candidate_id}")
             self.update_processing_status(candidate_id, ProcessingStatus.IN_PROGRESS)
-            
+
             # Fetch candidate data
+            logger.info(f"[DEBUG] Fetching candidate data for: {candidate_id}")
             candidate_data = await self.fetch_candidate_data(candidate_id)
-            
+            logger.info(f"[DEBUG] Fetched candidate data for: {candidate_id}")
+
             # Process with Together AI
+            logger.info(f"[DEBUG] Calling Together AI API for: {candidate_id}")
             enriched_data = await self.process_with_together_ai(candidate_data)
-            
+            logger.info(f"[DEBUG] Together AI API completed for: {candidate_id}")
+
             # Store results
+            logger.info(f"[DEBUG] Storing results for: {candidate_id}")
             success = await self.store_processing_result(candidate_id, enriched_data)
+            logger.info(f"[DEBUG] Results stored for: {candidate_id}")
             
             if not success:
                 raise Exception("Failed to store processing results")
