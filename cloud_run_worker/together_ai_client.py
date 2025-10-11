@@ -31,8 +31,12 @@ class TogetherAIClient:
     async def initialize(self):
         """Initialize HTTP session"""
         connector = aiohttp.TCPConnector(limit=100, ttl_dns_cache=300)
-        timeout = aiohttp.ClientTimeout(total=self.timeout)
-        
+        timeout = aiohttp.ClientTimeout(
+            total=self.timeout,      # Overall timeout (20s default)
+            connect=5,               # Connection timeout (5s)
+            sock_read=self.timeout-5 # Read timeout (15s default)
+        )
+
         self.session = aiohttp.ClientSession(
             connector=connector,
             timeout=timeout,
@@ -42,8 +46,8 @@ class TogetherAIClient:
                 "User-Agent": "Headhunter-Worker/1.0"
             }
         )
-        
-        logger.info("Together AI client initialized")
+
+        logger.info(f"Together AI client initialized (timeout={self.timeout}s, max_retries={self.max_retries})")
     
     async def shutdown(self):
         """Cleanup HTTP session"""

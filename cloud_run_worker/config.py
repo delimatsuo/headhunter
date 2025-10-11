@@ -27,8 +27,8 @@ class Config:
         # Together AI configuration (align with Stage 1 model env)
         self.together_ai_model = os.getenv("TOGETHER_MODEL_STAGE1", os.getenv("TOGETHER_AI_MODEL", "Qwen/Qwen2.5-32B-Instruct"))
         self.together_ai_base_url = os.getenv("TOGETHER_AI_BASE_URL", "https://api.together.xyz/v1")
-        self.together_ai_timeout = int(os.getenv("TOGETHER_AI_TIMEOUT", "60"))
-        self.together_ai_max_retries = int(os.getenv("TOGETHER_AI_MAX_RETRIES", "3"))
+        self.together_ai_timeout = int(os.getenv("TOGETHER_AI_TIMEOUT", "20"))  # Reduced from 60s - typical response 3-12s
+        self.together_ai_max_retries = int(os.getenv("TOGETHER_AI_MAX_RETRIES", "1"))  # Reduced from 3 - LLM failures rarely transient
         
         # Firestore configuration
         self.firestore_collection = os.getenv("FIRESTORE_COLLECTION", "candidates")
@@ -37,7 +37,7 @@ class Config:
         # Processing configuration
         self.max_concurrent_processes = int(os.getenv("MAX_CONCURRENT_PROCESSES", "10"))
         self.processing_timeout = int(os.getenv("PROCESSING_TIMEOUT", "300"))  # 5 minutes
-        self.retry_max_attempts = int(os.getenv("RETRY_MAX_ATTEMPTS", "3"))
+        self.retry_max_attempts = int(os.getenv("RETRY_MAX_ATTEMPTS", "1"))  # Reduced from 3 - single retry sufficient
         self.retry_base_delay = float(os.getenv("RETRY_BASE_DELAY", "1.0"))
         
         # Region and providers per PRD
