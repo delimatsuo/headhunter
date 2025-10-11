@@ -7,19 +7,24 @@ import asyncio
 import json
 import sys
 import logging
+import os
 from pathlib import Path
 from typing import Any, Dict
 
-# Ensure stdout is unbuffered for immediate log visibility
-sys.stdout.reconfigure(line_buffering=True)
-sys.stderr.reconfigure(line_buffering=True)
+# Ensure unbuffered output (Cloud Run compatible)
+os.environ['PYTHONUNBUFFERED'] = '1'
 
-# Configure logging to stdout
+# Configure logging to stdout with immediate flushing
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
-    handlers=[logging.StreamHandler(sys.stdout)]
+    handlers=[logging.StreamHandler(sys.stdout)],
+    force=True
 )
+
+# Test that logging works immediately
+logger = logging.getLogger(__name__)
+logger.info("[STARTUP] Python enrichment script starting...")
 
 # Ensure repository root is on path
 ROOT = Path(__file__).resolve().parents[1]
