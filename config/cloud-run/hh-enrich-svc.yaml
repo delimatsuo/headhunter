@@ -79,6 +79,8 @@ spec:
                   key: latest
             - name: ENRICH_MAX_CONCURRENCY
               value: "4"
+            - name: ENRICH_JOB_TIMEOUT_MS
+              value: "270000"
             - name: ENABLE_REQUEST_LOGGING
               value: "true"
             - name: ENABLE_GATEWAY_TOKENS
