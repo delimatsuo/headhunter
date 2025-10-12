@@ -1,0 +1,140 @@
+{
+  "explicit_skills": {
+    "technical_skills": [
+      {"skill": "Full Stack Development", "confidence": 100, "evidence": ["Full Stack Developer at Showmaker Tecnologia, Vega Technologies"]},
+      {"skill": "PHP Development", "confidence": 100, "evidence": ["PHP Developer at Belo Horizonte Area"]},
+      {"skill": ".Net Development", "confidence": 100, "evidence": ["Net Developer at Hexagon Mining"]}
+    ],
+    "tools_technologies": [
+      {"skill": "JavaScript", "confidence": 100, "evidence": ["Full Stack Developer role"]},
+      {"skill": "HTML/CSS", "confidence": 100, "evidence": ["Full Stack Developer role"]},
+      {"skill": "SQL", "confidence": 100, "evidence": ["Full Stack Developer role"]},
+      {"skill": ".Net Framework", "confidence": 100, "evidence": ["Net Developer at Hexagon Mining"]},
+      {"skill": "PHP", "confidence": 100, "evidence": ["PHP Developer at Belo Horizonte Area"]}
+    ],
+    "soft_skills": [
+      {"skill": "Problem Solving", "confidence": 100, "evidence": ["Full Stack Developer role"]},
+      {"skill": "Teamwork", "confidence": 100, "evidence": ["Full Stack Developer role"]},
+      {"skill": "Adaptability", "confidence": 100, "evidence": ["Remote work experience"]}
+    ],
+    "languages": [
+      {"skill": "Portuguese", "confidence": 100, "evidence": ["native/fluent"]},
+      {"skill": "English", "confidence": 80, "evidence": ["likely based on international work experience"]}
+    ]
+  },
+  "inferred_skills": {
+    "highly_probable_skills": [
+      {"skill": "Agile Methodologies", "confidence": 95, "reasoning": "Senior Software Engineer roles typically involve agile practices", "skill_category": "technical"},
+      {"skill": "Version Control (Git)", "confidence": 95, "reasoning": "Essential for software development", "skill_category": "technical"},
+      {"skill": "RESTful APIs", "confidence": 95, "reasoning": "Common in full stack development", "skill_category": "technical"}
+    ],
+    "probable_skills": [
+      {"skill": "Microservices Architecture", "confidence": 80, "reasoning": "Increasingly common in enterprise software development", "skill_category": "technical"},
+      {"skill": "DevOps Practices", "confidence": 80, "reasoning": "Important for efficient software delivery", "skill_category": "technical"},
+      {"skill": "Scalability and Performance Optimization", "confidence": 80, "reasoning": "Key for senior software engineers", "skill_category": "technical"}
+    ],
+    "likely_skills": [
+      {"skill": "Database Design and Optimization", "confidence": 65, "reasoning": "Common for full stack developers", "skill_category": "technical"},
+      {"skill": "UI/UX Design", "confidence": 65, "reason: "Often required for full stack developers", "skill_category": "technical"}
+    ],
+    "possible_skills": [
+      {"skill": "Machine Learning", "confidence": 50, "reasoning": "Not explicitly mentioned but common in tech roles", "skill_category": "technical"}
+    ]
+  },
+  "role_based_competencies": {
+    "current_role_competencies": {
+      "role": "Senior Software Engineer",
+      "core_competencies": ["Full Stack Development", "Agile Methodologies", "Version Control (Git)"],
+      "typical_tools": ["JavaScript", "HTML/CSS", "SQL", "Git", "RESTful APIs"],
+      "domain_knowledge": ["Web Application Development", "Software Architecture"]
+    },
+    "historical_competencies": [
+      {
+        "role": "Full Stack Developer",
+        "core_competencies": ["Full Stack Development", "Agile Methodologies", "Version Control (Git)"],
+        "typical_tools": ["JavaScript", "HTML/CSS", "SQL", "Git", "RESTful APIs"],
+        "domain_knowledge": ["Web Application Development", "Software Architecture"]
+      },
+      {
+        "role": "Net Developer",
+        "core_competencies": [".Net Development", "Agile Methodologies", "Version Control (Git)"],
+        "typical_tools": [".Net Framework", "SQL", "Git", "RESTful APIs"],
+        "domain_knowledge": ["Enterprise Software Development"]
+      },
+      {
+        "role": "PHP Developer",
+        "core_competencies": ["PHP Development", "Agile Methodologies", "Version Control (Git)"],
+        "typical_tools": ["PHP", "SQL", "Git", "RESTful APIs"],
+        "domain_knowledge": ["Web Application Development"]
+      }
+    ]
+  },
+  "company_context_skills": {
+    "company_specific": [],
+    "industry_skills": ["Web Application Development", "Software Architecture", "Enterprise Software Development"]
+  },
+  "skill_evolution_analysis": {
+    "skill_trajectory": "Consistent focus on full stack development with a progression in senior roles",
+    "emerging_skills": ["Microservices Architecture", "DevOps Practices", "Scalability and Performance Optimization"],
+    "skill_gaps": ["Machine Learning", "Advanced UI/UX Design"],
+    "learning_velocity": "Moderate",
+    "skill_timeline": [
+      {"skill": "Full Stack Development", "first_used": "2011", "last_used": "2022", "frequency": "high", "recency_score": 95},
+      {"skill": "Agile Methodologies", "first_used": "2015", "last_used": "2022", "frequency": "high", "recency_score": 95}
+    ],
+    "skill_depth_analysis": {
+      "beginner_skills": ["PHP Development", ".Net Development"],
+      "intermediate_skills": ["Full Stack Development", "Agile Methodologies", "Version Control (Git)"],
+      "advanced_skills": ["Microservices Architecture", "DevOps Practices", "Scalability and Performance Optimization"],
+      "expert_skills": ["Web Application Development", "Software Architecture"]
+    }
+  },
+  "composite_skill_profile": {
+    "primary_expertise": [
+      {"skill": "Full Stack Development", "confidence": 95, "market_demand": "high"},
+      {"skill": "Agile Methodologies", "confidence": 95, "market_demand": "high"}
+    ],
+    "secondary_expertise": [
+      {"skill": "Version Control (Git)", "confidence": 95, "market_demand": "high"},
+      {"skill": "Web Application Development", "confidence": 90, "market_demand": "high"}
+    ],
+    "domain_specialization": "Web and Enterprise Software Development",
+    "skill_breadth": "Broad",
+    "unique_combination": ["Full Stack Development with Agile Methodologies"],
+    "skill_categories": {
+      "technical_skills": ["Full Stack Development", "Agile Methodologies", "Version Control (Git)", "Web Application Development", "Software Architecture"],
+      "soft_skills": ["Problem Solving", "Teamwork", "Adaptability"],
+      "domain_skills": ["Web and Enterprise Software Development"],
+      "leadership_skills": []
+    },
+    "transferable_skills": [
+      {"skill": "Full Stack Development", "transferability": "high", "target_industries": ["Tech", "Finance", "Healthcare"]},
+      {"skill": "Agile Methodologies", "transferability": "high", "target_industries": ["Tech", "Finance", "Healthcare"]}
+    ]
+  },
+  "career_trajectory_analysis": {
+    "current_level": "Senior Software Engineer",
+    "years_experience": 12,
+    "promotion_velocity": "Moderate",
+    "career_progression": "Consistent progression in senior roles",
+    "performance_indicator": "High"
+  },
+  "market_positioning": {
+    "skill_market_value": "High",
+    "skill_rarity": "Moderate",
+    "competitive_advantage": ["Strong full stack development skills", "Experience in multiple tech stacks"],
+    "placement_difficulty": "Moderate",
+    "ideal_next_roles": ["Senior Full Stack Engineer", "Tech Lead", "Engineering Manager"],
+    "salary_range": "High"
+  },
+  "recruiter_insights": {
+    "overall_rating": "Strong",
+    "recommendation": "Highly qualified for senior software engineering roles",
+    "confidence_in_assessment": "High",
+    "verification_needed": ["Verify specific projects and technologies used"],
+    "red_flags": [],
+    "selling_points": ["Consistent experience in full stack development", "Proven ability to adapt to different tech stacks"],
+    "interview_focus": ["Current and emerging technologies", "Project management and leadership experience"],
+    "one_line_pitch": "Experienced senior software engineer with a strong background in full stack development and agile methodologies"
+  }
+}

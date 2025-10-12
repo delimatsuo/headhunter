@@ -1,0 +1,131 @@
+{
+  "explicit_skills": {
+    "technical_skills": [
+      {"skill": "User Experience Design", "confidence": 100, "evidence": ["Postgraduate & Certificate from Pontifical Catholic University of Rio Grande do Sul"]},
+      {"skill": "End Engineer", "confidence": 100, "evidence": ["Role at KolinaLabs and " role at ""]},
+      {"skill": "Software Development Engineer", "confidence": 100, "evidence": ["Role at ACE LMS"]},
+      {"skill": "Banking Officer", "confidence": 100, "evidence": ["Role at Curitiba e and Guarapuava e Região"]}
+    ],
+    "tools_technologies": [
+      {"skill": "HTML", "confidence": 100, "evidence": ["End Engineer role"]},
+      {"skill": "CSS", "confidence": 100, "evidence": ["End Engineer role"]},
+      {"skill": "JavaScript", "confidence": 100, "evidence": ["End Engineer role"]},
+      {"skill": "React", "confidence": 80, "evidence": ["End Engineer role, likely used in modern web development"]},
+      {"skill": "Node.js", "confidence": 80, "evidence": ["Software Development Engineer role, likely used in backend development"]},
+      {"skill": "SQL", "confidence": 100, "evidence": ["Banking Officer role, likely used for database management"]}
+    ],
+    "soft_skills": [
+      {"skill": "Problem-solving", "confidence": 100, "evidence": ["Various roles requiring technical problem-solving"]},
+      {"skill": "Communication", "confidence": 100, "evidence": ["Bachelor's in Communication and various roles requiring interaction with clients or teams"]}
+    ],
+    "certifications": [],
+    "languages": [
+      {"skill": "Portuguese", "confidence": 100, "evidence": ["Native speaker"]},
+      {"skill": "English", "confidence": 65, "evidence": ["likely conversational based on resume"]},
+      {"skill": "Spanish", "confidence": 50, "evidence": ["likely conversational based on resume and Brazilian background"]}
+    ]
+  },
+  "inferred_skills": {
+    "highly_probable_skills": [
+      {"skill": "UX/UI Design", "confidence": 95, "reasoning": "UX Developer role at Voith Group", "skill_category": "technical"},
+      {"skill": "Agile Methodologies", "confidence": 95, "reasoning": "End Engineer and Software Development Engineer roles", "skill_category": "soft"},
+      {"skill": "Scrum", "confidence": 95, "reasoning": "End Engineer and Software Development Engineer roles", "skill_category": "soft"}
+    ],
+    "probable_skills": [
+      {"skill": "Version Control Systems (e.g., Git)", "confidence": 80, "reasoning": "likely used in software development roles", "skill_category": "technical"},
+      {"skill": "RESTful APIs", "confidence": 80, "reasoning": "likely used in software development roles", "skill_category": "technical"},
+      {"skill": "Microservices Architecture", "confidence": 80, "reasoning": "likely used in software development roles", "skill_category": "technical"}
+    ],
+    "likely_skills": [
+      {"skill": "Cloud Services (e.g., AWS, Azure)", "confidence": 65, "reasoning": "likely used in software development roles", "skill_category": "technical"},
+      {"skill": "DevOps Practices", "confidence": 65, "reasoning": "likely used in software development roles", "skill_category": "technical"}
+    ],
+    "possible_skills": [
+      {"skill": "Machine Learning", "confidence": 50, "reasoning": "not explicitly mentioned but common in software development roles", "skill_category": "technical"}
+    ]
+  },
+  "role_based_competencies": {
+    "current_role_competencies": {
+      "role": "UX Developer at Voith Group",
+      "core_competencies": ["User Experience Design", "Agile Methodologies", "Scrum"],
+      "typical_tools": ["Adobe XD", "Figma", "Jira"],
+      "domain_knowledge": ["Industrial Engineering", "Product Design"]
+    },
+    "historical_competencies": [
+      {
+        "role": "End Engineer at KolinaLabs",
+        "core_competencies": ["HTML", "CSS", "JavaScript", "React"],
+        "typical_tools": ["Visual Studio Code", "Chrome DevTools"],
+        "domain_knowledge": ["Web Development"]
+      },
+      {
+        "role": "Software Development Engineer at ACE LMS",
+        "core_competencies": ["Node.js", "SQL", "RESTful APIs"],
+        "typical_tools": ["Visual Studio Code", "Postman"],
+        "domain_knowledge": ["Learning Management Systems"]
+      }
+    ]
+  },
+  "company_context_skills": {
+    "company_specific": ["Industrial Engineering", "Product Design"],
+    "industry_skills": ["Web Development", "Software Engineering", "UX/UI Design"]
+  },
+  "skill_evolution_analysis": {
+    "skill_trajectory": "Continuous learning and adaptation",
+    "emerging_skills": ["Cloud Services", "DevOps Practices"],
+    "skill_gaps": ["Machine Learning"],
+    "learning_velocity": "Moderate",
+    "skill_timeline": [
+      {"skill": "HTML", "first_used": "2010", "last_used": "2023", "frequency": "high", "recency_score": 95},
+      {"skill": "JavaScript", "first_used": "2010", "last_used": "2023", "frequency": "high", "recency_score": 95}
+    ],
+    "skill_depth_analysis": {
+      "beginner_skills": ["SQL", "Node.js"],
+      "intermediate_skills": ["React", "Agile Methodologies"],
+      "advanced_skills": ["Scrum", "Version Control Systems"],
+      "expert_skills": ["User Experience Design"]
+    }
+  },
+  "composite_skill_profile": {
+    "primary_expertise": [{"skill": "User Experience Design", "confidence": 95, "market_demand": "high"}], 
+    "secondary_expertise": [{"skill": "Agile Methodologies", "confidence": 80, "market_demand": "high"}], 
+    "domain_specialization": "Industrial Engineering and Product Design",
+    "skill_breadth": "Moderate",
+    "unique_combination": ["User Experience Design with Agile Methodologies"],
+    "skill_categories": {
+      "technical_skills": ["HTML", "CSS", "JavaScript", "React", "Node.js", "SQL", "Version Control Systems", "RESTful APIs"],
+      "soft_skills": ["Problem-solving", "Communication"],
+      "domain_skills": ["Industrial Engineering", "Product Design"],
+      "leadership_skills": ["Scrum"]
+    },
+    "transferable_skills": [
+      {"skill": "Agile Methodologies", "transferability": "high", "target_industries": ["Software Development", "Product Design"]},
+      {"skill": "User Experience Design", "transferability": "high", "target_industries": ["Software Development", "Product Design"]}
+    ]
+  },
+  "career_trajectory_analysis": {
+    "current_level": "Mid-level",
+    "years_experience": 15,
+    "promotion_velocity": "Moderate",
+    "career_progression": "Consistent growth in technical and soft skills",
+    "performance_indicator": "Adaptability and continuous learning"
+  },
+  "market_positioning": {
+    "skill_market_value": "High",
+    "skill_rarity": "Moderate",
+    "competitive_advantage": ["Strong UX/UI Design skills", "Experience in Agile Methodologies"],
+    "placement_difficulty": "Moderate",
+    "ideal_next_roles": ["UX/UI Designer", "Product Designer", "Software Engineer"],
+    "salary_range": "Mid to High"
+  },
+  "recruiter_insights": {
+    "overall_rating": "Good",
+    "recommendation": "Consider for UX/UI Design roles",
+    "confidence_in_assessment": "High",
+    "verification_needed": ["Specific tools and technologies used in roles"],
+    "red_flags": [],
+    "selling_points": ["Strong UX/UI Design skills", "Experience in Agile Methodologies"],
+    "interview_focus": ["Depth of UX/UI Design experience", "Current tools and technologies used"],
+    "one_line_pitch": "Experienced UX Developer with a strong background in Agile Methodologies and a passion for product design."
+  }
+}

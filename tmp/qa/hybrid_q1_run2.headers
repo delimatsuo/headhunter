@@ -1,0 +1,23 @@
+HTTP/2 200 
+content-security-policy: default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests
+cross-origin-opener-policy: same-origin
+cross-origin-resource-policy: same-origin
+origin-agent-cluster: ?1
+referrer-policy: no-referrer
+strict-transport-security: max-age=15552000; includeSubDomains
+x-content-type-options: nosniff
+x-dns-prefetch-control: off
+x-download-options: noopen
+x-frame-options: SAMEORIGIN
+x-permitted-cross-domain-policies: none
+x-xss-protection: 0
+x-request-id: 1af9a293-64c6-4537-89a2-23002c4989a8
+x-cloud-trace-context: a20044e69f36b9d03aebb3395f39784c/12600235899231763702;o=1
+vary: Origin
+content-type: application/json; charset=utf-8
+alt-svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+alt-svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+date: Tue, 07 Oct 2025 13:24:16 GMT
+server: Google Frontend
+content-length: 2638
+

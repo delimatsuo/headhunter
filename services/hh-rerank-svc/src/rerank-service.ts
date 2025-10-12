@@ -90,6 +90,16 @@ export class RerankService {
     const rawBudgetMs = runtime.slaTargetMs - elapsed - promptMs - 20;
     const budgetMs = Math.max(0, rawBudgetMs);
 
+    // Log budget calculation for debugging
+    this.logger.info({
+      slaTargetMs: runtime.slaTargetMs,
+      elapsed,
+      promptMs,
+      rawBudgetMs,
+      budgetMs,
+      togetherTimeout: this.dependencies.config.together.timeoutMs
+    }, 'Together AI budget calculated');
+
     const togetherPayload: TogetherChatCompletionRequestPayload = {
       model: together.model,
       messages,

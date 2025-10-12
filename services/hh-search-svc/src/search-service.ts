@@ -14,11 +14,17 @@ import type {
   SearchContext
 } from './types';
 import type { PgVectorClient } from './pgvector-client';
+import type { SearchRedisClient } from './redis-client';
+import type { RerankClient, RerankCandidate, RerankRequest, RerankResponse } from './rerank-client';
+import type { PerformanceTracker } from './performance-tracker';
 
 interface HybridSearchDependencies {
   config: SearchServiceConfig;
   pgClient: PgVectorClient;
   embedClient: EmbedClient;
+  redisClient?: SearchRedisClient;
+  rerankClient?: RerankClient;
+  performanceTracker: PerformanceTracker;
   logger?: Logger;
 }
 
@@ -51,6 +57,9 @@ export class SearchService {
   private readonly config: SearchServiceConfig;
   private readonly pgClient: PgVectorClient;
   private readonly embedClient: EmbedClient;
+  private readonly redisClient: SearchRedisClient | null;
+  private readonly rerankClient: RerankClient | null;
+  private readonly performanceTracker: PerformanceTracker;
   private readonly logger: Logger;
   private firestore: Firestore | null = null;
 
@@ -58,6 +67,9 @@ export class SearchService {
     this.config = deps.config;
     this.pgClient = deps.pgClient;
     this.embedClient = deps.embedClient;
+    this.redisClient = deps.redisClient ?? null;
+    this.rerankClient = deps.rerankClient ?? null;
+    this.performanceTracker = deps.performanceTracker;
     this.logger = (deps.logger ?? getLogger({ module: 'search-service' })).child({ module: 'search-service' });
   }
 
@@ -75,6 +87,21 @@ export class SearchService {
     hash.update(JSON.stringify(request.filters ?? {}));
     hash.update(String(request.limit ?? ''));
     hash.update(request.jobDescription ?? '');
+    return hash.digest('hex');
+  }
+
+  private computeEmbeddingCacheToken(request: HybridSearchRequest): string | null {
+    if (request.jdHash && request.jdHash.trim().length > 0) {
+      return request.jdHash.trim();
+    }
+
+    const baseText = (request.jobDescription ?? request.query ?? '').trim();
+    if (baseText.length === 0) {
+      return null;
+    }
+
+    const hash = createHash('sha1');
+    hash.update(baseText);
     return hash.digest('hex');
   }
 
@@ -98,6 +125,17 @@ export class SearchService {
     };
 
     let embedding = request.embedding;
+    let embeddingCacheKey: string | null = null;
+    const embeddingCacheToken = this.computeEmbeddingCacheToken(request);
+
+    if ((!embedding || embedding.length === 0) && this.redisClient && !this.redisClient.isDisabled() && embeddingCacheToken) {
+      embeddingCacheKey = this.redisClient.buildEmbeddingKey(context.tenant.id, embeddingCacheToken);
+      const cachedEmbedding = await this.redisClient.get<number[]>(embeddingCacheKey);
+      if (Array.isArray(cachedEmbedding) && cachedEmbedding.length > 0) {
+        embedding = cachedEmbedding;
+      }
+    }
+
     if (!embedding || embedding.length === 0) {
       const embeddingStart = Date.now();
       const embeddingText = sanitizedQuery || request.jobDescription || request.query || ' ';
@@ -112,6 +150,10 @@ export class SearchService {
       });
       timings.embeddingMs = Date.now() - embeddingStart;
       embedding = result.embedding;
+
+      if (embeddingCacheKey && this.redisClient && !this.redisClient.isDisabled() && Array.isArray(embedding) && embedding.length > 0) {
+        await this.redisClient.set(embeddingCacheKey, embedding);
+      }
     }
 
     const retrievalStart = Date.now();
@@ -158,8 +200,16 @@ export class SearchService {
     }
 
     const rankingStart = Date.now();
-    const ranked = this.rankCandidates(candidates, request);
+    let ranked = this.rankCandidates(candidates, request);
     timings.rankingMs = Date.now() - rankingStart;
+
+    const rerankOutcome = await this.applyRerankIfEnabled(context, request, ranked, limit);
+    if (rerankOutcome) {
+      ranked = rerankOutcome.results;
+      if (rerankOutcome.timingsMs !== undefined) {
+        timings.rerankMs = rerankOutcome.timingsMs;
+      }
+    }
 
     const response: HybridSearchResponse = {
       results: ranked.slice(0, limit),
@@ -174,6 +224,13 @@ export class SearchService {
       }
     };
 
+    if (rerankOutcome?.metadata) {
+      response.metadata = {
+        ...response.metadata,
+        rerank: rerankOutcome.metadata
+      } satisfies Record<string, unknown>;
+    }
+
     if (request.includeDebug) {
       response.debug = {
         candidateCount: ranked.length,
@@ -187,6 +244,15 @@ export class SearchService {
       { requestId: context.requestId, tenantId: context.tenant.id, timings, resultCount: response.results.length },
       'Hybrid search completed.'
     );
+
+    this.performanceTracker.record({
+      totalMs: timings.totalMs,
+      embeddingMs: timings.embeddingMs,
+      retrievalMs: timings.retrievalMs,
+      rerankMs: timings.rerankMs,
+      rerankApplied: Boolean(rerankOutcome),
+      cacheHit: false
+    });
 
     return response;
   }
@@ -233,6 +299,13 @@ export class SearchService {
       matchReasons.push('Lower profile confidence score');
     }
 
+    const compliance = {
+      legalBasis: row.legal_basis ?? undefined,
+      consentRecord: row.consent_record ?? undefined,
+      transferMechanism: row.transfer_mechanism ?? undefined
+    };
+    const hasCompliance = Object.values(compliance).some((value) => typeof value === 'string' && value.length > 0);
+
     return {
       candidateId: row.candidate_id,
       score: hybridScore,
@@ -251,7 +324,8 @@ export class SearchService {
           weight: normalizedMatches.has(skill.toLowerCase()) ? 1 : 0.3
         })),
       matchReasons,
-      metadata: row.metadata ?? undefined
+      metadata: row.metadata ?? undefined,
+      compliance: hasCompliance ? compliance : undefined
     } satisfies HybridSearchResultItem;
   }
 
@@ -285,6 +359,149 @@ export class SearchService {
 
     return scored.sort((a, b) => b.score - a.score);
   }
+
+
+  private async applyRerankIfEnabled(
+    context: SearchContext,
+    request: HybridSearchRequest,
+    candidates: HybridSearchResultItem[],
+    limit: number
+  ): Promise<{ results: HybridSearchResultItem[]; timingsMs?: number; metadata?: Record<string, unknown> } | null> {
+    if (!this.config.rerank.enabled || !this.rerankClient || !this.rerankClient.isEnabled()) {
+      return null;
+    }
+
+    if (candidates.length === 0) {
+      return null;
+    }
+
+    const jobDescription = request.jobDescription ?? request.query ?? '';
+    if (jobDescription.trim().length === 0) {
+      this.logger.warn({ requestId: context.requestId }, 'Skipping rerank; job description missing.');
+      return null;
+    }
+
+    const candidateLimit = Math.min(this.config.search.rerankCandidateLimit, candidates.length);
+    const topCandidates = candidates.slice(0, candidateLimit);
+
+    const rerankRequest = this.buildRerankRequest(request, jobDescription, topCandidates, limit);
+    const start = Date.now();
+
+    try {
+      const rerankResponse = await this.rerankClient.rerank(rerankRequest, {
+        tenantId: context.tenant.id,
+        requestId: context.requestId
+      });
+
+      const merged = this.mergeRerankResults(candidates, rerankResponse);
+      const metadata: Record<string, unknown> = {
+        cacheHit: rerankResponse.cacheHit,
+        usedFallback: rerankResponse.usedFallback
+      };
+      if (rerankResponse.metadata) {
+        metadata.details = rerankResponse.metadata;
+      }
+
+      return {
+        results: merged,
+        timingsMs: rerankResponse.timings?.totalMs ?? Date.now() - start,
+        metadata
+      };
+    } catch (error) {
+      this.logger.warn({ error, requestId: context.requestId }, 'Rerank request failed, using base ranking.');
+      return { results: candidates };
+    }
+  }
+
+  private buildRerankRequest(
+    request: HybridSearchRequest,
+    jobDescription: string,
+    candidates: HybridSearchResultItem[],
+    limit: number
+  ): RerankRequest {
+    const docsetHash = createHash('sha1');
+    candidates.forEach((candidate) => {
+      docsetHash.update(candidate.candidateId);
+      docsetHash.update(String(candidate.vectorScore ?? 0));
+      docsetHash.update(String(candidate.textScore ?? 0));
+    });
+
+    const rerankCandidates: RerankCandidate[] = candidates.map((candidate) => ({
+      candidateId: candidate.candidateId,
+      summary: candidate.headline ?? candidate.title ?? candidate.fullName,
+      highlights: candidate.matchReasons ?? [],
+      initialScore: candidate.score,
+      features: {
+        vectorScore: candidate.vectorScore,
+        textScore: candidate.textScore,
+        confidence: candidate.confidence,
+        yearsExperience: candidate.yearsExperience,
+        matchReasons: candidate.matchReasons,
+        skills: candidate.skills?.map((skill) => skill.name),
+        metadata: candidate.metadata
+      },
+      payload: candidate.metadata ?? {}
+    }));
+
+    return {
+      jobDescription,
+      query: request.query,
+      jdHash: request.jdHash,
+      docsetHash: docsetHash.digest('hex'),
+      limit,
+      candidates: rerankCandidates,
+      includeReasons: this.config.search.rerankIncludeReasons,
+      requestMetadata: {
+        source: 'hh-search-svc',
+        includeDebug: request.includeDebug === true
+      }
+    } satisfies RerankRequest;
+  }
+
+  private mergeRerankResults(
+    allCandidates: HybridSearchResultItem[],
+    rerankResponse: RerankResponse
+  ): HybridSearchResultItem[] {
+    const candidateMap = new Map(allCandidates.map((candidate) => [candidate.candidateId, candidate]));
+    const seen = new Set<string>();
+    const reranked: HybridSearchResultItem[] = [];
+
+    rerankResponse.results.forEach((result) => {
+      const existing = candidateMap.get(result.candidateId);
+      if (!existing) {
+        return;
+      }
+
+      seen.add(existing.candidateId);
+      const mergedMatchReasons = existing.matchReasons ? [...existing.matchReasons] : [];
+      result.reasons?.forEach((reason) => {
+        if (!mergedMatchReasons.includes(reason)) {
+          mergedMatchReasons.push(reason);
+        }
+      });
+
+      const metadata = existing.metadata ? { ...existing.metadata } : {};
+      if (result.payload && Object.keys(result.payload).length > 0) {
+        metadata.rerankPayload = result.payload;
+      }
+
+      reranked.push({
+        ...existing,
+        score: result.score,
+        matchReasons: mergedMatchReasons,
+        metadata
+      });
+    });
+
+    allCandidates.forEach((candidate) => {
+      if (!seen.has(candidate.candidateId)) {
+        reranked.push(candidate);
+      }
+    });
+
+    return reranked;
+  }
+
 
   private async fetchFromFirestore(tenantId: string, limit: number): Promise<FirestoreCandidateRecord[]> {
     try {

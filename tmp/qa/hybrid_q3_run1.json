@@ -1,0 +1,1 @@
+{"results":[],"total":0,"cacheHit":false,"requestId":"fa3de13b-7c20-4d8d-94ce-5297af8d647d","timings":{"totalMs":107,"embeddingMs":36,"retrievalMs":71,"rankingMs":0,"cacheMs":111},"metadata":{"vectorWeight":0.65,"textWeight":0.35,"minSimilarity":0.05},"debug":{"candidateCount":0,"filtersApplied":{},"minSimilarity":0.05}}

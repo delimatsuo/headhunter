@@ -1,0 +1,12 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+    - 'build'
+    - '-t'
+    - 'us-central1-docker.pkg.dev/headhunter-ai-0088/services/reprocess-candidates:latest'
+    - '-f'
+    - 'Dockerfile.reprocess'
+    - '.'
+images:
+- 'us-central1-docker.pkg.dev/headhunter-ai-0088/services/reprocess-candidates:latest'
+timeout: 900s

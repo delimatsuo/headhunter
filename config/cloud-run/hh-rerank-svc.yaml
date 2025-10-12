@@ -76,7 +76,7 @@ spec:
             - name: TOGETHER_MODEL
               value: ${TOGETHER_AI_MODEL}
             - name: TOGETHER_TIMEOUT_MS
-              value: "5000"
+              value: "10000"
             - name: RERANK_CACHE_TTL_SECONDS
               value: "180"
             - name: RERANK_CACHE_DISABLE
@@ -84,7 +84,7 @@ spec:
             - name: RERANK_MAX_CANDIDATES
               value: "50"
             - name: RERANK_SLA_TARGET_MS
-              value: "3000"
+              value: "8000"
             - name: ENABLE_GATEWAY_TOKENS
               value: "false"
             - name: AUTH_MODE

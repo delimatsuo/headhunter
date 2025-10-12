@@ -19,14 +19,14 @@ REPO_ROOT = repo_root()
 CSV_DIR = csv_dir()
 RESUME_DIR = resumes_dir()
 
-# Output to NAS
-NAS_DIR = Path(os.getenv(
-    "HEADHUNTER_NAS_DIR",
-    "/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project",
+# Output to local data directory
+OUTPUT_DIR = Path(os.getenv(
+    "OUTPUT_DIRECTORY",
+    str(REPO_ROOT / "data"),
 ))
-OUTPUT_FILE = NAS_DIR / "comprehensive_merged_candidates.json"
-STATS_FILE = NAS_DIR / "comprehensive_merge_statistics.json"
-MISSING_IDS_FILE = NAS_DIR / "missing_candidate_ids.json"
+OUTPUT_FILE = OUTPUT_DIR / "comprehensive_merged_candidates.json"
+STATS_FILE = OUTPUT_DIR / "comprehensive_merge_statistics.json"
+MISSING_IDS_FILE = OUTPUT_DIR / "missing_candidate_ids.json"
 
 def find_all_candidate_ids():
     """Find ALL unique candidate IDs from every source"""
@@ -493,9 +493,9 @@ def comprehensive_merge():
     
     # Step 7: Save comprehensive data
     print("\n💾 Step 7: Saving comprehensive merged data...")
-    
-    # Ensure NAS directory exists
-    NAS_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Ensure output directory exists
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     
     # Convert to list for JSON serialization
     candidates_list = list(candidates.values())

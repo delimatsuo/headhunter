@@ -43,6 +43,11 @@ export interface HybridSearchResultItem {
   yearsExperience?: number;
   matchReasons: string[];
   metadata?: Record<string, unknown>;
+  compliance?: {
+    legalBasis?: string | null;
+    consentRecord?: string | null;
+    transferMechanism?: string | null;
+  };
 }
 
 export interface HybridSearchTimings {
@@ -51,6 +56,7 @@ export interface HybridSearchTimings {
   retrievalMs?: number;
   rankingMs?: number;
   cacheMs?: number;
+  rerankMs?: number;
 }
 
 export interface HybridSearchResponse {
@@ -81,6 +87,9 @@ export interface PgHybridSearchRow {
   analysis_confidence?: number | null;
   profile?: Record<string, unknown> | null;
   metadata?: Record<string, unknown> | null;
+  legal_basis?: string | null;
+  consent_record?: string | null;
+  transfer_mechanism?: string | null;
   vector_score: number | null;
   text_score: number | null;
   hybrid_score: number | null;

@@ -337,7 +337,7 @@ export class EnrichmentWorker {
         const text = chunk.toString();
         stdout += text;
         // Log Python stdout immediately for debugging
-        text.split('\n').forEach(line => {
+        text.split('\n').forEach((line: string) => {
           if (line.trim()) {
             _jobLogger.info({ python_stdout: line.trim() }, 'Python output');
           }
@@ -348,7 +348,7 @@ export class EnrichmentWorker {
         const text = chunk.toString();
         stderr += text;
         // Log Python stderr immediately for debugging
-        text.split('\n').forEach(line => {
+        text.split('\n').forEach((line: string) => {
           if (line.trim()) {
             _jobLogger.warn({ python_stderr: line.trim() }, 'Python error output');
           }

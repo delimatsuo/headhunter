@@ -17,12 +17,34 @@ class PromptBuilder:
         education = candidate.get("education", "")
 
         return (
-            self._header("Analyze the resume and produce structured fields")
-            + f"CANDIDATE: {name}\n\n"
-            + "Provide ONLY a JSON object with the following top-level keys: "
-            "explicit_skills, inferred_skills, role_based_competencies, company_context_skills, "
-            "skill_evolution_analysis, composite_skill_profile, career_trajectory_analysis, market_positioning, recruiter_insights.\n\n"
-            + "Use this schema (names/structure only; fill values from context):\n\n"
+            "You are a senior tech recruiter with 15+ years of experience. "
+            "You have deep knowledge of tech stacks, company engineering cultures, and can infer likely skills "
+            "based on roles and companies.\n\n"
+            f"CANDIDATE: {name}\n\n"
+            f"EXPERIENCE:\n{experience}\n\n"
+            f"EDUCATION:\n{education}\n\n"
+            "YOUR TASK:\n"
+            "Analyze this candidate like a senior recruiter would. Separate what they EXPLICITLY mention "
+            "from what you can INFER based on company context, role requirements, and industry knowledge.\n\n"
+            "EXAMPLES OF RECRUITER-GRADE INFERENCE:\n\n"
+            "Example 1:\n"
+            '- Explicit: "Senior ML Engineer at Meta (2020-2023)"\n'
+            "- Inferred Skills (high confidence 90%+):\n"
+            "  * PyTorch (Meta's primary ML framework)\n"
+            "  * Large-scale distributed systems\n"
+            "  * A/B testing platforms\n"
+            "- Reasoning: Meta is known for PyTorch, operates at billions of users scale\n\n"
+            "Example 2:\n"
+            '- Explicit: "Lead Data Engineer at Nubank (2021-current)"\n'
+            "- Inferred Skills (high confidence 90%+):\n"
+            "  * Scala/Clojure (Nubank's stack)\n"
+            "  * AWS (Nubank runs on AWS)\n"
+            "  * Microservices, PCI-DSS compliance\n\n"
+            "NOW ANALYZE THE CANDIDATE ABOVE.\n\n"
+            "Return ONLY valid JSON (no markdown, no code blocks) with these top-level keys: "
+            "explicit_skills, inferred_skills, company_context_skills, composite_skill_profile, "
+            "career_trajectory_analysis, market_positioning, recruiter_insights.\n\n"
+            + "Schema structure:\n\n"
             + "{"  # keep recognizable in tests without f-strings interfering
               "\n  \"explicit_skills\": {\n"
               "    \"technical_skills\": [{\"skill\": \"...\", \"confidence\": 100, \"evidence\": [\"mentioned in experience\", \"listed in skills\"]}],\n"

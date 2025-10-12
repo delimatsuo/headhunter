@@ -1,0 +1,59 @@
+{
+  "test_timestamp": "2025-10-05T12:45:32.372461",
+  "test_size": 50,
+  "comparison": {
+    "A": {
+      "model_info": {
+        "name": "Llama 3.1 8B Instruct Turbo",
+        "id": "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+        "cost_per_1m": 0.18,
+        "description": "Current model - lowest cost"
+      },
+      "success_rate": 0.98,
+      "quality_metrics": {
+        "avg_explicit_skills": 2.5306122448979593,
+        "avg_inferred_skills": 2.36734693877551,
+        "avg_confidence": 94.91379310344827,
+        "skill_diversity": 97,
+        "total_skills_extracted": 240
+      }
+    },
+    "B": {
+      "model_info": {
+        "name": "Qwen 2.5 7B Instruct Turbo",
+        "id": "Qwen/Qwen2.5-7B-Instruct-Turbo",
+        "cost_per_1m": 0.3,
+        "description": "Optimized for structured extraction"
+      },
+      "success_rate": 1.0,
+      "quality_metrics": {
+        "avg_explicit_skills": 4.06,
+        "avg_inferred_skills": 2.32,
+        "avg_confidence": 94.95689655172414,
+        "skill_diversity": 111,
+        "total_skills_extracted": 319
+      }
+    },
+    "C": {
+      "model_info": {
+        "name": "Llama 3.1 70B Instruct Turbo",
+        "id": "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+        "cost_per_1m": 0.88,
+        "description": "Highest quality reasoning"
+      },
+      "success_rate": 1.0,
+      "quality_metrics": {
+        "avg_explicit_skills": 0.46,
+        "avg_inferred_skills": 3.84,
+        "avg_confidence": 94.40104166666667,
+        "skill_diversity": 92,
+        "total_skills_extracted": 215
+      }
+    }
+  },
+  "cost_estimates_29k": {
+    "A": 31.32,
+    "B": 52.199999999999996,
+    "C": 153.12
+  }
+}

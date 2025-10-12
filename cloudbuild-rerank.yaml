@@ -1,0 +1,13 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+    - 'build'
+    - '-t'
+    - 'us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-rerank-svc:v5-amd64'
+    - '-f'
+    - 'hh-rerank-svc/Dockerfile'
+    - '.'
+  dir: 'services'
+images:
+- 'us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-rerank-svc:v5-amd64'
+timeout: 900s

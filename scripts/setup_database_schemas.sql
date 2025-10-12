@@ -26,6 +26,10 @@ CREATE TABLE IF NOT EXISTS search.candidate_profiles (
     experience JSONB,
     education JSONB,
     metadata JSONB,
+    legal_basis TEXT,
+    consent_record TEXT,
+    transfer_mechanism TEXT,
+    search_document TSVECTOR NOT NULL DEFAULT to_tsvector('portuguese', COALESCE(full_name, '') || ' ' || COALESCE(headline, '')),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -46,20 +50,49 @@ CREATE INDEX IF NOT EXISTS candidate_embeddings_hnsw
     ON search.candidate_embeddings USING hnsw (embedding vector_cosine_ops)
     WITH (m = 16, ef_construction = 64);
 
+CREATE INDEX IF NOT EXISTS candidate_profiles_fts_idx
+    ON search.candidate_profiles USING GIN (search_document);
+
 CREATE TABLE IF NOT EXISTS search.search_logs (
-    id BIGSERIAL PRIMARY KEY,
+    id BIGSERIAL,
     tenant_id TEXT NOT NULL,
     search_id UUID NOT NULL,
     request_payload JSONB NOT NULL,
     response_payload JSONB,
     latency_ms INTEGER,
     source_service TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY (id, created_at)
 ) PARTITION BY RANGE (created_at);
 
 CREATE TABLE IF NOT EXISTS search.search_logs_y2024m01
     PARTITION OF search.search_logs
     FOR VALUES FROM ('2024-01-01') TO ('2024-02-01');
+
+CREATE TABLE IF NOT EXISTS search.search_logs_y2025m01
+    PARTITION OF search.search_logs
+    FOR VALUES FROM ('2025-01-01') TO ('2025-02-01');
+
+CREATE TABLE IF NOT EXISTS search.search_logs_y2025m10
+    PARTITION OF search.search_logs
+    FOR VALUES FROM ('2025-10-01') TO ('2025-11-01');
+
+-- Create trigger function for Portuguese FTS
+CREATE OR REPLACE FUNCTION search.update_candidate_search_document()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.search_document := to_tsvector('portuguese', COALESCE(NEW.full_name, '') || ' ' || COALESCE(NEW.headline, ''));
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger for Portuguese FTS on candidate_profiles
+DROP TRIGGER IF EXISTS candidate_profiles_search_document_trigger ON search.candidate_profiles;
+CREATE TRIGGER candidate_profiles_search_document_trigger
+    BEFORE INSERT OR UPDATE OF full_name, headline
+    ON search.candidate_profiles
+    FOR EACH ROW
+    EXECUTE FUNCTION search.update_candidate_search_document();
 
 -- TAXONOMY SCHEMA OBJECTS
 SET search_path TO taxonomy, public;
@@ -157,6 +190,11 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA search TO :app_user
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA taxonomy TO :app_user;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA msgs TO :app_user;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA ops TO :app_user;
+
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA search TO :app_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA taxonomy TO :app_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA msgs TO :app_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA ops TO :app_user;
 
 GRANT CONNECT ON DATABASE headhunter TO :app_user;
 GRANT CONNECT ON DATABASE headhunter TO :analytics_user;

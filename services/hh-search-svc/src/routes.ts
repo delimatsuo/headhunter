@@ -5,6 +5,8 @@ import type { SearchServiceConfig } from './config';
 import type { EmbedClient } from './embed-client';
 import type { PgVectorClient } from './pgvector-client';
 import { SearchRedisClient } from './redis-client';
+import type { RerankClient } from './rerank-client';
+import type { PerformanceTracker } from './performance-tracker';
 import { hybridSearchSchema } from './schemas';
 import type { HybridSearchRequest, HybridSearchResponse } from './types';
 import { SearchService } from './search-service';
@@ -15,6 +17,8 @@ interface RegisterRoutesOptions {
   redisClient: SearchRedisClient | null;
   pgClient: PgVectorClient | null;
   embedClient: EmbedClient | null;
+  rerankClient: RerankClient | null;
+  performanceTracker: PerformanceTracker;
   state: { isReady: boolean };
 }
 
@@ -41,11 +45,32 @@ export async function registerRoutes(
       };
     }
 
-    const [pgHealth, redisHealth, embedHealth] = await Promise.all([
+    if (dependencies.config.rerank.enabled && !dependencies.rerankClient) {
+      reply.status(503);
+      return {
+        status: 'initializing',
+        service: 'hh-search-svc'
+      };
+    }
+
+    const healthChecks = [
       dependencies.pgClient.healthCheck(),
       dependencies.redisClient.healthCheck(),
       dependencies.embedClient.healthCheck()
-    ]);
+    ] as Promise<unknown>[];
+
+    if (dependencies.config.rerank.enabled && dependencies.rerankClient) {
+      healthChecks.push(dependencies.rerankClient.healthCheck());
+    }
+
+    const results = await Promise.all(healthChecks);
+    const pgHealth = results[0] as Awaited<ReturnType<typeof dependencies.pgClient.healthCheck>>;
+    const redisHealth = results[1] as Awaited<ReturnType<typeof dependencies.redisClient.healthCheck>>;
+    const embedHealth = results[2] as Awaited<ReturnType<typeof dependencies.embedClient.healthCheck>>;
+    const rerankHealth =
+      dependencies.config.rerank.enabled && dependencies.rerankClient
+        ? (results[3] as Awaited<ReturnType<typeof dependencies.rerankClient.healthCheck>>)
+        : undefined;
 
     const degraded: string[] = [];
     if (pgHealth.status !== 'healthy') {
@@ -57,6 +82,9 @@ export async function registerRoutes(
     if (embedHealth.status !== 'healthy') {
       degraded.push('embeddings');
     }
+    if (dependencies.config.rerank.enabled && rerankHealth && !['healthy', 'disabled'].includes(rerankHealth.status)) {
+      degraded.push('rerank');
+    }
 
     if (degraded.length > 0) {
       reply.code(503);
@@ -65,8 +93,10 @@ export async function registerRoutes(
         components: {
           pgvector: pgHealth,
           redis: redisHealth,
-          embeddings: embedHealth
-        }
+          embeddings: embedHealth,
+          rerank: rerankHealth ?? { status: 'unavailable', message: 'Rerank health unavailable' }
+        },
+        metrics: dependencies.performanceTracker.getSnapshot()
       } satisfies Record<string, unknown>;
     }
 
@@ -74,7 +104,9 @@ export async function registerRoutes(
       status: 'ok',
       pgvector: pgHealth,
       redis: redisHealth,
-      embeddings: embedHealth
+      embeddings: embedHealth,
+      rerank: rerankHealth ?? { status: 'disabled' },
+      metrics: dependencies.performanceTracker.getSnapshot()
     } satisfies Record<string, unknown>;
   };
 
@@ -116,6 +148,15 @@ export async function registerRoutes(
             cacheMs: Date.now() - cacheStart
           }
         };
+
+        dependencies.performanceTracker.record({
+          totalMs: cached.timings.totalMs,
+          embeddingMs: cached.timings.embeddingMs,
+          retrievalMs: cached.timings.retrievalMs,
+          rerankMs: cached.timings.rerankMs,
+          cacheHit: true,
+          rerankApplied: Boolean((cached.metadata as { rerank?: unknown } | undefined)?.rerank)
+        });
         return cacheHitResponse;
       }
 

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 from pydantic import BaseModel, Field
 
 
@@ -11,9 +11,11 @@ class SkillItem(BaseModel):
 
 
 class ExplicitSkills(BaseModel):
-    technical_skills: Optional[List[str]] = None
-    tools_technologies: Optional[List[str]] = None
-    soft_skills: Optional[List[str]] = None
+    technical_skills: Optional[List[SkillItem]] = None
+    tools_technologies: Optional[List[SkillItem]] = None
+    soft_skills: Optional[List[SkillItem]] = None
+    certifications: Optional[List[SkillItem]] = None
+    languages: Optional[List[SkillItem]] = None
 
 
 class InferredSkills(BaseModel):
@@ -35,13 +37,14 @@ class MarketPositioning(BaseModel):
 
 
 class RecruiterInsights(BaseModel):
-    overall_rating: Optional[str] = None
+    overall_rating: Optional[Union[str, float, int]] = None
     recommendation: Optional[str] = None
 
 
 class CompositeSkillProfile(BaseModel):
-    primary_expertise: Optional[List[str]] = None
-    secondary_expertise: Optional[List[str]] = None
+    primary_expertise: Optional[List[SkillItem]] = None
+    secondary_expertise: Optional[List[SkillItem]] = None
+    domain_specialization: Optional[str] = None
 
 
 class IntelligentAnalysis(BaseModel):

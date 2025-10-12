@@ -1,0 +1,21 @@
+{
+  "total_candidates": 29142,
+  "normal_candidates": 29142,
+  "orphaned_candidates": 0,
+  "candidates_with_name": 29142,
+  "candidates_with_email": 6883,
+  "candidates_with_phone": 2350,
+  "candidates_with_headline": 81,
+  "candidates_with_summary": 53,
+  "candidates_with_comments": 21605,
+  "candidates_with_resumes": 0,
+  "total_comments": 70442,
+  "matched_comments": 70442,
+  "total_resume_files": 0,
+  "avg_comments_per_candidate": 2.42,
+  "target_count": 29176,
+  "missing_count": 34,
+  "additional_ids_found_but_not_loaded": 98371,
+  "merge_timestamp": "2025-10-05T17:19:56.640266",
+  "merge_duration_seconds": 1.8
+}

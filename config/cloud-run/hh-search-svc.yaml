@@ -105,7 +105,7 @@ spec:
             - name: ENABLE_RERANK
               value: "true"
             - name: RERANK_SERVICE_TIMEOUT_MS
-              value: "20000"
+              value: "30000"
             - name: PGVECTOR_CONNECTION_TIMEOUT_MS
               value: "15000"
             - name: ENABLE_AUTO_MIGRATE

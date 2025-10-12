@@ -136,6 +136,14 @@ export class SearchRedisClient {
     return `${this.config.keyPrefix}:${tenantId}:${cacheToken}`;
   }
 
+  buildEmbeddingKey(tenantId: string, cacheToken: string): string {
+    return `${this.config.keyPrefix}:embedding:${tenantId}:${cacheToken}`;
+  }
+
+  isDisabled(): boolean {
+    return this.config.disable;
+  }
+
   async healthCheck(): Promise<RedisHealthStatus> {
     if (this.config.disable) {
       return { status: 'disabled', message: 'Caching disabled via configuration.' } satisfies RedisHealthStatus;

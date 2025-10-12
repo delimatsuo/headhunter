@@ -1,0 +1,5 @@
+error_type: JSONValidationFailure
+error_message: All repair attempts failed
+candidate_id: 190484564
+processor: json_validator
+repair_attempts: 3

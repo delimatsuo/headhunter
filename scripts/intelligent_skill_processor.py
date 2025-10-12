@@ -173,17 +173,18 @@ class IntelligentSkillProcessor:
                                     "version": "4.0",
                                     "analysis_type": "probabilistic_skill_inference"
                                 },
-                                # Flattened fields for querying
-                                "explicit_skills": analysis.get("explicit_skills", {}).get("technical_skills", []),
+                                # Flattened fields for querying (extract skill names from SkillItem objects)
+                                "explicit_skills": self._extract_skill_names(analysis.get("explicit_skills", {}).get("technical_skills", [])),
                                 "inferred_skills_high_confidence": [
                                     s["skill"] for s in analysis.get("inferred_skills", {}).get("highly_probable_skills", [])
+                                    if isinstance(s, dict) and "skill" in s
                                 ],
                                 "all_probable_skills": self._extract_all_probable_skills(analysis),
                                 "current_level": analysis.get("career_trajectory_analysis", {}).get("current_level", "Unknown"),
                                 "skill_market_value": analysis.get("market_positioning", {}).get("skill_market_value", "moderate"),
                                 "overall_rating": analysis.get("recruiter_insights", {}).get("overall_rating", "C"),
                                 "recommendation": analysis.get("recruiter_insights", {}).get("recommendation", "consider"),
-                                "primary_expertise": analysis.get("composite_skill_profile", {}).get("primary_expertise", []),
+                                "primary_expertise": self._extract_skill_names(analysis.get("composite_skill_profile", {}).get("primary_expertise", [])),
                                 "search_keywords": self._generate_search_keywords(candidate_data, analysis)
                             }
 
@@ -205,7 +206,9 @@ class IntelligentSkillProcessor:
                     return await self.process_candidate(candidate_data)  # Retry
                     
                 else:
+                    error_text = await response.text()
                     logger.error(f"API error for {candidate_id}: Status {response.status}")
+                    logger.error(f"Error details: {error_text[:500]}")
                     self.stats.failed += 1
                     return None
                     
@@ -214,17 +217,27 @@ class IntelligentSkillProcessor:
             self.stats.failed += 1
             return None
     
+    def _extract_skill_names(self, skill_items: List) -> List[str]:
+        """Extract skill names from SkillItem objects or strings"""
+        skills = []
+        for item in skill_items:
+            if isinstance(item, dict) and "skill" in item:
+                skills.append(item["skill"])
+            elif isinstance(item, str):
+                skills.append(item)
+        return skills
+
     def _extract_all_probable_skills(self, analysis: Dict) -> List[str]:
         """Extract all skills with >75% confidence"""
         skills = []
         inferred = analysis.get("inferred_skills", {})
-        
+
         for category in ["highly_probable_skills", "probable_skills"]:
             for skill_item in inferred.get(category, []):
-                if skill_item.get("confidence", 0) >= 75:
-                    skills.append(skill_item["skill"])
-        
-        return skills
+                if isinstance(skill_item, dict) and skill_item.get("confidence", 0) >= 75:
+                    skills.append(skill_item.get("skill", ""))
+
+        return [s for s in skills if s]  # Filter out empty strings
     
     def _generate_search_keywords(self, candidate_data: Dict, analysis: Dict) -> str:
         """Generate comprehensive search keywords"""
@@ -233,18 +246,21 @@ class IntelligentSkillProcessor:
             analysis.get("career_trajectory_analysis", {}).get("current_level", ""),
             analysis.get("composite_skill_profile", {}).get("domain_specialization", "")
         ]
-        
-        # Add explicit skills
-        keywords.extend(analysis.get("explicit_skills", {}).get("technical_skills", [])[:5])
-        
+
+        # Add explicit skills (extract names from SkillItem objects)
+        tech_skills = analysis.get("explicit_skills", {}).get("technical_skills", [])[:5]
+        keywords.extend(self._extract_skill_names(tech_skills))
+
         # Add high confidence inferred skills
         for skill_item in analysis.get("inferred_skills", {}).get("highly_probable_skills", [])[:3]:
-            keywords.append(skill_item.get("skill", ""))
-        
+            if isinstance(skill_item, dict):
+                keywords.append(skill_item.get("skill", ""))
+
         # Add company names
         for company in analysis.get("company_context_skills", {}).get("company_specific", [])[:2]:
-            keywords.append(company.get("company", ""))
-        
+            if isinstance(company, dict):
+                keywords.append(company.get("company", ""))
+
         return " ".join(filter(None, keywords)).lower()
 
     def _estimate_analysis_confidence(self, analysis: Dict[str, Any]) -> float:

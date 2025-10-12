@@ -52,6 +52,18 @@ export interface SearchRuntimeConfig {
   ecoBoostFactor: number;
   confidenceFloor: number;
   warmupMultiplier: number;
+  rerankCandidateLimit: number;
+  rerankIncludeReasons: boolean;
+}
+
+export interface RerankServiceConfig {
+  baseUrl: string;
+  timeoutMs: number;
+  retries: number;
+  retryDelayMs: number;
+  idTokenAudience?: string;
+  authToken?: string;
+  enabled: boolean;
 }
 
 export interface FirestoreFallbackConfig {
@@ -64,6 +76,7 @@ export interface SearchServiceConfig {
   embed: EmbedServiceConfig;
   pgvector: PgVectorConfig;
   redis: RedisCacheConfig;
+  rerank: RerankServiceConfig;
   search: SearchRuntimeConfig;
   firestoreFallback: FirestoreFallbackConfig;
 }
@@ -164,6 +177,17 @@ export function getSearchServiceConfig(): SearchServiceConfig {
 
   const hnswEfSearch = parseOptionalNumber(process.env.PGVECTOR_HNSW_EF_SEARCH);
 
+  const rerankBaseUrl = normalizeUrl(process.env.RERANK_SERVICE_URL, 'http://localhost:7103');
+  const rerank: RerankServiceConfig = {
+    baseUrl: rerankBaseUrl,
+    timeoutMs: parseNumber(process.env.RERANK_SERVICE_TIMEOUT_MS, 4000),
+    retries: Math.max(0, parseNumber(process.env.RERANK_SERVICE_RETRIES, 2)),
+    retryDelayMs: Math.max(0, parseNumber(process.env.RERANK_SERVICE_RETRY_DELAY_MS, 200)),
+    idTokenAudience: resolveIdTokenAudience(process.env.RERANK_SERVICE_AUDIENCE, rerankBaseUrl),
+    authToken: process.env.RERANK_SERVICE_BEARER_TOKEN,
+    enabled: parseBoolean(process.env.ENABLE_RERANK, true)
+  };
+
   const pgvector: PgVectorConfig = {
     host: process.env.PGVECTOR_HOST ?? '127.0.0.1',
     port: parseNumber(process.env.PGVECTOR_PORT, 5432),
@@ -191,7 +215,9 @@ export function getSearchServiceConfig(): SearchServiceConfig {
     maxResults: Math.max(1, parseNumber(process.env.SEARCH_MAX_RESULTS, 50)),
     ecoBoostFactor: parseNumber(process.env.SEARCH_ECO_BOOST_FACTOR, 1.2),
     confidenceFloor: parseNumber(process.env.SEARCH_CONFIDENCE_FLOOR, 0.2),
-    warmupMultiplier: Math.max(1, parseNumber(process.env.SEARCH_WARMUP_MULTIPLIER, 3))
+    warmupMultiplier: Math.max(1, parseNumber(process.env.SEARCH_WARMUP_MULTIPLIER, 3)),
+    rerankCandidateLimit: Math.max(1, parseNumber(process.env.SEARCH_RERANK_CANDIDATE_LIMIT, 200)),
+    rerankIncludeReasons: parseBoolean(process.env.SEARCH_RERANK_INCLUDE_REASONS, true)
   };
 
   const firestoreFallback: FirestoreFallbackConfig = {
@@ -204,6 +230,7 @@ export function getSearchServiceConfig(): SearchServiceConfig {
     embed,
     pgvector,
     redis,
+    rerank,
     search,
     firestoreFallback
   };

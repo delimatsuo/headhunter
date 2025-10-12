@@ -1,0 +1,17 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies
+RUN pip install --no-cache-dir \
+    asyncpg==0.29.0 \
+    aiohttp==3.9.5
+
+# Copy the reprocessing script
+COPY scripts/reprocess_all_candidates.py /app/reprocess.py
+
+# Make it executable
+RUN chmod +x /app/reprocess.py
+
+# Run the script
+ENTRYPOINT ["python3", "/app/reprocess.py"]

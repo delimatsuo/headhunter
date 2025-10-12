@@ -419,6 +419,4 @@ async def main():
             logger.warning("No results to save.")
 
 if __name__ == "__main__":
-from scripts.json_repair import repair_json
-from scripts.schemas import IntelligentAnalysis
     asyncio.run(main())

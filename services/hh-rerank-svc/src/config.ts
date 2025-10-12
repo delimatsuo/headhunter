@@ -129,7 +129,7 @@ export function getRerankServiceConfig(): RerankServiceConfig {
   }
 
   const runtime: RerankRuntimeConfig = {
-    slaTargetMs: clamp(parseNumber(process.env.RERANK_SLA_TARGET_MS, 350), { min: 100, max: 1000 }),
+    slaTargetMs: clamp(parseNumber(process.env.RERANK_SLA_TARGET_MS, 350), { min: 100, max: 15000 }),
     slowLogMs: clamp(parseNumber(process.env.RERANK_SLOW_LOG_MS, 300), { min: 50, max: 2000 }),
     maxCandidates: clamp(parseNumber(process.env.RERANK_MAX_CANDIDATES, 50), { min: 1, max: 200 }),
     minCandidates: clamp(parseNumber(process.env.RERANK_MIN_CANDIDATES, 1), { min: 1, max: 50 }),

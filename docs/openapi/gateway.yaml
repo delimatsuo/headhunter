@@ -52,7 +52,6 @@ paths:
             - status
       x-google-backend:
         address: https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /ready:
     get:
@@ -78,7 +77,6 @@ paths:
             - status
       x-google-backend:
         address: https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/embeddings/generate:
     post:
@@ -111,7 +109,6 @@ paths:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
         address: https://hh-embed-svc-production-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-embed-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/embeddings/upsert:
     post:
@@ -144,7 +141,6 @@ paths:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
         address: https://hh-embed-svc-production-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-embed-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/embeddings/query:
     post:
@@ -177,7 +173,6 @@ paths:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
         address: https://hh-embed-svc-production-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-embed-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/search/hybrid:
     post:
@@ -210,7 +205,6 @@ paths:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
         address: https://hh-search-svc-production-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-search-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/search/rerank:
     post:
@@ -243,7 +237,6 @@ paths:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
         address: https://hh-rerank-svc-production-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-rerank-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/evidence/{candidateId}:
     get:
@@ -286,7 +279,6 @@ paths:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
         address: https://hh-evidence-svc-production-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-evidence-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/occupations/search:
     get:
@@ -345,7 +337,6 @@ paths:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
         address: https://hh-eco-svc-production-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-eco-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/occupations/{ecoId}:
     get:
@@ -395,7 +386,6 @@ paths:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
         address: https://hh-eco-svc-production-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-eco-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/enrich/profile:
     post:
@@ -428,7 +418,6 @@ paths:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
         address: https://hh-enrich-svc-production-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-enrich-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/enrich/status/{jobId}:
     get:
@@ -465,7 +454,6 @@ paths:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
         address: https://hh-enrich-svc-production-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-enrich-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/admin/refresh-postings:
     post:
@@ -502,7 +490,6 @@ paths:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
         address: https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/admin/refresh-profiles:
     post:
@@ -539,7 +526,6 @@ paths:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
         address: https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/admin/snapshots:
     get:
@@ -571,7 +557,6 @@ paths:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
         address: https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-admin-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/skills/expand:
     post:
@@ -604,7 +589,6 @@ paths:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
         address: https://hh-msgs-svc-production-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-msgs-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/roles/template:
     post:
@@ -637,7 +621,6 @@ paths:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
         address: https://hh-msgs-svc-production-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-msgs-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS
   /v1/market/demand:
     get:
@@ -685,5 +668,4 @@ paths:
           $ref: ./schemas/common.yaml#/responses/ErrorResponse
       x-google-backend:
         address: https://hh-msgs-svc-production-akcoqbr7sa-uc.a.run.app
-        jwt_audience: https://hh-msgs-svc-production-akcoqbr7sa-uc.a.run.app
         path_translation: APPEND_PATH_TO_ADDRESS

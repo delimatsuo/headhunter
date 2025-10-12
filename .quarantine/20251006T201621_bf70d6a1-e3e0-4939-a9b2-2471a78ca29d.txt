@@ -1,0 +1,160 @@
+{
+  "explicit_skills": {
+    "technical_skills": [
+      {"skill": "Java", "confidence": 100, "evidence": ["Java Developer (2001-2006)"]},
+      {"skill": ".NET", "confidence": 100, "evidence": ["Net Developer (2006-2008)"]},
+      {"skill": "Software Engineering", "confidence": 100, "evidence": ["Senior Software Engineering (2016-2019)"]},
+      {"skill": "Project Management", "confidence": 100, "evidence": ["Engineering Manager (2020-present)"]},
+      {"skill": "Tech Lead", "confidence": 100, "evidence": ["Tech Lead (2019-2020)"]}
+    ],
+    "tools_technologies": [
+      {"skill": "Agile Methodologies", "confidence": 100, "evidence": ["Engineering Manager, Tech Lead roles"]},
+      {"skill": "Version Control Systems", "confidence": 100, "evidence": ["Engineering Manager, Tech Lead roles"]},
+      {"skill": "Project Management Tools", "confidence": 100, "evidence": ["Engineering Manager, Tech Lead roles"]}
+    ],
+    "soft_skills": [
+      {"skill": "Leadership", "confidence": 100, "evidence": ["Engineering Manager, Tech Lead roles"]},
+      {"skill": "Communication", "confidence": 100, "evidence": ["Engineering Manager, Tech Lead roles"]},
+      {"skill": "Problem Solving", "confidence": 100, "evidence": ["Engineering Manager, Tech Lead roles"]}
+    ],
+    "certifications": [],
+    "languages": [
+      {"skill": "Portuguese", "confidence": 100, "evidence": ["native/fluent"]},
+      {"skill": "English", "confidence": 50, "evidence": ["likely based on international experience and education"]}
+    ]
+  },
+  "inferred_skills": {
+    "highly_probable_skills": [
+      {"skill": "Scrum", "confidence": 95, "reasoning": "Engineering Manager and Tech Lead roles", "skill_category": "technical"},
+      {"skill": "Kanban", "confidence": 95, "reasoning": "Engineering Manager and Tech Lead roles", "skill_category": "technical"},
+      {"skill": "MS Project", "confidence": 95, "reasoning": "Engineering Manager and Tech Lead roles", "skill_category": "tools_technologies"},
+      {"skill": "MS Office", "confidence": 95, "reasoning": "Engineering Manager and Tech Lead roles", "skill_category": "tools_technologies"}
+    ],
+    "probable_skills": [
+      {"skill": "Database Management", "confidence": 80, "reasoning": "Senior Software Engineering role", "skill_category": "technical"},
+      {"skill": "Cloud Services", "confidence": 80, "reasoning": "Senior Software Engineering role", "skill_category": "tools_technologies"},
+      {"skill": "Agile Practices", "confidence": 80, "reasoning": "Engineering Manager and Tech Lead roles", "skill_category": "technical"},
+      {"skill": "DevOps", "confidence": 80, "reasoning": "Engineering Manager and Tech Lead roles", "skill_category": "technical"}
+    ],
+    "likely_skills": [
+      {"skill": "Scalability", "confidence": 65, "reasoning": "Senior Software Engineering role", "skill_category": "technical"},
+      {"skill": "Performance Optimization", "confidence": 65, "reasoning": "Senior Software Engineering role", "skill_category": "technical"},
+      {"skill": "Team Leadership", "confidence": 65, "reasoning": "Engineering Manager and Tech Lead roles", "skill_category": "soft_skills"}
+    ],
+    "possible_skills": [
+      {"skill": "Business Intelligence", "confidence": 50, "reasoning": "MBA in Business Intelligence", "skill_category": "domain"}
+    ]
+  },
+  "role_based_competencies": {
+    "current_role_competencies": {
+      "role": "Engineering Manager",
+      "core_competencies": ["Leadership", "Project Management", "Agile Methodologies"],
+      "typical_tools": ["Version Control Systems", "Project Management Tools"],
+      "domain_knowledge": ["Software Engineering"]
+    },
+    "historical_competencies": [
+      {
+        "role": "Tech Lead",
+        "core_competencies": ["Agile Methodologies", "Project Management", "Technical Leadership"],
+        "typical_tools": ["Version Control Systems", "Project Management Tools"],
+        "domain_knowledge": ["Software Engineering"]
+      },
+      {
+        "role": "Senior Software Engineering",
+        "core_competencies": ["Software Engineering", "Technical Leadership", "Agile Methodologies"],
+        "typical_tools": ["Version Control Systems", "Project Management Tools"],
+        "domain_knowledge": ["Software Engineering"]
+      },
+      {
+        "role": "Development Coordinator",
+        "core_competencies": ["Project Management", "Agile Methodologies", "Technical Leadership"],
+        "typical_tools": ["Version Control Systems", "Project Management Tools"],
+        "domain_knowledge": ["Software Engineering"]
+      },
+      {
+        "role": "Net Developer",
+        ".NET Developer",
+        "core_competencies": [".NET", "Software Engineering", "Technical Leadership"],
+        "typical_tools": ["Version Control Systems", "Project Management Tools"],
+        "domain_knowledge": ["Software Engineering"]
+      },
+      {
+        "role": "Java Developer",
+        "core_competencies": ["Java", "Software Engineering", "Technical Leadership"],
+        "typical_tools": ["Version Control Systems", "Project Management Tools"],
+        "domain_knowledge": ["Software Engineering"]
+      }
+    ]
+  },
+  "company_context_skills": {
+    "company_specific": ["Software Engineering", "Project Management", "Agile Methodologies"],
+    "industry_skills": ["Software Engineering", "Project Management", "Agile Methodologies"]
+  },
+  "skill_evolution_analysis": {
+    "skill_trajectory": "Continuous learning and adaptation",
+    "emerging_skills": ["Cloud Services", "DevOps", "Business Intelligence"],
+    "skill_gaps": ["Modern programming languages (e.g., Python, JavaScript)", "Big Data Technologies"],
+    "learning_velocity": "Moderate",
+    "skill_currency": "Current",
+    "skill_timeline": [
+      {"skill": "Java", "first_used": "2001", "last_used": "2006", "frequency": "high", "recency_score": 95},
+      {"skill": ".NET", "first_used": "2006", "last_used": "2008", "frequency": "high", "recency_score": 90},
+      {"skill": "Software Engineering", "first_used": "2001", "last_used": "2019", "frequency": "high", "recency_score": 95},
+      {"skill": "Project Management", "first_used": "2019", "last_used": "2023", "frequency": "high", "recency_score": 95}
+    ],
+    "skill_depth_analysis": {
+      "beginner_skills": ["Cloud Services", "DevOps"],
+      "intermediate_skills": ["Agile Methodologies", "Database Management"],
+      "advanced_skills": ["Leadership", "Project Management"],
+      "expert_skills": ["Software Engineering"]
+    }
+  },
+  "composite_skill_profile": {
+    "primary_expertise": [
+      {"skill": "Software Engineering", "confidence": 95, "market_demand": "high"},
+      {"skill": "Project Management", "confidence": 90, "market_demand": "high"}
+    ],
+    "secondary_expertise": [
+      {"skill": "Agile Methodologies", "confidence": 85, "market_demand": "high"},
+      {"skill": "Leadership", "confidence": 80, "market_demand": "high"}
+    ],
+    "domain_specialization": "Software Engineering",
+    "skill_breadth": "Moderate",
+    "unique_combination": ["Leadership in Software Engineering"],
+    "skill_categories": {
+      "technical_skills": ["Java", ".NET", "Software Engineering", "Agile Methodologies", "Database Management", "Project Management"],
+      "soft_skills": ["Leadership", "Communication", "Problem Solving"],
+      "domain_skills": ["Software Engineering", "Project Management", "Agile Methodologies"],
+      "leadership_skills": ["Leadership", "Project Management"]
+    },
+    "transferable_skills": [
+      {"skill": "Project Management", "transferability": "high", "target_industries": ["Tech", "Finance", "Healthcare"]},
+      {"skill": "Leadership", "transferability": "high", "target_industries": ["Tech", "Finance", "Healthcare"]}
+    ]
+  },
+  "career_trajectory_analysis": {
+    "current_level": "Mid-Level",
+    "years_experience": 15,
+    "promotion_velocity": "Moderate",
+    "career_progression": "Consistent growth in leadership roles",
+    "performance_indicator": "Strong leadership and technical skills"
+  },
+  "market_positioning": {
+    "skill_market_value": "High",
+    "skill_rarity": "Moderate",
+    "competitive_advantage": ["Strong leadership skills", "Experienced in multiple software engineering roles"],
+    "placement_difficulty": "Moderate",
+    "ideal_next_roles": ["Senior Engineering Manager", "CTO"],
+    "salary_range": "High"
+  },
+  "recruiter_insights": {
+    "overall_rating": "Strong",
+    "recommendation": "Hire",
+    "confidence_in_assessment": "High",
+    "verification_needed": ["Specific project details", "References from current/previous employers"],
+    "red_flags": [],
+    "selling_points": ["Proven leadership in software engineering", "Experienced in multiple roles and industries"],
+    "interview_focus": ["Current project challenges", "Future career goals"],
+    "one_line_pitch": "Experienced Engineering Manager with a strong track record in software engineering and leadership"
+  }
+}

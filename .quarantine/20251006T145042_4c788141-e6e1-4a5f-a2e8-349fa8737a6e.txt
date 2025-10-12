@@ -1,0 +1,134 @@
+{
+  "explicit_skills": {
+    "technical_skills": [
+      {"skill": "Java", "confidence": 100, "evidence": ["Fullstack Java at Indra (2018/09 - 2019/04)"]},
+      {"skill": "Fullstack Development", "confidence": 100, "evidence": ["Fullstack Developer at Dextra Digital (2020/04 - 2020/08)"]},
+      {"skill": "Mobile Development", "confidence": 100, "evidence": ["Mobile Engineer at Instituto de Pesquisas Eldorado (2015/02 - 2016/01)"]},
+      {"skill": "Performance Engineering", "confidence": 100, "evidence": ["Performance Engineer at Instituto de Pesquisas Eldorado (2014/01 - 2015/01)"]},
+      {"skill": "Developer", "confidence": 100, "evidence": ["Developer at various companies (2013/06 - 2016/01)"]}
+    ],
+    "tools_technologies": [
+      {"skill": "AWS", "confidence": 80, "evidence": ["Inferred from roles at companies that typically use AWS"]}
+    ],
+    "soft_skills": [
+      {"skill": "Problem-solving", "confidence": 100, "evidence": ["Demonstrated through various roles requiring technical problem-solving"]}
+    ],
+    "certifications": [],
+    "languages": [
+      {"skill": "Portuguese", "confidence": 100, "evidence": ["Native language"]},
+      {"skill": "English", "confidence": 80, "evidence": ["Common for technical roles, but not explicitly mentioned"]}
+    ]
+  },
+  "inferred_skills": {
+    "highly_probable_skills": [
+      {"skill": "JavaScript", "confidence": 95, "reasoning": "Fullstack Developer role typically requires JavaScript", "skill_category": "technical"},
+      {"skill": "React", "confidence": 95, "reasoning": "Fullstack Developer role typically requires React", "skill_category": "technical"},
+      {"skill": "Spring Framework", "confidence": 95, "reasoning": "Fullstack Java role typically requires Spring Framework", "skill_category": "technical"}
+    ],
+    "probable_skills": [
+      {"skill": "Node.js", "confidence": 80, "reasoning": "Common in Fullstack Developer roles", "skill_category": "technical"},
+      {"skill": "Docker", "confidence": 80, "reasoning": "Common in Developer roles for containerization", "skill_category": "technical"},
+      {"skill": "Agile Methodologies", "confidence": 80, "reasoning": "Common in Developer roles", "skill_category": "soft"}
+    ],
+    "likely_skills": [
+      {"skill": "Python", "confidence": 65, "reasoning": "Common in Developer roles", "skill_category": "technical"},
+      {"skill": "SQL", "confidence": 65, "reason: "Common in Developer roles", "skill_category": "technical"}
+    ],
+    "possible_skills": [
+      {"skill": "Kubernetes", "confidence": 50, "reasoning": "Possible in Developer roles, especially if working with cloud services", "skill_category": "technical"}
+    ]
+  },
+  "role_based_competencies": {
+    "current_role_competencies": {
+      "role": "Developer at SiDi (2020/09 - current)",
+      "core_competencies": ["Problem-solving", "Technical skills"],
+      "typical_tools": ["JavaScript", "React", "Node.js"],
+      "domain_knowledge": ["General software development"]
+    },
+    "historical_competencies": [
+      {
+        "role": "Fullstack Developer at Dextra Digital (2020/04 - 2020/08)",
+        "core_competencies": ["JavaScript", "React", "Node.js"],
+        "typical_tools": ["JavaScript", "React", "Node.js"],
+        "domain_knowledge": ["General software development"]
+      },
+      {
+        "role": "Developer at Instituto de Pesquisas Eldorado (2013/06 - 2016/01)",
+        "core_competencies": ["Java", "Mobile Development", "Performance Engineering"],
+        "typical_tools": ["Java", "Mobile Development", "Performance Engineering"],
+        "domain_knowledge": ["General software development"]
+      }
+    ]
+  },
+  "company_context_skills": {
+    "company_specific": [],
+    "industry_skills": ["General software development"]
+  },
+  "skill_evolution_analysis": {
+    "skill_trajectory": "Continuous development in software development skills",
+    "emerging_skills": ["JavaScript", "React", "Node.js"],
+    "skill_gaps": ["Advanced cloud services (Kubernetes)", "Database management (SQL)"],
+    "learning_velocity": "Moderate",
+    "skill_currency": "Current",
+    "skill_timeline": [
+      {"skill": "Java", "first_used": "2016", "last_used": "2019", "frequency": "high", "recency_score": 95},
+      {"skill": "Mobile Development", "first_used": "2015", "last_used": "2016", "frequency": "high", "recency_score": 95},
+      {"skill": "Performance Engineering", "first_used": "2014", "last_used": "2015", "frequency": "high", "recency_score": 95}
+    ],
+    "skill_depth_analysis": {
+      "beginner_skills": ["JavaScript", "React", "Node.js"],
+      "intermediate_skills": ["Java", "Mobile Development", "Performance Engineering"],
+      "advanced_skills": [],
+      "expert_skills": []
+    }
+  },
+  "composite_skill_profile": {
+    "primary_expertise": [
+      {"skill": "Java", "confidence": 95, "market_demand": "medium"},
+      {"skill": "Fullstack Development", "confidence": 95, "market_demand": "high"}
+    ],
+    "secondary_expertise": [
+      {"skill": "Mobile Development", "confidence": 80, "market_demand": "medium"},
+      {"skill": "Performance Engineering", "confidence": 80, "market_demand": "medium"}
+    ],
+    "domain_specialization": "General software development",
+    "skill_breadth": "Moderate",
+    "unique_combination": ["Fullstack Development with Java and Mobile Development"],
+    "skill_categories": {
+      "technical_skills": ["Java", "JavaScript", "React", "Node.js", "Mobile Development", "Performance Engineering"],
+      "soft_skills": ["Problem-solving"],
+      "domain_skills": ["General software development"],
+      "leadership_skills": []
+    },
+    "transferable_skills": [
+      {"skill": "JavaScript", "transferability": "high", "target_industries": ["Web Development", "Fullstack Development"]},
+      {"skill": "React", "transferability": "high", "target_industries": ["Web Development", "Fullstack Development"]},
+      {"skill": "Node.js", "transferability": "high", "target_industries": ["Web Development", "Fullstack Development"]}
+    ]
+  },
+  "career_trajectory_analysis": {
+    "current_level": "Mid-level Developer",
+    "years_experience": 15,
+    "promotion_velocity": "Moderate",
+    "career_progression": "Continuous learning and skill development",
+    "performance_indicator": "Technical skills and problem-solving ability"
+  },
+  "market_positioning": {
+    "skill_market_value": "Medium",
+    "skill_rarity": "Moderate",
+    "competitive_advantage": ["Strong foundation in Java and Fullstack Development", "Experience in Mobile Development and Performance Engineering"],
+    "placement_difficulty": "Moderate",
+    "ideal_next_roles": ["Fullstack Developer", "Technical Lead", "Team Lead"],
+    "salary_range": "Mid-level Developer salary range"
+  },
+  "recruiter_insights": {
+    "overall_rating": "Good",
+    "recommendation": "Consider for mid-level Developer roles",
+    "confidence_in_assessment": "High",
+    "verification_needed": ["Verify specific technical skills and recent projects"],
+    "red_flags": [],
+    "selling_points": ["Strong technical foundation", "Experience in multiple domains"],
+    "interview_focus": ["Technical skills, problem-solving, and recent projects"],
+    "one_line_pitch": "Experienced Fullstack Developer with a strong foundation in Java and a range of technical skills"
+  }
+}

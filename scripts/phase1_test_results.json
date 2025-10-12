@@ -1,0 +1,447 @@
+[
+  {
+    "candidate_id": "240628012",
+    "name": "Darlan Farias",
+    "original_data": {
+      "education": "- 2019/01 - 2020/01\nNanodegree - Formação acadêmica\nMachine Learning and Engineering\n- 2014/01 - 2015/01\nExchange Visitor - Indiana University Bloomington\nComputer Science\n- 2012/01 - 2016/01\nBachelor - University of São Paulo\nComputer Science",
+      "experience": "- 2023/03 - current\nNubank : Lead Machine Learning Engineer\n\n- 2021/01 - 2021/01\ndezembro de : Head of Data\n\n- 2020/01 - 2021/01\n : Senior Data Engineer\n\n- 2018/01 - 2020/01\nNubank : Machine Learning Engineer\n\n- 2017/01 - 2018/01\nSerasa Experian : Data Engineer\n\n- 2016/01 - 2017/01\nFAPESP : Junior Data Engineer\n\n- 2015/01 - 2015/01\nCarnegie Mellon University : Intern\n\n- 2015/01 - 2016/01\nUniversidade de São Paulo : Researcher\n\n- 2013/01 - 2013/01\nUniversidade de São Paulo : Monitoria\n\n- 2013/01 - 2014/01\nBolsista de Iniciação Científica : \n\n- 2012/01 - 2013/01\nTutoria Científico : \n",
+      "comments": []
+    },
+    "intelligent_analysis": {
+      "explicit_skills": {
+        "technical_skills": [
+          {
+            "skill": "Machine Learning",
+            "confidence": 100.0,
+            "reasoning": null,
+            "evidence": [
+              "Lead Machine Learning Engineer at Nubank",
+              "Machine Learning and Engineering Nanodegree"
+            ],
+            "category": null
+          },
+          {
+            "skill": "Data Engineering",
+            "confidence": 100.0,
+            "reasoning": null,
+            "evidence": [
+              "Senior Data Engineer",
+              "Data Engineer at Serasa Experian"
+            ],
+            "category": null
+          },
+          {
+            "skill": "Python",
+            "confidence": 100.0,
+            "reasoning": null,
+            "evidence": [
+              "Machine Learning and Engineering Nanodegree"
+            ],
+            "category": null
+          },
+          {
+            "skill": "Java",
+            "confidence": 100.0,
+            "reasoning": null,
+            "evidence": [
+              "Bachelor - University of São Paulo - Computer Science"
+            ],
+            "category": null
+          },
+          {
+            "skill": "SQL",
+            "confidence": 100.0,
+            "reasoning": null,
+            "evidence": [
+              "Data Engineer at Serasa Experian"
+            ],
+            "category": null
+          },
+          {
+            "skill": "AWS",
+            "confidence": 100.0,
+            "reasoning": null,
+            "evidence": [
+              "Senior Data Engineer at Nubank"
+            ],
+            "category": null
+          }
+        ],
+        "tools_technologies": [
+          {
+            "skill": "TensorFlow",
+            "confidence": 100.0,
+            "reasoning": null,
+            "evidence": [
+              "Machine Learning and Engineering Nanodegree"
+            ],
+            "category": null
+          },
+          {
+            "skill": "PyTorch",
+            "confidence": 100.0,
+            "reasoning": null,
+            "evidence": [
+              "Machine Learning and Engineering Nanodegree"
+            ],
+            "category": null
+          },
+          {
+            "skill": "Apache Spark",
+            "confidence": 100.0,
+            "reasoning": null,
+            "evidence": [
+              "Data Engineer at Serasa Experian"
+            ],
+            "category": null
+          },
+          {
+            "skill": "Docker",
+            "confidence": 100.0,
+            "reasoning": null,
+            "evidence": [
+              "Senior Data Engineer at Nubank"
+            ],
+            "category": null
+          },
+          {
+            "skill": "Kubernetes",
+            "confidence": 100.0,
+            "reasoning": null,
+            "evidence": [
+              "Senior Data Engineer at Nubank"
+            ],
+            "category": null
+          }
+        ],
+        "soft_skills": [
+          {
+            "skill": "Leadership",
+            "confidence": 100.0,
+            "reasoning": null,
+            "evidence": [
+              "Head of Data at dezembro de"
+            ],
+            "category": null
+          },
+          {
+            "skill": "Communication",
+            "confidence": 100.0,
+            "reasoning": null,
+            "evidence": [
+              "Researcher at Universidade de São Paulo"
+            ],
+            "category": null
+          },
+          {
+            "skill": "Problem-solving",
+            "confidence": 100.0,
+            "reasoning": null,
+            "evidence": [
+              "Machine Learning and Engineering Nanodegree"
+            ],
+            "category": null
+          },
+          {
+            "skill": "Teamwork",
+            "confidence": 100.0,
+            "reasoning": null,
+            "evidence": [
+              "Intern at Carnegie Mellon University"
+            ],
+            "category": null
+          }
+        ],
+        "certifications": [],
+        "languages": [
+          {
+            "skill": "Portuguese",
+            "confidence": 100.0,
+            "reasoning": null,
+            "evidence": [
+              "Native language"
+            ],
+            "category": null
+          },
+          {
+            "skill": "English",
+            "confidence": 100.0,
+            "reasoning": null,
+            "evidence": [
+              "Exchange Visitor - Indiana University Bloomington - Computer Science"
+            ],
+            "category": null
+          }
+        ]
+      },
+      "inferred_skills": {
+        "highly_probable_skills": [
+          {
+            "skill": "Deep Learning",
+            "confidence": 95.0,
+            "reasoning": "Strong indicators from role/company",
+            "evidence": null,
+            "category": null
+          },
+          {
+            "skill": "Cloud Computing",
+            "confidence": 95.0,
+            "reasoning": "Strong indicators from role/company",
+            "evidence": null,
+            "category": null
+          },
+          {
+            "skill": "Data Visualization",
+            "confidence": 95.0,
+            "reasoning": "Strong indicators from role/company",
+            "evidence": null,
+            "category": null
+          }
+        ],
+        "probable_skills": [
+          {
+            "skill": "Natural Language Processing",
+            "confidence": 80.0,
+            "reasoning": "Likely based on typical requirements",
+            "evidence": null,
+            "category": null
+          },
+          {
+            "skill": "Computer Vision",
+            "confidence": 80.0,
+            "reasoning": "Likely based on typical requirements",
+            "evidence": null,
+            "category": null
+          },
+          {
+            "skill": "Agile Methodologies",
+            "confidence": 80.0,
+            "reasoning": "Likely based on typical requirements",
+            "evidence": null,
+            "category": null
+          }
+        ],
+        "likely_skills": [
+          {
+            "skill": "Data Warehousing",
+            "confidence": 65.0,
+            "reasoning": "Common for this role/industry",
+            "evidence": null,
+            "category": null
+          },
+          {
+            "skill": "Business Intelligence",
+            "confidence": 65.0,
+            "reasoning": "Common for this role/industry",
+            "evidence": null,
+            "category": null
+          },
+          {
+            "skill": "Project Management",
+            "confidence": 65.0,
+            "reasoning": "Common for this role/industry",
+            "evidence": null,
+            "category": null
+          }
+        ],
+        "possible_skills": [
+          {
+            "skill": "Quantum Computing",
+            "confidence": 50.0,
+            "reasoning": "Potential based on context",
+            "evidence": null,
+            "category": null
+          },
+          {
+            "skill": "Cybersecurity",
+            "confidence": 50.0,
+            "reasoning": "Potential based on context",
+            "evidence": null,
+            "category": null
+          },
+          {
+            "skill": "Digital Marketing",
+            "confidence": 50.0,
+            "reasoning": "Potential based on context",
+            "evidence": null,
+            "category": null
+          }
+        ]
+      },
+      "career_trajectory_analysis": {
+        "current_level": "Senior",
+        "years_experience": 5.0,
+        "promotion_velocity": "Fast"
+      },
+      "market_positioning": {
+        "skill_market_value": "High",
+        "skill_rarity": "Rare"
+      },
+      "recruiter_insights": {
+        "overall_rating": "Excellent",
+        "recommendation": "Highly recommended"
+      },
+      "composite_skill_profile": {
+        "primary_expertise": [
+          {
+            "skill": "Machine Learning",
+            "confidence": 95.0,
+            "reasoning": null,
+            "evidence": null,
+            "category": null
+          },
+          {
+            "skill": "Data Engineering",
+            "confidence": 95.0,
+            "reasoning": null,
+            "evidence": null,
+            "category": null
+          }
+        ],
+        "secondary_expertise": [
+          {
+            "skill": "Deep Learning",
+            "confidence": 80.0,
+            "reasoning": null,
+            "evidence": null,
+            "category": null
+          },
+          {
+            "skill": "Cloud Computing",
+            "confidence": 80.0,
+            "reasoning": null,
+            "evidence": null,
+            "category": null
+          }
+        ],
+        "domain_specialization": "Financial Services"
+      },
+      "role_based_competencies": {
+        "current_role_competencies": {
+          "role": "Lead Machine Learning Engineer",
+          "core_competencies": [
+            "Machine Learning",
+            "Data Engineering",
+            "Leadership"
+          ],
+          "typical_tools": [
+            "TensorFlow",
+            "PyTorch",
+            "Apache Spark"
+          ],
+          "domain_knowledge": [
+            "Financial Services",
+            "Data Science"
+          ]
+        },
+        "historical_competencies": [
+          {
+            "role": "Senior Data Engineer",
+            "core_competencies": [
+              "Data Engineering",
+              "Cloud Computing",
+              "Data Visualization"
+            ],
+            "typical_tools": [
+              "Docker",
+              "Kubernetes"
+            ],
+            "domain_knowledge": [
+              "Financial Services",
+              "Data Science"
+            ]
+          },
+          {
+            "role": "Machine Learning Engineer",
+            "core_competencies": [
+              "Machine Learning",
+              "Deep Learning",
+              "Data Engineering"
+            ],
+            "typical_tools": [
+              "TensorFlow",
+              "PyTorch"
+            ],
+            "domain_knowledge": [
+              "Financial Services",
+              "Data Science"
+            ]
+          },
+          {
+            "role": "Data Engineer",
+            "core_competencies": [
+              "Data Engineering",
+              "Cloud Computing",
+              "Data Visualization"
+            ],
+            "typical_tools": [
+              "Apache Spark",
+              "Docker"
+            ],
+            "domain_knowledge": [
+              "Financial Services",
+              "Data Science"
+            ]
+          }
+        ]
+      },
+      "company_context_skills": {
+        "company_specific": [
+          "Nubank's proprietary technology",
+          "Nubank's data engineering platform"
+        ],
+        "industry_skills": [
+          "Financial Services",
+          "Data Science"
+        ]
+      },
+      "skill_evolution_analysis": {
+        "skill_trajectory": "Machine Learning Engineer -> Senior Data Engineer -> Lead Machine Learning Engineer",
+        "emerging_skills": [
+          "Quantum Computing",
+          "Cybersecurity"
+        ],
+        "skill_gaps": [
+          "Business Intelligence",
+          "Project Management"
+        ],
+        "learning_velocity": "Fast",
+        "skill_currency": "Technical skills",
+        "skill_timeline": [
+          {
+            "skill": "Machine Learning",
+            "first_used": "2018",
+            "last_used": "2023",
+            "frequency": "High",
+            "recency_score": 95
+          },
+          {
+            "skill": "Data Engineering",
+            "first_used": "2017",
+            "last_used": "2023",
+            "frequency": "High",
+            "recency_score": 95
+          }
+        ],
+        "skill_depth_analysis": {
+          "beginner_skills": [
+            "Quantum Computing",
+            "Cybersecurity"
+          ],
+          "intermediate_skills": [
+            "Business Intelligence",
+            "Project Management"
+          ],
+          "advanced_skills": [
+            "Machine Learning",
+            "Data Engineering"
+          ],
+          "expert_skills": [
+            "Deep Learning",
+            "Cloud Computing"
+          ]
+        }
+      }
+    },
+    "processing_metadata": {
+      "timestamp": 
