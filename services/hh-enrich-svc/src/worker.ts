@@ -334,11 +334,25 @@ export class EnrichmentWorker {
       let stderr = '';
 
       child.stdout?.on('data', (chunk) => {
-        stdout += chunk.toString();
+        const text = chunk.toString();
+        stdout += text;
+        // Log Python stdout immediately for debugging
+        text.split('\n').forEach(line => {
+          if (line.trim()) {
+            _jobLogger.info({ python_stdout: line.trim() }, 'Python output');
+          }
+        });
       });
 
       child.stderr?.on('data', (chunk) => {
-        stderr += chunk.toString();
+        const text = chunk.toString();
+        stderr += text;
+        // Log Python stderr immediately for debugging
+        text.split('\n').forEach(line => {
+          if (line.trim()) {
+            _jobLogger.warn({ python_stderr: line.trim() }, 'Python error output');
+          }
+        });
       });
 
       child.on('error', (error) => {
