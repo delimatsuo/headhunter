@@ -58,6 +58,11 @@ test-data/
 *.test.json
 CSV files/
 
+# Data files - NEVER commit large data files
+data/enriched/
+data/enriched/**/*.json
+data/enriched/**/*.jsonl
+
 # Firebase
 .firebase/
 
