@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS search.candidate_embeddings (
     profile_id UUID PRIMARY KEY REFERENCES search.candidate_profiles(id) ON DELETE CASCADE,
     tenant_id TEXT NOT NULL,
     model_version TEXT NOT NULL,
-    embedding VECTOR(1536) NOT NULL,
+    embedding VECTOR(768) NOT NULL,
     embedding_norm DOUBLE PRECISION,
     last_indexed_at TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW(),

@@ -323,9 +323,18 @@ export class PgVectorClient {
     }
 
     const atttypmod = Number(embeddingColumn.rows[0]?.atttypmod ?? 0);
-    if (!Number.isFinite(atttypmod) || atttypmod - 4 !== this.dimensions) {
+    const actualDimension = atttypmod - 4;
+
+    this.logger.info({
+      atttypmod,
+      actualDimension,
+      expectedDimension: this.dimensions,
+      table: `${this.schema}.${this.table}`
+    }, 'Database dimension check');
+
+    if (!Number.isFinite(atttypmod) || actualDimension !== this.dimensions) {
       throw new Error(
-        `Embedding dimensionality mismatch detected in ${this.schema}.${this.table}. Expected vector(${this.dimensions}).`
+        `Embedding dimensionality mismatch detected in ${this.schema}.${this.table}. Expected vector(${this.dimensions}), found atttypmod=${atttypmod}, dimension=${actualDimension}.`
       );
     }
 
