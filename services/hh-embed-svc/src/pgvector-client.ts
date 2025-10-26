@@ -323,16 +323,25 @@ export class PgVectorClient {
     }
 
     const atttypmod = Number(embeddingColumn.rows[0]?.atttypmod ?? 0);
-    const actualDimension = atttypmod - 4;
+
+    // pgvector 0.7.0+ stores dimensions directly in atttypmod
+    // Older versions use atttypmod - 4
+    const dimensionDirect = atttypmod;
+    const dimensionLegacy = atttypmod - 4;
+
+    const isNewFormat = dimensionDirect === this.dimensions;
+    const isLegacyFormat = dimensionLegacy === this.dimensions;
+    const actualDimension = isNewFormat ? dimensionDirect : dimensionLegacy;
 
     this.logger.info({
       atttypmod,
       actualDimension,
       expectedDimension: this.dimensions,
+      format: isNewFormat ? 'pgvector-0.7.0+' : (isLegacyFormat ? 'pgvector-legacy' : 'unknown'),
       table: `${this.schema}.${this.table}`
     }, 'Database dimension check');
 
-    if (!Number.isFinite(atttypmod) || actualDimension !== this.dimensions) {
+    if (!Number.isFinite(atttypmod) || (!isNewFormat && !isLegacyFormat)) {
       throw new Error(
         `Embedding dimensionality mismatch detected in ${this.schema}.${this.table}. Expected vector(${this.dimensions}), found atttypmod=${atttypmod}, dimension=${actualDimension}.`
       );
