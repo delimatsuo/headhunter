@@ -11,6 +11,7 @@ import os
 import sys
 from pathlib import Path
 from datetime import datetime
+from typing import Any
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -18,6 +19,24 @@ sys.path.insert(0, str(project_root))
 
 from scripts.intelligent_skill_processor import IntelligentSkillProcessor
 from google.cloud import firestore
+
+def clean_for_json(obj: Any) -> Any:
+    """Remove Firestore Sentinel objects and other non-serializable types"""
+    if obj is None:
+        return None
+
+    # Check for Firestore Sentinel objects by class name
+    if hasattr(obj, '__class__') and 'Sentinel' in obj.__class__.__name__:
+        return datetime.now().isoformat()
+
+    if isinstance(obj, dict):
+        return {k: clean_for_json(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [clean_for_json(item) for item in obj]
+    elif isinstance(obj, datetime):
+        return obj.isoformat()
+
+    return obj
 
 # Configuration
 INPUT_FILE = Path("data/enriched/missing_candidates.json")
@@ -95,8 +114,11 @@ async def main():
 
             # Save progress
             if (i + BATCH_SIZE) % (CHECKPOINT_FREQ * BATCH_SIZE) == 0:
+                # Clean Firestore Sentinel objects before saving
+                clean_results = [clean_for_json(r) for r in enriched_results]
+
                 with open(OUTPUT_FILE, 'w') as f:
-                    json.dump(enriched_results, f, indent=2)
+                    json.dump(clean_results, f, indent=2)
 
                 with open(PROGRESS_FILE, 'w') as f:
                     json.dump({
@@ -114,9 +136,10 @@ async def main():
                 print(f"  💾 Checkpoint: {success_count} success, {fail_count} failed")
                 print(f"  ⏱️  Rate: {rate:.1f} candidates/hour | ETA: {eta_hours:.1f} hours")
 
-        # Final save
+        # Final save (clean Firestore Sentinel objects)
+        clean_results = [clean_for_json(r) for r in enriched_results]
         with open(OUTPUT_FILE, 'w') as f:
-            json.dump(enriched_results, f, indent=2)
+            json.dump(clean_results, f, indent=2)
 
         elapsed = (datetime.now() - start_time).total_seconds() / 3600
 
