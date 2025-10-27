@@ -1,4 +1,4 @@
-# Handover & Recovery Runbook (Updated 2025-10-06 18:30 PM)
+# Handover & Recovery Runbook (Updated 2025-10-27 17:50 UTC)
 
 > Canonical repository path: `/Volumes/Extreme Pro/myprojects/headhunter`. Do **not** work from `/Users/Delimatsuo/Documents/Coding/headhunter`.
 > Guardrail: all automation wrappers under `scripts/` source `scripts/utils/repo_guard.sh` and exit immediately when invoked from non-canonical clones.
@@ -7,28 +7,112 @@ This runbook is the single source of truth for resuming work or restoring local 
 
 ---
 
+## 🎉 CRITICAL UPDATE (2025-10-27 17:50 UTC): Embedding Remediation Phase 1 & 2
+
+### ✅ Phase 2 COMPLETED (2025-10-27 17:45 UTC)
+
+**Schema Mismatch & Authentication Fixed - Re-embedding COMPLETE**
+
+**What Was Accomplished:**
+1. ✅ **Fixed schema mismatch** between TypeScript and Python enrichment schemas
+   - Updated `scripts/reembed_enriched_candidates.py` to work with actual Firestore schema
+   - Rewrote `buildSearchableProfile()` function (lines 37-156) to map Python enrichment structure
+   - Changed from TypeScript schema (`technical_assessment.primary_skills`) to Python schema (`intelligent_analysis.explicit_skills`)
+
+2. ✅ **Fixed Cloud Run authentication issues**
+   - Added `get_auth_token()` function using `gcloud auth print-identity-token`
+   - Updated headers to use `Authorization: Bearer {token}` format instead of API key
+   - Corrected Cloud Run service URL to production endpoint
+
+3. ✅ **Re-embedded all 17,969 enriched candidates**
+   - **Success Rate:** 100% (0 failures)
+   - **Processing Time:** ~3 hours
+   - **Method:** Direct calls to `hh-embed-svc` Cloud Run service
+   - **Result:** All embeddings now based on enriched structured profiles (not raw text)
+   - **Metadata:** Updated with `source: 'reembed_migration'`
+
+**Code Changes Committed:**
+- Commit: `f55986b` - "fix: resolve embedding remediation schema mismatch and authentication issues"
+- Commit: `ee5b91e` - "docs: update handover with Phase 2 completion"
+- Files: `scripts/reembed_enriched_candidates.py`, `docs/HANDOVER.md`, `STATUS_UPDATE.md`
+
+### 🔄 Phase 1 IN PROGRESS (Started 2025-10-27 17:44 UTC)
+
+**Enriching 11,173 Missing Candidates with Together AI**
+
+**Current Status:**
+- 🔄 **Running** (PID: 37776)
+- 📊 **Progress:** Batch 5+/224 (~2% complete)
+- ✅ **Success Rate:** ~98% (5 errors in 250 candidates)
+- ⏱️ **ETA:** 4-6 hours from start (completion ~21:44-23:44 UTC)
+- 📝 **Log:** `data/enriched/phase1_enrichment_live.log`
+- 📝 **Results:** `data/enriched/newly_enriched.json` (saved every 50 batches)
+
+**Script Details:**
+- **Script:** `scripts/enrich_phase1_missing.py`
+- **Input:** `data/enriched/missing_candidates.json` (11,173 candidates)
+- **Model:** Qwen/Qwen2.5-32B-Instruct (Together AI)
+- **Batch Size:** 50 candidates per batch
+- **Concurrency:** 20 parallel requests
+- **Firestore Upload:** Automatic (as candidates are enriched)
+
+**Monitoring Commands:**
+```bash
+# Check if process is running
+ps aux | grep enrich_phase1_missing.py | grep -v grep
+
+# View live progress
+tail -f data/enriched/phase1_enrichment_live.log
+
+# Check current batch
+tail -5 data/enriched/phase1_enrichment_live.log | grep "Processing batch"
+
+# Count total errors
+grep -c "ERROR" data/enriched/phase1_enrichment_live.log
+```
+
+**What Happens When Complete:**
+1. All 11,173 candidates enriched and uploaded to Firestore
+2. Results saved to `data/enriched/newly_enriched.json`
+3. Next step: Generate embeddings for newly enriched candidates
+4. Final state: 100% coverage (29,142/29,142 candidates)
+
+**Data Flow:**
+```
+missing_candidates.json (11,173)
+  → Together AI enrichment (intelligent_analysis structure)
+  → Upload to Firestore (tenants/tenant-alpha/candidates)
+  → Local backup (newly_enriched.json)
+  → Next: Generate embeddings via hh-embed-svc
+```
+
+---
+
 ## 📋 EXECUTIVE SUMMARY FOR NEXT OPERATOR
 
 **What You're Inheriting:**
-An AI-powered recruitment platform with Phase 2 enrichment complete. All 29K candidates were processed with intelligent skill inference, dual storage is synchronized, and Gemini (Vertex `text-embedding-004`) embeddings now back the semantic search pipeline.
+An AI-powered recruitment platform with embedding remediation in progress. Phase 2 (re-embedding 17,969 candidates) is COMPLETE. Phase 1 (enriching 11,173 missing candidates) is ACTIVELY RUNNING and will complete in 4-6 hours.
 
-**Current State:**
-- ✅ Production: **FULLY OPERATIONAL** (all 8 services healthy, AUTH_MODE=none working)
-- ✅ Enrichment: **COMPLETED** (28,533 unique candidates enriched; 609 source records null or invalid after 423 quarantines)
-- ✅ Embeddings: **GENERATED** (28,534 vectors stored in Firestore `candidate_embeddings`, backup JSONL archived)
-- 📁 Data: **DUAL STORAGE VERIFIED** (local JSON + Firestore both at 28,533 docs)
-- 🗃️ Artifacts: **ARCHIVED** at `data/enriched/archive/20251006T202644/`
+**Current State (2025-10-27 17:50 UTC):**
+- ✅ Production: **FULLY OPERATIONAL** (all 8 services healthy, hybrid search working)
+- ✅ Phase 2: **COMPLETED** - All 17,969 enriched candidates re-embedded with structured profiles (100% success)
+- 🔄 Phase 1: **IN PROGRESS** - Enriching 11,173 missing candidates (batch 5+/224, ~2% complete, ETA 4-6h)
+- ✅ Embeddings: **17,969 updated** in Cloud SQL with enriched data (not raw text)
+- 🔄 Coverage: **61.7%** (17,969/29,142) → Will reach **100%** after Phase 1 completes
+- 📁 Data: Firestore contains 17,969 enriched + 11,173 being processed
 
 **Timeline:**
-- Enrichment ran 2025-10-06 10:09 AM → 5:55 PM (automatic resume mid-run, checkpoints preserved)
-- Firestore gaps (48 docs) healed at 6:25 PM following rerun upload
-- Vertex embeddings batch completed 6:33 PM (local + Firestore outputs)
-- Current time: ~6:30 PM – ready for search validation + Cloud SQL ingest
+- 2025-10-27 14:00 UTC: Schema mismatch discovered (re-embedding script incompatible with Firestore schema)
+- 2025-10-27 16:00 UTC: Fixed schema mapping + authentication issues
+- 2025-10-27 17:45 UTC: Phase 2 completed (17,969 candidates re-embedded, 100% success)
+- 2025-10-27 17:44 UTC: Phase 1 started (enriching 11,173 missing candidates)
+- 2025-10-27 21:44-23:44 UTC: Phase 1 ETA completion
 
 **Immediate Priorities for Next Operator:**
-1. Run hybrid search QA now that embeddings exist (`docs/HANDOVER.md` → Search validation section)
-2. Load embeddings into Cloud SQL / pgvector via existing ingestion scripts
-3. Execute end-to-end integration tests (`SKIP_JEST=1 npm run test:integration --prefix services`) with fresh embeddings
+1. **Monitor Phase 1 enrichment** - Check progress: `tail -f data/enriched/phase1_enrichment_live.log`
+2. **When Phase 1 completes:** Generate embeddings for newly enriched ~11K candidates
+3. **Validate 100% coverage:** Confirm all 29,142 candidates enriched and embedded
+4. **Run search validation:** Test hybrid search with full dataset
 
 ### Hybrid Search QA – 2025-10-07 13:20 UTC
 - **Request:**  
