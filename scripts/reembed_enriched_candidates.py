@@ -10,6 +10,7 @@ This script:
 
 import asyncio
 import os
+import subprocess
 import sys
 from typing import Any, Dict, List, Optional
 
@@ -18,10 +19,25 @@ from google.cloud import firestore
 from google.auth import default as get_default_credentials
 
 
+def get_auth_token() -> str:
+    """Get Google Cloud identity token for authenticating to Cloud Run services"""
+    try:
+        result = subprocess.run(
+            ["gcloud", "auth", "print-identity-token"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        return result.stdout.strip()
+    except subprocess.CalledProcessError as e:
+        print(f"ERROR: Failed to get auth token: {e.stderr}")
+        sys.exit(1)
+
+
 def build_searchable_profile(candidate: Dict[str, Any]) -> str:
     """
     Builds a searchable profile from enriched candidate data.
-    Mirrors the TypeScript implementation in embedding-client.ts
+    Updated to work with Python enrichment schema (intelligent_analysis structure)
     """
     parts: List[str] = []
 
@@ -48,82 +64,94 @@ def build_searchable_profile(candidate: Dict[str, Any]) -> str:
         value = get_field(path)
         return str(value) if isinstance(value, str) else None
 
-    def get_number(path: str) -> Optional[int]:
-        """Get number from path"""
-        value = get_field(path)
-        return int(value) if isinstance(value, (int, float)) else None
-
     # 1. Technical Skills (HIGHEST PRIORITY)
-    primary_skills = get_array('technical_assessment.primary_skills')
-    core_competencies = get_array('skill_assessment.technical_skills.core_competencies')
-    all_skills = list(set(primary_skills + core_competencies))
+    # From intelligent_analysis.explicit_skills (dict with technical_skills list)
+    explicit_skills = get_array('explicit_skills')  # Top-level
+    intel_explicit = get_field('intelligent_analysis.explicit_skills')
+    if isinstance(intel_explicit, dict):
+        tech_skills = intel_explicit.get('technical_skills', [])
+        if isinstance(tech_skills, list):
+            explicit_skills.extend([str(s) for s in tech_skills if isinstance(s, str)])
+
+    # Also get inferred high-confidence skills
+    inferred_high = get_array('inferred_skills_high_confidence')
+
+    # Get primary expertise
+    primary_expertise = get_array('primary_expertise')
+
+    # Combine all skills
+    all_skills = list(set(explicit_skills + inferred_high + primary_expertise))
     if all_skills:
         parts.append(f"Technical Skills: {', '.join(all_skills[:15])}")
 
-    # 2. Current Role and Title
-    current_role = get_string('experience_analysis.current_role')
-    current_title = get_string('current_title')
-    if current_role:
-        parts.append(f"Current Role: {current_role}")
-    elif current_title:
-        parts.append(f"Current Role: {current_title}")
+    # 2. Current Level / Seniority
+    current_level = get_string('current_level')
+    if current_level:
+        parts.append(f"Seniority: {current_level}")
 
-    # 3. Experience and Seniority
-    total_years = get_number('experience_analysis.total_years')
-    years_experience = get_number('career_trajectory.years_experience')
-    years = total_years if total_years is not None else years_experience
-    if years is not None:
-        parts.append(f"Experience: {years} years")
+    # 3. Career Trajectory Analysis
+    career_analysis = get_field('intelligent_analysis.career_trajectory_analysis')
+    if isinstance(career_analysis, dict):
+        progression = career_analysis.get('progression_speed')
+        if progression:
+            parts.append(f"Career Progression: {progression}")
 
-    seniority_level = get_string('personal_details.seniority_level')
-    current_level = get_string('career_trajectory.current_level')
-    seniority = seniority_level or current_level
-    if seniority:
-        parts.append(f"Seniority: {seniority}")
+    # 4. Market Positioning
+    market_pos = get_string('intelligent_analysis.market_positioning')
+    if market_pos:
+        parts.append(f"Market Position: {market_pos}")
 
-    # 4. Domain Expertise
-    domain_expertise = get_array('skill_assessment.domain_expertise')
-    if domain_expertise:
-        parts.append(f"Domain: {', '.join(domain_expertise[:5])}")
+    # 5. Role-based Competencies
+    role_comp = get_field('intelligent_analysis.role_based_competencies')
+    if isinstance(role_comp, dict):
+        roles = list(role_comp.keys())
+        if roles:
+            parts.append(f"Competencies: {', '.join(roles[:5])}")
 
-    # 5. Role Type (IC vs Leadership)
-    has_leadership = get_field('leadership_scope.has_leadership')
-    team_size = get_number('leadership_scope.team_size')
-    if has_leadership is True and team_size:
-        parts.append(f"Leadership: Managing {team_size} people")
-    elif has_leadership is False:
-        parts.append("Role Type: Individual Contributor")
+    # 6. Recruiter Insights
+    recruiter = get_field('intelligent_analysis.recruiter_insights')
+    if isinstance(recruiter, dict):
+        ideal_roles = recruiter.get('ideal_roles', [])
+        if isinstance(ideal_roles, list):
+            role_strings = [str(r) for r in ideal_roles if isinstance(r, str)]
+            if role_strings:
+                parts.append(f"Best Fit Roles: {', '.join(role_strings[:5])}")
 
-    # 6. Ideal Roles
-    ideal_roles = get_array('recruiter_recommendations.ideal_roles')
-    best_fit_roles = get_array('recruiter_insights.best_fit_roles')
-    roles = list(set(ideal_roles + best_fit_roles))
-    if roles:
-        parts.append(f"Best Fit: {', '.join(roles[:5])}")
+        strengths = recruiter.get('key_strengths', [])
+        if isinstance(strengths, list):
+            strength_strings = [str(s) for s in strengths if isinstance(s, str)]
+            if strength_strings:
+                parts.append(f"Strengths: {', '.join(strength_strings[:5])}")
 
-    # 7. Executive Summary
-    one_liner = get_string('executive_summary.one_line_pitch')
-    if one_liner:
-        parts.append(f"Summary: {one_liner}")
+    # 7. Overall Rating and Recommendation
+    rating = get_string('overall_rating')
+    if rating:
+        parts.append(f"Rating: {rating}")
 
-    # 8. Searchability Keywords
-    keywords = get_array('searchability.keywords')
-    search_tags = get_array('search_optimization.keywords')
-    all_keywords = list(set(keywords + search_tags))
-    if all_keywords:
-        parts.append(f"Keywords: {', '.join(all_keywords[:20])}")
+    recommendation = get_string('recommendation')
+    if recommendation:
+        parts.append(f"Recommendation: {recommendation}")
 
-    # 9. Company Pedigree
-    company_tier = get_string('company_pedigree.company_tier')
-    if company_tier:
-        parts.append(f"Company Tier: {company_tier}")
+    # 8. Search Keywords
+    keywords = get_string('search_keywords')
+    if keywords:
+        parts.append(f"Keywords: {keywords}")
 
-    # Fallback: use resume_text if no enriched data
+    # 9. Skill Market Value
+    market_value = get_string('skill_market_value')
+    if market_value:
+        parts.append(f"Market Value: {market_value}")
+
+    # Fallback: if no parts were added, we have a problem
     if not parts:
-        resume_text = get_string('resume_text')
-        if resume_text:
-            print(f"WARNING: No enriched data found for candidate, falling back to resume_text")
-            return resume_text
+        # Try to get name at least
+        name = get_string('name')
+        if name:
+            parts.append(f"Candidate: {name}")
+
+        # Last resort: check if there's any data at all
+        if not parts:
+            return ""  # Return empty string instead of None
 
     return '\n'.join(parts)
 
@@ -177,13 +205,13 @@ async def reembed_candidate(
 async def main():
     """Main migration function"""
     tenant_id = os.getenv("TENANT_ID", "tenant-alpha")
-    embed_url = os.getenv("EMBED_SERVICE_URL", "https://hh-embed-svc-production-1034162584026.us-central1.run.app")
+    embed_url = os.getenv("EMBED_SERVICE_URL", "https://hh-embed-svc-production-akcoqbr7sa-uc.a.run.app")
     project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "headhunter-ai-0088")
-    api_key_env = os.getenv("HH_API_KEY")
 
-    if not api_key_env:
-        print("ERROR: HH_API_KEY environment variable not set")
-        sys.exit(1)
+    # Get Google Cloud identity token for Cloud Run authentication
+    print("🔑 Getting authentication token...")
+    api_key_env = get_auth_token()
+    print("✅ Authentication token acquired\n")
 
     # Initialize Firestore
     credentials, _ = get_default_credentials()
@@ -199,7 +227,7 @@ async def main():
     for doc in all_docs:
         data = doc.to_dict()
         # Only process if enriched data exists
-        if 'technical_assessment' in data or 'skill_assessment' in data:
+        if 'intelligent_analysis' in data or 'technical_assessment' in data or 'skill_assessment' in data:
             candidates.append((doc.id, data))
 
     print(f"Found {len(candidates)} enriched candidates")
