@@ -15,7 +15,7 @@ import os
 import sys
 import subprocess
 from typing import Dict, Any, List, Optional, Tuple
-from datetime import datetime
+from datetime import datetime, timezone
 from google.cloud import firestore
 from google.auth import default as get_default_credentials
 
@@ -143,26 +143,32 @@ async def embed_batch(session: aiohttp.ClientSession, batch: List[Tuple[str, Dic
                 results.append((candidate_id, False, "No searchable profile could be built"))
                 continue
             
-            # Call embedding service
+            # Prepare metadata (convert Firestore DatetimeWithNanoseconds to ISO string)
+            enriched_at = candidate_data.get('processing_metadata', {}).get('timestamp')
+            if enriched_at and hasattr(enriched_at, 'isoformat'):
+                enriched_at = enriched_at.isoformat()
+            elif enriched_at and not isinstance(enriched_at, str):
+                enriched_at = str(enriched_at)
+
+            # Call embedding service - match working payload structure from reembed script
             payload = {
-                "candidateId": candidate_id,
-                "tenantId": tenant_id,
-                "searchableProfile": searchable_profile,
+                "entityId": f"{tenant_id}:{candidate_id}",
+                "text": searchable_profile,
                 "metadata": {
                     "source": "phase1_new_enrichment",
-                    "enriched_at": candidate_data.get('processing_metadata', {}).get('timestamp'),
-                    "processor": candidate_data.get('processing_metadata', {}).get('processor'),
-                    "version": candidate_data.get('processing_metadata', {}).get('version')
+                    "modelVersion": "enriched-v1",
+                    "promptVersion": "structured-profile-v1",
+                    "enriched_at": enriched_at
                 }
             }
-            
+
             headers = {
-                "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
-                "X-Tenant-ID": tenant_id
+                "X-Tenant-ID": tenant_id,
+                "Authorization": f"Bearer {api_key}"
             }
             
-            async with session.post(f"{embed_url}/embed", json=payload, headers=headers) as response:
+            async with session.post(f"{embed_url}/v1/embeddings/upsert", json=payload, headers=headers) as response:
                 if response.status == 200:
                     results.append((candidate_id, True, None))
                 else:
@@ -182,37 +188,58 @@ async def main():
     project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "headhunter-ai-0088")
     
     # Filter date (only candidates enriched on or after this date)
-    filter_date = "2025-10-27"
-    
+    filter_date_str = "2025-10-27"
+    filter_date = datetime.fromisoformat(filter_date_str).replace(tzinfo=timezone.utc)
+
     # Get Google Cloud identity token for Cloud Run authentication
     print("🔑 Getting authentication token...")
     api_key_env = get_auth_token()
     print("✅ Authentication token acquired\n")
-    
+
     # Initialize Firestore
     credentials, _ = get_default_credentials()
     db = firestore.Client(project=project_id, credentials=credentials)
-    
+
     # Query enriched candidates
-    print(f"📊 Fetching newly enriched candidates from Firestore (enriched >= {filter_date})...")
+    print(f"📊 Fetching newly enriched candidates from Firestore (enriched >= {filter_date_str})...")
     candidates_ref = db.collection(f"tenants/{tenant_id}/candidates")
-    
+
     # Get all candidates and filter by timestamp
     all_docs = candidates_ref.stream()
     candidates = []
     skipped_old = 0
-    
+
     for doc in all_docs:
         data = doc.to_dict()
-        
+
         # Check if enriched
         if not ('intelligent_analysis' in data or 'technical_assessment' in data):
             continue
-        
+
         # Filter by processing timestamp
-        timestamp_str = data.get('processing_metadata', {}).get('timestamp', '')
-        if timestamp_str and timestamp_str >= filter_date:
-            candidates.append((doc.id, data))
+        timestamp_obj = data.get('processing_metadata', {}).get('timestamp')
+        if timestamp_obj:
+            timestamp_dt = None
+            # Convert to datetime if it's a string, otherwise use as-is
+            if isinstance(timestamp_obj, str):
+                try:
+                    timestamp_dt = datetime.fromisoformat(timestamp_obj.replace('Z', '+00:00'))
+                    # Ensure timezone-aware
+                    if timestamp_dt.tzinfo is None:
+                        timestamp_dt = timestamp_dt.replace(tzinfo=timezone.utc)
+                except:
+                    timestamp_dt = None
+            else:
+                # It's already a datetime object from Firestore
+                timestamp_dt = timestamp_obj
+                # Make timezone-aware if it's naive
+                if timestamp_dt and timestamp_dt.tzinfo is None:
+                    timestamp_dt = timestamp_dt.replace(tzinfo=timezone.utc)
+
+            if timestamp_dt and timestamp_dt >= filter_date:
+                candidates.append((doc.id, data))
+            else:
+                skipped_old += 1
         else:
             skipped_old += 1
     
