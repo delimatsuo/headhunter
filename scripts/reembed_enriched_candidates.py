@@ -173,10 +173,10 @@ async def reembed_candidate(
             return False
 
         payload = {
-            "entityId": f"{tenant_id}:{candidate_id}",
+            "entityId": candidate_id,  # NO tenant prefix - must match candidate_profiles.candidate_id
             "text": profile_text,
             "metadata": {
-                "source": "reembed_migration",
+                "source": "phase2_structured_reembedding",
                 "modelVersion": "enriched-v1",
                 "promptVersion": "structured-profile-v1"
             }

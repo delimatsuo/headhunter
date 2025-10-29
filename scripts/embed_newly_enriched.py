@@ -150,9 +150,9 @@ async def embed_batch(session: aiohttp.ClientSession, batch: List[Tuple[str, Dic
             elif enriched_at and not isinstance(enriched_at, str):
                 enriched_at = str(enriched_at)
 
-            # Call embedding service - match working payload structure from reembed script
+            # Call embedding service - use plain candidate_id to match profiles table
             payload = {
-                "entityId": f"{tenant_id}:{candidate_id}",
+                "entityId": candidate_id,  # NO tenant prefix - must match candidate_profiles.candidate_id
                 "text": searchable_profile,
                 "metadata": {
                     "source": "phase1_new_enrichment",
