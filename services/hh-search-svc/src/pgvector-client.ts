@@ -150,7 +150,7 @@ export class PgVectorClient {
       const sql = `
         WITH vector_candidates AS (
           SELECT
-            ce.candidate_id,
+            ce.entity_id AS candidate_id,
             1 - (ce.embedding <=> $2) AS vector_score,
             ce.metadata,
             ce.updated_at
@@ -287,12 +287,15 @@ export class PgVectorClient {
       CREATE TABLE IF NOT EXISTS ${this.config.schema}.${this.config.embeddingsTable} (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         tenant_id TEXT NOT NULL,
-        candidate_id TEXT NOT NULL,
+        entity_id TEXT NOT NULL,
         embedding ${VECTOR_TYPE_NAME}(${this.config.dimensions}) NOT NULL,
         embedding_text TEXT,
         metadata JSONB,
+        model_version TEXT,
+        chunk_type TEXT NOT NULL DEFAULT 'default',
         updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc', now()),
-        created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc', now())
+        created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc', now()),
+        UNIQUE(tenant_id, entity_id, chunk_type)
       );
     `);
 
@@ -340,7 +343,7 @@ export class PgVectorClient {
 
     await client.query(`
       CREATE INDEX IF NOT EXISTS ${this.config.embeddingsTable}_tenant_idx
-        ON ${this.config.schema}.${this.config.embeddingsTable} (tenant_id, candidate_id);
+        ON ${this.config.schema}.${this.config.embeddingsTable} (tenant_id, entity_id);
     `);
 
     await client.query(`
