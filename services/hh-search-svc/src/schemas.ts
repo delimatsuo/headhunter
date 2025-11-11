@@ -136,3 +136,106 @@ export const hybridSearchSchema: FastifySchema = {
     }
   }
 };
+
+/**
+ * Simplified candidate search schema for /v1/search/candidates endpoint.
+ * Provides a user-friendly API that wraps the hybrid search functionality.
+ */
+export const candidateSearchSchema: FastifySchema = {
+  body: {
+    type: 'object',
+    required: ['query'],
+    additionalProperties: true,
+    properties: {
+      query: { type: 'string', minLength: 1, maxLength: 6000 },
+      limit: { type: 'integer', minimum: 1, maximum: 100 },
+      includeMetadata: { type: 'boolean' },
+      filters: {
+        type: 'object',
+        additionalProperties: true,
+        properties: {
+          skills: skillArraySchema,
+          locations: locationArraySchema,
+          industries: {
+            type: 'array',
+            minItems: 1,
+            maxItems: 20,
+            items: { type: 'string', minLength: 1 }
+          },
+          seniorityLevels: {
+            type: 'array',
+            minItems: 1,
+            maxItems: 20,
+            items: { type: 'string', minLength: 1 }
+          },
+          minExperienceYears: { type: 'number', minimum: 0, maximum: 60 },
+          maxExperienceYears: { type: 'number', minimum: 0, maximum: 60 }
+        }
+      }
+    }
+  },
+  response: {
+    200: {
+      type: 'object',
+      required: ['candidates', 'total', 'requestId'],
+      properties: {
+        candidates: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['id', 'score'],
+            properties: {
+              id: { type: 'string', minLength: 1 },
+              entityId: { type: 'string', minLength: 1 },
+              score: { type: 'number' },
+              similarity: { type: 'number' },
+              fullName: { type: 'string' },
+              title: { type: 'string' },
+              headline: { type: 'string' },
+              location: { type: 'string' },
+              industries: { type: 'array', items: { type: 'string' } },
+              yearsExperience: { type: 'number' },
+              skills: {
+                type: 'array',
+                items: {
+                  anyOf: [
+                    { type: 'string' },
+                    {
+                      type: 'object',
+                      properties: {
+                        name: { type: 'string' },
+                        weight: { type: 'number' }
+                      }
+                    }
+                  ]
+                }
+              },
+              metadata: { type: 'object', additionalProperties: true }
+            }
+          }
+        },
+        total: { type: 'integer', minimum: 0 },
+        requestId: { type: 'string', minLength: 8 },
+        cacheHit: { type: 'boolean' },
+        timings: {
+          type: 'object',
+          properties: {
+            totalMs: { type: 'integer', minimum: 0 },
+            embeddingMs: { type: 'integer', minimum: 0 },
+            retrievalMs: { type: 'integer', minimum: 0 },
+            rankingMs: { type: 'integer', minimum: 0 }
+          }
+        }
+      }
+    },
+    400: {
+      type: 'object',
+      required: ['code', 'message'],
+      properties: {
+        code: { type: 'string' },
+        message: { type: 'string' },
+        details: { type: 'object', additionalProperties: true }
+      }
+    }
+  }
+};

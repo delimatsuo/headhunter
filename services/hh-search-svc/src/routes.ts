@@ -7,8 +7,8 @@ import type { PgVectorClient } from './pgvector-client';
 import { SearchRedisClient } from './redis-client';
 import type { RerankClient } from './rerank-client';
 import type { PerformanceTracker } from './performance-tracker';
-import { hybridSearchSchema } from './schemas';
-import type { HybridSearchRequest, HybridSearchResponse } from './types';
+import { hybridSearchSchema, candidateSearchSchema } from './schemas';
+import type { HybridSearchRequest, HybridSearchResponse, HybridSearchFilters } from './types';
 import { SearchService } from './search-service';
 
 interface RegisterRoutesOptions {
@@ -20,6 +20,13 @@ interface RegisterRoutesOptions {
   rerankClient: RerankClient | null;
   performanceTracker: PerformanceTracker;
   state: { isReady: boolean };
+}
+
+interface CandidateSearchRequest {
+  query: string;
+  limit?: number;
+  includeMetadata?: boolean;
+  filters?: HybridSearchFilters;
 }
 
 export async function registerRoutes(
@@ -175,6 +182,132 @@ export async function registerRoutes(
       }
 
       return response;
+    }
+  );
+
+  /**
+   * Simplified candidate search endpoint
+   * Wraps the hybrid search functionality with a user-friendly API
+   */
+  app.post(
+    '/v1/search/candidates',
+    {
+      schema: candidateSearchSchema
+    },
+    async (request: FastifyRequest<{ Body: CandidateSearchRequest }>, reply: FastifyReply) => {
+      if (!request.tenant) {
+        throw badRequestError('Tenant context is required.');
+      }
+
+      if (!dependencies.service || !dependencies.redisClient) {
+        reply.status(503);
+        return { error: 'Service initializing' };
+      }
+
+      // Transform simple request to HybridSearchRequest format
+      const hybridRequest: HybridSearchRequest = {
+        query: request.body.query,
+        limit: request.body.limit ?? 10,
+        filters: request.body.filters,
+        includeDebug: false
+      };
+
+      // Use the same caching logic as hybrid search
+      const cacheToken = dependencies.service.computeCacheToken(hybridRequest);
+      const cacheKey = dependencies.redisClient.buildHybridKey(request.tenant.id, cacheToken);
+
+      const cacheStart = Date.now();
+      let cached: HybridSearchResponse | null = null;
+      if (!dependencies.config.redis.disable) {
+        cached = await dependencies.redisClient.get<HybridSearchResponse>(cacheKey);
+      }
+
+      // If cached, transform and return
+      if (cached) {
+        const candidates = cached.results.map(result => ({
+          id: result.candidateId,
+          entityId: result.candidateId,
+          score: result.score,
+          similarity: result.vectorScore,
+          fullName: result.fullName,
+          title: result.title,
+          headline: result.headline,
+          location: result.location,
+          industries: result.industries,
+          yearsExperience: result.yearsExperience,
+          skills: request.body.includeMetadata
+            ? result.skills
+            : result.skills?.map(s => s.name),
+          metadata: request.body.includeMetadata ? result.metadata : undefined
+        }));
+
+        dependencies.performanceTracker.record({
+          totalMs: cached.timings.totalMs,
+          embeddingMs: cached.timings.embeddingMs,
+          retrievalMs: cached.timings.retrievalMs,
+          rerankMs: cached.timings.rerankMs,
+          cacheHit: true,
+          rerankApplied: Boolean((cached.metadata as { rerank?: unknown } | undefined)?.rerank)
+        });
+
+        return {
+          candidates,
+          total: cached.total,
+          requestId: cached.requestId,
+          cacheHit: true,
+          timings: {
+            totalMs: Date.now() - cacheStart,
+            embeddingMs: cached.timings.embeddingMs,
+            retrievalMs: cached.timings.retrievalMs,
+            rankingMs: cached.timings.rerankMs ?? 0
+          }
+        };
+      }
+
+      // Execute search
+      const context = {
+        tenant: request.tenant,
+        user: request.user,
+        requestId: request.requestContext.requestId
+      };
+
+      const response = await dependencies.service.hybridSearch(context, hybridRequest);
+
+      // Transform HybridSearchResponse to simpler candidate format
+      const candidates = response.results.map(result => ({
+        id: result.candidateId,
+        entityId: result.candidateId,
+        score: result.score,
+        similarity: result.vectorScore,
+        fullName: result.fullName,
+        title: result.title,
+        headline: result.headline,
+        location: result.location,
+        industries: result.industries,
+        yearsExperience: result.yearsExperience,
+        skills: request.body.includeMetadata
+          ? result.skills
+          : result.skills?.map(s => s.name),
+        metadata: request.body.includeMetadata ? result.metadata : undefined
+      }));
+
+      // Cache the hybrid response for future requests
+      if (!dependencies.config.redis.disable && response.results.length > 0) {
+        await dependencies.redisClient.set(cacheKey, response);
+      }
+
+      return {
+        candidates,
+        total: response.total,
+        requestId: response.requestId,
+        cacheHit: false,
+        timings: {
+          totalMs: response.timings.totalMs,
+          embeddingMs: response.timings.embeddingMs,
+          retrievalMs: response.timings.retrievalMs,
+          rankingMs: response.timings.rerankMs ?? 0
+        }
+      };
     }
   );
 }
