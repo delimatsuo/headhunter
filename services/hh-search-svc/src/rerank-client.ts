@@ -122,6 +122,23 @@ export class RerankClient {
       try {
         const response = await this.http.post<RerankResponse>('/v1/search/rerank', request, { headers });
         const latency = Date.now() - started;
+
+        // DEBUG: Log rerank response structure
+        this.logger.info({
+          requestId: context.requestId,
+          latencyMs: latency,
+          responseData: {
+            hasResults: !!response.data.results,
+            resultsCount: response.data.results?.length,
+            cacheHit: response.data.cacheHit,
+            usedFallback: response.data.usedFallback,
+            hasTimings: !!response.data.timings,
+            timingsKeys: response.data.timings ? Object.keys(response.data.timings) : [],
+            timingsValues: response.data.timings,
+            hasMetadata: !!response.data.metadata
+          }
+        }, '[DEBUG] Rerank HTTP response received');
+
         this.logger.info({ requestId: context.requestId, latencyMs: latency }, 'Rerank request completed.');
         this.resetCircuit();
         return response.data;

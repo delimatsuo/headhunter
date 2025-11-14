@@ -165,7 +165,7 @@ export function getSearchServiceConfig(): SearchServiceConfig {
   const embedBaseUrl = normalizeUrl(process.env.EMBED_SERVICE_URL, 'http://localhost:8081');
   const embed: EmbedServiceConfig = {
     baseUrl: embedBaseUrl,
-    timeoutMs: parseNumber(process.env.EMBED_SERVICE_TIMEOUT_MS, 4000),
+    timeoutMs: parseNumber(process.env.EMBED_SERVICE_TIMEOUT_MS, 15000), // Increased from 4000ms to handle cold starts
     authToken: process.env.EMBED_SERVICE_BEARER_TOKEN,
     idTokenAudience: resolveIdTokenAudience(process.env.EMBED_SERVICE_AUDIENCE, embedBaseUrl),
     retries: Math.max(0, parseNumber(process.env.EMBED_SERVICE_RETRIES, 2)),
@@ -180,7 +180,7 @@ export function getSearchServiceConfig(): SearchServiceConfig {
   const rerankBaseUrl = normalizeUrl(process.env.RERANK_SERVICE_URL, 'http://localhost:7103');
   const rerank: RerankServiceConfig = {
     baseUrl: rerankBaseUrl,
-    timeoutMs: parseNumber(process.env.RERANK_SERVICE_TIMEOUT_MS, 4000),
+    timeoutMs: parseNumber(process.env.RERANK_SERVICE_TIMEOUT_MS, 15000), // Increased from 4000ms to handle cold starts
     retries: Math.max(0, parseNumber(process.env.RERANK_SERVICE_RETRIES, 2)),
     retryDelayMs: Math.max(0, parseNumber(process.env.RERANK_SERVICE_RETRY_DELAY_MS, 200)),
     idTokenAudience: resolveIdTokenAudience(process.env.RERANK_SERVICE_AUDIENCE, rerankBaseUrl),

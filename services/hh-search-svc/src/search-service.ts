@@ -204,11 +204,39 @@ export class SearchService {
     timings.rankingMs = Date.now() - rankingStart;
 
     const rerankOutcome = await this.applyRerankIfEnabled(context, request, ranked, limit);
+
+    // DEBUG: Log rerank outcome details
+    this.logger.info({
+      requestId: context.requestId,
+      tenantId: context.tenant.id,
+      rerankOutcome: {
+        isNull: rerankOutcome === null,
+        isUndefined: rerankOutcome === undefined,
+        hasResults: !!rerankOutcome?.results,
+        resultsCount: rerankOutcome?.results?.length,
+        timingsMs: rerankOutcome?.timingsMs,
+        timingsMsType: typeof rerankOutcome?.timingsMs,
+        hasMetadata: !!rerankOutcome?.metadata,
+        metadataKeys: rerankOutcome?.metadata ? Object.keys(rerankOutcome.metadata) : []
+      }
+    }, '[DEBUG] Rerank outcome received');
+
     if (rerankOutcome) {
       ranked = rerankOutcome.results;
       if (rerankOutcome.timingsMs !== undefined) {
         timings.rerankMs = rerankOutcome.timingsMs;
+        this.logger.info({
+          requestId: context.requestId,
+          rerankMs: rerankOutcome.timingsMs
+        }, '[DEBUG] Set rerankMs timing');
+      } else {
+        this.logger.warn({
+          requestId: context.requestId,
+          rerankOutcome: JSON.stringify(rerankOutcome, null, 2)
+        }, '[DEBUG] rerankOutcome.timingsMs is undefined - full outcome logged');
       }
+    } else {
+      this.logger.info({ requestId: context.requestId }, '[DEBUG] rerankOutcome is null/undefined - rerank did not execute');
     }
 
     const response: HybridSearchResponse = {

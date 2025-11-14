@@ -118,6 +118,7 @@ export const hybridSearchSchema: FastifySchema = {
             embeddingMs: { type: 'integer', minimum: 0 },
             retrievalMs: { type: 'integer', minimum: 0 },
             rankingMs: { type: 'integer', minimum: 0 },
+            rerankMs: { type: 'integer', minimum: 0 },
             cacheMs: { type: 'integer', minimum: 0 }
           }
         },
