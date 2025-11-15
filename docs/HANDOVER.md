@@ -13,6 +13,20 @@ This runbook is the single source of truth for resuming work or restoring local 
 **Project Status**: Production-ready, entering 1-week suspension
 **Next Session Start**: ~7 days from 2025-11-14
 
+---
+
+### 🚨 CRITICAL: PROJECT IS SUSPENDED - READ THIS FIRST
+
+**If you are resuming work after 2025-11-14, the infrastructure is SUSPENDED and you MUST restart services before any work!**
+
+**👉 READ IMMEDIATELY**: `/Volumes/Extreme Pro/myprojects/headhunter/SUSPENSION_PLAN.md`
+
+This file contains complete restart procedures (~5-10 minutes total) to bring Cloud SQL, Redis, and Cloud Run services back online.
+
+**Skip this step and ALL development work will fail** - services are scaled to zero and databases are offline.
+
+---
+
 ### What Is This Project?
 
 **Headhunter** is an AI-powered recruitment analytics platform built as a **microservices architecture on Google Cloud Platform**. The system enriches candidate resumes using LLMs (Together AI), generates semantic embeddings (VertexAI), stores profiles in Firestore, and provides intelligent candidate search via hybrid (semantic + keyword) search powered by PostgreSQL with pgvector.
@@ -111,22 +125,31 @@ This runbook is the single source of truth for resuming work or restoring local 
 
 ### Quick Start Guide for New Agent
 
-**1. Read These Files First** (in order):
+**🚨 CRITICAL FIRST STEP: If services are suspended, you MUST restart infrastructure before doing any work!**
+
+**1. Read SUSPENSION_PLAN.md FIRST if project is suspended**:
 ```bash
-1. /Volumes/Extreme Pro/myprojects/headhunter/SUSPENSION_PLAN.md   # Restart procedure
+# ⚠️ PROJECT IS CURRENTLY SUSPENDED (as of 2025-11-14)
+# Read this file IMMEDIATELY to restart services:
+cat "/Volumes/Extreme Pro/myprojects/headhunter/SUSPENSION_PLAN.md"
+
+# Then execute the restart procedure from SUSPENSION_PLAN.md (~5-10 minutes):
+# 1. Start Cloud SQL (activation-policy: ALWAYS)
+# 2. Recreate Redis instance
+# 3. Verify services are responding
+# 4. Test search API endpoint
+```
+
+**2. Read These Files for Full Context** (in order):
+```bash
+1. /Volumes/Extreme Pro/myprojects/headhunter/SUSPENSION_PLAN.md   # ⚠️ Restart procedure (READ FIRST!)
 2. /Volumes/Extreme Pro/myprojects/headhunter/docs/HANDOVER.md     # This file - full context
 3. /Volumes/Extreme Pro/myprojects/headhunter/README.md             # Project overview
 4. /Volumes/Extreme Pro/myprojects/headhunter/CLAUDE.md             # Development guidelines
 5. /Volumes/Extreme Pro/myprojects/headhunter/.taskmaster/docs/prd.txt  # Product requirements
 ```
 
-**2. Restart Services** (if suspended):
-```bash
-cd "/Volumes/Extreme Pro/myprojects/headhunter"
-# Follow SUSPENSION_PLAN.md "Restart Procedure" section
-```
-
-**3. Verify Production Health**:
+**3. After Restart, Verify Production Health**:
 ```bash
 # Get API key
 SEARCH_API_KEY=$(gcloud secrets versions access latest --secret=api-gateway-key --project=headhunter-ai-0088)
