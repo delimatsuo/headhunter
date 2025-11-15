@@ -1,9 +1,220 @@
-# Handover & Recovery Runbook (Updated 2025-11-06 14:15 UTC)
+# Handover & Recovery Runbook (Updated 2025-11-14)
 
 > Canonical repository path: `/Volumes/Extreme Pro/myprojects/headhunter`. Do **not** work from `/Users/Delimatsuo/Documents/Coding/headhunter`.
 > Guardrail: all automation wrappers under `scripts/` source `scripts/utils/repo_guard.sh` and exit immediately when invoked from non-canonical clones.
 
 This runbook is the single source of truth for resuming work or restoring local parity with production. It reflects the Fastify microservice mesh that replaced the legacy Cloud Functions stack.
+
+---
+
+## 🎯 EXECUTIVE SUMMARY FOR NEW AI CODING AGENT
+
+**Last Updated**: 2025-11-14
+**Project Status**: Production-ready, entering 1-week suspension
+**Next Session Start**: ~7 days from 2025-11-14
+
+### What Is This Project?
+
+**Headhunter** is an AI-powered recruitment analytics platform built as a **microservices architecture on Google Cloud Platform**. The system enriches candidate resumes using LLMs (Together AI), generates semantic embeddings (VertexAI), stores profiles in Firestore, and provides intelligent candidate search via hybrid (semantic + keyword) search powered by PostgreSQL with pgvector.
+
+**Technology Stack**:
+- **8 Fastify microservices** (TypeScript) on Cloud Run
+- **Cloud SQL PostgreSQL + pgvector** for semantic search
+- **Redis Memorystore** for caching
+- **Firestore** for candidate profiles
+- **Together AI** for enrichment (Qwen 2.5 32B Instruct)
+- **VertexAI** for embeddings (text-embedding-004, 768 dimensions)
+- **Gemini 2.5 Flash** for intelligent reranking
+
+### Current Production State (As of 2025-11-14)
+
+| Component | Status | Details |
+|-----------|--------|---------|
+| **Fastify Services** | ✅ HEALTHY | 8 services deployed and operational |
+| **Gemini Rerank** | ✅ DEPLOYED | Gemini-first fallback implemented (2025-11-14) |
+| **Cloud SQL** | ✅ ACTIVE | db-custom-2-7680, ~29K candidate embeddings |
+| **Redis Cache** | ✅ ACTIVE | STANDARD_HA tier, operational |
+| **Firestore** | ✅ COMPLETE | ~29K enriched candidate profiles |
+| **Hybrid Search** | ✅ WORKING | p95 latency 961ms (under 1.2s SLO) |
+| **API Gateway** | ✅ OPERATIONAL | Production endpoint active |
+| **Data Coverage** | ⚠️ 99.5% | 28,988/29,142 candidates (181 failed enrichments) |
+
+**Production URLs**:
+- API Gateway: https://headhunter-api-gateway-production-d735p8t6.uc.gateway.dev
+- Search Service: https://hh-search-svc-production-akcoqbr7sa-uc.a.run.app
+- Rerank Service: https://hh-rerank-svc-production-akcoqbr7sa-uc.a.run.app
+
+### Recent Accomplishments (2025-11-14)
+
+**✅ Gemini 2.5 Flash Integration** (MAJOR UPDATE)
+- **Problem Solved**: Together AI experiencing 100% fallback rate due to candidate ID mismatches
+- **Solution**: Implemented Gemini-first rerank with native schema enforcement
+- **Expected Impact**: 0% fallback rate (vs 100%), 2-3x cost reduction, faster response (~200-500ms)
+- **Architecture**: Gemini → Together AI → passthrough fallback chain
+- **Files Modified**: 8 service files (gemini-client.ts, config.ts, types.ts, rerank-service.ts, etc.)
+- **Documentation**: See section "Update – 2025-11-14 (Gemini 2.5 Flash Integration)" below
+
+**✅ Embedding Remediation Complete** (2025-10-28)
+- Phase 1: Enriched 10,992 missing candidates (98.4% success)
+- Phase 2: Re-embedded 17,969 candidates with structured profiles (100% success)
+- Phase 3: Embedded 11,019 newly enriched candidates (100% success)
+- **Result**: 100% coverage with high-quality embeddings based on enriched data
+
+**✅ Production Deployment Working** (2025-10-09)
+- All 8 Fastify services healthy
+- Hybrid search validated with real queries
+- Authentication working (AUTH_MODE=none with API Gateway + Cloud Run IAM)
+- Cloud SQL connectivity stable
+
+### To-Do List for Next Operator
+
+**Priority 1: Restart Services After Suspension** ⏱️ **~10 minutes**
+```bash
+# See SUSPENSION_PLAN.md for detailed commands
+# Quick restart:
+1. Start Cloud SQL: gcloud sql instances patch sql-hh-core --activation-policy=ALWAYS
+2. Recreate Redis: gcloud redis instances create redis-skills-us-central1 ...
+3. Verify services: curl https://hh-search-svc-production-akcoqbr7sa-uc.a.run.app/health
+```
+
+**Priority 2: Validate Gemini Rerank** 🧪 **~5 minutes**
+```bash
+# Test with realistic job description to confirm Gemini is being used
+# Expected: metadata.llmProvider = "gemini", timings.geminiMs present
+# See "Sample Test Query for Production Validation" in section below
+```
+
+**Priority 3: Address Technical Debt** 🔧 **Optional**
+- Remove auth bypass for embedding service (lines 322-327 in `services/common/src/auth.ts`)
+- Fix 181 quarantined candidates from Phase 1 enrichment
+- Investigate and repair service initialization race condition warnings
+
+**Priority 4: Production Monitoring** 📊 **Ongoing**
+- Monitor Gemini fallback rate (target: 0%)
+- Track p95 search latency (target: <1.2s)
+- Verify cache hit rates (embedding cache, rerank cache)
+
+### 🚨 COST OPTIMIZATION FOR SUSPENSION
+
+**IMPORTANT**: Project entering 1-week suspension to minimize costs.
+
+**Current Monthly Cost**: ~$645-970/month (~$162-243/week)
+**After Optimization**: ~$20-40/week (~85% cost reduction)
+
+**Cost Minimization Steps Taken** (see `SUSPENSION_PLAN.md` for details):
+1. ✅ Cloud SQL stopped (activation-policy: NEVER) - saves ~$100-150/week
+2. ✅ Redis deleted - saves ~$50-70/week (cache data lost, will recreate)
+3. ✅ Cloud Run services scaled to min-instances=0 - saves ~$5-10/week
+4. ✅ Data persisted: Firestore, Cloud SQL backups, container images
+
+**Restart Procedure**: See `SUSPENSION_PLAN.md` - estimated 5-10 minutes total
+
+### Quick Start Guide for New Agent
+
+**1. Read These Files First** (in order):
+```bash
+1. /Volumes/Extreme Pro/myprojects/headhunter/SUSPENSION_PLAN.md   # Restart procedure
+2. /Volumes/Extreme Pro/myprojects/headhunter/docs/HANDOVER.md     # This file - full context
+3. /Volumes/Extreme Pro/myprojects/headhunter/README.md             # Project overview
+4. /Volumes/Extreme Pro/myprojects/headhunter/CLAUDE.md             # Development guidelines
+5. /Volumes/Extreme Pro/myprojects/headhunter/.taskmaster/docs/prd.txt  # Product requirements
+```
+
+**2. Restart Services** (if suspended):
+```bash
+cd "/Volumes/Extreme Pro/myprojects/headhunter"
+# Follow SUSPENSION_PLAN.md "Restart Procedure" section
+```
+
+**3. Verify Production Health**:
+```bash
+# Get API key
+SEARCH_API_KEY=$(gcloud secrets versions access latest --secret=api-gateway-key --project=headhunter-ai-0088)
+
+# Test hybrid search
+curl -H "x-api-key: $SEARCH_API_KEY" \
+     -H "X-Tenant-ID: tenant-alpha" \
+     -H "Content-Type: application/json" \
+     https://headhunter-api-gateway-production-d735p8t6.uc.gateway.dev/v1/search/hybrid \
+     -d '{"jobDescription":"Senior Python Engineer with AWS experience","limit":5,"includeDebug":true}'
+
+# Expected: HTTP 200, results array, metadata.llmProvider="gemini"
+```
+
+**4. Review Recent Changes**:
+```bash
+# See git log
+git log --oneline --graph --all -20
+
+# Latest commits:
+# a771d23 - docs: document Gemini 2.5 Flash integration in HANDOVER.md
+# [previous Gemini integration commits]
+```
+
+### Project Structure
+
+```
+headhunter/
+├── services/                        # 8 Fastify microservices
+│   ├── hh-embed-svc/               # Embedding generation
+│   ├── hh-search-svc/              # Hybrid search orchestration
+│   ├── hh-rerank-svc/              # LLM-powered reranking (Gemini + Together AI)
+│   ├── hh-evidence-svc/            # Provenance and evidence
+│   ├── hh-eco-svc/                 # ECO data pipelines
+│   ├── hh-msgs-svc/                # Messaging and notifications
+│   ├── hh-admin-svc/               # Admin and scheduling
+│   ├── hh-enrich-svc/              # Candidate enrichment
+│   └── common/                     # Shared middleware and utilities
+├── scripts/                         # Python enrichment and embedding scripts
+├── config/cloud-run/                # Cloud Run service configurations
+├── docs/                            # Documentation
+│   ├── HANDOVER.md                 # This file
+│   ├── ARCHITECTURE.md             # System architecture
+│   ├── TDD_PROTOCOL.md             # Testing guidelines
+│   └── PRODUCTION_DEPLOYMENT_GUIDE.md
+├── SUSPENSION_PLAN.md              # Cost optimization and restart guide
+├── CLAUDE.md                        # Project-specific guidelines for Claude
+└── README.md                        # Quick start guide
+```
+
+### Data Inventory
+
+| Dataset | Count | Location | Status |
+|---------|-------|----------|--------|
+| **Source Candidates** | 29,142 | CSV files | Raw data |
+| **Enriched Profiles** | 28,988 | Firestore | Complete (99.5%) |
+| **Embeddings** | 28,988 | Cloud SQL (pgvector) | Complete (768-dim vectors) |
+| **Failed Enrichments** | 181 | `.quarantine/` directory | Requires manual review |
+| **Test Tenants** | 2 | Firestore | tenant-alpha, tenant-beta |
+
+### Important Notes
+
+**Authentication**:
+- **Production**: AUTH_MODE=none (relies on API Gateway + Cloud Run IAM)
+- **API Gateway**: Validates x-api-key header
+- **Cloud Run**: Only gateway service account has `roles/run.invoker`
+- **Tenant Isolation**: X-Tenant-ID header validated against Firestore
+
+**Known Issues**:
+1. **Auth bypass active** for embedding service (temporary, needs removal)
+2. **Service initialization warnings** - race condition on hook registration
+3. **Tenant ID duplication** in logs (cosmetic only)
+
+**Performance SLOs**:
+- Hybrid search p95: <1.2s (currently: 961ms ✅)
+- Error rate: <1% (currently: <0.1% ✅)
+- Cache hit rate: >0.98 (currently: varies)
+
+### Emergency Contacts
+
+**GCP Project**: headhunter-ai-0088
+**Region**: us-central1
+**Service Account**: Various (search-production@, rerank-production@, etc.)
+
+**Support Resources**:
+1. Cloud Console: https://console.cloud.google.com/run?project=headhunter-ai-0088
+2. Logging: `gcloud logging read "resource.type=cloud_run_revision" --limit=50`
+3. This document: Complete troubleshooting sections below
 
 ---
 
