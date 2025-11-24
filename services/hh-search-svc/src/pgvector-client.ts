@@ -162,10 +162,12 @@ export class PgVectorClient {
         text_candidates AS (
           SELECT
             cp.candidate_id,
-            ts_rank_cd(cp.search_document, plainto_tsquery('${PG_FTS_DICTIONARY}', COALESCE($4, ''))) AS text_score
+            ts_rank_cd(cp.search_document, plainto_tsquery('${PG_FTS_DICTIONARY}', $4)) AS text_score
           FROM ${this.config.schema}.${this.config.profilesTable} AS cp
           WHERE cp.tenant_id = $1
-            AND ($4 IS NULL OR $4 = '' OR cp.search_document @@ plainto_tsquery('${PG_FTS_DICTIONARY}', $4))
+            AND $4 IS NOT NULL
+            AND $4 != ''
+            AND cp.search_document @@ plainto_tsquery('${PG_FTS_DICTIONARY}', $4)
           ORDER BY text_score DESC
           LIMIT $3
         ),
@@ -277,6 +279,13 @@ export class PgVectorClient {
     }
   }
 
+  async rawQuery(sql: string): Promise<QueryResult> {
+    await this.initialize();
+    return this.withClient(async (client) => {
+      return await client.query(sql);
+    });
+  }
+
   private async ensureInfrastructure(client: PoolClient): Promise<void> {
     await client.query('CREATE EXTENSION IF NOT EXISTS "pgcrypto"');
     await client.query('CREATE EXTENSION IF NOT EXISTS "vector"');
@@ -366,6 +375,65 @@ export class PgVectorClient {
       CREATE INDEX IF NOT EXISTS ${this.config.profilesTable}_fts_idx
         ON ${this.config.schema}.${this.config.profilesTable} USING GIN (search_document);
     `);
+
+    // Migrate existing rows: populate search_document with title, headline, skills, and industries
+    this.logger.info('Checking if search_document migration is needed...');
+    const needsMigration = await client.query(`
+      SELECT COUNT(*) as count
+      FROM ${this.config.schema}.${this.config.profilesTable}
+      WHERE search_document IS NULL
+         OR length(search_document::text) < 10
+    `);
+
+    const migrationCount = Number(needsMigration.rows[0]?.count ?? 0);
+    if (migrationCount > 0) {
+      this.logger.info({ count: migrationCount }, 'Migrating search_document for existing candidates...');
+      await client.query(`
+        UPDATE ${this.config.schema}.${this.config.profilesTable}
+        SET search_document = to_tsvector('${PG_FTS_DICTIONARY}',
+          COALESCE(current_title, '') || ' ' ||
+          COALESCE(headline, '') || ' ' ||
+          COALESCE(array_to_string(skills, ' '), '') || ' ' ||
+          COALESCE(array_to_string(industries, ' '), '')
+        )
+        WHERE search_document IS NULL
+           OR length(search_document::text) < 10
+      `);
+      this.logger.info({ count: migrationCount }, 'Search_document migration completed');
+    } else {
+      this.logger.info('No search_document migration needed');
+    }
+
+    // Create or replace trigger to auto-update search_document on INSERT/UPDATE
+    await client.query(`
+      CREATE OR REPLACE FUNCTION update_candidate_search_document()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        NEW.search_document := to_tsvector('${PG_FTS_DICTIONARY}',
+          COALESCE(NEW.current_title, '') || ' ' ||
+          COALESCE(NEW.headline, '') || ' ' ||
+          COALESCE(array_to_string(NEW.skills, ' '), '') || ' ' ||
+          COALESCE(array_to_string(NEW.industries, ' '), '')
+        );
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+
+    await client.query(`
+      DROP TRIGGER IF EXISTS candidates_search_document_trigger
+        ON ${this.config.schema}.${this.config.profilesTable};
+    `);
+
+    await client.query(`
+      CREATE TRIGGER candidates_search_document_trigger
+        BEFORE INSERT OR UPDATE OF current_title, headline, skills, industries
+        ON ${this.config.schema}.${this.config.profilesTable}
+        FOR EACH ROW
+        EXECUTE FUNCTION update_candidate_search_document();
+    `);
+
+    this.logger.info('FTS trigger created for automatic search_document updates');
   }
 
   private async verifyInfrastructure(client: PoolClient): Promise<void> {
