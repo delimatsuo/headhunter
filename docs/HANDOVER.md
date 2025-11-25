@@ -1,4 +1,4 @@
-# Handover & Recovery Runbook (Updated 2025-11-14)
+# Handover & Recovery Runbook (Updated 2025-11-25)
 
 > Canonical repository path: `/Volumes/Extreme Pro/myprojects/headhunter`. Do **not** work from `/Users/Delimatsuo/Documents/Coding/headhunter`.
 > Guardrail: all automation wrappers under `scripts/` source `scripts/utils/repo_guard.sh` and exit immediately when invoked from non-canonical clones.
@@ -9,9 +9,9 @@ This runbook is the single source of truth for resuming work or restoring local 
 
 ## 🎯 EXECUTIVE SUMMARY FOR NEW AI CODING AGENT
 
-**Last Updated**: 2025-11-14
-**Project Status**: Production-ready, entering 1-week suspension
-**Next Session Start**: ~7 days from 2025-11-14
+**Last Updated**: 2025-11-25
+**Project Status**: Production-ready and stable, rerank optimization blocked by Redis issue
+**Next Session**: Address Redis connectivity or defer optimization
 
 ---
 
@@ -40,30 +40,38 @@ This file contains complete restart procedures (~5-10 minutes total) to bring Cl
 - **VertexAI** for embeddings (text-embedding-004, 768 dimensions)
 - **Gemini 2.5 Flash** for intelligent reranking
 
-### Current Production State (As of 2025-11-14)
+### Current Production State (As of 2025-11-25)
 
 | Component | Status | Details |
 |-----------|--------|---------|
 | **Fastify Services** | ✅ HEALTHY | 8 services deployed and operational |
-| **Gemini Rerank** | ✅ DEPLOYED | Gemini-first fallback implemented (2025-11-14) |
+| **Gemini Rerank** | ⚠️ STABLE (NOT OPTIMIZED) | Revision 00053-52f, Redis caching disabled (see Nov 25 update below) |
 | **Cloud SQL** | ✅ ACTIVE | db-custom-2-7680, ~29K candidate embeddings |
-| **Redis Cache** | ✅ ACTIVE | STANDARD_HA tier, operational |
+| **Redis Cache** | ⚠️ PARTIAL | Active for search-svc, disabled for rerank-svc (connectivity issue) |
 | **Firestore** | ✅ COMPLETE | ~29K enriched candidate profiles |
 | **Hybrid Search** | ✅ WORKING | p95 latency 961ms (under 1.2s SLO) |
 | **API Gateway** | ✅ OPERATIONAL | Production endpoint active |
 | **Data Coverage** | ⚠️ 99.5% | 28,988/29,142 candidates (181 failed enrichments) |
+| **Rerank Latency** | ⚠️ NOT OPTIMIZED | ~1899ms baseline (target: ≤350ms blocked by Redis issue) |
 
 **Production URLs**:
 - API Gateway: https://headhunter-api-gateway-production-d735p8t6.uc.gateway.dev
 - Search Service: https://hh-search-svc-production-akcoqbr7sa-uc.a.run.app
 - Rerank Service: https://hh-rerank-svc-production-akcoqbr7sa-uc.a.run.app
 
-### Recent Accomplishments (2025-11-14)
+### Recent Updates (2025-11-25)
 
-**✅ Gemini 2.5 Flash Integration** (MAJOR UPDATE)
+**⚠️ Rerank Latency Optimization Blocked** (Nov 25, 2025)
+- **Investigation**: Attempted optimization to reduce latency from 1899ms to ≤350ms
+- **Finding**: Identified Redis connectivity issue blocking container startup when caching enabled
+- **Current State**: Service stable on revision 00053-52f with Redis caching disabled
+- **Recommendation**: Stop optimization work until Redis infrastructure issue resolved
+- **Documentation**: See section "Update – 2025-11-25 (Rerank Service Investigation & Redis Issue)" below
+
+**✅ Gemini 2.5 Flash Integration** (Nov 14, 2025)
 - **Problem Solved**: Together AI experiencing 100% fallback rate due to candidate ID mismatches
 - **Solution**: Implemented Gemini-first rerank with native schema enforcement
-- **Expected Impact**: 0% fallback rate (vs 100%), 2-3x cost reduction, faster response (~200-500ms)
+- **Code Status**: ✅ Deployed (not actively using optimized settings due to Redis issue)
 - **Architecture**: Gemini → Together AI → passthrough fallback chain
 - **Files Modified**: 8 service files (gemini-client.ts, config.ts, types.ts, rerank-service.ts, etc.)
 - **Documentation**: See section "Update – 2025-11-14 (Gemini 2.5 Flash Integration)" below
@@ -585,11 +593,81 @@ ENABLE_RERANK=true
 
 **Documentation**: See `docs/task-84-rerank-fix.md` for complete root cause analysis and validation plan.
 
+#### Update – 2025-11-25 (Rerank Service Investigation & Redis Issue)
+
+**⚠️ Latency Optimization Blocked - Redis Connectivity Issue**
+
+**Current Service Status:**
+- **Service**: HEALTHY and STABLE (✅ Service availability restored)
+- **Revision**: hh-rerank-svc-production-00053-52f (Nov 21, 2025)
+- **Gemini Model**: gemini-2.5-flash-002
+- **Redis Caching**: DISABLED (`RERANK_CACHE_DISABLE=true`)
+- **SLA Target**: 8000ms (conservative, not optimized)
+- **Latency Optimization**: ❌ BLOCKED pending Redis investigation
+
+**Investigation Summary:**
+
+Attempted latency optimization to reduce reranking from 1899ms to ≤350ms on Nov 25, 2025. Multiple deployment attempts failed with "upstream request timeout" errors. After extensive investigation involving 4 deployment attempts and environment variable comparisons, identified the root cause:
+
+**Root Cause**: When `RERANK_CACHE_DISABLE=false` (Redis enabled), the container crashes during startup before health checks succeed.
+
+**Evidence Table:**
+
+| Revision | Date | Redis Caching | Gemini Model | Result |
+|----------|------|---------------|--------------|---------|
+| 00053-52f | Nov 21 | DISABLED (`true`) | gemini-2.5-flash-002 | ✅ WORKS |
+| 00061-zqs | Nov 25 | ENABLED (`false`) | gemini-2.5-flash | ❌ FAILS |
+| 00063-vwb | Nov 25 | ENABLED (`false`) | gemini-2.5-flash-002 | ❌ FAILS |
+
+**Key Finding**: Initial hypothesis that Gemini model name mismatch (`gemini-2.5-flash` vs `gemini-2.5-flash-002`) was causing the issue was **disproven**. The actual differentiator is the Redis caching configuration.
+
+**Likely Causes:**
+1. Redis instance at `10.103.201.212:6379` not reachable from Cloud Run
+2. VPC connector or network configuration blocking access
+3. Redis TLS certificate validation failing during container initialization
+4. Redis instance down or misconfigured
+
+**Investigation Documents Created:**
+- `/tmp/RERANK_DEPLOYMENT_STATUS.md` - Initial failure analysis
+- `/tmp/RERANK_DEPLOYMENT_POSTMORTEM.md` - Detailed deployment timeline
+- `/tmp/RERANK_ROOT_CAUSE_ANALYSIS.md` - Model name hypothesis (disproven)
+- `/tmp/RERANK_INVESTIGATION_COMPLETE.md` - Final investigation summary
+
+**Recommendation**: **STOP optimization work** until Redis connectivity is resolved. The service is healthy and stable on revision 00053-52f. Further deployment attempts risk destabilizing production without resolving the underlying infrastructure issue.
+
+**Path Forward** (if optimization needed):
+
+**Option 1 - Investigate Redis Connectivity (RECOMMENDED):**
+```bash
+# 1. Check Redis instance status
+gcloud redis instances describe redis-hh-cache --region=us-central1
+
+# 2. Test Redis connection from Cloud Run independently
+# 3. Verify VPC connector configuration
+# 4. Once Redis works, retry deployment with caching enabled
+```
+
+**Option 2 - Optimize Without Redis:**
+- Deploy with `RERANK_CACHE_DISABLE=true` (keep Redis disabled)
+- Apply aggressive Gemini/Together timeouts only
+- Expected improvement: ~80% of target (vs 100% with caching)
+- No infrastructure dependencies, immediate deployment possible
+
+**Lessons Learned:**
+1. Always compare working vs failing revision environment variables early
+2. Test infrastructure dependencies (Redis, databases) before deployment
+3. Maintain rollback revisions for quick recovery
+4. Don't assume model configuration is the issue without evidence
+
+---
+
 #### Update – 2025-11-14 (Gemini 2.5 Flash Integration)
 
-**Gemini-First Rerank Implementation** ✅ **DEPLOYED**
+**Gemini-First Rerank Implementation** ✅ **CODE DEPLOYED**
 
 Successfully integrated Gemini 2.5 Flash as the primary LLM provider for candidate reranking, replacing Together AI to eliminate the 100% fallback rate caused by candidate ID mismatches.
+
+**⚠️ Note (2025-11-25)**: While the Gemini integration code is deployed, the service is currently running on revision 00053-52f with conservative timeout settings and Redis caching disabled due to connectivity issues discovered during optimization attempts. See "Update – 2025-11-25" above for details.
 
 **Problem Solved**:
 - **Previous State**: Together AI (Qwen 2.5 32B Instruct) experiencing 100% fallback rate
