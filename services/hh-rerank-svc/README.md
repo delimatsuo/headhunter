@@ -3,10 +3,10 @@
 `hh-rerank-svc` provides Together AI powered reranking for Headhunter search flows. The service consumes candidate lists plus job context and returns tenant-scoped ordering tuned for the ≤350 ms p95 SLA defined in the rerank PRD.
 
 ## Features
-- `POST /v1/search/rerank` — reranks candidates with Qwen 2.5 32B via Together AI and returns rationale metadata.
+- `POST /v1/search/rerank` — reranks candidates with Gemini 2.5 Flash (primary) or Qwen 2.5 32B via Together AI (fallback).
 - Tenant-aware Redis caching (`hh:rerank:{tenant}:{jd_hash}:{docset_hash}`) with graceful cache bypass controls.
-- Circuit breaker, retry, and timeout safeguards around Together AI to guarantee graceful degradation.
-- Built-in health endpoint surfaces Redis and Together AI status for Cloud Run probes.
+- Circuit breaker, retry, and timeout safeguards around LLM providers to guarantee graceful degradation.
+- Built-in health endpoint surfaces Redis, Gemini, and Together AI status for Cloud Run probes.
 - Structured logging, Firebase auth, and tenant validation provided by `@hh/common`.
 
 ## Quick Start
@@ -18,15 +18,26 @@ npm run build --workspace @hh/hh-rerank-svc
 npm run dev --workspace @hh/hh-rerank-svc
 ```
 
-Copy `.env.example` to `.env` (or export variables) and supply a valid `TOGETHER_API_KEY` plus Redis credentials before starting locally.
+Copy `.env.example` to `.env` (or export variables) and supply valid `TOGETHER_API_KEY` and Google Cloud credentials before starting locally.
 
 ## Configuration
 Key environment variables (see `.env.example` for the full list):
-- `TOGETHER_API_KEY` / `TOGETHER_MODEL` / `TOGETHER_TIMEOUT_MS` — Together AI auth and latency targets (defaults tuned for 320 ms timeouts).
-- `RERANK_MAX_CANDIDATES`, `RERANK_DEFAULT_LIMIT` — caps to keep prompts light and align with SLA.
+
+### Gemini (Primary)
+- `GEMINI_ENABLE` — toggle Gemini integration (default: `true`).
+- `GEMINI_PROJECT_ID`, `GEMINI_LOCATION` — Google Cloud project details.
+- `GEMINI_MODEL` — model version (default: `gemini-2.5-flash`).
+- `GEMINI_TIMEOUT_MS` — timeout for Gemini requests (default: `8000`).
+
+### Together AI (Fallback)
+- `TOGETHER_API_KEY` / `TOGETHER_MODEL` / `TOGETHER_TIMEOUT_MS` — Together AI auth and latency targets.
+
+### Runtime
+- `RERANK_SLA_TARGET_MS` — overall service SLA target (default: `10000` to accommodate Gemini).
+- `RERANK_MAX_CANDIDATES`, `RERANK_DEFAULT_LIMIT` — caps to keep prompts light.
 - `RERANK_CACHE_TTL_SECONDS`, `RERANK_REDIS_PREFIX` — Redis cache behaviour.
 - `RERANK_ENABLE_FALLBACK` — toggle graceful degradation to passthrough ranking.
-- `REDIS_*` — standard cache connectivity toggles (cluster friendly via comma-separated hosts).
+- `REDIS_*` — standard cache connectivity toggles.
 
 ## API Overview
 A minimal rerank request:

@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@fastify/under-pressure": "^8.5.0",
+    "@google-cloud/vertexai": "latest",
     "@hh/common": "file:../common",
     "axios": "^1.6.8",
     "dotenv": "^16.4.5",

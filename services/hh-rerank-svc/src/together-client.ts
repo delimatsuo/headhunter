@@ -210,6 +210,12 @@ export class TogetherClient {
             );
 
             this.recordSuccess();
+            // Strip markdown code blocks if present
+            if (typeof response.data?.choices?.[0]?.message?.content === 'string') {
+              let content = response.data.choices[0].message.content;
+              content = content.replace(/^```json\n/, '').replace(/^```\n/, '').replace(/\n```$/, '');
+              response.data.choices[0].message.content = content;
+            }
             return response.data;
           } catch (error) {
             const isTimeout = this.isTimeoutError(error);
