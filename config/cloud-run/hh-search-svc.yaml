@@ -34,11 +34,11 @@ spec:
             - name: FIREBASE_PROJECT_ID
               value: ${SERVICE_PROJECT_ID}
             - name: REDIS_HOST
-              value: 10.159.1.4
+              value: 10.103.201.212
             - name: REDIS_PORT
-              value: "6378"
+              value: "6379"
             - name: REDIS_TLS
-              value: "true"
+              value: "false"
             - name: REDIS_TLS_REJECT_UNAUTHORIZED
               value: "true"
             - name: REDIS_TLS_CA

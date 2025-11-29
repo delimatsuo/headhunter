@@ -40,6 +40,8 @@ if (process.env.NODE_ENV === 'development' && process.env.REACT_APP_USE_EMULATOR
 
 // Cloud Function references
 export const searchCandidates = httpsCallable(functions, 'searchCandidates');
+export const searchJobCandidates = httpsCallable(functions, 'searchJobCandidates');
+export const semanticSearch = httpsCallable(functions, 'semanticSearch');
 export const getCandidates = httpsCallable(functions, 'getCandidates');
 export const createCandidate = httpsCallable(functions, 'createCandidate');
 export const generateUploadUrl = httpsCallable(functions, 'generateUploadUrl');
@@ -49,6 +51,7 @@ export const completeOnboarding = httpsCallable(functions, 'completeOnboarding')
 // Skill-aware search and assessment (ensure backend functions are deployed)
 export const skillAwareSearch = httpsCallable(functions, 'skillAwareSearch');
 export const getCandidateSkillAssessment = httpsCallable(functions, 'getCandidateSkillAssessment');
+export const rerankCandidates = httpsCallable(functions, 'rerankCandidates');
 
 // Admin callables
 export const addAllowedUserFn = httpsCallable(functions, 'addAllowedUser');

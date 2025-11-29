@@ -1,0 +1,12 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-search-svc:latest'
+      - '-f'
+      - 'hh-search-svc/Dockerfile'
+      - '.'
+images:
+  - 'us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-search-svc:latest'
+timeout: '600s'

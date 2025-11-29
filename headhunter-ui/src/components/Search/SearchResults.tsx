@@ -8,10 +8,10 @@ interface SearchResultsProps {
   error: string | null;
 }
 
-export const SearchResults: React.FC<SearchResultsProps> = ({ 
-  results, 
-  loading, 
-  error 
+export const SearchResults: React.FC<SearchResultsProps> = ({
+  results,
+  loading,
+  error
 }) => {
   if (loading) {
     return (
@@ -40,24 +40,31 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     return null;
   }
 
-  const { matches, insights } = results;
+  const { matches = [], insights = {
+    total_candidates: 0,
+    avg_match_score: 0,
+    top_skills_matched: [],
+    common_gaps: [],
+    market_analysis: '',
+    recommendations: []
+  } } = results || {};
 
   return (
     <div className="search-results">
       <div className="results-header">
         <div className="results-summary">
           <h2>Search Results</h2>
-          <p>Found {matches.length} matching candidates in {results.query_time_ms}ms</p>
+          <p>Found {matches?.length || 0} matching candidates in {results?.query_time_ms || 0}ms</p>
         </div>
 
         <div className="results-stats">
           <div className="stat">
             <span className="stat-label">Total Candidates</span>
-            <span className="stat-value">{insights.total_candidates}</span>
+            <span className="stat-value">{insights?.total_candidates || 0}</span>
           </div>
           <div className="stat">
             <span className="stat-label">Avg Match Score</span>
-            <span className="stat-value">{Math.round(insights.avg_match_score * 100)}%</span>
+            <span className="stat-value">{Math.round((insights?.avg_match_score || 0) > 1 ? (insights?.avg_match_score || 0) : (insights?.avg_match_score || 0) * 100)}%</span>
           </div>
         </div>
       </div>
@@ -69,7 +76,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
             <div className="insight-card">
               <h4>Top Skills Matched</h4>
               <div className="skill-list">
-                {insights.top_skills_matched.map((skill, index) => (
+                {insights.top_skills_matched?.map((skill, index) => (
                   <span key={index} className="skill-tag">{skill}</span>
                 ))}
               </div>
@@ -78,7 +85,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
             <div className="insight-card">
               <h4>Common Gaps</h4>
               <div className="gap-list">
-                {insights.common_gaps.map((gap, index) => (
+                {insights.common_gaps?.map((gap, index) => (
                   <span key={index} className="gap-tag">{gap}</span>
                 ))}
               </div>
@@ -86,14 +93,14 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 
             <div className="insight-card full-width">
               <h4>Market Analysis</h4>
-              <p>{insights.market_analysis}</p>
+              <p>{insights.market_analysis || 'No analysis available'}</p>
             </div>
 
-            {insights.recommendations.length > 0 && (
+            {insights.recommendations?.length > 0 && (
               <div className="insight-card full-width">
                 <h4>Recommendations</h4>
                 <ul>
-                  {insights.recommendations.map((rec, index) => (
+                  {insights.recommendations?.map((rec, index) => (
                     <li key={index}>{rec}</li>
                   ))}
                 </ul>
@@ -104,8 +111,8 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
       )}
 
       <div className="candidates-list">
-        <h3>Candidate Matches ({matches.length})</h3>
-        {matches.length === 0 ? (
+        <h3>Candidate Matches ({matches?.length || 0})</h3>
+        {(!matches || matches.length === 0) ? (
           <div className="no-results">
             <div className="no-results-icon">🔍</div>
             <h4>No matches found</h4>
@@ -115,7 +122,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
           <div className="candidates-grid">
             {matches.map((match, index) => (
               <CandidateCard
-                key={match.candidate.candidate_id}
+                key={match.candidate?.candidate_id || index}
                 candidate={match.candidate}
                 matchScore={match.score}
                 similarity={match.similarity}

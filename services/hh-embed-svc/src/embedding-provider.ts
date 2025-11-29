@@ -201,6 +201,78 @@ class VertexAiProvider implements EmbeddingProvider {
   }
 }
 
+class TogetherAiProvider implements EmbeddingProvider {
+  readonly name: EmbeddingProviderName = 'together';
+  readonly model: string;
+  readonly dimensions: number;
+
+  constructor(
+    private readonly logger: Logger,
+    private readonly settings: EmbeddingProviderSettings['together'],
+    runtime: EmbeddingRuntimeSettings
+  ) {
+    this.model = this.settings.model ?? 'togethercomputer/m2-bert-80M-8k-retrieval';
+    this.dimensions = runtime.dimensions;
+  }
+
+  async generateEmbedding(text: string): Promise<EmbeddingVector> {
+    const trimmed = text.trim().slice(0, INPUT_CHARACTER_LIMIT);
+    if (!trimmed) {
+      throw new Error('Text payload must not be empty for embedding generation.');
+    }
+
+    try {
+      const response = await fetch('https://api.together.xyz/v1/embeddings', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.settings.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: this.model,
+          input: trimmed
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        this.logger.error(
+          { status: response.status, error: errorText },
+          'Together AI API request failed'
+        );
+        throw new Error(`Together AI API returned ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json() as {
+        data?: Array<{ embedding?: unknown }>;
+      };
+
+      if (!result.data || !Array.isArray(result.data) || result.data.length === 0) {
+        this.logger.error({ result }, 'Together AI response missing embedding data');
+        throw new Error('Together AI response did not include embedding data');
+      }
+
+      const embedding = result.data[0].embedding;
+
+      if (!Array.isArray(embedding) || embedding.length === 0) {
+        this.logger.error({ result }, 'Together AI embedding response returned an empty vector');
+        throw new Error('Together AI response did not include an embedding vector');
+      }
+
+      if (embedding.length !== this.dimensions) {
+        const message = `Together AI embedding dimensionality mismatch. Expected ${this.dimensions}, received ${embedding.length}`;
+        this.logger.error({ expected: this.dimensions, received: embedding.length }, message);
+        throw new Error(message);
+      }
+
+      return embedding as EmbeddingVector;
+    } catch (error) {
+      this.logger.error({ error }, 'Failed to generate embedding using Together AI');
+      throw error;
+    }
+  }
+}
+
 class TogetherStubProvider implements EmbeddingProvider {
   readonly name: EmbeddingProviderName = 'together';
   readonly model: string;
@@ -238,7 +310,7 @@ export function createEmbeddingProvider(options: EmbeddingProviderFactoryOptions
         options.logger.warn({ provider: 'together' }, 'TOGETHER_API_KEY not configured. Falling back to deterministic stub provider.');
         return new TogetherStubProvider(options.runtime.dimensions);
       }
-      return new TogetherStubProvider(options.runtime.dimensions);
+      return new TogetherAiProvider(options.logger.child({ provider: 'together' }), options.providers.together, options.runtime);
     case 'local':
     default:
       return new LocalDeterministicProvider(options.providers.localDimensions || options.runtime.dimensions);

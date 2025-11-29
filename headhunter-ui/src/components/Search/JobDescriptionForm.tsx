@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { JobDescription } from '../../types';
 
 interface JobDescriptionFormProps {
@@ -6,9 +6,9 @@ interface JobDescriptionFormProps {
   loading?: boolean;
 }
 
-export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({ 
-  onSearch, 
-  loading = false 
+export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
+  onSearch,
+  loading = false
 }) => {
   const [formData, setFormData] = useState<JobDescription>({
     title: '',
@@ -21,58 +21,94 @@ export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
     leadership_required: false,
   });
 
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [skillInput, setSkillInput] = useState('');
-  const [niceToHaveInput, setNiceToHaveInput] = useState('');
+
+  // Simple keyword extraction from description
+  const extractSkills = (text: string) => {
+    const commonSkills = [
+      'java', 'python', 'javascript', 'typescript', 'react', 'angular', 'vue', 'node', 'aws', 'cloud',
+      'docker', 'kubernetes', 'sql', 'nosql', 'agile', 'scrum', 'leadership', 'management',
+      'communication', 'rest', 'api', 'graphql', 'ci/cd', 'devops', 'machine learning', 'ai'
+    ];
+
+    const foundSkills = commonSkills.filter(skill =>
+      text.toLowerCase().includes(skill.toLowerCase())
+    );
+
+    return Array.from(new Set(foundSkills));
+  };
+
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = e.target.value;
+    setFormData(prev => ({ ...prev, description: text }));
+
+    // Auto-extract if description is long enough
+    if (text.length > 50) {
+      const extracted = extractSkills(text);
+      setFormData(prev => ({
+        ...prev,
+        required_skills: extracted
+      }));
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.title.trim() || !formData.description.trim()) {
-      alert('Please fill in at least the job title and description');
+    if (!formData.description.trim()) {
+      alert('Please provide a job description');
       return;
     }
-
-    onSearch(formData);
+    // Ensure title is set
+    const finalData = {
+      ...formData,
+      title: formData.title || 'Untitled Position'
+    };
+    onSearch(finalData);
   };
 
-  const addSkill = (skillType: 'required_skills' | 'nice_to_have') => {
-    const input = skillType === 'required_skills' ? skillInput : niceToHaveInput;
-    const setInput = skillType === 'required_skills' ? setSkillInput : setNiceToHaveInput;
-    
-    if (input.trim() && !formData[skillType]?.includes(input.trim())) {
+  const addSkill = () => {
+    if (skillInput.trim() && !formData.required_skills?.includes(skillInput.trim())) {
       setFormData(prev => ({
         ...prev,
-        [skillType]: [...(prev[skillType] || []), input.trim()]
+        required_skills: [...(prev.required_skills || []), skillInput.trim()]
       }));
-      setInput('');
+      setSkillInput('');
     }
   };
 
-  const removeSkill = (skillType: 'required_skills' | 'nice_to_have', index: number) => {
+  const removeSkill = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      [skillType]: prev[skillType]?.filter((_, i) => i !== index) || []
+      required_skills: prev.required_skills?.filter((_, i) => i !== index) || []
     }));
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent, skillType: 'required_skills' | 'nice_to_have') => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addSkill(skillType);
-    }
   };
 
   return (
     <div className="job-description-form">
       <div className="form-header">
         <h2>Find Perfect Candidates</h2>
-        <p>Describe the role and we'll find the best matching candidates</p>
+        <p>Paste your job description below. We'll extract the requirements automatically.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="search-form">
+        <div className="form-group">
+          <label htmlFor="description">Job Description *</label>
+          <textarea
+            id="description"
+            value={formData.description}
+            onChange={handleDescriptionChange}
+            placeholder="Paste the full job description here..."
+            rows={10}
+            disabled={loading}
+            required
+            className="description-input"
+          />
+        </div>
+
         <div className="form-row">
           <div className="form-group">
-            <label htmlFor="title">Job Title *</label>
+            <label htmlFor="title">Job Title (Optional)</label>
             <input
               type="text"
               id="title"
@@ -80,167 +116,58 @@ export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               placeholder="e.g., Senior Software Engineer"
               disabled={loading}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="company">Company</label>
-            <input
-              type="text"
-              id="company"
-              value={formData.company}
-              onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
-              placeholder="e.g., TechCorp Inc."
-              disabled={loading}
             />
           </div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="description">Job Description *</label>
-          <textarea
-            id="description"
-            value={formData.description}
-            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-            placeholder="Paste the full job description here..."
-            rows={6}
-            disabled={loading}
-            required
-          />
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label>Required Skills</label>
-            <div className="skill-input">
-              <input
-                type="text"
-                value={skillInput}
-                onChange={(e) => setSkillInput(e.target.value)}
-                onKeyPress={(e) => handleKeyPress(e, 'required_skills')}
-                placeholder="Add required skill"
-                disabled={loading}
-              />
-              <button
-                type="button"
-                onClick={() => addSkill('required_skills')}
-                disabled={loading || !skillInput.trim()}
-                className="btn btn-small"
-              >
-                Add
-              </button>
-            </div>
-            <div className="skill-tags">
-              {formData.required_skills?.map((skill, index) => (
-                <span key={index} className="skill-tag required">
-                  {skill}
-                  <button
-                    type="button"
-                    onClick={() => removeSkill('required_skills', index)}
-                    disabled={loading}
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label>Nice to Have</label>
-            <div className="skill-input">
-              <input
-                type="text"
-                value={niceToHaveInput}
-                onChange={(e) => setNiceToHaveInput(e.target.value)}
-                onKeyPress={(e) => handleKeyPress(e, 'nice_to_have')}
-                placeholder="Add nice-to-have skill"
-                disabled={loading}
-              />
-              <button
-                type="button"
-                onClick={() => addSkill('nice_to_have')}
-                disabled={loading || !niceToHaveInput.trim()}
-                className="btn btn-small"
-              >
-                Add
-              </button>
-            </div>
-            <div className="skill-tags">
-              {formData.nice_to_have?.map((skill, index) => (
-                <span key={index} className="skill-tag nice-to-have">
-                  {skill}
-                  <button
-                    type="button"
-                    onClick={() => removeSkill('nice_to_have', index)}
-                    disabled={loading}
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
+        <div className="extracted-skills-preview">
+          <label>Detected Skills:</label>
+          <div className="skill-tags">
+            {formData.required_skills?.map((skill, index) => (
+              <span key={index} className="skill-tag required">
+                {skill}
+                <button type="button" onClick={() => removeSkill(index)}>×</button>
+              </span>
+            ))}
+            {(!formData.required_skills || formData.required_skills.length === 0) && (
+              <span className="no-skills">Type description to detect skills...</span>
+            )}
           </div>
         </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="minExperience">Min Experience (years)</label>
-            <select
-              id="minExperience"
-              value={formData.min_experience}
-              onChange={(e) => setFormData(prev => ({ 
-                ...prev, 
-                min_experience: parseInt(e.target.value) 
-              }))}
-              disabled={loading}
-            >
-              {[...Array(16)].map((_, i) => (
-                <option key={i} value={i}>{i} years</option>
-              ))}
-            </select>
-          </div>
+        <button
+          type="button"
+          className="btn btn-text"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+        >
+          {showAdvanced ? 'Hide Advanced Options' : 'Show Advanced Options'}
+        </button>
 
-          <div className="form-group">
-            <label htmlFor="maxExperience">Max Experience (years)</label>
-            <select
-              id="maxExperience"
-              value={formData.max_experience}
-              onChange={(e) => setFormData(prev => ({ 
-                ...prev, 
-                max_experience: parseInt(e.target.value) 
-              }))}
-              disabled={loading}
-            >
-              {[...Array(21)].map((_, i) => (
-                <option key={i} value={i}>{i === 20 ? '20+' : i} years</option>
-              ))}
-            </select>
+        {showAdvanced && (
+          <div className="advanced-options">
+            <div className="form-group">
+              <label>Add Manual Skill</label>
+              <div className="skill-input">
+                <input
+                  type="text"
+                  value={skillInput}
+                  onChange={(e) => setSkillInput(e.target.value)}
+                  placeholder="Add skill"
+                />
+                <button type="button" onClick={addSkill} className="btn btn-small">Add</button>
+              </div>
+            </div>
+            {/* Add other advanced fields here if needed */}
           </div>
-        </div>
-
-        <div className="form-group">
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={formData.leadership_required || false}
-              onChange={(e) => setFormData(prev => ({ 
-                ...prev, 
-                leadership_required: e.target.checked 
-              }))}
-              disabled={loading}
-            />
-            Leadership experience required
-          </label>
-        </div>
+        )}
 
         <button
           type="submit"
           className="btn btn-primary btn-large"
           disabled={loading}
+          style={{ marginTop: '20px' }}
         >
-          {loading ? 'Searching...' : 'Search Candidates'}
+          {loading ? 'Analyzing...' : 'Search Candidates'}
         </button>
       </form>
     </div>

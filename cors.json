@@ -1,0 +1,25 @@
+[
+    {
+        "origin": [
+            "https://headhunter-ai-0088.web.app",
+            "http://localhost:3000"
+        ],
+        "method": [
+            "PUT",
+            "POST",
+            "GET",
+            "HEAD",
+            "DELETE"
+        ],
+        "responseHeader": [
+            "Content-Type",
+            "x-goog-resumable",
+            "x-goog-meta-candidate-id",
+            "x-goog-meta-org-id",
+            "x-goog-meta-uploaded-by",
+            "x-goog-meta-original-name",
+            "x-goog-meta-file-type"
+        ],
+        "maxAgeSeconds": 3600
+    }
+]

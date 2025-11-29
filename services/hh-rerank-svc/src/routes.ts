@@ -6,6 +6,7 @@ import { RerankRedisClient } from './redis-client.js';
 import { rerankSchema } from './schemas.js';
 import type { RerankRequest, RerankResponse } from './types.js';
 import { TogetherClient } from './together-client.js';
+import { GeminiClient } from './gemini-client.js';
 import { RerankService } from './rerank-service.js';
 
 interface RegisterRoutesOptions {
@@ -13,6 +14,7 @@ interface RegisterRoutesOptions {
   config: RerankServiceConfig;
   redisClient: RerankRedisClient | null;
   togetherClient: TogetherClient | null;
+  geminiClient: GeminiClient | null;
   state: { isReady: boolean };
 }
 
@@ -31,7 +33,7 @@ export async function registerRoutes(
       };
     }
 
-    if (!dependencies.redisClient || !dependencies.togetherClient) {
+    if (!dependencies.redisClient || !dependencies.togetherClient || !dependencies.geminiClient) {
       reply.status(503);
       return {
         status: 'initializing',
@@ -39,7 +41,11 @@ export async function registerRoutes(
       };
     }
 
-    const [redisHealth, togetherHealth] = await Promise.all([dependencies.redisClient.healthCheck(), dependencies.togetherClient.healthCheck()]);
+    const [redisHealth, togetherHealth, geminiHealth] = await Promise.all([
+      dependencies.redisClient.healthCheck(),
+      dependencies.togetherClient.healthCheck(),
+      dependencies.geminiClient.healthCheck()
+    ]);
 
     const degraded: Record<string, unknown> = {};
     if (!['healthy', 'disabled'].includes(redisHealth.status)) {
@@ -48,6 +54,9 @@ export async function registerRoutes(
     if (!['healthy', 'disabled'].includes(togetherHealth.status)) {
       degraded.together = togetherHealth;
     }
+    if (!['healthy', 'disabled'].includes(geminiHealth.status)) {
+      degraded.gemini = geminiHealth;
+    }
 
     if (Object.keys(degraded).length > 0) {
       reply.code(503);
@@ -55,7 +64,8 @@ export async function registerRoutes(
         status: 'degraded',
         components: {
           redis: redisHealth,
-          together: togetherHealth
+          together: togetherHealth,
+          gemini: geminiHealth
         }
       } satisfies Record<string, unknown>;
     }
@@ -63,7 +73,8 @@ export async function registerRoutes(
     return {
       status: 'ok',
       redis: redisHealth,
-      together: togetherHealth
+      together: togetherHealth,
+      gemini: geminiHealth
     } satisfies Record<string, unknown>;
   };
 
@@ -94,17 +105,24 @@ export async function registerRoutes(
       const cacheKey = dependencies.redisClient.buildKey(request.tenant.id, descriptor);
 
       if (!disableCache) {
-        const cached = await dependencies.redisClient.get<RerankResponse>(cacheKey);
-        if (cached) {
-          const cacheHitResponse: RerankResponse = {
-            ...cached,
-            cacheHit: true,
-            timings: {
-              ...cached.timings,
-              cacheMs: Date.now() - cacheStart
-            }
-          };
-          return cacheHitResponse;
+        try {
+          const cached = await dependencies.redisClient.get<RerankResponse>(cacheKey);
+          if (cached) {
+            const timings = cached.timings || { totalMs: 0 };
+            const cacheHitResponse: RerankResponse = {
+              ...cached,
+              cacheHit: true,
+              timings: {
+                ...timings,
+                cacheMs: Date.now() - cacheStart,
+                totalMs: Date.now() - cacheStart
+              }
+            };
+            return cacheHitResponse;
+          }
+        } catch (error) {
+          request.log.warn({ error }, 'Failed to retrieve or parse cached response');
+          // Continue to fallback (non-cached) execution
         }
       }
 

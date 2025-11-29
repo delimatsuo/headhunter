@@ -310,4 +310,102 @@ export async function registerRoutes(
       };
     }
   );
+
+  // Admin endpoint to run FTS migration
+  app.post(
+    '/admin/migrate-fts',
+    async (_request: FastifyRequest, reply: FastifyReply) => {
+      if (!dependencies.pgClient) {
+        reply.status(503);
+        return { error: 'Database not ready' };
+      }
+
+      try {
+        const schema = dependencies.config.pgvector.schema;
+        const profilesTable = dependencies.config.pgvector.profilesTable;
+        const qualifiedTable = `${schema}.${profilesTable}`;
+
+        app.log.info({ schema, profilesTable }, 'Running FTS migration...');
+
+        // Drop old trigger and function
+        await dependencies.pgClient.rawQuery(`
+          DROP TRIGGER IF EXISTS candidate_profiles_search_document_trigger ON ${qualifiedTable};
+          DROP TRIGGER IF EXISTS candidates_search_document_trigger ON ${qualifiedTable};
+          DROP FUNCTION IF EXISTS update_candidate_search_document();
+        `);
+
+        // Create new function with Portuguese dictionary
+        await dependencies.pgClient.rawQuery(`
+          CREATE OR REPLACE FUNCTION update_candidate_search_document()
+          RETURNS TRIGGER AS $$
+          BEGIN
+              NEW.search_document := to_tsvector('portuguese',
+                  COALESCE(NEW.current_title, '') || ' ' ||
+                  COALESCE(NEW.headline, '') || ' ' ||
+                  COALESCE(array_to_string(NEW.skills, ' '), '') || ' ' ||
+                  COALESCE(array_to_string(NEW.industries, ' '), '')
+              );
+              RETURN NEW;
+          END;
+          $$ LANGUAGE plpgsql;
+        `);
+
+        // Create trigger
+        await dependencies.pgClient.rawQuery(`
+          CREATE TRIGGER candidate_profiles_search_document_trigger
+              BEFORE INSERT OR UPDATE OF current_title, headline, skills, industries
+              ON ${qualifiedTable}
+              FOR EACH ROW
+              EXECUTE FUNCTION update_candidate_search_document();
+        `);
+
+        // Update ALL existing candidates
+        await dependencies.pgClient.rawQuery(`
+          UPDATE ${qualifiedTable}
+          SET search_document = to_tsvector('portuguese',
+              COALESCE(current_title, '') || ' ' ||
+              COALESCE(headline, '') || ' ' ||
+              COALESCE(array_to_string(skills, ' '), '') || ' ' ||
+              COALESCE(array_to_string(industries, ' '), '')
+          );
+        `);
+
+        // Verify
+        const verification = await dependencies.pgClient.rawQuery(`
+          SELECT
+              COUNT(*) as total_candidates,
+              COUNT(search_document) as has_search_doc,
+              SUM(CASE WHEN search_document IS NOT NULL AND length(search_document::text) > 10 THEN 1 ELSE 0 END) as populated_search_doc
+          FROM ${qualifiedTable};
+        `);
+
+        // Test query
+        const testResult = await dependencies.pgClient.rawQuery(`
+          SELECT
+              candidate_id,
+              full_name,
+              current_title,
+              ts_rank_cd(search_document, plainto_tsquery('portuguese', 'javascript')) AS text_score
+          FROM ${qualifiedTable}
+          WHERE search_document @@ plainto_tsquery('portuguese', 'javascript')
+          ORDER BY text_score DESC
+          LIMIT 3;
+        `);
+
+        app.log.info({ verification, testResult }, 'FTS migration completed');
+
+        return {
+          success: true,
+          schema,
+          verification: verification.rows?.[0],
+          testMatches: testResult.rows?.length ?? 0,
+          sampleResults: testResult.rows
+        };
+      } catch (error) {
+        app.log.error({ error }, 'FTS migration failed');
+        reply.status(500);
+        return { error: error instanceof Error ? error.message : 'Migration failed' };
+      }
+    }
+  );
 }

@@ -217,6 +217,48 @@ class IntelligentSkillProcessor:
             self.stats.failed += 1
             return None
     
+    async def repair_json_with_llm(self, json_text: str) -> Optional[Dict[str, Any]]:
+        """Attempt to repair malformed JSON using the LLM"""
+        try:
+            prompt = (
+                "You are a JSON repair expert. The following text contains malformed JSON data. "
+                "Your task is to fix the syntax errors and return ONLY the valid JSON object. "
+                "Do not add any markdown formatting, explanations, or code blocks. "
+                "Just return the raw JSON string.\n\n"
+                f"MALFORMED JSON:\n{json_text[:15000]}\n\n"  # Truncate to avoid token limits if massive
+                "VALID JSON:"
+            )
+            
+            payload = {
+                "model": self.model,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 4500,
+                "temperature": 0.0,
+                "top_p": 0.1
+            }
+            
+            async with self.session.post(self.base_url, json=payload) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    if 'choices' in result and len(result['choices']) > 0:
+                        content = result['choices'][0]['message']['content']
+                        
+                        # Validate the repaired JSON
+                        validation_result = self.json_validator.validate(content)
+                        if validation_result.is_valid:
+                            logger.info("✅ LLM successfully repaired JSON")
+                            return validation_result.data
+                        else:
+                            logger.warning(f"⚠️ LLM repair failed validation: {validation_result.errors}")
+                            return None
+                else:
+                    logger.error(f"LLM repair request failed: {response.status}")
+                    return None
+                    
+        except Exception as e:
+            logger.error(f"Error during LLM JSON repair: {e}")
+            return None
+    
     def _extract_skill_names(self, skill_items: List) -> List[str]:
         """Extract skill names from SkillItem objects or strings"""
         skills = []
@@ -230,10 +272,10 @@ class IntelligentSkillProcessor:
     def _extract_all_probable_skills(self, analysis: Dict) -> List[str]:
         """Extract all skills with >75% confidence"""
         skills = []
-        inferred = analysis.get("inferred_skills", {})
+        inferred = analysis.get("inferred_skills") or {}
 
         for category in ["highly_probable_skills", "probable_skills"]:
-            for skill_item in inferred.get(category, []):
+            for skill_item in (inferred.get(category) or []):
                 if isinstance(skill_item, dict) and skill_item.get("confidence", 0) >= 75:
                     skills.append(skill_item.get("skill", ""))
 

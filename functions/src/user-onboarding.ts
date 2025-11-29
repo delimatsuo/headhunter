@@ -4,8 +4,8 @@
  * Handle new user registration, organization creation, and custom claims
  */
 
-import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { beforeUserCreated } from "firebase-functions/v2/identity";
+import { onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
+import { beforeUserCreated, AuthBlockingEvent } from "firebase-functions/v2/identity";
 import * as admin from "firebase-admin";
 import { z } from "zod";
 
@@ -21,7 +21,7 @@ const OnboardUserSchema = z.object({
  * Trigger that runs before a user is created
  * Sets up organization and custom claims for new users
  */
-export const handleNewUser = beforeUserCreated(async (event) => {
+export const handleNewUser = beforeUserCreated(async (event: AuthBlockingEvent) => {
   const user = event.data;
   if (!user) {
     console.error("No user data in event");
@@ -33,7 +33,7 @@ export const handleNewUser = beforeUserCreated(async (event) => {
   try {
     // Create a default organization for the user
     const orgId = `org_${user.uid}_${Date.now()}`;
-    const organizationName = user.displayName 
+    const organizationName = user.displayName
       ? `${user.displayName}'s Organization`
       : `${user.email?.split('@')[0]}'s Organization`;
 
@@ -59,7 +59,12 @@ export const handleNewUser = beforeUserCreated(async (event) => {
       displayName: user.displayName || user.email?.split('@')[0],
       organization_id: orgId,
       role: 'admin',
-      permissions: ['read', 'write', 'delete', 'admin'],
+      permissions: {
+        can_view_candidates: true,
+        can_edit_candidates: true,
+        can_delete_candidates: true,
+        admin: true
+      },
       created_at: admin.firestore.FieldValue.serverTimestamp(),
       updated_at: admin.firestore.FieldValue.serverTimestamp()
     });
@@ -68,7 +73,12 @@ export const handleNewUser = beforeUserCreated(async (event) => {
     await admin.auth().setCustomUserClaims(user.uid, {
       org_id: orgId,
       role: 'admin',
-      permissions: ['read', 'write', 'delete', 'admin']
+      permissions: {
+        can_view_candidates: true,
+        can_edit_candidates: true,
+        can_delete_candidates: true,
+        admin: true
+      }
     });
 
     console.log(`Successfully onboarded user ${user.email} with org ${orgId}`);
@@ -95,7 +105,7 @@ export const completeOnboarding = onCall(
     memory: "512MiB",
     timeoutSeconds: 60,
   },
-  async (request) => {
+  async (request: CallableRequest) => {
     // Check if user is authenticated
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Authentication required");
@@ -118,13 +128,30 @@ export const completeOnboarding = onCall(
     try {
       // Check if user already has an organization
       const userDoc = await firestore.collection('users').doc(userId).get();
+
+      // Define standard admin permissions
+      const adminPermissions = {
+        can_view_candidates: true,
+        can_edit_candidates: true,
+        can_delete_candidates: true,
+        admin: true
+      };
+
       if (userDoc.exists && userDoc.data()?.organization_id) {
-        // User already onboarded, just refresh their custom claims
+        // User already onboarded, just refresh their custom claims and ensure permissions are correct
         const userData = userDoc.data()!;
+
+        // Update Firestore permissions if they are missing or in wrong format (array vs object)
+        if (Array.isArray(userData.permissions) || !userData.permissions) {
+          await userDoc.ref.update({
+            permissions: adminPermissions
+          });
+        }
+
         await admin.auth().setCustomUserClaims(userId, {
           org_id: userData.organization_id,
           role: userData.role || 'admin',
-          permissions: userData.permissions || ['read', 'write', 'delete', 'admin']
+          permissions: adminPermissions
         });
 
         return {
@@ -136,10 +163,10 @@ export const completeOnboarding = onCall(
 
       // Create a new organization for the user
       const orgId = `org_${userId}_${Date.now()}`;
-      const organizationName = validatedInput.organizationName || 
-                              validatedInput.displayName ? `${validatedInput.displayName}'s Organization` :
-                              userEmail ? `${userEmail.split('@')[0]}'s Organization` : 
-                              'My Organization';
+      const organizationName = validatedInput.organizationName ||
+        validatedInput.displayName ? `${validatedInput.displayName}'s Organization` :
+        userEmail ? `${userEmail.split('@')[0]}'s Organization` :
+          'My Organization';
 
       // Create organization document
       await firestore.collection('organizations').doc(orgId).set({
@@ -163,7 +190,7 @@ export const completeOnboarding = onCall(
         displayName: validatedInput.displayName || userEmail?.split('@')[0] || 'User',
         organization_id: orgId,
         role: 'admin',
-        permissions: ['read', 'write', 'delete', 'admin'],
+        permissions: adminPermissions,
         created_at: admin.firestore.FieldValue.serverTimestamp(),
         updated_at: admin.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
@@ -172,7 +199,7 @@ export const completeOnboarding = onCall(
       await admin.auth().setCustomUserClaims(userId, {
         org_id: orgId,
         role: 'admin',
-        permissions: ['read', 'write', 'delete', 'admin']
+        permissions: adminPermissions
       });
 
       console.log(`Successfully completed onboarding for user ${userEmail} with org ${orgId}`);
@@ -199,7 +226,7 @@ export const getOnboardingStatus = onCall(
     memory: "256MiB",
     timeoutSeconds: 30,
   },
-  async (request) => {
+  async (request: CallableRequest) => {
     // Check if user is authenticated
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Authentication required");
@@ -219,7 +246,7 @@ export const getOnboardingStatus = onCall(
       // Check if organization exists
       let hasOrganization = false;
       let organizationData = null;
-      
+
       if (hasOrgClaim) {
         const orgDoc = await firestore.collection('organizations').doc(customClaims.org_id).get();
         hasOrganization = orgDoc.exists;

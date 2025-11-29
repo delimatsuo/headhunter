@@ -46,11 +46,11 @@ spec:
                   name: ${SECRET_DB_OPERATIONS}
                   key: latest
             - name: MSGS_REDIS_URL
-              value: redis://10.159.1.4:6378
+              value: redis://10.103.201.212:6379
             - name: REDIS_TLS
-              value: "true"
+              value: "false"
             - name: REDIS_TLS_REJECT_UNAUTHORIZED
-              value: "true"
+              value: "false"
             - name: REDIS_TLS_CA
               value: |-
                 -----BEGIN CERTIFICATE-----
@@ -86,7 +86,7 @@ spec:
             - name: ENABLE_GATEWAY_TOKENS
               value: "false"
             - name: AUTH_MODE
-              value: "none"
+              value: "firebase"
           resources:
             limits:
               cpu: "${SERVICE_CPU}"

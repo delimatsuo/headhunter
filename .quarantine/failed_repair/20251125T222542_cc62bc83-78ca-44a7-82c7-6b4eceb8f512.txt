@@ -1,0 +1,115 @@
+{
+  "explicit_skills": {
+    "technical_skills": [
+      {"skill": "Troubleshooting", "confidence": 100, "evidence": ["Technical Support Specialist", "Technical Support Senior Specialist", "Desktop Support Engineer and Contractor"]},
+      {"skill": "Windows Operating Systems", "confidence": 100, "evidence": ["Desktop Support Technician", "System Technician Iii", "Desktop Support Analyst and Contractor"]},
+      {"skill": "Networking", "confidence": 100, "evidence": ["Network Support", "System Technician Iii", "Technical Support Analyst and Contractor"]}
+    ],
+    "tools_technologies": [
+      {"skill": "Microsoft Office Suite", "confidence": 100, "evidence": ["Technical Support Specialist", "Technical Support Senior Specialist", "Desktop Support Engineer and Contractor"]},
+      {"skill": "Remote Desktop Software", "confidence": 100, "evidence": ["Remote Support\Onsite It Support", "Technical Support Analyst and Contractor"]}
+    ],
+    "soft_skills": [
+      {"skill": "Customer Service", "confidence": 100, "evidence": ["Technical Support Specialist", "Technical Support Senior Specialist", "Desktop Support Engineer and Contractor"]},
+      {"skill": "Problem Solving", "confidence": 100, "evidence": ["Technical Support Specialist", "Technical Support Senior Specialist", "Desktop Support Engineer and Contractor"]}
+    ],
+    "certifications": [],
+    "languages": []
+  },
+  "inferred_skills": {
+    "highly_probable_skills": [
+      {"skill": "ITIL", "confidence": 95, "reasoning": "Strong role/company indicators, typical for position", "skill_category": "soft"},
+      {"skill": "Help Desk Software", "confidence": 95, "reasoning": "Strong role/company indicators, typical for position", "skill_category": "tools_technologies"}
+    ],
+    "probable_skills": [
+      {"skill": "Linux", "confidence": 80, "reasoning": "Likely based on typical requirements", "skill_category": "technical"},
+      {"skill": "Troubleshooting Mobile Devices", "confidence": 80, "reasoning": "Likely based on typical requirements", "skill_category": "technical"}
+    ],
+    "likely_skills": [
+      {"skill": "Scripting (e.g., PowerShell)", "confidence": 65, "reasoning": "Common for this role/industry", "skill_category": "technical"},
+      {"skill": "Help Desk Procedures", "confidence": 65, "reasoning": "Common for this role/industry", "skill_category": "soft"}
+    ],
+    "possible_skills": [
+      {"skill": "Virtualization Technologies", "confidence": 50, "reasoning": "Potential based on context", "skill_category": "technical"}
+    ]
+  },
+  "role_based_competencies": {
+    "current_role_competencies": {
+      "role": "Technical Support Senior Specialist",
+      "core_competencies": ["Troubleshooting", "Windows Operating Systems", "Networking"],
+      "typical_tools": ["Microsoft Office Suite", "Remote Desktop Software"],
+      "domain_knowledge": ["ITIL", "Help Desk Software"]
+    },
+    "historical_competencies": [
+      {
+        "role": "Desktop Support Engineer and Contractor",
+        "core_competencies": ["Troubleshooting", "Windows Operating Systems", "Networking"],
+        "typical_tools": ["Microsoft Office Suite", "Remote Desktop Software"],
+        "domain_knowledge": ["ITIL", "Help Desk Software"]
+      }
+    ]
+  },
+  "company_context_skills": {
+    "company_specific": ["ITIL", "Help Desk Software"],
+    "industry_skills": ["Troubleshooting", "Windows Operating Systems", "Networking"]
+  },
+  "skill_evolution_analysis": {
+    "skill_trajectory": "Steady progression in IT support roles",
+    "emerging_skills": ["Virtualization Technologies", "Scripting (e.g., PowerShell)"],
+    "skill_gaps": ["Advanced scripting", "Virtualization Technologies"],
+    "learning_velocity": "Moderate",
+    "skill_timeline": [
+      {"skill": "Troubleshooting", "first_used": "1999", "last_used": "2022", "frequency": "high", "recency_score": 95},
+      {"skill": "Windows Operating Systems", "first_used": "1999", "last_used": "2022", "frequency": "high", "recency_score": 95},
+      {"skill": "Networking", "first_used": "1999", "last_used": "2022", "frequency": "high", "recency_score": 95}
+    ],
+    "skill_depth_analysis": {
+      "beginner_skills": ["Troubleshooting", "Windows Operating Systems", "Networking"],
+      "intermediate_skills": ["ITIL", "Help Desk Software"],
+      "advanced_skills": ["Virtualization Technologies", "Scripting (e.g., PowerShell)"],
+      "expert_skills": []
+    }
+  },
+  "composite_skill_profile": {
+    "primary_expertise": [{"skill": "Troubleshooting", "confidence": 95, "market_demand": "high"}],
+    "secondary_expertise": [{"skill": "Windows Operating Systems", "confidence": 80, "market_demand": "high"}],
+    "domain_specialization": "IT Support",
+    "skill_breadth": "Moderate",
+    "unique_combination": ["Steady progression in IT support roles"],
+    "skill_categories": {
+      "technical_skills": ["Troubleshooting", "Windows Operating Systems", "Networking", "Virtualization Technologies", "Scripting (e.g., PowerShell)"],
+      "soft_skills": ["Customer Service", "Problem Solving", "ITIL", "Help Desk Software"],
+      "domain_skills": ["IT Support"],
+      "leadership_skills": []
+    },
+    "transferable_skills": [
+      {"skill": "Troubleshooting", "transferability": "high", "target_industries": ["Tech Support", "IT Services"]},
+      {"skill": "Windows Operating Systems", "transferability": "high", "target_industries": ["Tech Support", "IT Services"]}
+    ]
+  },
+  "career_trajectory_analysis": {
+    "current_level": "Mid-Level",
+    "years_experience": 15,
+    "promotion_velocity": "Moderate",
+    "career_progression": "Steady progression in IT support roles",
+    "performance_indicator": "High"
+  },
+  "market_positioning": {
+    "skill_market_value": "High",
+    "skill_rarity": "Moderate",
+    "competitive_advantage": ["Steady progression in IT support roles", "Strong domain knowledge"],
+    "placement_difficulty": "Low",
+    "ideal_next_roles": ["Technical Support Manager", "Help Desk Manager"],
+    "salary_range": "$50,000 - $70,000"
+  },
+  "recruiter_insights": {
+    "overall_rating": "Good",
+    "recommendation": "Consider for IT Support roles",
+    "confidence_in_assessment": "High",
+    "verification_needed": ["Certifications", "Specific tools used"],
+    "red_flags": [],
+    "selling_points": ["Steady progression in IT support roles", "Strong domain knowledge"],
+    "interview_focus": ["Advanced troubleshooting techniques", "Virtualization technologies"],
+    "one_line_pitch": "John Villeneuve is a seasoned IT support professional with 15+ years of experience in troubleshooting and supporting Windows operating systems and networking."
+  }
+}

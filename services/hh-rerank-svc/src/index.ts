@@ -5,6 +5,7 @@ import { registerRoutes } from './routes.js';
 import { RerankRedisClient } from './redis-client.js';
 import { RerankService } from './rerank-service.js';
 import { TogetherClient } from './together-client.js';
+import { GeminiClient } from './gemini-client.js';
 
 async function bootstrap(): Promise<void> {
   process.env.SERVICE_NAME = process.env.SERVICE_NAME ?? 'hh-rerank-svc';
@@ -28,6 +29,7 @@ async function bootstrap(): Promise<void> {
       service: null as RerankService | null,
       redisClient: null as RerankRedisClient | null,
       togetherClient: null as TogetherClient | null,
+      geminiClient: null as GeminiClient | null,
       state  // Pass state to routes
     };
 
@@ -45,19 +47,28 @@ async function bootstrap(): Promise<void> {
       maxHeapUsedBytes: 1_024 * 1_024 * 1024,
       maxRssBytes: 1_536 * 1_024 * 1024,
       healthCheck: async () => {
-        if (!dependencies.redisClient || !dependencies.togetherClient) return true;
+        if (!dependencies.redisClient || !dependencies.togetherClient || !dependencies.geminiClient) return true;
 
-        const [redisHealth, togetherHealth] = await Promise.all([
+        const [redisHealth, togetherHealth, geminiHealth] = await Promise.all([
           dependencies.redisClient.healthCheck(),
-          dependencies.togetherClient.healthCheck()
+          dependencies.togetherClient.healthCheck(),
+          dependencies.geminiClient.healthCheck()
         ]);
 
         const unhealthy = [];
-        if (!['healthy', 'disabled'].includes(redisHealth.status)) {
+
+        // Debug logging for health check status
+        logger.info({ redis: redisHealth, together: togetherHealth, gemini: geminiHealth }, 'Health check status');
+
+        // Redis is allowed to be degraded since caching is optional
+        if (!['healthy', 'disabled', 'degraded'].includes(redisHealth.status)) {
           unhealthy.push('redis');
         }
         if (!['healthy', 'disabled'].includes(togetherHealth.status)) {
           unhealthy.push('together');
+        }
+        if (!['healthy', 'disabled'].includes(geminiHealth.status)) {
+          unhealthy.push('gemini');
         }
 
         if (unhealthy.length > 0) {
@@ -72,8 +83,12 @@ async function bootstrap(): Promise<void> {
 
     // Register cleanup hook BEFORE listen (required by Fastify)
     server.addHook('onClose', async () => {
-      if (dependencies.redisClient && dependencies.togetherClient) {
-        await Promise.all([dependencies.redisClient.close(), dependencies.togetherClient.close()]);
+      if (dependencies.redisClient && dependencies.togetherClient && dependencies.geminiClient) {
+        await Promise.all([
+          dependencies.redisClient.close(),
+          dependencies.togetherClient.close(),
+          dependencies.geminiClient.close()
+        ]);
       }
     });
 
@@ -90,6 +105,10 @@ async function bootstrap(): Promise<void> {
         dependencies.redisClient = new RerankRedisClient(config.redis, getLogger({ module: 'redis-client' }));
         logger.info('Redis client initialized');
 
+        logger.info('Initializing Gemini client...');
+        dependencies.geminiClient = new GeminiClient(config.gemini, getLogger({ module: 'gemini-client' }));
+        logger.info('Gemini client initialized');
+
         logger.info('Initializing Together AI client...');
         dependencies.togetherClient = new TogetherClient(config.together, getLogger({ module: 'together-client' }));
         logger.info('Together AI client initialized');
@@ -98,6 +117,8 @@ async function bootstrap(): Promise<void> {
         dependencies.service = new RerankService({
           config,
           togetherClient: dependencies.togetherClient,
+          geminiClient: dependencies.geminiClient,
+          redisClient: dependencies.redisClient,
           logger: getLogger({ module: 'rerank-service' })
         });
         logger.info('Rerank service initialized');
@@ -114,8 +135,12 @@ async function bootstrap(): Promise<void> {
       logger.info('Received shutdown signal.');
       try {
         await server.close();
-        if (dependencies.redisClient && dependencies.togetherClient) {
-          await Promise.all([dependencies.redisClient.close(), dependencies.togetherClient.close()]);
+        if (dependencies.redisClient && dependencies.togetherClient && dependencies.geminiClient) {
+          await Promise.all([
+            dependencies.redisClient.close(),
+            dependencies.togetherClient.close(),
+            dependencies.geminiClient.close()
+          ]);
         }
         logger.info('hh-rerank-svc closed gracefully.');
         process.exit(0);

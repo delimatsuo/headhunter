@@ -39,9 +39,16 @@ service cloud.firestore {
      * This is the primary authentication check
      * Uses exists() instead of get() to avoid circular dependencies
      */
+    /**
+     * Check if user is in allowed_users collection OR has an allowed domain
+     * This is the primary authentication check
+     */
     function isAllowedUser() {
-      return isAuthenticated() &&
-             exists(/databases/$(database)/documents/allowed_users/$(emailToDocId(getUserEmail())));
+      return isAuthenticated() && (
+        exists(/databases/$(database)/documents/allowed_users/$(emailToDocId(getUserEmail()))) ||
+        getUserEmail().matches('.*@ella.com.br') ||
+        getUserEmail().matches('.*@ellaexecutivesearch.com')
+      );
     }
 
     /**

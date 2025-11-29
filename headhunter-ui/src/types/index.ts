@@ -3,6 +3,7 @@ export interface JobDescription {
   company: string;
   description: string;
   required_skills?: string[];
+  preferred_skills?: string[];
   nice_to_have?: string[];
   min_experience?: number;
   max_experience?: number;
@@ -27,6 +28,64 @@ export interface CandidateProfile {
   desiredSalary?: string;
   profileUrl?: string;
   lastUpdated?: string;
+  personal?: {
+    name: string;
+    email?: string;
+    phone?: string;
+    linkedin?: string;
+    github?: string;
+    portfolio?: string;
+    location?: string;
+  };
+  analysis?: {
+    current_role?: {
+      title: string;
+      company: string;
+    };
+    career_trajectory?: {
+      years_experience: number;
+      current_level: string;
+      progression_speed: string;
+      trajectory_type: string;
+      domain_expertise: string[];
+    };
+    company_pedigree?: {
+      current_company: string;
+      tier_level: string;
+      company_types: string[];
+      recent_companies: string[];
+    };
+    skills?: {
+      technical_skills: string[];
+      soft_skills: string[];
+      domain_knowledge: string[];
+    };
+    education?: {
+      highest_degree: string;
+      institutions: string[];
+    };
+  };
+  searchable_data?: {
+    name: string;
+    email: string;
+    skills: string[];
+    experience_level: number;
+    location: string;
+    current_company: string;
+    current_title: string;
+    education_level: string;
+  };
+  interactions?: {
+    notes: any[];
+    status_updates: any[];
+    emails: any[];
+  };
+  processing?: {
+    status: string;
+    stage: string;
+    last_updated: any;
+    error?: string;
+  };
   resume_analysis?: {
     career_trajectory: {
       current_level: string;

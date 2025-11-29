@@ -3,6 +3,25 @@ import { FileUpload } from './FileUpload';
 import { apiService } from '../../services/api';
 import { CandidateProfile } from '../../types';
 
+// MUI Components
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import FormControl from '@mui/material/FormControl';
+import FormLabel from '@mui/material/FormLabel';
+import RadioGroup from '@mui/material/RadioGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Radio from '@mui/material/Radio';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
+import Divider from '@mui/material/Divider';
+
 interface AddCandidateModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -14,6 +33,7 @@ export const AddCandidateModal: React.FC<AddCandidateModalProps> = ({
   onClose,
   onCandidateAdded
 }) => {
+  const [candidateId] = useState(`cand_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -27,7 +47,7 @@ export const AddCandidateModal: React.FC<AddCandidateModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       setError('Candidate name is required');
       return;
@@ -48,6 +68,7 @@ export const AddCandidateModal: React.FC<AddCandidateModalProps> = ({
 
     try {
       const candidateData = {
+        candidate_id: candidateId, // Pass the pre-generated ID
         name: formData.name,
         email: formData.email || undefined,
         resumeText: uploadMethod === 'text' ? formData.resumeText : undefined,
@@ -88,141 +109,134 @@ export const AddCandidateModal: React.FC<AddCandidateModalProps> = ({
     setError(error);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="modal-overlay" onClick={handleClose}>
-      <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Add New Candidate</h2>
-          <button className="modal-close" onClick={handleClose}>
-            ×
-          </button>
-        </div>
+    <Dialog
+      open={isOpen}
+      onClose={handleClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: { borderRadius: 3 }
+      }}
+    >
+      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
+        <Typography variant="h6" fontWeight="bold">Add New Candidate</Typography>
+        <IconButton onClick={handleClose} size="small">
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
 
-        <form onSubmit={handleSubmit} className="add-candidate-form">
+      <Divider />
+
+      <form onSubmit={handleSubmit}>
+        <DialogContent sx={{ py: 3 }}>
           {error && (
-            <div className="error-message">
+            <Alert severity="error" sx={{ mb: 3 }}>
               {error}
-            </div>
+            </Alert>
           )}
 
-          <div className="form-section">
-            <h3>Candidate Information</h3>
-            
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="name">Full Name *</label>
-                <input
-                  type="text"
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Enter candidate's full name"
-                  disabled={loading}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="email">Email</label>
-                <input
-                  type="email"
-                  id="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  placeholder="candidate@example.com"
-                  disabled={loading}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h3>Resume</h3>
-            
-            <div className="upload-method-selector">
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="uploadMethod"
-                  value="file"
-                  checked={uploadMethod === 'file'}
-                  onChange={(e) => setUploadMethod(e.target.value as 'file')}
-                  disabled={loading}
-                />
-                Upload resume file
-              </label>
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="uploadMethod"
-                  value="text"
-                  checked={uploadMethod === 'text'}
-                  onChange={(e) => setUploadMethod(e.target.value as 'text')}
-                  disabled={loading}
-                />
-                Paste resume text
-              </label>
-            </div>
-
-            {uploadMethod === 'file' && (
-              <FileUpload
-                onUploadComplete={handleUploadComplete}
-                onUploadError={handleUploadError}
-                className="candidate-upload"
-              />
-            )}
-
-            {uploadMethod === 'text' && (
-              <div className="form-group">
-                <label htmlFor="resumeText">Resume Text</label>
-                <textarea
-                  id="resumeText"
-                  value={formData.resumeText}
-                  onChange={(e) => setFormData(prev => ({ ...prev, resumeText: e.target.value }))}
-                  placeholder="Paste the candidate's resume text here..."
-                  rows={8}
-                  disabled={loading}
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="form-section">
-            <h3>Recruiter Notes (Optional)</h3>
-            <div className="form-group">
-              <label htmlFor="recruiterComments">Comments</label>
-              <textarea
-                id="recruiterComments"
-                value={formData.recruiterComments}
-                onChange={(e) => setFormData(prev => ({ ...prev, recruiterComments: e.target.value }))}
-                placeholder="Add any recruiter insights, interview notes, or observations..."
-                rows={4}
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="subtitle2" color="primary" fontWeight="bold" gutterBottom textTransform="uppercase" sx={{ fontSize: '0.75rem', letterSpacing: 1 }}>
+              Candidate Information
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+              <TextField
+                autoFocus
+                label="Full Name"
+                fullWidth
+                required
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 disabled={loading}
+                variant="outlined"
               />
-            </div>
-          </div>
+              <TextField
+                label="Email"
+                type="email"
+                fullWidth
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                disabled={loading}
+                variant="outlined"
+              />
+            </Box>
+          </Box>
 
-          <div className="form-actions">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="btn btn-secondary"
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="subtitle2" color="primary" fontWeight="bold" gutterBottom textTransform="uppercase" sx={{ fontSize: '0.75rem', letterSpacing: 1 }}>
+              Resume
+            </Typography>
+
+            <FormControl component="fieldset" sx={{ mb: 2, width: '100%' }}>
+              <RadioGroup
+                row
+                value={uploadMethod}
+                onChange={(e) => setUploadMethod(e.target.value as 'file' | 'text')}
+              >
+                <FormControlLabel value="file" control={<Radio />} label="Upload resume file" />
+                <FormControlLabel value="text" control={<Radio />} label="Paste resume text" />
+              </RadioGroup>
+            </FormControl>
+
+            {uploadMethod === 'file' ? (
+              <Box sx={{ border: '1px dashed', borderColor: 'divider', borderRadius: 2, p: 3, bgcolor: 'background.default' }}>
+                <FileUpload
+                  candidateId={candidateId}
+                  onUploadComplete={handleUploadComplete}
+                  onUploadError={handleUploadError}
+                  className="candidate-upload"
+                />
+              </Box>
+            ) : (
+              <TextField
+                label="Resume Text"
+                multiline
+                rows={8}
+                fullWidth
+                value={formData.resumeText}
+                onChange={(e) => setFormData(prev => ({ ...prev, resumeText: e.target.value }))}
+                placeholder="Paste the candidate's resume text here..."
+                disabled={loading}
+                variant="outlined"
+              />
+            )}
+          </Box>
+
+          <Box>
+            <Typography variant="subtitle2" color="primary" fontWeight="bold" gutterBottom textTransform="uppercase" sx={{ fontSize: '0.75rem', letterSpacing: 1 }}>
+              Recruiter Notes (Optional)
+            </Typography>
+            <TextField
+              label="Comments"
+              multiline
+              rows={4}
+              fullWidth
+              value={formData.recruiterComments}
+              onChange={(e) => setFormData(prev => ({ ...prev, recruiterComments: e.target.value }))}
+              placeholder="Add any recruiter insights, interview notes, or observations..."
               disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={loading}
-            >
-              {loading ? 'Processing...' : 'Add Candidate'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+              variant="outlined"
+            />
+          </Box>
+        </DialogContent>
+
+        <Divider />
+
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={handleClose} color="inherit" disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={loading}
+            sx={{ px: 4 }}
+          >
+            {loading ? 'Adding...' : 'Add Candidate'}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
   );
 };

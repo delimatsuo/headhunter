@@ -35,14 +35,14 @@ export class RerankRedisClient {
 
     const tlsOptions = this.config.tls
       ? (() => {
-          const options: Record<string, unknown> = {
-            rejectUnauthorized: this.config.tlsRejectUnauthorized
-          };
-          if (this.config.caCert) {
-            options.ca = [this.config.caCert];
-          }
-          return options;
-        })()
+        const options: Record<string, unknown> = {
+          rejectUnauthorized: this.config.tlsRejectUnauthorized
+        };
+        if (this.config.caCert) {
+          options.ca = [this.config.caCert];
+        }
+        return options;
+      })()
       : undefined;
 
     if (hosts.length > 1) {
@@ -65,37 +65,55 @@ export class RerankRedisClient {
     }
 
     this.client.on('error', (error) => {
-      this.logger.error({ error }, 'Redis connection error.');
+      console.error('[ERROR] Redis connection error:', error);
     });
 
     this.client.on('reconnecting', () => {
-      this.logger.warn('Redis reconnecting for rerank cache.');
+      console.log('[DEBUG] Redis reconnecting for rerank cache.');
+    });
+
+    this.client.on('close', () => {
+      console.log('[DEBUG] Redis connection closed.');
+    });
+
+    this.client.on('connect', () => {
+      console.log('[DEBUG] Redis connected.');
+    });
+
+    this.client.on('ready', () => {
+      console.log('[DEBUG] Redis ready.');
     });
 
     return this.client;
   }
 
   async get<T>(key: string): Promise<T | null> {
+    console.log(`[DEBUG] Redis GET key: ${key}`);
     const client = this.createClient();
     if (!client) {
+      console.log('[DEBUG] Redis client not available for get.');
       return null;
     }
 
     try {
       const raw = await client.get(key);
       if (!raw) {
+        console.log('[DEBUG] Redis MISS');
         return null;
       }
+      console.log('[DEBUG] Redis HIT');
       return JSON.parse(raw) as T;
     } catch (error) {
-      this.logger.error({ error, key }, 'Failed to read rerank cache entry.');
+      console.error('[ERROR] Failed to read rerank cache entry:', error);
       return null;
     }
   }
 
   async set<T>(key: string, value: T, ttlSeconds?: number): Promise<void> {
+    console.log(`[DEBUG] Redis SET key: ${key}`);
     const client = this.createClient();
     if (!client) {
+      console.log('[DEBUG] Redis client not available for set.');
       return;
     }
 
@@ -103,13 +121,15 @@ export class RerankRedisClient {
 
     try {
       const payload = JSON.stringify(value);
+      console.log(`[DEBUG] Redis SET payload size: ${payload.length}`);
       if (ttl > 0) {
         await client.setex(key, ttl, payload);
       } else {
         await client.set(key, payload);
       }
+      console.log('[DEBUG] Redis SET success');
     } catch (error) {
-      this.logger.error({ error, key }, 'Failed to write rerank cache entry.');
+      console.error('[ERROR] Failed to write rerank cache entry:', error);
     }
   }
 

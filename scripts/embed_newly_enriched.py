@@ -145,10 +145,25 @@ async def embed_batch(session: aiohttp.ClientSession, batch: List[Tuple[str, Dic
             
             # Prepare metadata (convert Firestore DatetimeWithNanoseconds to ISO string)
             enriched_at = candidate_data.get('processing_metadata', {}).get('timestamp')
-            if enriched_at and hasattr(enriched_at, 'isoformat'):
-                enriched_at = enriched_at.isoformat()
-            elif enriched_at and not isinstance(enriched_at, str):
-                enriched_at = str(enriched_at)
+            enriched_at_str = None
+            if enriched_at:
+                try:
+                    # Handle Firestore DatetimeWithNanoseconds objects
+                    if hasattr(enriched_at, 'timestamp'):
+                        enriched_at_str = datetime.fromtimestamp(enriched_at.timestamp(), tz=timezone.utc).isoformat()
+                    elif isinstance(enriched_at, str):
+                        enriched_at_str = enriched_at
+                    elif hasattr(enriched_at, 'isoformat'):
+                        enriched_at_str = enriched_at.isoformat()
+                    else:
+                        enriched_at_str = str(enriched_at)
+                except Exception as e:
+                    # Fallback: just use current time if conversion fails
+                    enriched_at_str = datetime.now(timezone.utc).isoformat()
+
+            # Ensure enriched_at_str is actually a string or None (not a Firestore object)
+            if enriched_at_str is not None and not isinstance(enriched_at_str, str):
+                enriched_at_str = datetime.now(timezone.utc).isoformat()
 
             # Call embedding service - use plain candidate_id to match profiles table
             payload = {
@@ -158,7 +173,7 @@ async def embed_batch(session: aiohttp.ClientSession, batch: List[Tuple[str, Dic
                     "source": "phase1_new_enrichment",
                     "modelVersion": "enriched-v1",
                     "promptVersion": "structured-profile-v1",
-                    "enriched_at": enriched_at
+                    "enriched_at": enriched_at_str
                 }
             }
 

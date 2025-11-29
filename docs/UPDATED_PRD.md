@@ -1,4 +1,4 @@
-# Headhunter AI v2.0 - Complete Cloud CRUD System (Note: AI processing now via Together AI; see .taskmaster/docs/prd.txt)
+# Headhunter AI v2.0 - Complete Cloud CRUD System (Hybrid AI: Vertex AI + Together AI)
 ## Product Requirements Document
 
 ### Executive Summary

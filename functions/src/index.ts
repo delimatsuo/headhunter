@@ -174,6 +174,7 @@ export const processUploadedProfile = onObjectFinalized(
       console.log("Enrichment via Functions is disabled. Skipping and waiting for Together processors.");
       return;
 
+      /*
       // Also store in a searchable collection with flattened data for querying
       await firestore
         .collection("candidates")
@@ -203,6 +204,7 @@ export const processUploadedProfile = onObjectFinalized(
         console.error(`Error generating embedding for ${profile.candidate_id}:`, embeddingError);
         // Don't fail the entire process if embedding fails
       }
+      */
 
       console.log(`Successfully enriched and stored profile for: ${profile.candidate_id}`);
     } catch (error) {
@@ -486,7 +488,7 @@ export const searchJobCandidates = onCall(
   },
   async (request) => {
     // const startTime = Date.now();
-    
+
     // Check if user is authenticated
     if (!request.auth) {
       // await auditLogger.logAuth("failed", undefined, undefined, "No authentication provided");
@@ -506,7 +508,7 @@ export const searchJobCandidates = onCall(
       //   errorMessage: error instanceof z.ZodError ? error.errors[0].message : "Invalid request data",
       //   details: { function: "searchJobCandidates", validation_error: true },
       // });
-      
+
       if (error instanceof z.ZodError) {
         throw new HttpsError("invalid-argument", `Invalid input: ${error.errors[0].message}`);
       }
@@ -531,7 +533,7 @@ export const searchJobCandidates = onCall(
 
     try {
       console.log(`Processing job search for: ${jobDesc.title}`);
-      
+
       // Check cache if enabled
       if (use_cache) {
         const cachedResults = await jobSearchService.getCachedResults(jobDesc);
@@ -554,7 +556,7 @@ export const searchJobCandidates = onCall(
       }
 
       // const duration = Date.now() - startTime;
-      
+
       // Log successful search
       // await auditLogger.logSearch(
       //   userId,
@@ -572,7 +574,7 @@ export const searchJobCandidates = onCall(
       return out;
     } catch (error) {
       // const duration = Date.now() - startTime;
-      
+
       // Log error
       await getAuditLogger().log(AuditAction.ERROR_OCCURRED, {
         userId: request.auth?.uid,
@@ -580,7 +582,7 @@ export const searchJobCandidates = onCall(
         errorMessage: (error as any)?.message,
         success: false,
       });
-      
+
       // Handle error with error handler
       console.error("Error in job search:", error);
       throw new HttpsError("internal", "Failed to search for candidates");
@@ -725,3 +727,6 @@ export { api } from './rest-api';
 
 // Compliance and security reporting
 export { getAuditReport, getSecuritySummary } from './compliance';
+
+// Export LLM Reranking
+export { rerankCandidates } from './rerank-candidates';

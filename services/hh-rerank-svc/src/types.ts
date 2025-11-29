@@ -36,6 +36,7 @@ export interface RerankRequest {
 export interface RerankTimingBreakdown {
   totalMs: number;
   togetherMs?: number;
+  geminiMs?: number;
   promptMs?: number;
   cacheMs?: number;
 }

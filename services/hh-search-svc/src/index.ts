@@ -87,7 +87,16 @@ async function bootstrap(): Promise<void> {
       try {
         logger.info('Initializing pgvector client...');
         pgClient = new PgVectorClient(config.pgvector, getLogger({ module: 'pgvector-client' }));
-        await pgClient.initialize();
+
+        // Add timeout wrapper to prevent infinite hang
+        const initTimeout = config.pgvector.connectionTimeoutMs || 15000;
+        await Promise.race([
+          pgClient.initialize(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error(`pgvector initialization timeout after ${initTimeout}ms`)), initTimeout)
+          )
+        ]);
+
         dependencies.pgClient = pgClient;
         logger.info('pgvector client initialized');
 

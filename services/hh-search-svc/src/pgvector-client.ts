@@ -33,6 +33,7 @@ export interface PgVectorHealth {
 export class PgVectorClient {
   private readonly pool: Pool;
   private initialized = false;
+  private initializationPromise: Promise<void> | null = null;
 
   constructor(private readonly config: PgVectorConfig, private readonly logger: Logger) {
     this.pool = new Pool({
@@ -57,17 +58,28 @@ export class PgVectorClient {
       return;
     }
 
-    await this.withClient(async (client) => {
-      if (this.config.enableAutoMigrate) {
-        await this.ensureInfrastructure(client);
-      } else {
-        await this.verifyInfrastructure(client);
+    if (this.initializationPromise) {
+      return this.initializationPromise;
+    }
+
+    this.initializationPromise = (async () => {
+      try {
+        await this.withClient(async (client) => {
+          if (this.config.enableAutoMigrate) {
+            await this.ensureInfrastructure(client);
+          } else {
+            await this.verifyInfrastructure(client);
+          }
+        });
+
+        await this.warmupPool();
+        this.initialized = true;
+      } finally {
+        this.initializationPromise = null;
       }
-    });
+    })();
 
-    await this.warmupPool();
-
-    this.initialized = true;
+    return this.initializationPromise;
   }
 
   async close(): Promise<void> {
@@ -192,7 +204,14 @@ export class PgVectorClient {
             cp.consent_record,
             cp.transfer_mechanism,
             MAX(combined.vector_score) AS vector_score,
-            MAX(tc.text_score) AS text_score,
+            MAX(COALESCE(
+              tc.text_score,
+              CASE
+                WHEN $4 IS NOT NULL AND $4 != '' AND cp.search_document @@ plainto_tsquery('${PG_FTS_DICTIONARY}', $4)
+                THEN ts_rank_cd(cp.search_document, plainto_tsquery('${PG_FTS_DICTIONARY}', $4))
+                ELSE 0
+              END
+            )) AS text_score,
             MAX(vc.updated_at) AS updated_at,
             MAX(combined.metadata) AS metadata
           FROM combined

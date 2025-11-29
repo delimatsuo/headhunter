@@ -24,6 +24,18 @@ export interface TogetherAIConfig {
   enable: boolean;
 }
 
+export interface GeminiConfig {
+  projectId: string;
+  location: string;
+  model: string;
+  timeoutMs: number;
+  retries: number;
+  retryDelayMs: number;
+  circuitBreakerThreshold: number;
+  circuitBreakerCooldownMs: number;
+  enable: boolean;
+}
+
 export interface RerankRuntimeConfig {
   slaTargetMs: number;
   slowLogMs: number;
@@ -41,6 +53,7 @@ export interface RerankServiceConfig {
   base: ServiceConfig;
   redis: RerankRedisConfig;
   together: TogetherAIConfig;
+  gemini: GeminiConfig;
   runtime: RerankRuntimeConfig;
 }
 
@@ -128,6 +141,21 @@ export function getRerankServiceConfig(): RerankServiceConfig {
     throw new Error('TOGETHER_API_KEY is required when Together AI integration is enabled.');
   }
 
+  const gemini: GeminiConfig = {
+    projectId: process.env.GEMINI_PROJECT_ID ?? process.env.GCP_PROJECT ?? 'headhunter-ai-0088',
+    location: process.env.GEMINI_LOCATION ?? 'us-central1',
+    model: process.env.GEMINI_MODEL ?? 'gemini-2.5-flash',
+    timeoutMs: clamp(parseNumber(process.env.GEMINI_TIMEOUT_MS, 5000), { min: 150, max: 30000 }),
+    retries: clamp(parseNumber(process.env.GEMINI_RETRIES, 2), { min: 0, max: 5 }),
+    retryDelayMs: clamp(parseNumber(process.env.GEMINI_RETRY_DELAY_MS, 50), { min: 0, max: 1000 }),
+    circuitBreakerThreshold: clamp(parseNumber(process.env.GEMINI_CB_FAILURES, 4), { min: 1, max: 20 }),
+    circuitBreakerCooldownMs: clamp(parseNumber(process.env.GEMINI_CB_COOLDOWN_MS, 60_000), {
+      min: 5_000,
+      max: 600_000
+    }),
+    enable: parseBoolean(process.env.GEMINI_ENABLE, true)
+  };
+
   const runtime: RerankRuntimeConfig = {
     slaTargetMs: clamp(parseNumber(process.env.RERANK_SLA_TARGET_MS, 350), { min: 100, max: 15000 }),
     slowLogMs: clamp(parseNumber(process.env.RERANK_SLOW_LOG_MS, 300), { min: 50, max: 2000 }),
@@ -148,6 +176,7 @@ export function getRerankServiceConfig(): RerankServiceConfig {
     base,
     redis,
     together,
+    gemini,
     runtime
   };
 

@@ -1,0 +1,137 @@
+{
+  "explicit_skills": {
+    "technical_skills": [
+      {"skill": "HTML", "confidence": 100, "evidence": ["Desenvolvedor Front"]},
+      {"skill": "CSS", "confidence": 100, "evidence": ["Desenvolvedor Front"]},
+      {"skill": "JavaScript", "confidence": 100, "evidence": ["Desenvolvedor Front"]},
+      {"skill": "React", "confidence": 100, "evidence": ["Desenvolvedor Front"]},
+      {"skill": "Vue.js", "confidence": 80, "evidence": ["Desenvolvedor Front"]},
+      {"skill": "Angular", "confidence": 80, "evidence": ["Desenvolvedor Front"]},
+      {"skill": "Bootstrap", "confidence": 80, "evidence": ["Desenvolvedor Front"]},
+      {"skill": "Sass", "confidence": 80, "evidence": ["Desenvolvedor Front"]},
+      {"skill": "Webpack", "confidence": 80, "evidence": ["Desenvolvedor Front"]},
+      {"skill": "Git", "confidence": 100, "evidence": ["Desenvolvedor Front"]}
+    ],
+    "tools_technologies": [
+      {"skill": "Jira", "confidence": 80, "evidence": ["Desenvolvedor Front"]},
+      {"skill": "Confluence", "confidence": 80, "evidence": ["Desenvolvedor Front"]},
+      {"skill": "Docker", "confidence": 65, "evidence": ["Desenvolvedor Front"]},
+      {"skill": "Kubernetes", "confidence": 65, "evidence": ["Desenvolvedor Front"]}
+    ],
+    "soft_skills": [
+      {"skill": "Problem-solving", "confidence": 100, "evidence": ["Desenvolvedor Front"]},
+      {"skill": "Attention to detail", "confidence": 100, "evidence": ["Desenvolvedor Front"]},
+      {"skill": "Collaboration", "confidence": 100, "evidence": ["Desenvolvedor Front"]},
+      {"skill": "Adaptability", "confidence": 100, "evidence": ["Desenvolvedor Front"]}
+    ],
+    "certifications": [],
+    "languages": [
+      {"skill": "Japanese", "confidence": 100, "evidence": ["Kaoru F." in name]}
+    ]
+  },
+  "inferred_skills": {
+    "highly_probable_skills": [
+      {"skill": "Responsive design", "confidence": 95, "reasoning": "Front-end roles typically require responsive design", "skill_category": "technical"},
+      {"skill": "RESTful APIs", "confidence": 95, "reasoning": "Common in front-end development for integrating with back-end services", "skill_category": "technical"},
+      {"skill": "Version control", "confidence": 95, "reasoning": "Git is widely used in front-end development", "skill_category": "technical"}
+    ],
+    "probable_skills": [
+      {"skill": "SEO optimization", "confidence": 80, "reasoning": "Front-end developers often need to optimize for search engines", "skill_category": "technical"},
+      {"skill": "Accessibility", "confidence": 80, "reasoning": "Important for user experience in front-end development", "skill_category": "technical"},
+      {"skill": "User experience (UX) design", "confidence": 80, "reasoning": "Front-end developers often work closely with UX designers", "skill_category": "technical"}
+    ],
+    "likely_skills": [
+      {"skill": "Agile methodologies", "confidence": 65, "reasoning": "Common in software development roles", "skill_category": "soft"},
+      {"skill": "Scrum", "confidence": 65, "reasoning": "Popular in Agile development", "skill_category": "soft"}
+    ],
+    "possible_skills": [
+      {"skill": "Node.js", "confidence": 50, "reasoning": "Possible based on front-end developer roles", "skill_category": "technical"}
+    ]
+  },
+  "role_based_competencies": {
+    "current_role_competencies": {
+      "role": "Desenvolvedor Front",
+      "core_competencies": ["HTML", "CSS", "JavaScript", "React", "Version control"],
+      "typical_tools": ["Jira", "Confluence", "Git"],
+      "domain_knowledge": ["Front-end web development"]
+    },
+    "historical_competencies": [
+      {
+        "role": "Desenvolvedor Front-End Pleno",
+        "core_competencies": ["HTML", "CSS", "JavaScript", "React", "Vue.js", "Angular", "Bootstrap", "Sass", "Webpack", "Version control"],
+        "typical_tools": ["Jira", "Confluence", "Git"],
+        "domain_knowledge": ["Front-end web development"]
+      }
+    ]
+  },
+  "company_context_skills": {
+    "company_specific": [
+      {"skill": "Agile development", "confidence": 80, "reasoning": "Common in tech companies", "skill_category": "soft"}
+    ],
+    "industry_skills": ["Front-end web development"]
+  },
+  "skill_evolution_analysis": {
+    "skill_trajectory": "Front-end developer with increasing experience and skills",
+    "emerging_skills": ["Node.js", "SEO optimization", "Accessibility"],
+    "skill_gaps": ["Back-end development", "Full-stack development"],
+    "learning_velocity": "Moderate",
+    "skill_currency": "Current",
+    "skill_timeline": [
+      {"skill": "HTML", "first_used": "2013", "last_used": "2023", "frequency": "high", "recency_score": 95},
+      {"skill": "CSS", "first_used": "2013", "last_used": "2023", "frequency": "high", "recency_score": 95},
+      {"skill": "JavaScript", "first_used": "2013", "last_used": "2023", "frequency": "high", "recency_score": 95},
+      {"skill": "React", "first_used": "2019", "last_used": "2023", "frequency": "high", "recency_score": 95}
+    ],
+    "skill_depth_analysis": {
+      "beginner_skills": ["HTML", "CSS", "JavaScript"],
+      "intermediate_skills": ["React", "Vue.js", "Angular", "Bootstrap", "Sass", "Webpack"],
+      "advanced_skills": ["Version control", "Agile methodologies"],
+      "expert_skills": ["Front-end web development"]
+    }
+  },
+  "composite_skill_profile": {
+    "primary_expertise": [
+      {"skill": "Front-end web development", "confidence": 95, "market_demand": "high"}
+    ],
+    "secondary_expertise": [
+      {"skill": "Version control", "confidence": 80, "market_demand": "high"}
+    ],
+    "domain_specialization": "Web development",
+    "skill_breadth": "Moderate",
+    "unique_combination": ["Japanese language", "Front-end development"],
+    "skill_categories": {
+      "technical_skills": ["HTML", "CSS", "JavaScript", "React", "Vue.js", "Angular", "Bootstrap", "Sass", "Webpack", "Version control"],
+      "soft_skills": ["Problem-solving", "Attention to detail", "Collaboration", "Adaptability"],
+      "domain_skills": ["Front-end web development"],
+      "leadership_skills": []
+    },
+    "transferable_skills": [
+      {"skill": "Version control", "transferability": "high", "target_industries": ["Tech", "Software development"]}
+    ]
+  },
+  "career_trajectory_analysis": {
+    "current_level": "Mid-level front-end developer",
+    "years_experience": 15,
+    "promotion_velocity": "Moderate",
+    "career_progression": "Has shown consistent progression in front-end development",
+    "performance_indicator": "Has held multiple front-end roles with increasing responsibilities"
+  },
+  "market_positioning": {
+    "skill_market_value": "High",
+    "skill_rarity": "Moderate",
+    "competitive_advantage": ["Japanese language", "Experienced front-end developer"],
+    "placement_difficulty": "Moderate",
+    "ideal_next_roles": ["Front-end engineer", "Front-end lead"],
+    "salary_range": "$70,000 - $100,000"
+  },
+  "recruiter_insights": {
+    "overall_rating": "Good",
+    "recommendation": "Consider for front-end development roles, especially those requiring Japanese language skills",
+    "confidence_in_assessment": "High",
+    "verification_needed": ["Verify specific projects and technologies used"],
+    "red_flags": [],
+    "selling_points": ["Experienced front-end developer with Japanese language skills"],
+    "interview_focus": ["Front-end technologies, project experience, and Japanese language proficiency"],
+    "one_line_pitch": "Experienced front-end developer with a strong background in web technologies and Japanese language skills"
+  }
+}

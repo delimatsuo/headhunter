@@ -36,15 +36,27 @@ class VertexProvider implements EmbeddingProvider {
       const parameters = { outputDimensionality: 768 } as const;
       const [response] = await predictionClient.predict({
         endpoint,
-        instances: instances.map((i) => ({ content: { stringValue: i.content } } as any)),
-        parameters: Object.fromEntries(
-          Object.entries(parameters).map(([k, v]) => [k, { numberValue: v as number }])
-        ),
+        instances: instances.map((i) => ({
+          structValue: {
+            fields: {
+              content: { stringValue: i.content }
+            }
+          }
+        })),
+        parameters: {
+          structValue: {
+            fields: Object.fromEntries(
+              Object.entries(parameters).map(([k, v]) => [k, { numberValue: v as number }])
+            )
+          }
+        },
       });
+      console.log('Vertex Response:', JSON.stringify(response, null, 2));
       const pred = (response as any).predictions?.[0];
-      const embed = pred?.structValue?.fields?.embeddings?.listValue?.values?.map(
-        (v: any) => v.numberValue || 0
-      );
+      const embeddingsStruct = pred?.structValue?.fields?.embeddings?.structValue?.fields;
+      const valuesList = embeddingsStruct?.values?.listValue?.values;
+      const embed = valuesList?.map((v: any) => v.numberValue || 0);
+
       if (Array.isArray(embed) && embed.length === 768) return embed;
       throw new Error("Vertex embeddings response missing or invalid");
     } catch (err) {

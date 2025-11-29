@@ -59,24 +59,24 @@ function validateAuth(request: any): { userId: string; orgId: string } {
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "Authentication required");
   }
-  
+
   const userId = request.auth.uid;
   const orgId = request.auth.token.org_id;
-  
+
   if (!orgId) {
     throw new HttpsError("permission-denied", "Organization membership required");
   }
-  
+
   return { userId, orgId };
 }
 
 async function validatePermissions(userId: string, permission: string): Promise<boolean> {
   const userDoc = await firestore.collection('users').doc(userId).get();
-  
+
   if (!userDoc.exists) {
     throw new HttpsError("not-found", "User profile not found");
   }
-  
+
   const userData = userDoc.data();
   return userData?.permissions?.[permission] === true;
 }
@@ -129,7 +129,7 @@ export const createCandidate = onCall(
   },
   async (request) => {
     const { userId, orgId } = validateAuth(request);
-    
+
     // Check permissions
     const canCreate = await validatePermissions(userId, 'can_edit_candidates');
     if (!canCreate) {
@@ -149,14 +149,14 @@ export const createCandidate = onCall(
 
     try {
       const candidateId = firestore.collection('candidates').doc().id;
-      
+
       const candidateData = {
         candidate_id: candidateId,
         org_id: orgId,
         created_by: userId,
         created_at: admin.firestore.FieldValue.serverTimestamp(),
         updated_at: admin.firestore.FieldValue.serverTimestamp(),
-        
+
         // Basic Information
         personal: {
           name: validatedInput.name,
@@ -164,12 +164,12 @@ export const createCandidate = onCall(
           phone: validatedInput.phone || null,
           location: validatedInput.location || null,
         },
-        
+
         // Documents
         documents: {
           resume_text: validatedInput.resume_text || null,
         },
-        
+
         // Processing Status
         processing: {
           status: 'pending',
@@ -177,7 +177,7 @@ export const createCandidate = onCall(
           embedding_generated: false,
           last_processed: null,
         },
-        
+
         // Search Data (will be populated after analysis)
         searchable_data: {
           skills_combined: [],
@@ -185,7 +185,7 @@ export const createCandidate = onCall(
           industries: [],
           locations: validatedInput.location ? [validatedInput.location] : [],
         },
-        
+
         // User Interactions
         interactions: {
           views: 0,
@@ -193,15 +193,15 @@ export const createCandidate = onCall(
           notes: validatedInput.notes ? [{
             user_id: userId,
             note: validatedInput.notes,
-            created_at: admin.firestore.FieldValue.serverTimestamp(),
+            created_at: admin.firestore.Timestamp.now(),
           }] : [],
           status_updates: [{
             status: 'created',
             updated_by: userId,
-            updated_at: admin.firestore.FieldValue.serverTimestamp(),
+            updated_at: admin.firestore.Timestamp.now(),
           }],
         },
-        
+
         // Privacy
         privacy: {
           is_public: false,
@@ -211,7 +211,7 @@ export const createCandidate = onCall(
       };
 
       await firestore.collection('candidates').doc(candidateId).set(candidateData);
-      
+
       // Add to processing queue if resume text provided
       if (validatedInput.resume_text) {
         await firestore.collection('processing_queue').add({
@@ -262,7 +262,7 @@ export const getCandidate = onCall(
       }
 
       const candidateData = candidateDoc.data();
-      
+
       // Check organization access
       if (candidateData?.org_id !== orgId) {
         throw new HttpsError("permission-denied", "Access denied to this candidate");
@@ -327,7 +327,7 @@ export const updateCandidate = onCall(
       }
 
       const existingData = candidateDoc.data();
-      
+
       // Check organization access
       if (existingData?.org_id !== orgId) {
         throw new HttpsError("permission-denied", "Access denied to this candidate");
@@ -353,7 +353,7 @@ export const updateCandidate = onCall(
         updateObj['interactions.status_updates'] = admin.firestore.FieldValue.arrayUnion({
           status: validatedInput.status,
           updated_by: userId,
-          updated_at: admin.firestore.FieldValue.serverTimestamp(),
+          updated_at: admin.firestore.Timestamp.now(),
         });
       }
 
@@ -362,7 +362,7 @@ export const updateCandidate = onCall(
         updateObj['interactions.notes'] = admin.firestore.FieldValue.arrayUnion({
           user_id: userId,
           note: validatedInput.notes,
-          created_at: admin.firestore.FieldValue.serverTimestamp(),
+          created_at: admin.firestore.Timestamp.now(),
         });
       }
 
@@ -413,7 +413,7 @@ export const deleteCandidate = onCall(
       }
 
       const candidateData = candidateDoc.data();
-      
+
       // Check organization access
       if (candidateData?.org_id !== orgId) {
         throw new HttpsError("permission-denied", "Access denied to this candidate");
@@ -526,11 +526,11 @@ export const searchCandidates = onCall(
           const skills = (candidate.searchable_data?.skills_combined || []).join(' ').toLowerCase();
           const resumeText = candidate.documents?.resume_text?.toLowerCase() || '';
           const location = candidate.personal?.location?.toLowerCase() || '';
-          
-          return name.includes(queryLower) || 
-                 skills.includes(queryLower) || 
-                 resumeText.includes(queryLower) ||
-                 location.includes(queryLower);
+
+          return name.includes(queryLower) ||
+            skills.includes(queryLower) ||
+            resumeText.includes(queryLower) ||
+            location.includes(queryLower);
         });
       }
 
@@ -659,7 +659,7 @@ export const addCandidateNote = onCall(
       }
 
       const candidateData = candidateDoc.data();
-      
+
       // Check organization access
       if (candidateData?.org_id !== orgId) {
         throw new HttpsError("permission-denied", "Access denied to this candidate");
@@ -668,7 +668,7 @@ export const addCandidateNote = onCall(
       const noteObj = {
         user_id: userId,
         note: note.trim(),
-        created_at: admin.firestore.FieldValue.serverTimestamp(),
+        created_at: admin.firestore.Timestamp.now(),
       };
 
       await candidateDoc.ref.update({
@@ -712,7 +712,7 @@ export const toggleCandidateBookmark = onCall(
       }
 
       const candidateData = candidateDoc.data();
-      
+
       // Check organization access
       if (candidateData?.org_id !== orgId) {
         throw new HttpsError("permission-denied", "Access denied to this candidate");
@@ -773,14 +773,14 @@ export const bulkCandidateOperations = onCall(
 
       for (const candidate_id of candidate_ids) {
         const candidateDoc = await firestore.collection('candidates').doc(candidate_id).get();
-        
+
         if (!candidateDoc.exists) {
           results.push({ candidate_id, status: 'not_found' });
           continue;
         }
 
         const candidateData = candidateDoc.data();
-        
+
         // Check organization access
         if (candidateData?.org_id !== orgId) {
           results.push({ candidate_id, status: 'access_denied' });
@@ -796,7 +796,7 @@ export const bulkCandidateOperations = onCall(
             batch.delete(candidateDoc.ref);
             results.push({ candidate_id, status: 'deleted' });
             break;
-            
+
           case 'update_status':
             if (!data?.status) {
               results.push({ candidate_id, status: 'invalid_status' });
@@ -810,7 +810,7 @@ export const bulkCandidateOperations = onCall(
             batch.update(candidateDoc.ref, updateObj);
             results.push({ candidate_id, status: 'updated' });
             break;
-            
+
           case 'add_tag':
             if (!data?.tag) {
               results.push({ candidate_id, status: 'invalid_tag' });
@@ -820,7 +820,7 @@ export const bulkCandidateOperations = onCall(
             batch.update(candidateDoc.ref, updateObj);
             results.push({ candidate_id, status: 'tagged' });
             break;
-            
+
           default:
             results.push({ candidate_id, status: 'invalid_operation' });
         }
@@ -875,7 +875,7 @@ export const getCandidateStats = onCall(
       // Get candidates by experience level
       const experienceLevels = ['entry', 'mid', 'senior', 'lead', 'executive'];
       const experienceStats: { [key: string]: number } = {};
-      
+
       for (const level of experienceLevels) {
         const snapshot = await candidatesRef
           .where('searchable_data.experience_level', '==', level)
@@ -887,7 +887,7 @@ export const getCandidateStats = onCall(
       // Get recent activity (last 7 days)
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      
+
       const recentSnapshot = await candidatesRef
         .where('created_at', '>=', sevenDaysAgo)
         .count()
@@ -902,8 +902,8 @@ export const getCandidateStats = onCall(
           pending_processing: totalCandidates - processedCandidates,
           recent_candidates: recentCandidates,
           experience_levels: experienceStats,
-          processing_completion_rate: totalCandidates > 0 
-            ? Math.round((processedCandidates / totalCandidates) * 100) 
+          processing_completion_rate: totalCandidates > 0
+            ? Math.round((processedCandidates / totalCandidates) * 100)
             : 0,
         },
       };

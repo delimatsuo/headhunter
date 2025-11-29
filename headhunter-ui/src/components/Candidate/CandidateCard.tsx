@@ -35,7 +35,10 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
     return 'poor';
   };
 
-  const formatScore = (score: number) => Math.round(score * 100);
+  const formatScore = (score: number) => {
+    if (score > 1) return Math.round(score);
+    return Math.round(score * 100);
+  };
 
   return (
     <div className={`candidate-card ${expanded ? 'expanded' : ''}`} onClick={handleCardClick}>
@@ -64,7 +67,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
               <span className="score-label">Match</span>
             </div>
           )}
-          
+
           {similarity !== undefined && (
             <div className={`score-badge ${getScoreColor(similarity)}`}>
               <span className="score-value">{formatScore(similarity)}%</span>
@@ -203,7 +206,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
               <div className="detail-section full-width">
                 <h4>Complete Assessment</h4>
                 <p className="overall-assessment">{rationale.overall_assessment}</p>
-                
+
                 {rationale.risk_factors.length > 0 && (
                   <div className="risk-factors">
                     <strong>Risk Factors:</strong>

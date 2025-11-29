@@ -50,24 +50,24 @@ function validateAuth(request: any): { userId: string; orgId: string } {
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "Authentication required");
   }
-  
+
   const userId = request.auth.uid;
   const orgId = request.auth.token.org_id;
-  
+
   if (!orgId) {
     throw new HttpsError("permission-denied", "Organization membership required");
   }
-  
+
   return { userId, orgId };
 }
 
 async function validatePermissions(userId: string, permission: string): Promise<boolean> {
   const userDoc = await firestore.collection('users').doc(userId).get();
-  
+
   if (!userDoc.exists) {
     throw new HttpsError("not-found", "User profile not found");
   }
-  
+
   const userData = userDoc.data();
   return userData?.permissions?.[permission] === true;
 }
@@ -97,6 +97,7 @@ export const generateUploadUrl = onCall(
   {
     memory: "256MiB",
     timeoutSeconds: 30,
+    cors: true,
   },
   async (request) => {
     const { userId, orgId } = validateAuth(request);
@@ -126,16 +127,14 @@ export const generateUploadUrl = onCall(
         throw new HttpsError("invalid-argument", "Invalid file type. Supported: PDF, DOCX, DOC, TXT, RTF, JPG, PNG");
       }
 
-      // Check if candidate exists and user has access
-      const candidateDoc = await firestore.collection('candidates').doc(candidate_id).get();
-      if (!candidateDoc.exists) {
-        throw new HttpsError("not-found", "Candidate not found");
-      }
-
-      const candidateData = candidateDoc.data();
-      if (candidateData?.org_id !== orgId) {
-        throw new HttpsError("permission-denied", "Access denied to this candidate");
-      }
+      // Check if candidate exists (optional - allow new candidates)
+      // const candidateDoc = await firestore.collection('candidates').doc(candidate_id).get();
+      // if (candidateDoc.exists) {
+      //   const candidateData = candidateDoc.data();
+      //   if (candidateData?.org_id !== orgId) {
+      //     throw new HttpsError("permission-denied", "Access denied to this candidate");
+      //   }
+      // }
 
       // Generate unique file path
       const fileExtension = getFileExtension(file_name);
@@ -147,18 +146,22 @@ export const generateUploadUrl = onCall(
       const bucket = storage.bucket(BUCKET_FILES);
       const file = bucket.file(filePath);
 
+      const safeContentType = content_type || 'application/octet-stream';
+
+      const extensionHeaders = {
+        'x-goog-meta-candidate-id': candidate_id,
+        'x-goog-meta-org-id': orgId,
+        'x-goog-meta-uploaded-by': userId,
+        'x-goog-meta-original-name': encodeURIComponent(file_name),
+        'x-goog-meta-file-type': fileExtension,
+      };
+
       const [signedUrl] = await file.getSignedUrl({
         version: 'v4',
         action: 'write',
         expires: Date.now() + 15 * 60 * 1000, // 15 minutes
-        contentType: content_type,
-        extensionHeaders: {
-          'x-goog-meta-candidate-id': candidate_id,
-          'x-goog-meta-org-id': orgId,
-          'x-goog-meta-uploaded-by': userId,
-          'x-goog-meta-original-name': file_name,
-          'x-goog-meta-file-type': fileExtension,
-        },
+        contentType: safeContentType,
+        extensionHeaders,
       });
 
       // Store upload session info
@@ -184,6 +187,7 @@ export const generateUploadUrl = onCall(
         upload_session_id: uploadSessionId,
         file_path: filePath,
         expires_in_minutes: 15,
+        required_headers: extensionHeaders,
       };
     } catch (error) {
       if (error instanceof HttpsError) throw error;
@@ -212,7 +216,7 @@ export const confirmUpload = onCall(
     try {
       // Get upload session
       const sessionDoc = await firestore.collection('upload_sessions').doc(upload_session_id).get();
-      
+
       if (!sessionDoc.exists) {
         throw new HttpsError("not-found", "Upload session not found");
       }
@@ -321,10 +325,11 @@ export const processUploadedFile = onObjectFinalized(
       // Get file metadata
       const file = storage.bucket(bucket).file(filePath);
       const [metadata] = await file.getMetadata();
-      
+
       const candidateIdFromMeta = metadata.metadata?.['candidate-id'];
       const orgIdFromMeta = metadata.metadata?.['org-id'];
-      const fileType = String(metadata.metadata?.['file-type'] || getFileExtension(filePath));
+      const fileType = decodeURIComponent(String(metadata.metadata?.['file-type'] || getFileExtension(filePath)));
+      const originalName = decodeURIComponent(String(metadata.metadata?.['original-name'] || ''));
 
       // Validate metadata matches path
       if (candidateIdFromMeta !== candidateId || orgIdFromMeta !== orgId) {
@@ -368,7 +373,7 @@ export const processUploadedFile = onObjectFinalized(
         }
       } catch (extractionError) {
         console.error(`Text extraction failed for ${filePath}:`, extractionError);
-        
+
         // Update candidate with extraction failure
         await firestore.collection('candidates').doc(candidateId).update({
           'processing.status': 'extraction_failed',
@@ -376,22 +381,22 @@ export const processUploadedFile = onObjectFinalized(
           'processing.last_processed': admin.firestore.FieldValue.serverTimestamp(),
           updated_at: admin.firestore.FieldValue.serverTimestamp(),
         });
-        
+
         return;
       }
 
       // Clean and validate extracted text
       const cleanText = cleanExtractedText(extractedText);
-      
+
       if (!cleanText || cleanText.length < 50) {
         console.warn(`Insufficient text extracted from ${filePath}: ${cleanText.length} characters`);
-        
+
         await firestore.collection('candidates').doc(candidateId).update({
           'processing.status': 'extraction_insufficient',
           'processing.error_message': 'Insufficient text extracted from document',
           updated_at: admin.firestore.FieldValue.serverTimestamp(),
         });
-        
+
         return;
       }
 
@@ -419,7 +424,7 @@ export const processUploadedFile = onObjectFinalized(
             filename: metadata.name,
             size: metadata.size,
             content_type: metadata.contentType,
-            original_name: metadata.metadata?.['original-name'],
+            original_name: originalName,
           },
         },
         created_at: admin.firestore.FieldValue.serverTimestamp(),
@@ -430,7 +435,7 @@ export const processUploadedFile = onObjectFinalized(
 
     } catch (error) {
       console.error(`Error processing file ${filePath}:`, error);
-      
+
       // Update candidate with processing failure
       try {
         await firestore.collection('candidates').doc(candidateId).update({
@@ -442,7 +447,7 @@ export const processUploadedFile = onObjectFinalized(
       } catch (updateError) {
         console.error(`Failed to update candidate ${candidateId} with error status:`, updateError);
       }
-      
+
       throw error; // This will trigger retry if retry is enabled
     }
   }
@@ -493,14 +498,14 @@ export const processFile = onCall(
       // Download file
       const bucket = storage.bucket(BUCKET_FILES);
       const file = bucket.file(file_path);
-      
+
       const [exists] = await file.exists();
       if (!exists) {
         throw new HttpsError("not-found", "File not found in storage");
       }
 
       const [fileBuffer] = await file.download();
-      
+
       let result = {
         success: true,
         candidate_id,
@@ -513,7 +518,7 @@ export const processFile = onCall(
       // Extract text if requested
       if (processing_options?.extract_text !== false) {
         let extractedText = '';
-        
+
         switch (file_type.toLowerCase()) {
           case 'pdf':
             extractedText = await extractPdfText(fileBuffer);
@@ -610,7 +615,7 @@ export const deleteFile = onCall(
       // Delete file from storage
       const bucket = storage.bucket(BUCKET_FILES);
       const file = bucket.file(file_path);
-      
+
       const [exists] = await file.exists();
       if (exists) {
         await file.delete();
@@ -661,7 +666,7 @@ async function extractPdfText(buffer: Buffer): Promise<string> {
   // const pdfParse = require('pdf-parse');
   // const data = await pdfParse(buffer);
   // return data.text;
-  
+
   // Placeholder implementation
   return "PDF text extraction not implemented - would use pdf-parse library";
 }
@@ -671,7 +676,7 @@ async function extractDocxText(buffer: Buffer): Promise<string> {
   // const mammoth = require('mammoth');
   // const result = await mammoth.extractRawText({ buffer });
   // return result.value;
-  
+
   // Placeholder implementation
   return "DOCX text extraction not implemented - would use mammoth library";
 }
@@ -679,7 +684,7 @@ async function extractDocxText(buffer: Buffer): Promise<string> {
 async function extractDocText(buffer: Buffer): Promise<string> {
   // This would use antiword or similar for .doc files
   // More complex implementation required
-  
+
   // Placeholder implementation
   return "DOC text extraction not implemented - would use antiword or similar";
 }
@@ -691,7 +696,7 @@ async function extractImageText(buffer: Buffer): Promise<string> {
   // const [result] = await client.textDetection({ image: { content: buffer } });
   // const detections = result.textAnnotations;
   // return detections && detections.length > 0 ? detections[0].description : '';
-  
+
   // Placeholder implementation
   return "OCR text extraction not implemented - would use Google Cloud Vision API";
 }
@@ -757,7 +762,7 @@ export const getUploadStats = onCall(
         const data = doc.data();
         const stage = data.stage || 'unknown';
         const status = data.status || 'unknown';
-        
+
         (processingStats.by_stage as any)[stage] = ((processingStats.by_stage as any)[stage] || 0) + 1;
         (processingStats.by_status as any)[status] = ((processingStats.by_status as any)[status] || 0) + 1;
       });
@@ -767,7 +772,7 @@ export const getUploadStats = onCall(
         stats: {
           candidates_with_files: candidatesWithFiles,
           candidates_with_extracted_text: candidatesWithText,
-          text_extraction_rate: candidatesWithFiles > 0 
+          text_extraction_rate: candidatesWithFiles > 0
             ? Math.round((candidatesWithText / candidatesWithFiles) * 100)
             : 0,
           processing_queue: processingStats,

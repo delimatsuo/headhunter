@@ -92,6 +92,8 @@ interface SkillAwareSearchResult {
     average_skill_confidence: number;
     experience_alignment: string;
     vector_similarity: number;
+    analysis_confidence?: number;
+    analysis_confidence_factor?: number;
   };
   metadata: EmbeddingData["metadata"];
   match_reasons: string[];
@@ -122,12 +124,12 @@ export class VectorSearchService {
     // });
     // this.storage = new Storage();
     this.firestore = admin.firestore();
-    
+
     // Feature flag for gradual migration to pgvector
     this.usePgVector = process.env.USE_PGVECTOR === 'true';
-    
+
     // Project and region can be provided via environment to the provider if needed
-    
+
     // These will need to be configured after Vector Search setup
     // this.indexEndpoint = `projects/${this.projectId}/locations/${this.region}/indexEndpoints/ENDPOINT_ID`;
     // this.deployedIndexId = "DEPLOYED_INDEX_ID";
@@ -155,24 +157,24 @@ export class VectorSearchService {
    */
   extractEmbeddingText(profile: any): string {
     const textParts: string[] = [];
-    
+
     // Career information
     if (profile.resume_analysis) {
       const resume = profile.resume_analysis;
-      
+
       // Level and experience
       textParts.push(`${resume.career_trajectory?.current_level || ""} level professional`);
       textParts.push(`${resume.years_experience || 0} years experience`);
-      
+
       // Skills
       if (resume.technical_skills?.length) {
         textParts.push(`Technical skills: ${resume.technical_skills.join(", ")}`);
       }
-      
+
       if (resume.soft_skills?.length) {
         textParts.push(`Soft skills: ${resume.soft_skills.join(", ")}`);
       }
-      
+
       // Career trajectory
       if (resume.career_trajectory) {
         textParts.push(`Career trajectory: ${resume.career_trajectory.trajectory_type || ""}`);
@@ -180,7 +182,7 @@ export class VectorSearchService {
           textParts.push(`Domain expertise: ${resume.career_trajectory.domain_expertise.join(", ")}`);
         }
       }
-      
+
       // Leadership
       if (resume.leadership_scope?.has_leadership) {
         textParts.push(`Leadership experience: ${resume.leadership_scope.leadership_level || "Team Lead"}`);
@@ -188,7 +190,7 @@ export class VectorSearchService {
           textParts.push(`Managed team of ${resume.leadership_scope.team_size}`);
         }
       }
-      
+
       // Company background
       if (resume.company_pedigree) {
         textParts.push(`Company tier: ${resume.company_pedigree.tier_level || ""}`);
@@ -200,41 +202,41 @@ export class VectorSearchService {
         }
       }
     }
-    
+
     // Recruiter insights
     if (profile.recruiter_insights) {
       const insights = profile.recruiter_insights;
-      
+
       if (insights.strengths?.length) {
         textParts.push(`Strengths: ${insights.strengths.join(", ")}`);
       }
-      
+
       if (insights.key_themes?.length) {
         textParts.push(`Key themes: ${insights.key_themes.join(", ")}`);
       }
-      
+
       if (insights.competitive_advantages?.length) {
         textParts.push(`Competitive advantages: ${insights.competitive_advantages.join(", ")}`);
       }
     }
-    
+
     // Enrichment insights
     if (profile.enrichment) {
       const enrichment = profile.enrichment;
-      
+
       if (enrichment.ai_summary) {
         textParts.push(enrichment.ai_summary);
       }
-      
+
       if (enrichment.career_analysis?.trajectory_insights) {
         textParts.push(enrichment.career_analysis.trajectory_insights);
       }
-      
+
       if (enrichment.strategic_fit?.competitive_positioning) {
         textParts.push(enrichment.strategic_fit.competitive_positioning);
       }
     }
-    
+
     return textParts.filter(Boolean).join(". ");
   }
 
@@ -244,7 +246,7 @@ export class VectorSearchService {
   async storeEmbedding(profile: any): Promise<EmbeddingData> {
     const embeddingText = this.extractEmbeddingText(profile);
     const embeddingVector = await this.generateEmbedding(embeddingText);
-    
+
     const embeddingData: EmbeddingData = {
       candidate_id: profile.candidate_id,
       embedding_vector: embeddingVector,
@@ -259,7 +261,7 @@ export class VectorSearchService {
         updated_at: new Date().toISOString(),
       },
     };
-    
+
     if (this.usePgVector) {
       // Use pgvector for storage
       await this.initializePgVectorClient();
@@ -281,7 +283,7 @@ export class VectorSearchService {
         .set(embeddingData);
       console.log(`Stored embedding in Firestore for candidate: ${profile.candidate_id}`);
     }
-    
+
     return embeddingData;
   }
 
@@ -292,14 +294,14 @@ export class VectorSearchService {
     try {
       // Generate embedding for query text
       const queryEmbedding = await this.generateEmbedding(query.query_text);
-      
+
       if (this.usePgVector) {
         // Use pgvector for optimized similarity search
         await this.initializePgVectorClient();
         if (this.pgVectorClient) {
           const similarityThreshold = 0.7; // Default threshold
           const limit = query.limit || 20;
-          
+
           const pgResults = await this.pgVectorClient.searchSimilar(
             queryEmbedding,
             similarityThreshold,
@@ -307,44 +309,44 @@ export class VectorSearchService {
             'vertex-ai-textembedding-004',
             'full_profile'
           );
-          
+
           // Convert pgvector results to VectorSearchResult format
           const results: VectorSearchResult[] = [];
-          
+
           for (const pgResult of pgResults) {
             // Apply additional filters
-            if (query.filters?.min_years_experience && 
-                pgResult.metadata.years_experience < query.filters.min_years_experience) {
+            if (query.filters?.min_years_experience &&
+              pgResult.metadata.years_experience < query.filters.min_years_experience) {
               continue;
             }
-            
-            if (query.filters?.current_level && 
-                pgResult.metadata.current_level !== query.filters.current_level) {
+
+            if (query.filters?.current_level &&
+              pgResult.metadata.current_level !== query.filters.current_level) {
               continue;
             }
-            
-            if (query.filters?.company_tier && 
-                pgResult.metadata.company_tier !== query.filters.company_tier) {
+
+            if (query.filters?.company_tier &&
+              pgResult.metadata.company_tier !== query.filters.company_tier) {
               continue;
             }
-            
-            if (query.filters?.min_score && 
-                pgResult.metadata.overall_score < query.filters.min_score) {
+
+            if (query.filters?.min_score &&
+              pgResult.metadata.overall_score < query.filters.min_score) {
               continue;
             }
-            
+
             // Organization filter - check if candidate belongs to the requested org
             if (query.org_id) {
               const candidateDoc = await this.firestore
                 .collection('candidates')
                 .doc(pgResult.candidate_id)
                 .get();
-              
+
               if (!candidateDoc.exists || candidateDoc.data()?.org_id !== query.org_id) {
                 continue;
               }
             }
-            
+
             // Generate match reasons based on metadata
             const embeddingData: EmbeddingData = {
               candidate_id: pgResult.candidate_id,
@@ -361,7 +363,7 @@ export class VectorSearchService {
               }
             };
             const matchReasons = this.generateMatchReasons(embeddingData, pgResult.similarity);
-            
+
             results.push({
               candidate_id: pgResult.candidate_id,
               similarity_score: pgResult.similarity,
@@ -369,14 +371,14 @@ export class VectorSearchService {
               match_reasons: matchReasons
             });
           }
-          
+
           return results.slice(0, limit);
         }
       }
-      
+
       // Fallback to Firestore-based search (legacy behavior)
       return this.searchCandidatesFirestore(query, queryEmbedding);
-      
+
     } catch (error) {
       console.error("Error in searchCandidates:", error);
       throw error;
@@ -389,64 +391,64 @@ export class VectorSearchService {
   private async searchCandidatesFirestore(query: SearchQuery, queryEmbedding: number[]): Promise<VectorSearchResult[]> {
     // Get all embeddings from Firestore with organization filter
     let embeddingsQuery = this.firestore.collection("candidate_embeddings");
-    
+
     if (query.org_id) {
       // We need to join with candidates collection to filter by org_id
       // For now, get all embeddings and filter in memory
     }
-    
+
     const snapshot = await embeddingsQuery.get();
     const embeddings: EmbeddingData[] = [];
-    
+
     for (const doc of snapshot.docs) {
       const data = doc.data() as EmbeddingData;
-      
+
       // If org_id filter is provided, check candidate's organization
       if (query.org_id) {
         const candidateDoc = await this.firestore
           .collection('candidates')
           .doc(data.candidate_id)
           .get();
-        
+
         if (!candidateDoc.exists || candidateDoc.data()?.org_id !== query.org_id) {
           continue;
         }
       }
-      
+
       embeddings.push(data);
     }
-    
+
     // Calculate similarity scores
     const results: VectorSearchResult[] = [];
-    
+
     for (const embedding of embeddings) {
       // Apply filters
-      if (query.filters?.min_years_experience && 
-          embedding.metadata.years_experience < query.filters.min_years_experience) {
+      if (query.filters?.min_years_experience &&
+        embedding.metadata.years_experience < query.filters.min_years_experience) {
         continue;
       }
-      
-      if (query.filters?.current_level && 
-          embedding.metadata.current_level !== query.filters.current_level) {
+
+      if (query.filters?.current_level &&
+        embedding.metadata.current_level !== query.filters.current_level) {
         continue;
       }
-      
-      if (query.filters?.company_tier && 
-          embedding.metadata.company_tier !== query.filters.company_tier) {
+
+      if (query.filters?.company_tier &&
+        embedding.metadata.company_tier !== query.filters.company_tier) {
         continue;
       }
-      
-      if (query.filters?.min_score && 
-          embedding.metadata.overall_score < query.filters.min_score) {
+
+      if (query.filters?.min_score &&
+        embedding.metadata.overall_score < query.filters.min_score) {
         continue;
       }
-      
+
       // Calculate cosine similarity
       const similarity = this.calculateCosineSimilarity(queryEmbedding, embedding.embedding_vector);
-      
+
       // Generate match reasons
       const matchReasons = this.generateMatchReasons(embedding, similarity);
-      
+
       results.push({
         candidate_id: embedding.candidate_id,
         similarity_score: similarity,
@@ -454,10 +456,10 @@ export class VectorSearchService {
         match_reasons: matchReasons
       });
     }
-    
+
     // Sort by similarity score and apply limit
     results.sort((a, b) => b.similarity_score - a.similarity_score);
-    
+
     const limit = query.limit || 20;
     return results.slice(0, limit);
   }
@@ -465,9 +467,9 @@ export class VectorSearchService {
   /**
    * Find candidates similar to a reference candidate
    */
-  async findSimilarCandidates(candidateId: string, options: { 
-    limit?: number; 
-    org_id?: string; 
+  async findSimilarCandidates(candidateId: string, options: {
+    limit?: number;
+    org_id?: string;
   } = {}): Promise<VectorSearchResult[]> {
     try {
       // Get the reference candidate's embedding
@@ -475,28 +477,28 @@ export class VectorSearchService {
         .collection("candidate_embeddings")
         .doc(candidateId)
         .get();
-      
+
       if (!embeddingDoc.exists) {
         throw new Error(`Embedding not found for candidate: ${candidateId}`);
       }
-      
+
       const referenceEmbedding = embeddingDoc.data() as EmbeddingData;
-      
+
       // Search for similar candidates using the reference embedding
       const query: SearchQuery = {
         query_text: referenceEmbedding.embedding_text,
         limit: (options.limit || 10) + 1, // +1 to exclude the reference candidate
         org_id: options.org_id
       };
-      
+
       const results = await this.searchCandidates(query);
-      
+
       // Remove the reference candidate from results
       const filteredResults = results.filter(result => result.candidate_id !== candidateId);
-      
+
       // Return up to the requested limit
       return filteredResults.slice(0, options.limit || 10);
-      
+
     } catch (error) {
       console.error("Error in findSimilarCandidates:", error);
       throw error;
@@ -525,73 +527,73 @@ export class VectorSearchService {
       };
 
       const vectorResults = await this.searchCandidates(traditionalQuery);
-      
+
       // Get detailed candidate data including skill assessments
       const enrichedResults: SkillAwareSearchResult[] = [];
-      
+
       for (const vectorResult of vectorResults) {
         // Fetch full candidate profile with skill assessments
         const candidateDoc = await this.firestore
           .collection('candidates')
           .doc(vectorResult.candidate_id)
           .get();
-          
+
         if (!candidateDoc.exists) {
           continue;
         }
-        
+
         const candidateData = candidateDoc.data();
-        
+
         // Calculate skill-aware scores
         const skillScores = this.calculateSkillAwareScores(candidateData, query);
-        
+
         // Apply minimum confidence filter
-        if (query.minimum_overall_confidence && 
-            skillScores.confidence_score < query.minimum_overall_confidence) {
+        if (query.minimum_overall_confidence &&
+          skillScores.confidence_score < query.minimum_overall_confidence) {
           continue;
         }
-        
-      // Calculate composite ranking score
-      let overallScore = this.calculateCompositeRankingScore(
-        skillScores, 
-        vectorResult.similarity_score, 
-        query.ranking_weights || {}
-      );
 
-      // Apply analysis_confidence demotion for low-content profiles (if available)
-      const analysisConfidence = typeof candidateData.analysis_confidence === 'number'
-        ? Math.max(0, Math.min(1, candidateData.analysis_confidence))
-        : null;
-      if (analysisConfidence !== null) {
-        // Scale overall score by a factor between 0.6 and 1.0 based on confidence
-        const factor = 0.6 + 0.4 * analysisConfidence;
-        overallScore = Math.round(overallScore * factor * 100) / 100;
-        // Record the applied factor in ranking factors
-        skillScores.ranking_factors = {
-          ...skillScores.ranking_factors,
-          analysis_confidence: analysisConfidence,
-          analysis_confidence_factor: Number(factor.toFixed(2))
-        };
-      }
-        
+        // Calculate composite ranking score
+        let overallScore = this.calculateCompositeRankingScore(
+          skillScores,
+          vectorResult.similarity_score,
+          query.ranking_weights || {}
+        );
+
+        // Apply analysis_confidence demotion for low-content profiles (if available)
+        const analysisConfidence = typeof candidateData?.analysis_confidence === 'number'
+          ? Math.max(0, Math.min(1, candidateData.analysis_confidence))
+          : null;
+        if (analysisConfidence !== null) {
+          // Scale overall score by a factor between 0.6 and 1.0 based on confidence
+          const factor = 0.6 + 0.4 * analysisConfidence;
+          overallScore = Math.round(overallScore * factor * 100) / 100;
+          // Record the applied factor in ranking factors
+          skillScores.ranking_factors = {
+            ...skillScores.ranking_factors,
+            analysis_confidence: analysisConfidence,
+            analysis_confidence_factor: Number(factor.toFixed(2))
+          };
+        }
+
         // Generate enhanced match reasons
         const matchReasons = this.generateSkillAwareMatchReasons(
-          candidateData, 
-          vectorResult, 
+          candidateData,
+          vectorResult,
           skillScores,
           query
         );
-        
+
         // Build profile snippet for recruiter context
         const candidateSkillsList = this.extractCandidateSkills(candidateData)
           .sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
         const topSkills = candidateSkillsList.slice(0, 5).map(s => ({ skill: s.skill, confidence: s.confidence }));
-        const years = candidateData.intelligent_analysis?.career_trajectory_analysis?.years_experience 
-          ?? candidateData.resume_analysis?.years_experience;
-        const level = (candidateData.intelligent_analysis?.career_trajectory_analysis?.current_level 
-          ?? candidateData.resume_analysis?.career_trajectory?.current_level) as string | undefined;
-        const summary = candidateData.intelligent_analysis?.executive_summary?.one_line_pitch 
-          ?? candidateData.executive_summary?.one_line_pitch;
+        const years = candidateData?.intelligent_analysis?.career_trajectory_analysis?.years_experience
+          ?? candidateData?.resume_analysis?.years_experience;
+        const level = (candidateData?.intelligent_analysis?.career_trajectory_analysis?.current_level
+          ?? candidateData?.resume_analysis?.career_trajectory?.current_level) as string | undefined;
+        const summary = candidateData?.intelligent_analysis?.executive_summary?.one_line_pitch
+          ?? candidateData?.executive_summary?.one_line_pitch;
 
         enrichedResults.push({
           candidate_id: vectorResult.candidate_id,
@@ -605,23 +607,23 @@ export class VectorSearchService {
           metadata: vectorResult.metadata,
           match_reasons: matchReasons,
           profile: {
-            name: candidateData.name,
-            current_role: candidateData.current_role || candidateData.resume_analysis?.current_role,
-            current_company: candidateData.current_company || candidateData.resume_analysis?.current_company,
+            name: candidateData?.name,
+            current_role: candidateData?.current_role || candidateData?.resume_analysis?.current_role,
+            current_company: candidateData?.current_company || candidateData?.resume_analysis?.current_company,
             years_experience: typeof years === 'number' ? years : undefined,
             current_level: level,
-            analysis_confidence: typeof candidateData.analysis_confidence === 'number' ? candidateData.analysis_confidence : undefined,
+            analysis_confidence: typeof candidateData?.analysis_confidence === 'number' ? candidateData.analysis_confidence : undefined,
             top_skills: topSkills,
             summary: summary
           }
         });
       }
-      
+
       // Sort by overall score and return top results
       enrichedResults.sort((a, b) => b.overall_score - a.overall_score);
-      
+
       return enrichedResults.slice(0, query.limit || 20);
-      
+
     } catch (error) {
       console.error("Error in searchCandidatesSkillAware:", error);
       throw error;
@@ -641,23 +643,23 @@ export class VectorSearchService {
     const candidateSkills = this.extractCandidateSkills(candidateData);
     const requiredSkills = query.required_skills || [];
     const preferredSkills = query.preferred_skills || [];
-    
+
     // Calculate required skills match
     let requiredSkillsMatched = 0;
     let totalRequiredWeight = 0;
     let weightedRequiredScore = 0;
     const skillBreakdown: Record<string, number> = {};
-    
+
     for (const requiredSkill of requiredSkills) {
       const weight = requiredSkill.weight || 1.0;
       totalRequiredWeight += weight;
-      
+
       const candidateSkill = this.findMatchingSkill(candidateSkills, requiredSkill.skill);
-      
+
       if (candidateSkill) {
         const confidence = candidateSkill.confidence;
         const meetsMinimum = confidence >= (requiredSkill.minimum_confidence || 70);
-        
+
         if (meetsMinimum) {
           requiredSkillsMatched++;
           weightedRequiredScore += confidence * weight;
@@ -670,18 +672,18 @@ export class VectorSearchService {
         skillBreakdown[requiredSkill.skill] = 0;
       }
     }
-    
+
     // Calculate preferred skills match  
     let preferredSkillsMatched = 0;
     let totalPreferredWeight = 0;
     let weightedPreferredScore = 0;
-    
+
     for (const preferredSkill of preferredSkills) {
       const weight = preferredSkill.weight || 0.5;
       totalPreferredWeight += weight;
-      
+
       const candidateSkill = this.findMatchingSkill(candidateSkills, preferredSkill.skill);
-      
+
       if (candidateSkill && candidateSkill.confidence >= (preferredSkill.minimum_confidence || 60)) {
         preferredSkillsMatched++;
         weightedPreferredScore += candidateSkill.confidence * weight;
@@ -693,22 +695,22 @@ export class VectorSearchService {
         skillBreakdown[preferredSkill.skill] = 0;
       }
     }
-    
+
     // Calculate overall skill match score
     const totalWeight = totalRequiredWeight + totalPreferredWeight;
-    const skillMatchScore = totalWeight > 0 
+    const skillMatchScore = totalWeight > 0
       ? ((weightedRequiredScore + weightedPreferredScore) / totalWeight)
       : 0;
-    
+
     // Calculate average confidence across all candidate skills
     const allConfidences = candidateSkills.map(s => s.confidence);
-    const averageConfidence = allConfidences.length > 0 
+    const averageConfidence = allConfidences.length > 0
       ? allConfidences.reduce((sum, conf) => sum + conf, 0) / allConfidences.length
       : 0;
-    
+
     // Calculate experience match score
     const experienceMatchScore = this.calculateExperienceMatch(candidateData, query);
-    
+
     return {
       skill_match_score: skillMatchScore,
       confidence_score: averageConfidence,
@@ -729,17 +731,17 @@ export class VectorSearchService {
   /**
    * Extract skills from candidate data with confidence scores
    */
-  private extractCandidateSkills(candidateData: any): Array<{skill: string, confidence: number, source: string, category: string}> {
-    const skills: Array<{skill: string, confidence: number, source: string, category: string}> = [];
-    
+  private extractCandidateSkills(candidateData: any): Array<{ skill: string, confidence: number, source: string, category: string }> {
+    const skills: Array<{ skill: string, confidence: number, source: string, category: string }> = [];
+
     // Check for intelligent analysis first (new skill assessment format)
     if (candidateData.intelligent_analysis) {
       const analysis = candidateData.intelligent_analysis;
-      
+
       // Extract explicit skills
       if (analysis.explicit_skills) {
         const explicitSkills = analysis.explicit_skills;
-        
+
         // Technical skills
         if (explicitSkills.technical_skills) {
           for (const skillItem of explicitSkills.technical_skills) {
@@ -753,7 +755,7 @@ export class VectorSearchService {
             });
           }
         }
-        
+
         // Tools and technologies
         if (explicitSkills.tools_technologies) {
           for (const skillItem of explicitSkills.tools_technologies) {
@@ -767,7 +769,7 @@ export class VectorSearchService {
             });
           }
         }
-        
+
         // Soft skills
         if (explicitSkills.soft_skills) {
           for (const skillItem of explicitSkills.soft_skills) {
@@ -782,11 +784,11 @@ export class VectorSearchService {
           }
         }
       }
-      
+
       // Extract inferred skills
       if (analysis.inferred_skills) {
         const inferred = analysis.inferred_skills;
-        
+
         // Highly probable skills
         if (inferred.highly_probable_skills) {
           for (const skillItem of inferred.highly_probable_skills) {
@@ -798,7 +800,7 @@ export class VectorSearchService {
             });
           }
         }
-        
+
         // Probable skills
         if (inferred.probable_skills) {
           for (const skillItem of inferred.probable_skills) {
@@ -810,7 +812,7 @@ export class VectorSearchService {
             });
           }
         }
-        
+
         // Likely skills  
         if (inferred.likely_skills) {
           for (const skillItem of inferred.likely_skills) {
@@ -824,11 +826,11 @@ export class VectorSearchService {
         }
       }
     }
-    
+
     // Fallback to basic resume analysis format
     if (skills.length === 0 && candidateData.resume_analysis) {
       const resume = candidateData.resume_analysis;
-      
+
       // Technical skills (100% confidence for explicitly listed)
       if (resume.technical_skills) {
         for (const skill of resume.technical_skills) {
@@ -840,7 +842,7 @@ export class VectorSearchService {
           });
         }
       }
-      
+
       // Soft skills
       if (resume.soft_skills) {
         for (const skill of resume.soft_skills) {
@@ -853,33 +855,33 @@ export class VectorSearchService {
         }
       }
     }
-    
+
     return skills;
   }
 
   /**
    * Find matching skill with fuzzy matching
    */
-  private findMatchingSkill(candidateSkills: Array<{skill: string, confidence: number, source: string, category: string}>, targetSkill: string): {skill: string, confidence: number} | null {
+  private findMatchingSkill(candidateSkills: Array<{ skill: string, confidence: number, source: string, category: string }>, targetSkill: string): { skill: string, confidence: number } | null {
     const target = targetSkill.toLowerCase();
-    
+
     // Exact match first
     const exactMatch = candidateSkills.find(s => s.skill === target);
     if (exactMatch) {
       return { skill: exactMatch.skill, confidence: exactMatch.confidence };
     }
-    
+
     // Partial match (skill contains target or vice versa)
-    const partialMatch = candidateSkills.find(s => 
+    const partialMatch = candidateSkills.find(s =>
       s.skill.includes(target) || target.includes(s.skill)
     );
     if (partialMatch) {
-      return { 
-        skill: partialMatch.skill, 
+      return {
+        skill: partialMatch.skill,
         confidence: partialMatch.confidence * 0.8 // Penalty for partial match
       };
     }
-    
+
     // Synonym matching (basic)
     const synonyms: Record<string, string[]> = {
       'javascript': ['js', 'ecmascript', 'node.js', 'nodejs'],
@@ -889,10 +891,10 @@ export class VectorSearchService {
       'aws': ['amazon web services'],
       'machine learning': ['ml', 'ai', 'artificial intelligence']
     };
-    
+
     for (const [canonical, alts] of Object.entries(synonyms)) {
       if (target === canonical || alts.includes(target)) {
-        const synonymMatch = candidateSkills.find(s => 
+        const synonymMatch = candidateSkills.find(s =>
           s.skill === canonical || alts.includes(s.skill)
         );
         if (synonymMatch) {
@@ -900,7 +902,7 @@ export class VectorSearchService {
         }
       }
     }
-    
+
     return null;
   }
 
@@ -911,24 +913,24 @@ export class VectorSearchService {
     if (!query.experience_level) {
       return 100; // No preference specified
     }
-    
+
     const candidateYears = candidateData.resume_analysis?.years_experience || 0;
     const candidateLevel = candidateData.resume_analysis?.career_trajectory?.current_level?.toLowerCase() || '';
-    
-    const experienceLevels: Record<string, {minYears: number, maxYears: number, keywords: string[]}> = {
+
+    const experienceLevels: Record<string, { minYears: number, maxYears: number, keywords: string[] }> = {
       'entry': { minYears: 0, maxYears: 3, keywords: ['junior', 'entry', 'associate'] },
       'mid': { minYears: 2, maxYears: 7, keywords: ['mid', 'intermediate', 'regular'] },
       'senior': { minYears: 5, maxYears: 12, keywords: ['senior', 'sr', 'lead'] },
       'executive': { minYears: 8, maxYears: 50, keywords: ['principal', 'staff', 'director', 'vp', 'executive', 'head'] }
     };
-    
+
     const targetLevel = experienceLevels[query.experience_level];
     if (!targetLevel) {
       return 100;
     }
-    
+
     let score = 0;
-    
+
     // Years experience match
     if (candidateYears >= targetLevel.minYears && candidateYears <= targetLevel.maxYears) {
       score += 60;
@@ -937,15 +939,15 @@ export class VectorSearchService {
     } else {
       score += 20; // Some experience
     }
-    
+
     // Level keyword match
-    const levelKeywordMatch = targetLevel.keywords.some(keyword => 
+    const levelKeywordMatch = targetLevel.keywords.some(keyword =>
       candidateLevel.includes(keyword)
     );
     if (levelKeywordMatch) {
       score += 40;
     }
-    
+
     return Math.min(score, 100);
   }
 
@@ -954,7 +956,7 @@ export class VectorSearchService {
    */
   private getExperienceAlignment(candidateData: any, query: SkillAwareSearchQuery): string {
     const experienceScore = this.calculateExperienceMatch(candidateData, query);
-    
+
     if (experienceScore >= 90) return 'excellent';
     if (experienceScore >= 70) return 'good';
     if (experienceScore >= 50) return 'fair';
@@ -965,8 +967,8 @@ export class VectorSearchService {
    * Calculate composite ranking score using weighted factors
    */
   private calculateCompositeRankingScore(
-    skillScores: any, 
-    vectorSimilarity: number, 
+    skillScores: any,
+    vectorSimilarity: number,
     weights: SkillAwareSearchQuery['ranking_weights']
   ): number {
     const defaultWeights = {
@@ -975,15 +977,15 @@ export class VectorSearchService {
       vector_similarity: 0.25,
       experience_match: 0.1
     };
-    
+
     const finalWeights = { ...defaultWeights, ...weights };
-    
-    const score = 
+
+    const score =
       (skillScores.skill_match_score * finalWeights.skill_match) +
       (skillScores.confidence_score * finalWeights.confidence) +
       (vectorSimilarity * 100 * finalWeights.vector_similarity) +
       (skillScores.experience_match_score * finalWeights.experience_match);
-    
+
     return Math.round(score * 100) / 100; // Round to 2 decimal places
   }
 
@@ -997,7 +999,7 @@ export class VectorSearchService {
     query: SkillAwareSearchQuery
   ): string[] {
     const reasons: string[] = [];
-    
+
     // Overall match quality
     if (skillScores.skill_match_score >= 90) {
       reasons.push("Exceptional skill match");
@@ -1006,7 +1008,7 @@ export class VectorSearchService {
     } else if (skillScores.skill_match_score >= 70) {
       reasons.push("Good skill match");
     }
-    
+
     // Required skills
     const requiredMatched = skillScores.ranking_factors.required_skills_matched;
     const totalRequired = skillScores.ranking_factors.total_required_skills;
@@ -1017,16 +1019,16 @@ export class VectorSearchService {
         reasons.push(`Has ${requiredMatched}/${totalRequired} required skills`);
       }
     }
-    
+
     // High confidence skills
     const highConfidenceSkills = Object.entries(skillScores.skill_breakdown)
       .filter(([_, confidence]) => (confidence as number) >= 90)
       .map(([skill]) => skill);
-    
+
     if (highConfidenceSkills.length > 0) {
       reasons.push(`Expert level: ${highConfidenceSkills.slice(0, 3).join(", ")}`);
     }
-    
+
     // Experience alignment
     const expAlignment = skillScores.ranking_factors.experience_alignment;
     if (expAlignment === 'excellent') {
@@ -1034,14 +1036,14 @@ export class VectorSearchService {
     } else if (expAlignment === 'good') {
       reasons.push("Good experience level match");
     }
-    
+
     // Vector similarity context
     if (vectorResult.similarity_score > 0.85) {
       reasons.push("Excellent profile similarity");
     } else if (vectorResult.similarity_score > 0.75) {
       reasons.push("Strong profile match");
     }
-    
+
     return reasons;
   }
 
@@ -1052,24 +1054,24 @@ export class VectorSearchService {
     if (vectorA.length !== vectorB.length) {
       throw new Error("Vector dimensions must match");
     }
-    
+
     let dotProduct = 0;
     let normA = 0;
     let normB = 0;
-    
+
     for (let i = 0; i < vectorA.length; i++) {
       dotProduct += vectorA[i] * vectorB[i];
       normA += vectorA[i] * vectorA[i];
       normB += vectorB[i] * vectorB[i];
     }
-    
+
     normA = Math.sqrt(normA);
     normB = Math.sqrt(normB);
-    
+
     if (normA === 0 || normB === 0) {
       return 0;
     }
-    
+
     return dotProduct / (normA * normB);
   }
 
@@ -1078,7 +1080,7 @@ export class VectorSearchService {
    */
   private generateMatchReasons(embedding: EmbeddingData, similarity: number): string[] {
     const reasons: string[] = [];
-    
+
     if (similarity > 0.9) {
       reasons.push("Excellent overall match");
     } else if (similarity > 0.8) {
@@ -1086,23 +1088,23 @@ export class VectorSearchService {
     } else if (similarity > 0.7) {
       reasons.push("Good profile match");
     }
-    
+
     if (embedding.metadata.technical_skills && embedding.metadata.technical_skills.length > 0) {
       reasons.push(`Technical skills: ${embedding.metadata.technical_skills.slice(0, 3).join(", ")}`);
     }
-    
+
     if (embedding.metadata.years_experience > 5) {
       reasons.push(`${embedding.metadata.years_experience} years experience`);
     }
-    
+
     if (embedding.metadata.leadership_level) {
       reasons.push(`Leadership: ${embedding.metadata.leadership_level}`);
     }
-    
+
     if (embedding.metadata.company_tier && embedding.metadata.company_tier !== "Unknown") {
       reasons.push(`${embedding.metadata.company_tier} company background`);
     }
-    
+
     return reasons;
   }
 
@@ -1118,22 +1120,22 @@ export class VectorSearchService {
     const snapshot = await this.firestore
       .collection("candidate_embeddings")
       .get();
-    
+
     let totalScore = 0;
     const levelCounts: Record<string, number> = {};
     const tierCounts: Record<string, number> = {};
-    
+
     snapshot.docs.forEach(doc => {
       const embedding = doc.data() as EmbeddingData;
       totalScore += embedding.metadata.overall_score;
-      
+
       const level = embedding.metadata.current_level;
       levelCounts[level] = (levelCounts[level] || 0) + 1;
-      
+
       const tier = embedding.metadata.company_tier;
       tierCounts[tier] = (tierCounts[tier] || 0) + 1;
     });
-    
+
     return {
       total_embeddings: snapshot.docs.length,
       avg_score: snapshot.docs.length > 0 ? totalScore / snapshot.docs.length : 0,
@@ -1157,7 +1159,7 @@ export class VectorSearchService {
     try {
       let pgvectorStatus = "not_enabled";
       let totalEmbeddings = 0;
-      
+
       if (this.usePgVector) {
         // Test pgvector connection
         try {
@@ -1176,14 +1178,14 @@ export class VectorSearchService {
           .collection("health")
           .doc("vector_search_test")
           .set({ timestamp: new Date().toISOString() });
-        
+
         // Get embedding count from Firestore
         const embeddingsSnapshot = await this.firestore
           .collection("candidate_embeddings")
           .get();
         totalEmbeddings = embeddingsSnapshot.docs.length;
       }
-      
+
       return {
         status: "healthy",
         embedding_service: "operational",

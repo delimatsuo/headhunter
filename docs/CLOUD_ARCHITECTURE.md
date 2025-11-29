@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the cloud architecture for deploying Headhunter AI to Firebase/GCP with comprehensive CRUD operations, with AI processing performed via Together AI (cloud chat completions). Local-only processing references are historical and superseded by this design.
+This document outlines the cloud architecture for deploying Headhunter AI to Firebase/GCP with comprehensive CRUD operations. AI processing is a hybrid model: **Vertex AI (Gemini 1.5 Pro)** is used for high-quality candidate reranking and embeddings, while **Together AI** handles candidate enrichment. Local-only processing references are historical.
 
 ## Architecture Principles
 

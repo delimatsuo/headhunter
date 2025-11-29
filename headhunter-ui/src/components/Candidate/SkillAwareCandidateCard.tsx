@@ -40,12 +40,12 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
 
   const loadSkillAssessment = async () => {
     if (!candidateId) return;
-    
+
     setLoadingSkills(true);
     try {
       const response = await api.getCandidateSkillAssessment(candidateId);
-      if (response.success) {
-        setSkillAssessment(response.skill_assessment);
+      if (response.success && response.data) {
+        setSkillAssessment(response.data.skill_assessment);
         setSkillsLoaded(true);
       }
     } catch (error) {
@@ -82,13 +82,13 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
 
   const getMatchedSkillsCount = () => {
     if (!searchSkills.length) return 0;
-    
+
     const candidateSkills = [
       ...(candidate.resume_analysis?.technical_skills || []),
       ...(candidate.resume_analysis?.soft_skills || [])
     ].map(skill => skill.toLowerCase());
-    
-    return searchSkills.filter(skill => 
+
+    return searchSkills.filter(skill =>
       candidateSkills.some(cSkill => cSkill.includes(skill.toLowerCase()))
     ).length;
   };
@@ -125,7 +125,7 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
               <span className="score-label">Match</span>
             </div>
           )}
-          
+
           {similarity !== undefined && (
             <div className={`score-badge ${getScoreColor(similarity)}`}>
               <span className="score-value">{formatScore(similarity)}%</span>
@@ -166,8 +166,8 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
                   {(candidate.resume_analysis?.technical_skills || []).slice(0, 4).map((skill, index) => {
                     const isRequired = searchSkills.some(s => s.toLowerCase() === skill.toLowerCase());
                     return (
-                      <span 
-                        key={index} 
+                      <span
+                        key={index}
                         className={`skill-tag technical ${isRequired ? 'required' : ''}`}
                       >
                         {skill}
@@ -189,8 +189,8 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
                     {(candidate.resume_analysis?.soft_skills || []).slice(0, 3).map((skill, index) => {
                       const isRequired = searchSkills.some(s => s.toLowerCase() === skill.toLowerCase());
                       return (
-                        <span 
-                          key={index} 
+                        <span
+                          key={index}
                           className={`skill-tag soft ${isRequired ? 'required' : ''}`}
                         >
                           {skill}
@@ -218,12 +218,12 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
                   ...(candidate.resume_analysis?.technical_skills || []),
                   ...(candidate.resume_analysis?.soft_skills || [])
                 ];
-                
-                const hasSkill = candidateSkills.some(skill => 
+
+                const hasSkill = candidateSkills.some(skill =>
                   skill.toLowerCase().includes(requiredSkill.toLowerCase())
                 );
-                
-                const matchData = skillMatches.find(m => 
+
+                const matchData = skillMatches.find(m =>
                   m.skill.toLowerCase() === requiredSkill.toLowerCase()
                 );
 

@@ -110,23 +110,29 @@ describe('registerRoutes', () => {
     const config = baseConfig();
 
     const pgClient = {
-      healthCheck: jest.fn().mockResolvedValue({ status: 'healthy' })
+      healthCheck: vi.fn().mockResolvedValue({ status: 'healthy' }),
+      close: vi.fn()
     } as unknown as PgVectorClient;
 
     const redisClient = {
-      healthCheck: jest.fn().mockResolvedValue({ status: 'healthy' }),
-      buildHybridKey: jest.fn(() => 'hybrid-key'),
-      get: jest.fn(),
-      set: jest.fn(),
-      close: jest.fn(),
-      isDisabled: jest.fn(() => false)
+      healthCheck: vi.fn().mockResolvedValue({ status: 'healthy' }),
+      get: vi.fn(),
+      set: vi.fn(),
+      buildHybridKey: vi.fn(),
+      close: vi.fn(),
+      isDisabled: vi.fn(() => false)
     } as unknown as SearchRedisClient;
 
     const embedClient = {
-      healthCheck: jest.fn().mockResolvedValue({ status: 'healthy' })
+      healthCheck: vi.fn().mockResolvedValue({ status: 'healthy' }),
+      embed: vi.fn()
     } as unknown as EmbedClient;
 
-    const rerankClient = null as unknown as RerankClient | null;
+    const rerankClient = {
+      healthCheck: vi.fn().mockResolvedValue({ status: 'healthy' }),
+      rerank: vi.fn(),
+      isEnabled: vi.fn().mockReturnValue(true)
+    } as unknown as RerankClient;
 
     const performanceSnapshot: PerformanceSnapshot = {
       totalCount: 2,
@@ -142,8 +148,8 @@ describe('registerRoutes', () => {
     };
 
     const performanceTracker = {
-      getSnapshot: jest.fn(() => performanceSnapshot),
-      record: jest.fn()
+      record: vi.fn(),
+      getSnapshot: vi.fn().mockReturnValue(performanceSnapshot)
     } as unknown as PerformanceTracker;
 
     const state = { isReady: true };
@@ -216,7 +222,7 @@ describe('registerRoutes', () => {
     (redisClient.get as jest.Mock).mockResolvedValue(cachedResponse);
 
     const service = {
-      computeCacheToken: jest.fn(() => 'token')
+      computeCacheToken: vi.fn(() => 'token')
     } as unknown as SearchService;
     dependencies.service = service;
 

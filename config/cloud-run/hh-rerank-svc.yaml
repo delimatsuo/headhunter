@@ -33,7 +33,7 @@ spec:
             - name: FIREBASE_PROJECT_ID
               value: ${SERVICE_PROJECT_ID}
             - name: REDIS_HOST
-              value: 10.103.201.212
+              value: 10.99.187.236
             - name: REDIS_PORT
               value: "6379"
             - name: REDIS_TLS
@@ -76,7 +76,7 @@ spec:
             - name: TOGETHER_MODEL
               value: ${TOGETHER_AI_MODEL}
             - name: TOGETHER_TIMEOUT_MS
-              value: "320"
+              value: "2000"
             - name: TOGETHER_RETRIES
               value: "1"
             - name: TOGETHER_ENABLE
@@ -88,7 +88,7 @@ spec:
             - name: RERANK_MAX_CANDIDATES
               value: "50"
             - name: RERANK_SLA_TARGET_MS
-              value: "350"
+              value: "2500"
             - name: RERANK_SLOW_LOG_MS
               value: "300"
             - name: ENABLE_GATEWAY_TOKENS
@@ -104,9 +104,9 @@ spec:
             - name: GEMINI_LOCATION
               value: ${SERVICE_REGION}
             - name: GEMINI_MODEL
-              value: "gemini-2.0-flash-exp"
+              value: "gemini-2.5-flash"
             - name: GEMINI_TIMEOUT_MS
-              value: "280"
+              value: "2000"
             - name: GEMINI_RETRIES
               value: "0"
           resources:

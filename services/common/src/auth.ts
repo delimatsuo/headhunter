@@ -319,6 +319,8 @@ export const authenticationPlugin: FastifyPluginAsync = fp(async (fastify) => {
       return;
     }
 
+
+
     const token = getTokenFromRequest(request.headers as Record<string, unknown>);
     if (!token) {
       throw unauthorizedError('Missing bearer token.');

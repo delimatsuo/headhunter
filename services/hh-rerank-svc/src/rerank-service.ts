@@ -11,9 +11,12 @@ import type {
   TogetherChatCompletionResponsePayload,
   TogetherChatCompletionRequestPayload,
   TogetherChatMessage,
-  TogetherRerankCandidate
+  TogetherRerankCandidate,
+  RerankResult
 } from './types.js';
 import { TogetherClient } from './together-client.js';
+import { GeminiClient, type GeminiRerankRequest, type GeminiRerankResponse } from './gemini-client.js';
+import { RerankRedisClient } from './redis-client.js';
 
 interface RerankOptions {
   context: RerankContext;
@@ -32,6 +35,8 @@ export class RerankService {
     private readonly dependencies: {
       config: RerankServiceConfig;
       togetherClient: TogetherClient;
+      geminiClient: GeminiClient;
+      redisClient?: RerankRedisClient;
       logger?: Logger;
     }
   ) {
@@ -56,7 +61,7 @@ export class RerankService {
 
   async rerank({ context, request }: RerankOptions): Promise<RerankResponse> {
     const start = Date.now();
-    const { runtime, together } = this.dependencies.config;
+    const { runtime, together, gemini } = this.dependencies.config;
 
     if (!request.candidates || request.candidates.length === 0) {
       throw badRequestError('At least one candidate is required for reranking.');
@@ -86,6 +91,35 @@ export class RerankService {
       { togetherCandidates, includePayload }
     );
 
+    // Check cache if enabled
+    if (this.dependencies.redisClient && !request.disableCache) {
+      const cacheKey = this.dependencies.redisClient.buildKey(context.tenant.id, descriptor);
+      const cached = await this.dependencies.redisClient.get<RerankResult[]>(cacheKey);
+
+      if (cached) {
+        const cacheMs = Date.now() - start;
+        this.logger.info({ requestId: context.requestId, cacheMs }, 'Rerank cache hit');
+
+        return {
+          results: cached,
+          cacheHit: true,
+          usedFallback: false,
+          requestId: context.requestId,
+          timings: {
+            totalMs: cacheMs,
+            cacheMs
+          },
+          metadata: {
+            candidateCount: truncatedCandidates.length,
+            limit,
+            docsetHash: descriptor.docsetHash,
+            jdHash: descriptor.jdHash,
+            llmProvider: 'cache'
+          }
+        };
+      }
+    }
+
     const elapsed = Date.now() - start;
     const rawBudgetMs = runtime.slaTargetMs - elapsed - promptMs - 20;
     const budgetMs = Math.max(0, rawBudgetMs);
@@ -97,59 +131,122 @@ export class RerankService {
       promptMs,
       rawBudgetMs,
       budgetMs,
-      togetherTimeout: this.dependencies.config.together.timeoutMs
-    }, 'Together AI budget calculated');
+      geminiEnabled: gemini.enable,
+      togetherEnabled: together.enable
+    }, 'LLM budget calculated');
 
-    const togetherPayload: TogetherChatCompletionRequestPayload = {
-      model: together.model,
-      messages,
-      temperature: 0,
-      max_tokens: 128,
-      response_format: { type: 'json_object' },
-      user: context.user?.uid,
-      context: {
-        tenantId: context.tenant.id,
-        requestId: context.requestId,
-        query: request.query ?? null,
-        docsetHash: descriptor.docsetHash,
-        limit
-      }
-    } satisfies TogetherChatCompletionRequestPayload;
-
-    const togetherResult = await this.dependencies.togetherClient.rerank(togetherPayload, {
-      requestId: context.requestId,
-      tenantId: context.tenant.id,
-      topN: limit,
-      context: togetherPayload.context,
-      budgetMs
-    });
-
-    const togetherMs = togetherResult?.latencyMs;
     const includeReasons = request.includeReasons ?? true;
-
     let results = this.buildPassthroughOrdering(truncatedCandidates, limit, includeReasons);
     let usedFallback = true;
+    let llmProvider: 'gemini' | 'together' | 'none' = 'none';
+    let llmMs: number | undefined;
 
-    if (togetherResult?.data) {
+    // Try Gemini first (if enabled)
+    if (gemini.enable) {
       try {
-        const parsedResults = this.parseTogetherResults(togetherResult.data);
-        if (parsedResults.length > 0) {
-          results = this.mergeRerankResults(parsedResults, truncatedCandidates, limit, includeReasons);
-          usedFallback = false;
-        } else if (!runtime.allowGracefulDegradation) {
-          throw badRequestError('Rerank vendor did not return any results.');
+        this.logger.info({ requestId: context.requestId }, 'Attempting Gemini rerank');
+
+        const geminiRequest: GeminiRerankRequest = {
+          jobDescription: normalizedJobDescription,
+          candidates: truncatedCandidates.map(c => ({
+            candidateId: c.candidateId,
+            summary: c.summary,
+            highlights: c.highlights,
+            skills: c.features?.skills
+          })),
+          topN: limit,
+          includeReasons
+        };
+
+        const geminiResult = await this.dependencies.geminiClient.rerank(geminiRequest, {
+          requestId: context.requestId,
+          tenantId: context.tenant.id,
+          topN: limit,
+          budgetMs
+        });
+
+        if (geminiResult?.data) {
+          const geminiData = geminiResult.data as GeminiRerankResponse;
+          const parsedResults: ParsedTogetherResult[] = geminiData.candidates.map(c => ({
+            id: c.candidateId,
+            score: c.score
+          }));
+
+          if (parsedResults.length > 0) {
+            results = this.mergeRerankResults(parsedResults, truncatedCandidates, limit, includeReasons);
+            usedFallback = false;
+            llmProvider = 'gemini';
+            llmMs = geminiResult.latencyMs;
+            this.logger.info({ requestId: context.requestId, latencyMs: llmMs, resultCount: parsedResults.length }, 'Gemini rerank succeeded');
+          } else {
+            this.logger.warn({ requestId: context.requestId }, 'Gemini returned empty results');
+          }
         }
       } catch (error) {
         this.logger.warn(
-          { error: error instanceof Error ? error.message : error },
-          'Failed to parse Together chat completion response.'
+          { error: error instanceof Error ? error.message : error, requestId: context.requestId },
+          'Gemini rerank failed, will try Together AI fallback'
+        );
+      }
+    }
+
+    // Fallback to Together AI if Gemini failed or disabled
+    if (usedFallback && together.enable) {
+      try {
+        this.logger.info({ requestId: context.requestId }, 'Attempting Together AI rerank');
+
+        const togetherPayload: TogetherChatCompletionRequestPayload = {
+          model: together.model,
+          messages,
+          temperature: 0,
+          max_tokens: 128,
+          response_format: { type: 'json_object' },
+          user: context.user?.uid,
+          context: {
+            tenantId: context.tenant.id,
+            requestId: context.requestId,
+            query: request.query ?? null,
+            docsetHash: descriptor.docsetHash,
+            limit
+          }
+        } satisfies TogetherChatCompletionRequestPayload;
+
+        const togetherResult = await this.dependencies.togetherClient.rerank(togetherPayload, {
+          requestId: context.requestId,
+          tenantId: context.tenant.id,
+          topN: limit,
+          context: togetherPayload.context,
+          budgetMs
+        });
+
+        if (togetherResult?.data) {
+          const parsedResults = this.parseTogetherResults(togetherResult.data);
+          if (parsedResults.length > 0) {
+            results = this.mergeRerankResults(parsedResults, truncatedCandidates, limit, includeReasons);
+            usedFallback = false;
+            llmProvider = 'together';
+            llmMs = togetherResult.latencyMs;
+            this.logger.info({ requestId: context.requestId, latencyMs: llmMs, resultCount: parsedResults.length }, 'Together AI rerank succeeded');
+          } else if (!runtime.allowGracefulDegradation) {
+            throw badRequestError('Rerank vendor did not return any results.');
+          }
+        } else if (!runtime.allowGracefulDegradation) {
+          throw badRequestError('Rerank vendor unavailable and graceful degradation disabled.');
+        }
+      } catch (error) {
+        this.logger.warn(
+          { error: error instanceof Error ? error.message : error, requestId: context.requestId },
+          'Together AI rerank failed'
         );
         if (!runtime.allowGracefulDegradation) {
           throw badRequestError('Rerank vendor returned invalid response.');
         }
       }
-    } else if (!runtime.allowGracefulDegradation) {
-      throw badRequestError('Rerank vendor unavailable and graceful degradation disabled.');
+    }
+
+    // Final check: if both failed and graceful degradation not allowed
+    if (usedFallback && !runtime.allowGracefulDegradation) {
+      throw badRequestError('All rerank providers failed and graceful degradation disabled.');
     }
 
     const totalMs = Date.now() - start;
@@ -158,12 +255,14 @@ export class RerankService {
       this.logger.warn(
         {
           totalMs,
-          togetherMs,
+          geminiMs: llmProvider === 'gemini' ? llmMs : undefined,
+          togetherMs: llmProvider === 'together' ? llmMs : undefined,
           candidateCount: truncatedCandidates.length,
           limit,
           requestId: context.requestId,
           tenantId: context.tenant.id,
-          fallback: usedFallback
+          fallback: usedFallback,
+          llmProvider
         },
         'Slow rerank invocation.'
       );
@@ -176,16 +275,32 @@ export class RerankService {
       requestId: context.requestId,
       timings: {
         totalMs,
-        togetherMs,
+        togetherMs: llmProvider === 'together' ? llmMs : undefined,
+        geminiMs: llmProvider === 'gemini' ? llmMs : undefined,
         promptMs
       },
       metadata: {
         candidateCount: truncatedCandidates.length,
         limit,
         docsetHash: descriptor.docsetHash,
-        jdHash: descriptor.jdHash
+        jdHash: descriptor.jdHash,
+        llmProvider
       }
     } satisfies RerankResponse;
+
+    // Cache successful results if not fallback (or if fallback is acceptable to cache?)
+    // Usually we only cache LLM results, not passthrough fallback.
+    // But here usedFallback=true means we used Together or Passthrough?
+    // Wait, usedFallback=false means we used Gemini (primary).
+    // usedFallback=true means we used Together (fallback) or Passthrough.
+    // If llmProvider is 'gemini' or 'together', we should cache.
+    if (this.dependencies.redisClient && !request.disableCache && (llmProvider === 'gemini' || llmProvider === 'together')) {
+      const cacheKey = this.dependencies.redisClient.buildKey(context.tenant.id, descriptor);
+      // Fire and forget cache write
+      this.dependencies.redisClient.set(cacheKey, results).catch(err => {
+        this.logger.warn({ error: err }, 'Failed to write to rerank cache');
+      });
+    }
 
     return response;
   }

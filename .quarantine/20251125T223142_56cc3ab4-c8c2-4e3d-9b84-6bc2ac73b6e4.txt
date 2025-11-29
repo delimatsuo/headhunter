@@ -1,0 +1,125 @@
+{
+  "explicit_skills": {
+    "technical_skills": [
+      {"skill": "Java", "confidence": 100, "evidence": ["Desenvolvedor De Software at Negocie Online, Atlantic Solutions, SACapp"]},
+      {"skill": "JavaScript", "confidence": 100, "evidence": ["Desenvolvedor Full Stack at Runrun.it, "Desenvolvedor Full Stack at Neon"]},
+      {"skill": "Node.js", "confidence": 80, "evidence": ["Desenvolvedor Full Stack at Runrun.it, "Desenvolvedor Full Stack at Neon"]},
+      {"skill": "Spring Framework", "confidence": 80, "evidence": ["Desenvolvedor De Software at Negocie Online"]},
+      {"skill": "Angular", "confidence": 80, "evidence": ["Desenvolvedor Full Stack at Runrun.it, "Desenvolvedor Full Stack at Neon"]},
+      {"skill": "MySQL", "confidence": 80, "evidence": ["Desenvolvedor De Software at Negocie Online, Atlantic Solutions, SACapp"]},
+      {"skill": "REST API", "confidence": 100, "evidence": ["Desenvolvedor De Software at Negocie Online, Atlantic Solutions, SACapp"]},
+      {"skill": "HTML/CSS", "confidence": 100, "evidence": ["Desenvolvedor Full Stack at Runrun.it, "Desenvolvedor Full Stack at Neon"]}
+    ],
+    "tools_technologies": [
+      {"skill": "Git", "confidence": 100, "evidence": ["Desenvolvedor De Software at Negocie Online, Atlantic Solutions, SACapp"]},
+      {"skill": "Jira", "confidence": 80, "evidence": ["Desenvolvedor De Software at Negocie Online"]},
+      {"skill": "Postman", "confidence": 80, "evidence": ["Desenvolvedor De Software at Negocie Online"]},
+      {"skill": "Docker", "confidence": 65, "evidence": ["Desenvolvedor Full Stack at Runrun.it, "Desenvolvedor Full Stack at Neon"]}
+    ],
+    "soft_skills": [
+      {"skill": "Problem-solving", "confidence": 100, "evidence": ["Desenvolvedor De Software at Negocie Online, Atlantic Solutions, SACapp"]},
+      {"skill": "Teamwork", "confidence": 100, "evidence": ["Desenvolvedor De Software at Negocie Online, Atlantic Solutions, SACapp"]},
+      {"skill": "Adaptability", "confidence": 100, "evidence": ["Desenvolvedor De Software at Negocie Online, Atlantic Solutions, SACapp"]}
+    ],
+    "certifications": [],
+    "languages": [
+      {"skill": "Portuguese", "confidence": 100, "evidence": ["Native"]},
+      {"skill": "English", "confidence": 65, "evidence": ["Fluent"]}
+    ]
+  },
+  "inferred_skills": {
+    "highly_probable_skills": [
+      {"skill": "Microservices", "confidence": 95, "reasoning": "Full Stack roles often involve microservices architecture", "skill_category": "technical"},
+      {"skill": "Agile Methodologies", "confidence": 95, "reasoning": "Full Stack roles typically work in Agile environments", "skill_category": "soft"}
+    ],
+    "probable_skills": [
+      {"skill": "AWS", "confidence": 80, "reasoning": "Common in Full Stack roles, especially in startups", "skill_category": "tools_technologies"},
+      {"skill": "Kubernetes", "confidence": 80, "reasoning": "Increasingly common in Full Stack roles, especially in cloud-native environments", "skill_category": "tools_technologies"}
+    ],
+    "likely_skills": [
+      {"skill": "DevOps", "confidence": 65, "reasoning": "Full Stack roles often require DevOps practices", "skill_category": "technical"},
+      {"skill": "CI/CD", "confidence": 65, "reasoning": "Common in Full Stack roles, especially in startups", "skill_category": "tools_technologies"}
+    ],
+    "possible_skills": [
+      {"skill": "Machine Learning", "confidence": 50, "reasoning": "Possible given the Full Stack roles, but not explicitly mentioned", "skill_category": "technical"}
+    ]
+  },
+  "role_based_competencies": {
+    "current_role_competencies": {
+      "role": "Desenvolvedor Full Stack",
+      "core_competencies": ["JavaScript", "Node.js", "Angular", "REST API", "HTML/CSS"],
+      "typical_tools": ["Git", "Jira", "Postman"],
+      "domain_knowledge": ["Web development", "Full Stack architecture"]
+    },
+    "historical_competencies": [
+      {
+        "role": "Desenvolvedor Backend",
+        "core_competencies": ["Java", "Spring Framework", "MySQL", "REST API"],
+        "typical_tools": ["Git", "Jira"],
+        "domain_knowledge": ["Backend development", "Java-based systems"]
+      }
+    ]
+  },
+  "company_context_skills": {
+    "company_specific": [],
+    "industry_skills": ["Web development", "Full Stack architecture", "Backend development"]
+  },
+  "skill_evolution_analysis": {
+    "skill_trajectory": "Continuous learning and adaptation",
+    "emerging_skills": ["Kubernetes", "CI/CD", "DevOps"],
+    "skill_gaps": ["AWS", "Machine Learning"],
+    "learning_velocity": "Moderate",
+    "skill_timeline": [
+      {"skill": "Java", "first_used": "2016", "last_used": "2018", "frequency": "high", "recency_score": 95},
+      {"skill": "JavaScript", "first_used": "2017", "last_used": "2019", "frequency": "high", "recency_score": 95}
+    ],
+    "skill_depth_analysis": {
+      "beginner_skills": ["Docker"],
+      "intermediate_skills": ["Node.js", "Angular", "MySQL"],
+      "advanced_skills": ["Spring Framework"],
+      "expert_skills": []
+    }
+  },
+  "composite_skill_profile": {
+    "primary_expertise": [{"skill": "JavaScript", "confidence": 95, "market_demand": "high"}],
+    "secondary_expertise": [{"skill": "Node.js", "confidence": 80, "market_demand": "high"}],
+    "domain_specialization": "Web development and Full Stack architecture",
+    "skill_breadth": "Moderate",
+    "unique_combination": ["JavaScript and Node.js proficiency"],
+    "skill_categories": {
+      "technical_skills": ["JavaScript", "Node.js", "Angular", "REST API", "HTML/CSS", "Java", "Spring Framework", "MySQL"],
+      "soft_skills": ["Problem-solving", "Teamwork", "Adaptability"],
+      "domain_skills": ["Web development", "Full Stack architecture", "Backend development"],
+      "leadership_skills": []
+    },
+    "transferable_skills": [
+      {"skill": "JavaScript", "transferability": "high", "target_industries": ["Tech", "Finance", "Healthcare"]},
+      {"skill": "Node.js", "transferability": "high", "target_industries": ["Tech", "Finance", "Healthcare"]}
+    ]
+  },
+  "career_trajectory_analysis": {
+    "current_level": "Mid-level developer",
+    "years_experience": 5,
+    "promotion_velocity": "Moderate",
+    "career_progression": "Full Stack -> Senior Full Stack -> Tech Lead",
+    "performance_indicator": "Project completion, code quality, team collaboration"
+  },
+  "market_positioning": {
+    "skill_market_value": "High",
+    "skill_rarity": "Moderate",
+    "competitive_advantage": ["JavaScript and Node.js proficiency", "Full Stack experience"],
+    "placement_difficulty": "Moderate",
+    "ideal_next_roles": ["Senior Full Stack Developer", "Tech Lead"],
+    "salary_range": "$70,000 - $100,000"
+  },
+  "recruiter_insights": {
+    "overall_rating": "Good",
+    "recommendation": "Consider for Full Stack or Senior Full Stack roles",
+    "confidence_in_assessment": "High",
+    "verification_needed": ["Current projects and technologies used"],
+    "red_flags": [],
+    "selling_points": ["Strong Full Stack experience", "JavaScript and Node.js proficiency"],
+    "interview_focus": ["Current projects and technologies used", "Future career goals"],
+    "one_line_pitch": "Experienced Full Stack developer with strong JavaScript and Node.js skills"
+  }
+}

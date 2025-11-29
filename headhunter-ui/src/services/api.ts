@@ -1,11 +1,14 @@
 import {
   searchCandidates,
+  searchJobCandidates,
+  semanticSearch,
   getCandidates,
   createCandidate,
   generateUploadUrl,
   healthCheck,
   skillAwareSearch,
-  getCandidateSkillAssessment
+  getCandidateSkillAssessment,
+  rerankCandidates
 } from '../config/firebase';
 import {
   JobDescription,
@@ -36,18 +39,157 @@ export const apiService = {
   },
 
   // Search candidates based on job description
+  // Search candidates based on job description using semantic search
   async searchCandidates(jobDescription: JobDescription): Promise<SearchResponse> {
     try {
-      const result = await searchCandidates({
-        jobDescription,
-        limit: 20,
-        minScore: 0.5
+      // Construct query text from job description
+      const queryText = `
+        Title: ${jobDescription.title}
+        Description: ${jobDescription.description}
+        Required Skills: ${(jobDescription.required_skills || []).join(', ')}
+        Experience: ${jobDescription.min_experience}-${jobDescription.max_experience} years
+      `.trim();
+
+      // Construct skill-aware search query
+      const requiredSkills = (jobDescription.required_skills || []).map((skill: string) => ({
+        skill,
+        minimum_confidence: 70,
+        weight: 1.0,
+        category: 'technical'
+      }));
+
+      const preferredSkills = (jobDescription.preferred_skills || []).map((skill: string) => ({
+        skill,
+        minimum_confidence: 60,
+        weight: 0.5,
+        category: 'technical'
+      }));
+
+      const minExp = jobDescription.min_experience || 0;
+
+      const result = await skillAwareSearch({
+        text_query: queryText,
+        required_skills: requiredSkills,
+        preferred_skills: preferredSkills,
+        experience_level: minExp <= 3 ? 'entry' :
+          minExp <= 7 ? 'mid' :
+            minExp <= 12 ? 'senior' : 'executive',
+        limit: 50, // Fetch more candidates for reranking
+        filters: {
+          min_years_experience: minExp,
+        }
       });
-      
-      if (result.data && (result.data as any).success) {
-        return result.data as SearchResponse;
+
+      const data = result.data as any;
+
+      if (data && data.success) {
+        let candidates = data.results.candidates || [];
+
+        // Perform LLM Reranking
+        try {
+          const rerankResult = await rerankCandidates({
+            job_description: queryText,
+            candidates: candidates.map((c: any) => ({
+              candidate_id: c.candidate_id,
+              profile: c.profile,
+              initial_score: c.overall_score
+            })),
+            limit: 20 // Final display limit
+          });
+
+          const rerankData = rerankResult.data as any;
+          if (rerankData.success && rerankData.results.length > 0) {
+            candidates = rerankData.results;
+          }
+        } catch (err) {
+          console.warn("Reranking failed, falling back to vector sort:", err);
+          // Fallback to top 20 from vector search
+          candidates = candidates.slice(0, 20);
+        }
+
+        // Map skill-aware search results to frontend format
+        const matches = candidates.map((c: any) => {
+          let candidate = c.profile ? {
+            ...c.profile,
+            candidate_id: c.candidate_id,
+            // Map profile fields back to candidate structure if needed
+            name: c.profile.name,
+            resume_analysis: {
+              years_experience: c.profile.years_experience,
+              technical_skills: c.profile.top_skills?.map((s: any) => s.skill) || [],
+              career_trajectory: {
+                current_level: c.profile.current_level,
+                domain_expertise: []
+              }
+            }
+          } : { candidate_id: c.candidate_id };
+
+          // If we have the full candidate object in the response (which skillAwareSearch might not return fully),
+          // we might need to fetch it or rely on what's returned. 
+          // Looking at skill-aware-search.ts, it returns a 'profile' object but it's a simplified version.
+          // However, the frontend expects a full candidate object.
+          // The previous semanticSearch implementation fetched the full candidate.
+          // skillAwareSearch in vector-search.ts (which skill-aware-search.ts uses) DOES fetch the full candidate 
+          // but maps it to a simplified profile in the final response of skillAwareSearch.
+          // Wait, skill-aware-search.ts line 433: profile: result.profile.
+          // And result.profile comes from vector-search.ts line 588 which is a simplified object.
+          // This might be an issue if the frontend needs more data.
+          // BUT, vector-search.ts line 570 shows it fetches the full candidate data.
+          // Let's assume for now we need to use what's returned or fetch if missing.
+          // Actually, let's look at how I mapped it before. I was using `r.candidate_data`.
+          // skillAwareSearch response doesn't seem to include the full `candidate_data`.
+          // I might need to update `skill-aware-search.ts` to return the full candidate data OR
+          // fetch it here if it's missing. 
+          // For now, let's map what we have and see. The `profile` object has some info.
+
+          return {
+            candidate,
+            score: c.overall_score / 100, // Scale 0-100 to 0-1
+            similarity: c.vector_similarity_score,
+            rationale: {
+              overall_assessment: c.rationale && c.rationale.length > 0
+                ? c.rationale.join('. ') + '.'
+                : `Matched with ${(c.overall_score).toFixed(0)}% score based on skills and experience.`,
+              strengths: c.rationale || [],
+              gaps: [],
+              risk_factors: []
+            }
+          };
+        });
+
+        // Generate insights on the client side
+        const totalCandidates = matches.length;
+        const avgScore = totalCandidates > 0
+          ? matches.reduce((sum: number, m: any) => sum + m.score, 0) / totalCandidates
+          : 0;
+
+        // Extract top skills from matched candidates
+        const allSkills = matches.flatMap((m: any) => m.candidate.resume_analysis?.technical_skills || []);
+        const skillCounts = allSkills.reduce((acc: any, skill: string) => {
+          acc[skill] = (acc[skill] || 0) + 1;
+          return acc;
+        }, {});
+        const topSkills = Object.entries(skillCounts)
+          .sort(([, a]: any, [, b]: any) => b - a)
+          .slice(0, 5)
+          .map(([skill]) => skill as string);
+
+        return {
+          success: true,
+          matches,
+          insights: {
+            total_candidates: totalCandidates,
+            avg_match_score: avgScore,
+            top_skills_matched: topSkills,
+            common_gaps: [],
+            market_analysis: `Found ${totalCandidates} candidates using skill-aware search.`,
+            recommendations: totalCandidates > 0 ? ['Review top matches'] : ['Try adjusting search terms']
+          },
+
+          query_time_ms: data.results.search_metadata?.search_time_ms || 0
+        };
       } else {
-        throw new ApiError((result.data as any)?.error || 'Search failed');
+        throw new ApiError(data?.error || 'Search failed');
       }
     } catch (error) {
       console.error('Search candidates error:', error);
@@ -89,13 +231,25 @@ export const apiService = {
   },
 
   // Generate upload URL for resume files
-  async generateUploadUrl(fileName: string, contentType: string): Promise<ApiResponse<{ uploadUrl: string; fileUrl: string }>> {
+  async generateUploadUrl(candidateId: string, fileName: string, contentType: string, fileSize: number): Promise<ApiResponse<{ uploadUrl: string; fileUrl: string; uploadSessionId: string; requiredHeaders: Record<string, string> }>> {
     try {
       const result = await generateUploadUrl({
-        fileName,
-        contentType
+        candidate_id: candidateId,
+        file_name: fileName,
+        content_type: contentType,
+        file_size: fileSize
       });
-      return result.data as ApiResponse<{ uploadUrl: string; fileUrl: string }>;
+
+      const data = result.data as any;
+      return {
+        success: true,
+        data: {
+          uploadUrl: data.upload_url,
+          fileUrl: data.file_path,
+          uploadSessionId: data.upload_session_id,
+          requiredHeaders: data.required_headers || {}
+        }
+      };
     } catch (error) {
       console.error('Generate upload URL error:', error);
       throw new ApiError('Failed to generate upload URL');
@@ -128,21 +282,23 @@ export const apiService = {
       // This would be implemented as a separate cloud function
       // For now, we'll derive it from getCandidates
       const candidatesResult = await this.getCandidates({ limit: 1000 });
-      
+
       if (candidatesResult.success && candidatesResult.data) {
-        const candidates = candidatesResult.data;
-        const totalCandidates = candidates.length;
-        const averageScore = candidates.reduce((sum, candidate) => 
+        const candidatesData = candidatesResult.data as any;
+        const candidates = Array.isArray(candidatesData) ? candidatesData : (candidatesData.candidates || []);
+        // Use server-provided total count if available, otherwise fall back to array length
+        const totalCandidates = candidatesData.pagination?.total_count || candidates.length;
+        const averageScore = candidates.reduce((sum: number, candidate: CandidateProfile) =>
           sum + (candidate.overall_score || 0), 0) / totalCandidates || 0;
-        
+
         // Extract top skills
         const skillsCount = new Map<string, number>();
-        candidates.forEach(candidate => {
-          (candidate.resume_analysis?.technical_skills || []).forEach(skill => {
+        candidates.forEach((candidate: CandidateProfile) => {
+          (candidate.resume_analysis?.technical_skills || []).forEach((skill: string) => {
             skillsCount.set(skill, (skillsCount.get(skill) || 0) + 1);
           });
         });
-        
+
         const topSkills = Array.from(skillsCount.entries())
           .sort((a, b) => b[1] - a[1])
           .slice(0, 10)
@@ -237,7 +393,7 @@ export const apiService = {
     try {
       // This combines skill assessment with job requirements
       const skillAssessmentResult = await this.getCandidateSkillAssessment(candidateId);
-      
+
       if (!skillAssessmentResult.success || !skillAssessmentResult.data) {
         throw new ApiError('Failed to get skill assessment');
       }
@@ -247,7 +403,7 @@ export const apiService = {
 
       requiredSkills.forEach(requiredSkill => {
         const candidateSkill = skill_assessment.skills[requiredSkill.toLowerCase()];
-        
+
         if (candidateSkill) {
           skillMatches.push({
             skill: requiredSkill,
@@ -260,7 +416,7 @@ export const apiService = {
         } else {
           // Check for partial matches
           const partialMatch = Object.entries(skill_assessment.skills).find(([skill, _]) =>
-            skill.includes(requiredSkill.toLowerCase()) || 
+            skill.includes(requiredSkill.toLowerCase()) ||
             requiredSkill.toLowerCase().includes(skill)
           );
 

@@ -128,7 +128,7 @@ class SkillAwareSearchService {
    */
   private normalizeSkill(skill: string): string {
     const skillLower = skill.toLowerCase().trim();
-    
+
     // Common skill synonyms
     const synonymMap: Record<string, string> = {
       "js": "javascript",
@@ -205,10 +205,10 @@ class SkillAwareSearchService {
 
               // Only add if not already present with higher confidence
               if (!skills[skillName] || skills[skillName].confidence < confidence) {
-                skills[skillName] = { 
-                  confidence, 
-                  category, 
-                  evidence: [skillObj.reasoning || "Inferred from profile"] 
+                skills[skillName] = {
+                  confidence,
+                  category,
+                  evidence: [skillObj.reasoning || "Inferred from profile"]
                 };
                 skillCategories[category] = (skillCategories[category] || 0) + 1;
               }
@@ -219,8 +219,8 @@ class SkillAwareSearchService {
 
       // Calculate average confidence
       const confidenceValues = Object.values(skills).map(s => s.confidence);
-      const avgConfidence = confidenceValues.length > 0 
-        ? confidenceValues.reduce((a, b) => a + b, 0) / confidenceValues.length 
+      const avgConfidence = confidenceValues.length > 0
+        ? confidenceValues.reduce((a, b) => a + b, 0) / confidenceValues.length
         : 0;
 
       return { skills, average_confidence: avgConfidence, skill_categories: skillCategories };
@@ -233,8 +233,8 @@ class SkillAwareSearchService {
   /**
    * Calculate skill match score
    */
-  private calculateSkillMatch(candidateSkills: Record<string, any>, 
-                             requiredSkills: SkillRequirement[]): number {
+  private calculateSkillMatch(candidateSkills: Record<string, any>,
+    requiredSkills: SkillRequirement[]): number {
     if (requiredSkills.length === 0) {
       return 80; // Default score when no specific skills required
     }
@@ -293,15 +293,15 @@ class SkillAwareSearchService {
   /**
    * Calculate experience match score
    */
-  private calculateExperienceMatch(candidateData: any, 
-                                  targetLevel?: string): number {
+  private calculateExperienceMatch(candidateData: any,
+    targetLevel?: string): number {
     if (!targetLevel) {
       return 75; // Neutral score
     }
 
     const experienceMapping: Record<string, [number, number]> = {
       "entry": [0, 3],
-      "mid": [3, 7], 
+      "mid": [3, 7],
       "senior": [7, 12],
       "executive": [12, 50]
     };
@@ -323,9 +323,9 @@ class SkillAwareSearchService {
   /**
    * Score a candidate against search query
    */
-  private scoreCandidateAgainstQuery(candidateData: any, 
-                                    searchQuery: SearchQuery,
-                                    vectorSimilarity: number): CandidateScore {
+  private scoreCandidateAgainstQuery(candidateData: any,
+    searchQuery: SearchQuery,
+    vectorSimilarity: number): CandidateScore {
     const skillProfile = this.extractSkillProfile(candidateData);
     const weights = searchQuery.ranking_weights || {
       skill_match: 0.4,
@@ -374,7 +374,7 @@ class SkillAwareSearchService {
           average_confidence: skillProfile.average_confidence,
           skill_categories: skillProfile.skill_categories
         },
-        experience_analysis: candidateData.recruiter_analysis?.career_trajectory_analysis?.years_experience 
+        experience_analysis: candidateData.recruiter_analysis?.career_trajectory_analysis?.years_experience
           ? `${candidateData.recruiter_analysis.career_trajectory_analysis.years_experience} years experience`
           : "Experience not specified",
         vector_similarity: vectorSimilarity
@@ -404,7 +404,7 @@ class SkillAwareSearchService {
 
       // Use the enhanced skill-aware search from VectorSearchService
       const vectorResults = await this.vectorSearchService.searchCandidatesSkillAware(skillAwareQuery);
-      
+
       console.log(`Enhanced skill-aware search returned ${vectorResults.length} candidates`);
 
       // Convert VectorSearchService results to our SearchResult format
@@ -447,7 +447,7 @@ class SkillAwareSearchService {
           search_strategy: {
             approach: "Enhanced hybrid vector + skill confidence analysis",
             vector_query: searchQuery.text_query,
-            skill_focus: searchQuery.required_skills.length > 0 
+            skill_focus: searchQuery.required_skills.length > 0
               ? `Prioritizing ${searchQuery.required_skills.map(s => s.skill).join(", ")}`
               : "General skill assessment with confidence scoring"
           },
@@ -480,14 +480,14 @@ class SkillAwareSearchService {
  */
 export const skillAwareSearch = onCall(
   {
-    memory: "512MiB",
+    memory: "1GiB",
     timeoutSeconds: 60,
   },
   async (request) => {
     try {
       // Validate request data
       const searchQuery = SearchQuerySchema.parse(request.data);
-      
+
       console.log(`Skill-aware search request:`, {
         text_query: searchQuery.text_query,
         required_skills: searchQuery.required_skills.length,
@@ -511,11 +511,11 @@ export const skillAwareSearch = onCall(
 
     } catch (error) {
       console.error("Error in skillAwareSearch:", error);
-      
+
       if (error instanceof z.ZodError) {
         throw new HttpsError("invalid-argument", `Invalid search query: ${error.message}`);
       }
-      
+
       throw new HttpsError("internal", "Failed to perform skill-aware search");
     }
   }

@@ -43,6 +43,7 @@ export interface AllowedUserDocument {
 export interface AddAllowedUserInput {
   email: string;
   role?: AllowedUserRole; // Defaults to 'recruiter' if not specified
+  organization_id?: string;
 }
 
 /**
@@ -121,5 +122,5 @@ export function normalizeEmail(email: string): string {
  * Replaces '/' with '_' to ensure valid document ID
  */
 export function emailToDocId(email: string): string {
-  return normalizeEmail(email).replaceAll('/', '_');
+  return normalizeEmail(email).replace(/\//g, '_');
 }

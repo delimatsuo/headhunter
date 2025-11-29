@@ -3,6 +3,7 @@ import { apiService } from '../../services/api';
 import { UploadProgress } from '../../types';
 
 interface FileUploadProps {
+  candidateId: string;
   onUploadComplete?: (fileUrl: string) => void;
   onUploadError?: (error: string) => void;
   acceptedTypes?: string[];
@@ -11,6 +12,7 @@ interface FileUploadProps {
 }
 
 export const FileUpload: React.FC<FileUploadProps> = ({
+  candidateId,
   onUploadComplete,
   onUploadError,
   acceptedTypes = ['.pdf', '.doc', '.docx', '.txt'],
@@ -46,15 +48,17 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     try {
       // Generate upload URL
       const uploadUrlResult = await apiService.generateUploadUrl(
+        candidateId,
         file.name,
-        file.type
+        file.type || 'application/octet-stream',
+        file.size
       );
 
       if (!uploadUrlResult.success || !uploadUrlResult.data) {
         throw new Error(uploadUrlResult.error || 'Failed to generate upload URL');
       }
 
-      const { uploadUrl, fileUrl } = uploadUrlResult.data;
+      const { uploadUrl, fileUrl, uploadSessionId, requiredHeaders } = uploadUrlResult.data;
 
       // Upload file with progress tracking
       const xhr = new XMLHttpRequest();
@@ -84,7 +88,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       });
 
       xhr.open('PUT', uploadUrl);
-      xhr.setRequestHeader('Content-Type', file.type);
+      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
       xhr.send(file);
     } catch (error: any) {
       const errorMessage = error.message || 'Upload failed';
@@ -98,7 +102,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
     const file = files[0];
     const validationError = validateFile(file);
-    
+
     if (validationError) {
       setUploadProgress({ progress: 0, status: 'error', error: validationError });
       onUploadError?.(validationError);
@@ -143,15 +147,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   return (
     <div className={`file-upload ${className}`}>
       <div
-        className={`upload-area ${
-          dragActive ? 'drag-active' : ''
-        } ${
-          uploadProgress.status === 'uploading' ? 'uploading' : ''
-        } ${
-          uploadProgress.status === 'error' ? 'error' : ''
-        } ${
-          uploadProgress.status === 'completed' ? 'completed' : ''
-        }`}
+        className={`upload-area ${dragActive ? 'drag-active' : ''
+          } ${uploadProgress.status === 'uploading' ? 'uploading' : ''
+          } ${uploadProgress.status === 'error' ? 'error' : ''
+          } ${uploadProgress.status === 'completed' ? 'completed' : ''
+          }`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragEnter={handleDragEnter}

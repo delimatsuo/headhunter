@@ -35,13 +35,13 @@ spec:
             - name: EVIDENCE_CANDIDATES_COLLECTION
               value: candidate_evidence
             - name: REDIS_HOST
-              value: 10.159.1.4
+              value: 10.103.201.212
             - name: REDIS_PORT
-              value: "6378"
+              value: "6379"
             - name: REDIS_TLS
-              value: "true"
+              value: "false"
             - name: REDIS_TLS_REJECT_UNAUTHORIZED
-              value: "true"
+              value: "false"
             - name: REDIS_TLS_CA
               value: |-
                 -----BEGIN CERTIFICATE-----
@@ -79,7 +79,7 @@ spec:
             - name: ENABLE_GATEWAY_TOKENS
               value: "false"
             - name: AUTH_MODE
-              value: "none"
+              value: "firebase"
           resources:
             limits:
               cpu: "${SERVICE_CPU}"
