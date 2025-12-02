@@ -55,9 +55,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const baseItems: NavItem[] = [
     { name: 'Dashboard', path: 'dashboard', icon: '🏠' },
-    { name: 'Search', path: 'search', icon: '🔍' },
-    { name: 'Candidates', path: 'candidates', icon: '👥' },
-    { name: 'Analytics', path: 'analytics', icon: '📊' }
+    { name: 'Search', path: 'search', icon: '🔍' }
   ];
 
   let role: string | undefined;

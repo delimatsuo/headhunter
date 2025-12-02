@@ -45,7 +45,7 @@ function AppContent() {
       setShowAuth(true);
       return;
     }
-    
+
     setCurrentPage(page as PageType);
   };
 
@@ -78,7 +78,7 @@ function AppContent() {
                 </div>
               </div>
               <div className="hero-actions">
-                <button 
+                <button
                   className="btn btn-primary btn-large"
                   onClick={() => setShowAuth(true)}
                 >
@@ -99,37 +99,14 @@ function AppContent() {
         const payload = JSON.parse(atob(token.split('.')[1]));
         role = payload.role || payload.custom_role;
       }
-    } catch {}
+    } catch { }
 
     switch (currentPage) {
       case 'dashboard':
         return <Dashboard />;
       case 'search':
         return <SearchPage />;
-      case 'candidates':
-        return (
-          <div className="page-placeholder">
-            <div className="empty-state">
-              <div className="empty-icon">👥</div>
-              <h2>Candidate Database</h2>
-              <p>Browse and manage your candidate database</p>
-              <button className="btn btn-primary" onClick={() => setCurrentPage('search')}>
-                Start Searching
-              </button>
-            </div>
-          </div>
-        );
-      case 'analytics':
-        return (
-          <div className="page-placeholder">
-            <div className="empty-state">
-              <div className="empty-icon">📊</div>
-              <h2>Analytics & Reports</h2>
-              <p>Analyze your recruitment metrics and trends</p>
-              <p className="text-muted">Coming soon...</p>
-            </div>
-          </div>
-        );
+
       case 'profile':
         return (
           <div className="page-placeholder">

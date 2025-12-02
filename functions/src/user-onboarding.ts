@@ -31,34 +31,54 @@ export const handleNewUser = beforeUserCreated(async (event: AuthBlockingEvent) 
   console.log(`Setting up new user: ${user.email}`);
 
   try {
-    // Create a default organization for the user
-    const orgId = `org_${user.uid}_${Date.now()}`;
-    const organizationName = user.displayName
-      ? `${user.displayName}'s Organization`
-      : `${user.email?.split('@')[0]}'s Organization`;
+    const email = user.email || '';
+    const isEllaUser = email.endsWith('@ella.com.br') || email.endsWith('@ellaexecutivesearch.com');
 
-    // Create organization document
-    await firestore.collection('organizations').doc(orgId).set({
-      id: orgId,
-      name: organizationName,
-      owner_id: user.uid,
-      members: [user.uid],
-      settings: {
-        max_candidates: 10000,
-        max_searches_per_month: 1000,
-        features: ['candidate_search', 'analytics', 'exports']
-      },
-      created_at: admin.firestore.FieldValue.serverTimestamp(),
-      updated_at: admin.firestore.FieldValue.serverTimestamp()
-    });
+    let orgId: string;
+    let role = 'admin'; // Default role
+    let organizationName: string;
+
+    if (isEllaUser) {
+      // Route to main organization
+      orgId = 'org_ella_main';
+      organizationName = 'Ella Executive Search';
+      console.log(`Routing Ella user ${email} to ${orgId}`);
+
+      // Add user to org members if not already there
+      await firestore.collection('organizations').doc(orgId).update({
+        members: admin.firestore.FieldValue.arrayUnion(user.uid)
+      });
+    } else {
+      // Create a new organization for the client
+      orgId = `org_${user.uid}_${Date.now()}`;
+      organizationName = user.displayName
+        ? `${user.displayName}'s Organization`
+        : `${email.split('@')[0]}'s Organization`;
+
+      // Create organization document
+      await firestore.collection('organizations').doc(orgId).set({
+        id: orgId,
+        name: organizationName,
+        owner_id: user.uid,
+        members: [user.uid],
+        settings: {
+          max_candidates: 10000,
+          max_searches_per_month: 1000,
+          features: ['candidate_search', 'analytics', 'exports']
+        },
+        created_at: admin.firestore.FieldValue.serverTimestamp(),
+        updated_at: admin.firestore.FieldValue.serverTimestamp()
+      });
+    }
 
     // Create user profile document
     await firestore.collection('users').doc(user.uid).set({
       uid: user.uid,
       email: user.email,
       displayName: user.displayName || user.email?.split('@')[0],
-      organization_id: orgId,
-      role: 'admin',
+      organization_id: orgId, // Primary org
+      organizations: [orgId], // List of all orgs
+      role: role,
       permissions: {
         can_view_candidates: true,
         can_edit_candidates: true,
@@ -72,7 +92,7 @@ export const handleNewUser = beforeUserCreated(async (event: AuthBlockingEvent) 
     // Set custom claims - this is critical for API access
     await admin.auth().setCustomUserClaims(user.uid, {
       org_id: orgId,
-      role: 'admin',
+      role: role,
       permissions: {
         can_view_candidates: true,
         can_edit_candidates: true,
@@ -86,7 +106,7 @@ export const handleNewUser = beforeUserCreated(async (event: AuthBlockingEvent) 
     return {
       customClaims: {
         org_id: orgId,
-        role: 'admin'
+        role: role
       }
     };
   } catch (error) {
@@ -161,27 +181,44 @@ export const completeOnboarding = onCall(
         };
       }
 
-      // Create a new organization for the user
-      const orgId = `org_${userId}_${Date.now()}`;
-      const organizationName = validatedInput.organizationName ||
-        validatedInput.displayName ? `${validatedInput.displayName}'s Organization` :
-        userEmail ? `${userEmail.split('@')[0]}'s Organization` :
-          'My Organization';
+      // Determine organization based on email domain
+      const isEllaUser = userEmail && (userEmail.endsWith('@ella.com.br') || userEmail.endsWith('@ellaexecutivesearch.com'));
 
-      // Create organization document
-      await firestore.collection('organizations').doc(orgId).set({
-        id: orgId,
-        name: organizationName,
-        owner_id: userId,
-        members: [userId],
-        settings: {
-          max_candidates: 10000,
-          max_searches_per_month: 1000,
-          features: ['candidate_search', 'analytics', 'exports']
-        },
-        created_at: admin.firestore.FieldValue.serverTimestamp(),
-        updated_at: admin.firestore.FieldValue.serverTimestamp()
-      });
+      let orgId: string;
+      let organizationName: string;
+      let role = 'admin';
+
+      if (isEllaUser) {
+        orgId = 'org_ella_main';
+        organizationName = 'Ella Executive Search';
+
+        // Add user to org members if not already there
+        await firestore.collection('organizations').doc(orgId).update({
+          members: admin.firestore.FieldValue.arrayUnion(userId)
+        });
+      } else {
+        // Create a new organization for the client
+        orgId = `org_${userId}_${Date.now()}`;
+        organizationName = validatedInput.organizationName ||
+          validatedInput.displayName ? `${validatedInput.displayName}'s Organization` :
+          userEmail ? `${userEmail.split('@')[0]}'s Organization` :
+            'My Organization';
+
+        // Create organization document
+        await firestore.collection('organizations').doc(orgId).set({
+          id: orgId,
+          name: organizationName,
+          owner_id: userId,
+          members: [userId],
+          settings: {
+            max_candidates: 10000,
+            max_searches_per_month: 1000,
+            features: ['candidate_search', 'analytics', 'exports']
+          },
+          created_at: admin.firestore.FieldValue.serverTimestamp(),
+          updated_at: admin.firestore.FieldValue.serverTimestamp()
+        });
+      }
 
       // Create or update user profile document
       await firestore.collection('users').doc(userId).set({

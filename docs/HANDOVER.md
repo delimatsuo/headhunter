@@ -9,11 +9,19 @@ This runbook is the single source of truth for resuming work or restoring local 
 
 ## 🎯 EXECUTIVE SUMMARY FOR NEW AI CODING AGENT
 
-**Last Updated**: 2025-11-28
-**Project Status**: Production-ready and stable. Redis connectivity fixed, Rerank Service optimized.
-**Next Session**: Monitor production performance.
+**Last Updated**: 2025-12-02
+**Project Status**: Production-ready. Agency Model implemented.
+**Next Session**: Implement Organization Switcher UI.
 
 ---
+
+### ✅ AGENCY MODEL IMPLEMENTED (Dec 02, 2025)
+
+**The platform has been restructured into an Agency Model.**
+- **Central Hub**: `org_ella_main` (Ella Executive Search) now holds all 29k+ candidates.
+- **Access Control**: `@ella` employees are auto-routed to this central hub.
+- **Migration**: All candidates successfully migrated to `org_ella_main`.
+- **UI**: Simplified to Dashboard + Search. Admin page added for Org management.
 
 ### ✅ RERANK LATENCY OPTIMIZATION COMPLETE
 

@@ -817,3 +817,6 @@ export { rerankCandidates } from './rerank-candidates';
 
 export { resetCandidate } from './reset-candidate';
 export { verifyEnrichment } from './verify-enrichment';
+export { getMainOrgId, addUserToOrg } from './user-helpers';
+export { initAgencyModel } from './init-agency';
+export { migrateCandidates } from './migrate-candidates';

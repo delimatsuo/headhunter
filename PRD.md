@@ -11,7 +11,7 @@
 
 ## Current Architecture Snapshot (2025 Fastify Mesh)
 
-- **Canonical repository**: `/Volumes/Extreme Pro/myprojects/headhunter` (all automation scripts source `scripts/utils/repo_guard.sh`; deprecated clones under `/Users/delimatsuo/Documents/Coding/headhunter` exit on invocation).
+
 - **Fastify services**: Eight HTTP services (`hh-embed-svc`, `hh-search-svc`, `hh-rerank-svc`, `hh-evidence-svc`, `hh-eco-svc`, `hh-msgs-svc`, `hh-admin-svc`, `hh-enrich-svc`) exposing ports 7101–7108. Responsibilities and dependencies are described in `ARCHITECTURE.md`.
 - **Shared infrastructure**: Redis (redis:7-alpine), Postgres with pgvector (ankane/pgvector:v0.5.1), Firestore + Pub/Sub emulators (Cloud SDK), mock Together AI, mock OAuth, and Python enrichment workers. Topology is defined in `docker-compose.local.yml`.
 - **Integration baseline**: `SKIP_JEST=1 npm run test:integration --prefix services` must report `cacheHitRate=1.0` and rerank latency ≈ 0 ms before code is promoted. Metrics are exported via `/metrics` on each Fastify service.
@@ -36,6 +36,32 @@ The remainder of this document is preserved for historical reference only. Use i
 # Headhunter v2.0 - AI-Powered Recruitment Analytics Platform
 
 Note: This document contains legacy content from earlier iterations. The authoritative PRD is maintained at `.taskmaster/docs/prd.txt` and reflects the current single-pass Qwen 2.5 32B architecture, unified search pipeline, and the “no mock fallbacks” policy.
+
+# Product Requirements Document (PRD) - Headhunter AI
+
+## 1. Executive Summary
+Headhunter AI is an intelligent recruitment platform that uses LLMs to enrich candidate profiles, perform semantic search, and rank candidates against job descriptions.
+**Update (Dec 2025):** The platform now operates on an **Agency Model**, featuring a centralized candidate database ("Ella Executive Search") accessible to all Ella employees, with support for isolated Client Organizations.
+
+## 2. User Roles
+- **Ella Recruiter (Admin):** Access to the central `org_ella_main` database (29k+ candidates). Can create and manage Client Organizations.
+- **Client User:** Access to their specific private organization. Can view candidates explicitly shared or added to their org.
+
+## 3. Key Features
+### 3.1 Agency Model & Centralization
+- **Central Hub:** All 29k+ candidates reside in `org_ella_main`.
+- **Auto-Onboarding:** Users with `@ella.com.br` or `@ellaexecutivesearch.com` emails are automatically assigned to `org_ella_main`.
+- **Client Isolation:** External users are assigned to new, private organizations.
+- **Organization Switching:** (Future) Ability for Admins to switch contexts between Ella and Client orgs.
+
+### 3.2 Search & Discovery
+- **Hybrid Search:** Vector + Keyword search.
+- **Global Search:** Ella Recruiters search the entire central pool.
+- **Reranking:** LLM-based candidate scoring.
+
+### 3.3 User Interface
+- **Simplified Navigation:** Dashboard and Search only.
+- **Admin Portal:** For managing users and organizations.
 
 ## Overview  
 Headhunter v2.0 transforms Ella Executive Search's candidate database into an intelligent, semantic search engine powered by **cloud-based AI processing and vector embeddings**. It solves the inefficiency of keyword-based ATS queries by deeply analyzing 20,000+ candidates using Together AI's Llama 3.2 3B model, creating comprehensive profiles with 15+ detailed fields, and enabling semantic similarity search for recruiter workflows.
