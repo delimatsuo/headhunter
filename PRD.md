@@ -63,144 +63,24 @@ Headhunter AI is an intelligent recruitment platform that uses LLMs to enrich ca
 - **Simplified Navigation:** Dashboard and Search only.
 - **Admin Portal:** For managing users and organizations.
 
-## Overview  
-Headhunter v2.0 transforms Ella Executive Search's candidate database into an intelligent, semantic search engine powered by **cloud-based AI processing and vector embeddings**. It solves the inefficiency of keyword-based ATS queries by deeply analyzing 20,000+ candidates using Together AI's Llama 3.2 3B model, creating comprehensive profiles with 15+ detailed fields, and enabling semantic similarity search for recruiter workflows.
+## 4. Technical Architecture
 
-**Core Value Proposition**: Recruiters can upload job descriptions and instantly find the most relevant candidates from a database of enhanced profiles with semantic understanding, reducing time-to-longlist from hours to minutes while uncovering hidden matches that keyword search would miss.
+### 4.1 Hybrid Infrastructure
+The platform uses a hybrid architecture to optimize for both search performance and ease of management:
+- **Search & Rerank:** 8 Fastify microservices on Cloud Run (optimized for high-concurrency, low-latency search).
+- **Agency Management:** Firebase Cloud Functions (handling User Onboarding, Organization Logic, and Data Migration).
 
-## Business Requirements
+### 4.2 AI Processing Pipeline
+- **Enrichment:** Candidates are processed to extract structured data (Skills, Experience, etc.).
+- **Embeddings:** VertexAI `text-embedding-004` (768 dimensions).
+- **Reranking:** **Gemini 1.5 Pro** (Primary) with Together AI (Fallback).
 
-### Primary Users & Workflows
+### 4.3 Data Storage
+- **Firestore:** Stores enriched candidate profiles and user/org data.
+- **Cloud SQL (pgvector):** Stores candidate embeddings for fast vector search.
+- **Redis:** Caches search results and embeddings for performance.
 
-**Persona: Alex (Senior Recruiter)**
-- **Current Pain Points**: 
-  - Hours spent on manual keyword searches
-  - Missing ideal candidates due to limited search terms
-  - Inconsistent profile data quality
-  - No semantic understanding of candidate-role fit
-
-- **Target Workflows**:
-  1. **Semantic Job Search**: Upload job description → Get ranked candidate matches with similarity scores
-  2. **Profile Management**: Update LinkedIn profiles → Re-process and refresh search results
-  3. **Batch Processing**: Upload CSV files → Process thousands of candidates with AI analysis
-  4. **Advanced Search**: Combine semantic search with structured filters (location, experience, skills)
-
-### Success Metrics
-- **Time-to-Longlist**: < 5 minutes (vs current 2+ hours)
-- **Search Quality**: 90%+ relevant matches in top 20 results
-- **Database Coverage**: Process all 29,000 historical candidates
-- **User Adoption**: > 20 searches per recruiter per week
-- **Satisfaction**: > 4.5/5 user rating
-
-## Technical Architecture
-
-### Multi-Stage AI Processing Pipeline
-
-**Core Components:**
-- **Stage 1 AI**: Together AI Llama 3.2 3B ($0.20/1M tokens) - Basic Enhancement
-- **Stage 2 AI**: Together AI Qwen2.5 Coder 32B ($0.80/1M tokens) - Contextual Intelligence
-- **Stage 3 AI**: VertexAI text-embedding-004 - Vector Embeddings
-- **Orchestration**: Multi-stage pipeline with Cloud Run workers
-- **Vector Database**: Cloud SQL + pgvector for semantic search
-- **Structured Storage**: Firestore for rich candidate profiles
-- **API Layer**: FastAPI + Cloud Run for search and CRUD operations
-
-### 3-Stage Data Processing Pipeline
-
-```
-Stage 1: Basic Enhancement
-Resume Text + Comments → Llama 3.2 3B → Enhanced Profile Structure (15+ fields)
-
-Stage 2: Contextual Intelligence 
-Enhanced Profile → Qwen2.5 Coder 32B → Trajectory-Based Skill Inference
-- Company context analysis (Google vs startup patterns)
-- Industry intelligence (FinTech vs consulting expertise)
-- Role progression mapping (VP vs team lead skills)
-- Educational context weighting (MIT vs state school signals)
-
-Stage 3: Vector Generation
-Enriched Profile → VertexAI Embeddings → 768-dim vectors for semantic search
-
-Storage & Retrieval:
-Profiles → Firestore (structured data) + Cloud SQL pgvector (semantic search)
-Job Description → Vector similarity → Ranked candidate matches
-```
-
-## Comprehensive Candidate Profile Schema
-
-### 15+ Detailed Profile Fields
-
-**Personal Information**
-- Full contact details and current role
-- LinkedIn profile and location data
-
-**Career Trajectory Analysis** 
-- Current level (junior → executive)
-- Progression speed and career velocity
-- Role transitions and promotion patterns
-- Years of experience breakdown
-
-**Leadership Assessment**
-- Management experience and team size
-- Leadership style and cross-functional collaboration
-- Mentorship experience and direct reports
-
-**Company Pedigree**
-- Company tier (startup → FAANG)
-- Career trajectory across companies
-- Industry focus and stability patterns
-
-**Technical Skills Matrix**
-- Primary languages and frameworks with confidence scores (0-100%)
-- Cloud platforms and databases with evidence arrays
-- Specializations and skill depth with fuzzy matching
-- Learning velocity assessment and skill categorization
-
-**Domain Expertise**
-- Industry experience and business functions
-- Vertical knowledge and regulatory experience
-- Domain transferability scores
-
-**Soft Skills Evaluation**
-- Communication and collaboration strength
-- Problem-solving and adaptability
-- Leadership and emotional intelligence
-
-**Cultural Signals**
-- Work style and team dynamics
-- Values alignment and cultural strengths
-- Change adaptability and feedback receptiveness
-
-**Compensation Intelligence**
-- Salary range and total compensation
-- Equity preferences and negotiation flexibility
-- Compensation motivators
-
-**Recruiter Insights**
-- Engagement history and placement likelihood
-- Best-fit roles and company types
-- Interview strengths and potential concerns
-
-**Search Optimization**
-- Primary and secondary keywords with probability weights
-- Skill tags with confidence levels and synonym matching
-- Industry tags and seniority indicators
-- Skill-aware search ranking with composite scoring
-
-**Matching Intelligence**
-- Ideal role types and company preferences with skill gap analysis
-- Technology stack compatibility scores with confidence weighting
-- Leadership readiness and cultural fit scores
-- Skill probability assessment with evidence-based validation
-
-**Executive Summary**
-- One-line pitch and key differentiators
-- Career narrative and ideal next role
-- Overall rating and recommendation tier
-
-## Semantic Search Architecture
-
-### Vector Database Design
-
-**Storage Strategy**: Hybrid dual-database approach
-- **Cloud SQL + pgvector**: 768-dimensional vectors for fast similarity search
+## 5. Success Metrics
+- **Search Latency:** p95 < 1.2s.
+- **Rerank Quality:** "Senior Recruiter" level reasoning via Gemini.
+- **Migration:** 100% of candidates in `org_ella_main`.

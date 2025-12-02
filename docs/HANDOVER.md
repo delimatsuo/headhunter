@@ -3,7 +3,7 @@
 > Canonical repository path: `/Volumes/Extreme Pro/myprojects/headhunter`. Do **not** work from `/Users/Delimatsuo/Documents/Coding/headhunter`.
 > Guardrail: all automation wrappers under `scripts/` source `scripts/utils/repo_guard.sh` and exit immediately when invoked from non-canonical clones.
 
-This runbook is the single source of truth for resuming work or restoring local parity with production. It reflects the Fastify microservice mesh that replaced the legacy Cloud Functions stack.
+This runbook is the single source of truth for resuming work or restoring local parity with production. It reflects the **Hybrid Architecture** (Fastify microservices for Search + Firebase Cloud Functions for Agency Management).
 
 ---
 
@@ -32,16 +32,16 @@ Rerank Service caching is now enabled and verified.
 
 ### What Is This Project?
 
-**Headhunter** is an AI-powered recruitment analytics platform built as a **microservices architecture on Google Cloud Platform**. The system enriches candidate resumes using LLMs (Together AI), generates semantic embeddings (VertexAI), stores profiles in Firestore, and provides intelligent candidate search via hybrid (semantic + keyword) search powered by PostgreSQL with pgvector.
+**Headhunter** is an AI-powered recruitment analytics platform built as a **Hybrid Architecture on Google Cloud Platform**. The system enriches candidate resumes using LLMs (Gemini), generates semantic embeddings (VertexAI), stores profiles in Firestore, and provides intelligent candidate search via hybrid (semantic + keyword) search powered by PostgreSQL with pgvector.
 
 **Technology Stack**:
-- **8 Fastify microservices** (TypeScript) on Cloud Run
-- **Cloud SQL PostgreSQL + pgvector** for semantic search
-- **Redis Memorystore** for caching
-- **Firestore** for candidate profiles
-- **Together AI** for enrichment (Qwen 2.5 32B Instruct)
-- **VertexAI** for embeddings (text-embedding-004, 768 dimensions)
-- **Gemini 2.5 Flash** for intelligent reranking
+- **Search & Rerank**: 8 Fastify microservices (TypeScript) on Cloud Run.
+- **Agency Management**: Firebase Cloud Functions (User Onboarding, Org Logic).
+- **Cloud SQL PostgreSQL + pgvector** for semantic search.
+- **Redis Memorystore** for caching.
+- **Firestore** for candidate profiles.
+- **VertexAI** for embeddings (text-embedding-004, 768 dimensions).
+- **Gemini 1.5 Pro / 2.5 Flash** for intelligent reranking.
 
 ### Current Production State (As of 2025-11-25)
 
