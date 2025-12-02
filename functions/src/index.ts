@@ -807,9 +807,13 @@ export {
 
 // Export similar candidates function
 export { findSimilarCandidates } from './similar-candidates';
-
+export { analyzeSearchQuery } from './search-agent';
+export { batchEnrichCandidates } from './batch-enrichment';
 // Compliance and security reporting
 export { getAuditReport, getSecuritySummary } from './compliance';
 
 // Export LLM Reranking
 export { rerankCandidates } from './rerank-candidates';
+
+export { resetCandidate } from './reset-candidate';
+export { verifyEnrichment } from './verify-enrichment';

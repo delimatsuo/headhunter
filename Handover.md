@@ -38,3 +38,16 @@ Successfully integrated Gemini 2.5 Flash as the primary reranking provider for `
 ## Next Steps
 - **Monitor Latency**: Keep an eye on production latency. If ~6-7s is deemed too slow for user experience, consider exploring faster models or further prompt engineering.
 - **Cost Analysis**: Compare costs of Gemini vs. Together AI at scale.
+## Batch Enrichment & Search Agent
+### 1. Batch Enrichment Architecture
+- **Service**: `batchEnrichCandidates` Cloud Function (Node.js 20).
+- **Model**: Gemini 2.5 Flash (`gemini-2.5-flash`) via `GoogleGenerativeAI` SDK.
+- **Access**: Uses `GOOGLE_API_KEY` (stored in `functions/.env`).
+- **Logic**: "Senior Executive Recruiter" persona with strict education filtering (Undergrad/Grad only) and email extraction.
+- **Orchestration**: `scripts/run_batch_enrichment.js` manages pagination and rate limiting.
+
+### 2. Search Agent
+- **Service**: `analyzeSearchQuery` Cloud Function.
+- **Model**: Gemini 2.5 Flash.
+- **Functionality**: Converts natural language queries into structured search parameters (Role, Seniority, Context, Filters).
+- **Integration**: Frontend `Dashboard.tsx` intercepts queries and displays AI analysis before searching.

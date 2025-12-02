@@ -128,12 +128,50 @@ export const Dashboard: React.FC = () => {
     setCurrentSearch(jobDescription);
 
     try {
-      const results = await apiService.searchCandidates(jobDescription);
+      // Step 1: Analyze the query with the Search Agent
+      // We only do this if it's a raw text query (title/description) and not a re-run of a structured search
+      let searchParams = jobDescription;
+      let agentAnalysis = null;
+
+      if (jobDescription.title && !jobDescription.min_experience) {
+        // This looks like a raw query, let's analyze it
+        try {
+          const analysisResponse = await apiService.analyzeSearchQuery(jobDescription.title + ' ' + (jobDescription.description || ''));
+          if (analysisResponse.success && analysisResponse.data) {
+            const strategy = analysisResponse.data;
+            agentAnalysis = strategy;
+
+            // Update search params with Agent's strategy
+            searchParams = {
+              ...jobDescription,
+              title: strategy.target_role, // Use standardized role
+              description: strategy.search_query, // Use optimized vector query
+              min_experience: strategy.filters?.min_years_experience || 0,
+              // We could also map context/requirements to skills if needed
+              required_skills: strategy.key_requirements
+            };
+
+            console.log('Agent Strategy:', strategy);
+          }
+        } catch (agentError) {
+          console.warn('Agent analysis failed, falling back to raw search:', agentError);
+        }
+      }
+
+      // Step 2: Execute the search
+      const results = await apiService.searchCandidates(searchParams);
+
+      // Attach agent reasoning to the results for display (optional, if UI supports it)
+      if (agentAnalysis && results.success) {
+        // We could inject a "Search Strategy" card into the results here
+        // For now, we'll just log it.
+      }
+
       setSearchResults(results);
 
       // Add to search history
       setSearchHistory(prev => {
-        const updated = [jobDescription, ...prev];
+        const updated = [searchParams, ...prev];
         return updated.slice(0, 5); // Keep only last 5 searches
       });
     } catch (error: any) {
@@ -185,9 +223,8 @@ export const Dashboard: React.FC = () => {
       const response = await apiService.findSimilarCandidates(candidateId);
       if (response.success && response.data) {
         // Transform the similar candidates response into the SearchResponse format
-        // The backend returns { results: [...] } where results are VectorSearchResult[]
-        // We need to map this to the structure expected by SearchResults
-        const similarCandidates = response.data.results || [];
+        // The backend returns VectorSearchResult[] directly
+        const similarCandidates = response.data || [];
 
         // Fetch full profiles for these candidates if needed, or if the backend already returns them
         // The current findSimilarCandidates implementation returns enriched results with 'profile'

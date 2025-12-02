@@ -306,3 +306,11 @@ export interface SavedSearch {
   createdAt: string;
   lastUsed: string;
 }
+
+export interface VectorSearchResult {
+  candidate_id: string;
+  similarity_score: number;
+  overall_score?: number;
+  profile?: CandidateProfile;
+  match_reasons?: string[];
+}

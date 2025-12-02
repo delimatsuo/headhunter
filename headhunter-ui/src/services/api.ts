@@ -12,7 +12,8 @@ import {
   saveSearch,
   getSavedSearches,
   deleteSavedSearch,
-  findSimilarCandidates
+  findSimilarCandidates,
+  analyzeSearchQuery
 } from '../config/firebase';
 import {
   JobDescription,
@@ -22,7 +23,8 @@ import {
   DashboardStats,
   SkillAssessment,
   SkillMatchData,
-  SavedSearch
+  SavedSearch,
+  VectorSearchResult
 } from '../types';
 
 export class ApiError extends Error {
@@ -499,15 +501,37 @@ export const apiService = {
   },
 
   // Similar Candidates
-  async findSimilarCandidates(candidateId: string): Promise<ApiResponse<{ results: any[] }>> {
+  async findSimilarCandidates(candidateId: string): Promise<ApiResponse<VectorSearchResult[]>> {
     try {
-      const result = await findSimilarCandidates({ candidate_id: candidateId });
-      return result.data as ApiResponse<{ results: any[] }>;
+      const result = await findSimilarCandidates({ candidateId });
+      return {
+        success: true,
+        data: result.data as VectorSearchResult[]
+      };
     } catch (error) {
-      console.error('Find similar candidates error:', error);
-      throw new ApiError('Failed to find similar candidates');
+      console.error('Error finding similar candidates:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
   },
+
+  async analyzeSearchQuery(query: string): Promise<ApiResponse<any>> {
+    try {
+      const result = await analyzeSearchQuery({ query });
+      return {
+        success: true,
+        data: result.data
+      };
+    } catch (error) {
+      console.error('Error analyzing search query:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
 };
 
 // Export the api object for backwards compatibility

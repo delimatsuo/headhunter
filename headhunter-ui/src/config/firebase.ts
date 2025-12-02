@@ -66,5 +66,6 @@ export const deleteSavedSearch = httpsCallable(functions, 'deleteSavedSearch');
 
 // Similar Candidates
 export const findSimilarCandidates = httpsCallable(functions, 'findSimilarCandidates');
+export const analyzeSearchQuery = httpsCallable(functions, 'analyzeSearchQuery');
 
 export default app;
