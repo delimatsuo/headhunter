@@ -475,15 +475,28 @@ class SkillAwareSearchService {
   }
 }
 
+import { defineSecret } from "firebase-functions/params";
+
+const dbPostgresPassword = defineSecret("db-postgres-password");
+
 /**
  * Main skill-aware search endpoint
  */
 export const skillAwareSearch = onCall(
   {
-    memory: "1GiB",
+    memory: "2GiB",
     timeoutSeconds: 60,
+    secrets: [dbPostgresPassword],
+    vpcConnector: "svpc-us-central1",
+    vpcConnectorEgressSettings: "PRIVATE_RANGES_ONLY",
   },
   async (request) => {
+    // Inject DB configuration for Cloud SQL connection
+    process.env.PGVECTOR_PASSWORD = dbPostgresPassword.value();
+    process.env.PGVECTOR_HOST = "10.159.0.2";
+    process.env.PGVECTOR_USER = "postgres";
+    process.env.PGVECTOR_DATABASE = "headhunter";
+
     try {
       // Validate request data
       const searchQuery = SearchQuerySchema.parse(request.data);

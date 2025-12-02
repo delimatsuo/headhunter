@@ -692,6 +692,22 @@ Successfully integrated Gemini 2.5 Flash as the primary LLM provider for candida
      - Circuit breaker: 4 failures trigger open, 60s cooldown
      - Enable: true (default)
 
+## 2. System Architecture
+
+### 2.1 Core Services
+*   **Search Service (`hh-search-svc`):** Handles candidate search.
+    *   **Hybrid Search:** Combines Vector Search (Vertex AI) with Direct Lookup (Firestore) for Name/Email.
+    *   **Reranking:** Uses Gemini 1.5 Flash to score candidates against JDs.
+*   **Ingestion Pipeline:**
+    *   **Cloud Functions:** `processUploadedProfile` triggers `AnalysisService` (Vertex AI) for real-time enrichment.
+    *   **Batch Processing:** Scripts (`batch-enrich.ts`, `ingest_csv.py`) handle historical data backfill.
+
+### 2.2 Data Flow
+1.  **Upload:** Frontend -> Cloud Storage -> Cloud Function.
+2.  **Analysis:** Cloud Function -> Vertex AI (Gemini) -> Firestore (`enriched_profiles`).
+3.  **Indexing:** Firestore -> Vector Search (pgvector/Vertex AI).
+4.  **Search:** Frontend -> Search Service -> Hybrid Search (Vector + Direct).
+
 4. **services/hh-rerank-svc/src/types.ts** (line 39)
    - Added `geminiMs?: number` to `RerankTimingBreakdown`
 

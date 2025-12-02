@@ -95,7 +95,14 @@ class PromptBuilder:
             + "- For inferred skills: Explain reasoning based on role, company, or industry\n"
             + "- Include recency and frequency of skill usage when possible\n\n"
             + "CONTEXT:\n"
-            + f"Experience: {experience[:1500]}\nEducation: {education[:750]}\n"
+            + f"Experience: {experience[:1500]}\nEducation: {education[:750]}\n\n"
+            + "STANDARDIZED LEVELING GUIDE (CRITICAL):\n"
+            + "- Junior: 0-2 years experience. Learning phase, task execution.\n"
+            + "- Mid-Level: 3-7 years experience. Independent contributor, owns features.\n"
+            + "- Senior: 8-12 years experience. System design, mentorship, owns complex projects. (Force 'Senior' if >8 years unless explicitly junior role)\n"
+            + "- Staff/Principal: 12+ years experience. Org-wide impact, technical strategy.\n"
+            + "- Executive: VP, C-Level, Director with significant scope.\n"
+            + "NOTE: If a candidate has >10 years experience, they are likely Senior or above, even if their title is just 'Developer' or 'Manager'. Look at the duration and scope.\n"
         )
 
     def build_recruiter_comments_prompt(self, candidate: Dict[str, Any]) -> str:

@@ -19,6 +19,8 @@ from dotenv import load_dotenv
 from scripts.json_validator import JSONValidator
 from scripts.prompt_builder import PromptBuilder
 from scripts.firestore_streamer import FirestoreStreamer
+import vertexai
+from vertexai.generative_models import GenerativeModel, GenerationConfig, HarmCategory, HarmBlockThreshold
 
 # Load environment variables
 load_dotenv()
@@ -49,21 +51,28 @@ class ProcessingStats:
     failed_validations: int = 0
     start_time: Optional[datetime] = None
     estimated_cost: float = 0.0
-    
-class IntelligentSkillProcessor:
-    """Processes candidates with intelligent skill inference and probabilistic analysis"""
-    
-    def __init__(self, api_key: str = None):
-        # Require API key via env or parameter (no hardcoded defaults)
-        self.api_key = api_key or os.getenv('TOGETHER_API_KEY')
-        if not self.api_key:
-            raise ValueError("Together API key not provided")
 
-        # Stage 1 model configurable via env; default to Qwen2.5 32B Instruct
-        # Adjust to the exact Together model ID during deployment if needed
-        self.model = os.getenv('TOGETHER_MODEL_STAGE1', 'Qwen/Qwen2.5-32B-Instruct')
-        self.base_url = "https://api.together.xyz/v1/chat/completions"
-        self.session = None
+
+# ...
+
+class IntelligentSkillProcessor:
+    """Processes candidates with intelligent skill inference and probabilistic analysis using Gemini via Vertex AI"""
+    
+    def __init__(self, project_id: str = "headhunter-ai-0088", location: str = "us-central1"):
+        # Initialize Vertex AI
+        self.project_id = project_id
+        self.location = location
+        
+        try:
+            vertexai.init(project=self.project_id, location=self.location)
+            logger.info(f"✅ Initialized Vertex AI (Project: {self.project_id}, Location: {self.location})")
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize Vertex AI: {e}")
+            raise
+
+        # Use Gemini 2.5 Flash (Latest Stable)
+        self.model_name = "gemini-2.5-flash"
+        self.model = GenerativeModel(self.model_name)
         
         # Initialize Firestore
         try:
@@ -75,8 +84,8 @@ class IntelligentSkillProcessor:
             self.db = None
             self.use_firestore = False
         
-        # Cost tracking
-        self.cost_per_token = 0.10 / 1_000_000
+        # Cost tracking (Gemini 3 Flash is ~ $0.075/1M input, $0.30/1M output)
+        self.cost_per_token = 0.15 / 1_000_000
         self.stats = ProcessingStats()
         
         # JSON validation system
@@ -91,7 +100,7 @@ class IntelligentSkillProcessor:
                 
             self.firestore_streamer = FirestoreStreamer(
                 firestore_client=self.db,
-                batch_size=10,  # Smaller batches for real-time processing
+                batch_size=10,
                 collections=["candidates", "enriched_profiles"],
                 checkpoint_file=f"{checkpoint_dir}/intelligent_processor_checkpoint.json"
             )
@@ -99,18 +108,10 @@ class IntelligentSkillProcessor:
             self.firestore_streamer = None
         
     async def __aenter__(self):
-        self.session = aiohttp.ClientSession(
-            timeout=aiohttp.ClientTimeout(total=120),
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
-            }
-        )
         return self
     
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        if self.session:
-            await self.session.close()
+        pass
     
     def create_intelligent_analysis_prompt(self, candidate_data: Dict[str, Any]) -> str:
         """Create prompt with probabilistic skill inference"""
@@ -125,92 +126,92 @@ class IntelligentSkillProcessor:
         try:
             prompt = self.create_intelligent_analysis_prompt(candidate_data)
             
-            payload = {
-                "model": self.model,
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 4500,
-                "temperature": 0.2,  # Lower temperature for consistent analysis
-                "top_p": 0.95
-            }
+            # Generate content using Gemini via Vertex AI
+            response = await self.model.generate_content_async(
+                prompt,
+                generation_config=GenerationConfig(
+                    temperature=0.2,
+                    top_p=0.95,
+                    max_output_tokens=8192,
+                    response_mime_type="application/json"
+                ),
+                safety_settings={
+                    HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                    HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                    HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+                    HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+                }
+            )
             
-            async with self.session.post(self.base_url, json=payload) as response:
-                if response.status == 200:
-                    result = await response.json()
+            if response.text:
+                content = response.text
+                
+                try:
+                    # Use JSON validation system with repair and quarantine
+                    validation_result = self.json_validator.validate(content, candidate_id=candidate_id)
                     
-                    if 'choices' in result and len(result['choices']) > 0:
-                        content = result['choices'][0]['message']['content']
+                    if validation_result.is_valid:
+                        analysis = validation_result.data
+                    else:
+                        # JSON validation failed and was quarantined
+                        logger.error(f"❌ JSON validation failed for candidate {candidate_id}")
+                        logger.error(f"   Errors: {validation_result.errors}")
+                        if validation_result.quarantined:
+                            logger.error(f"   Quarantined as: {validation_result.quarantine_id}")
                         
-                        try:
-                            # Use JSON validation system with repair and quarantine
-                            validation_result = self.json_validator.validate(content, candidate_id=candidate_id)
-                            
-                            if validation_result.is_valid:
-                                analysis = validation_result.data
-                            else:
-                                # JSON validation failed and was quarantined
-                                logger.error(f"❌ JSON validation failed for candidate {candidate_id}")
-                                logger.error(f"   Errors: {validation_result.errors}")
-                                if validation_result.quarantined:
-                                    logger.error(f"   Quarantined as: {validation_result.quarantine_id}")
-                                
-                                self.stats.failed_validations += 1
-                                return None  # Skip this candidate
-                            
-                            # Create enhanced document with intelligent analysis
-                            enhanced_data = {
-                                "candidate_id": candidate_id,
-                                "name": candidate_data.get('name', 'Unknown'),
-                                "original_data": {
-                                    "education": candidate_data.get('education', ''),
-                                    "experience": candidate_data.get('experience', ''),
-                                    "comments": candidate_data.get('comments', [])
-                                },
-                                "intelligent_analysis": analysis,
-                                "processing_metadata": {
-                                    "timestamp": firestore.SERVER_TIMESTAMP,
-                                    "processor": "intelligent_skill_processor",
-                                    "model": self.model,
-                                    "version": "4.0",
-                                    "analysis_type": "probabilistic_skill_inference"
-                                },
-                                # Flattened fields for querying (extract skill names from SkillItem objects)
-                                "explicit_skills": self._extract_skill_names(analysis.get("explicit_skills", {}).get("technical_skills", [])),
-                                "inferred_skills_high_confidence": [
-                                    s["skill"] for s in analysis.get("inferred_skills", {}).get("highly_probable_skills", [])
-                                    if isinstance(s, dict) and "skill" in s
-                                ],
-                                "all_probable_skills": self._extract_all_probable_skills(analysis),
-                                "current_level": analysis.get("career_trajectory_analysis", {}).get("current_level", "Unknown"),
-                                "skill_market_value": analysis.get("market_positioning", {}).get("skill_market_value", "moderate"),
-                                "overall_rating": analysis.get("recruiter_insights", {}).get("overall_rating", "C"),
-                                "recommendation": analysis.get("recruiter_insights", {}).get("recommendation", "consider"),
-                                "primary_expertise": self._extract_skill_names(analysis.get("composite_skill_profile", {}).get("primary_expertise", [])),
-                                "search_keywords": self._generate_search_keywords(candidate_data, analysis)
-                            }
+                        self.stats.failed_validations += 1
+                        return None  # Skip this candidate
+                    
+                    # Create enhanced document with intelligent analysis
+                    # Start with a copy of the original data to preserve all fields (resume_url, linkedin_url, etc.)
+                    enhanced_data = candidate_data.copy()
+                    
+                    # Update with new analysis
+                    enhanced_data.update({
+                        "candidate_id": candidate_id,
+                        "name": candidate_data.get('name', 'Unknown'),
+                        "original_data": {
+                            "education": candidate_data.get('education', ''),
+                            "experience": candidate_data.get('experience', ''),
+                            "comments": candidate_data.get('comments', [])
+                        },
+                        "intelligent_analysis": analysis,
+                        "processing_metadata": {
+                            "timestamp": firestore.SERVER_TIMESTAMP,
+                            "processor": "intelligent_skill_processor",
+                            "model": self.model_name,
+                            "version": "5.0", # Bump version for Gemini + Leveling Fix
+                            "analysis_type": "probabilistic_skill_inference"
+                        },
+                        # Flattened fields for querying (extract skill names from SkillItem objects)
+                        "explicit_skills": self._extract_skill_names(analysis.get("explicit_skills", {}).get("technical_skills", [])),
+                        "inferred_skills_high_confidence": [
+                            s["skill"] for s in analysis.get("inferred_skills", {}).get("highly_probable_skills", [])
+                            if isinstance(s, dict) and "skill" in s
+                        ],
+                        "all_probable_skills": self._extract_all_probable_skills(analysis),
+                        "current_level": analysis.get("career_trajectory_analysis", {}).get("current_level", "Unknown"),
+                        "skill_market_value": analysis.get("market_positioning", {}).get("skill_market_value", "moderate"),
+                        "overall_rating": analysis.get("recruiter_insights", {}).get("overall_rating", "C"),
+                        "recommendation": analysis.get("recruiter_insights", {}).get("recommendation", "consider"),
+                        "primary_expertise": self._extract_skill_names(analysis.get("composite_skill_profile", {}).get("primary_expertise", [])),
+                        "search_keywords": self._generate_search_keywords(candidate_data, analysis)
+                    })
 
-                            # Add analysis confidence and quality flags for downstream ranking/UX
-                            enhanced_data["analysis_confidence"] = self._estimate_analysis_confidence(analysis)
-                            enhanced_data["quality_flags"] = self._quality_flags(analysis, enhanced_data["analysis_confidence"]) 
-                            
-                            return enhanced_data
-                            
-                        except json.JSONDecodeError as e:
-                            logger.error(f"JSON parse error for {candidate_id}: {e}")
-                            self.stats.failed += 1
-                            return None
+                    # Add analysis confidence and quality flags for downstream ranking/UX
+                    enhanced_data["analysis_confidence"] = self._estimate_analysis_confidence(analysis)
+                    enhanced_data["quality_flags"] = self._quality_flags(analysis, enhanced_data["analysis_confidence"]) 
                     
-                elif response.status == 429:
-                    # Rate limit - wait and retry
-                    logger.warning(f"Rate limited for {candidate_id}, waiting 10 seconds...")
-                    await asyncio.sleep(10)
-                    return await self.process_candidate(candidate_data)  # Retry
+                    return enhanced_data
                     
-                else:
-                    error_text = await response.text()
-                    logger.error(f"API error for {candidate_id}: Status {response.status}")
-                    logger.error(f"Error details: {error_text[:500]}")
+                except Exception as e:
+                    logger.error(f"JSON parse/validation error for {candidate_id}: {e}")
                     self.stats.failed += 1
                     return None
+            else:
+                logger.error(f"Empty response from Gemini for {candidate_id}")
+                self.stats.failed += 1
+                return None
                     
         except Exception as e:
             logger.error(f"Error processing {candidate_id}: {e}")
@@ -218,7 +219,7 @@ class IntelligentSkillProcessor:
             return None
     
     async def repair_json_with_llm(self, json_text: str) -> Optional[Dict[str, Any]]:
-        """Attempt to repair malformed JSON using the LLM"""
+        """Attempt to repair malformed JSON using Gemini"""
         try:
             prompt = (
                 "You are a JSON repair expert. The following text contains malformed JSON data. "
@@ -229,31 +230,28 @@ class IntelligentSkillProcessor:
                 "VALID JSON:"
             )
             
-            payload = {
-                "model": self.model,
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 4500,
-                "temperature": 0.0,
-                "top_p": 0.1
-            }
+            response = await self.model.generate_content_async(
+                prompt,
+                generation_config=GenerationConfig(
+                    temperature=0.0,
+                    response_mime_type="application/json"
+                )
+            )
             
-            async with self.session.post(self.base_url, json=payload) as response:
-                if response.status == 200:
-                    result = await response.json()
-                    if 'choices' in result and len(result['choices']) > 0:
-                        content = result['choices'][0]['message']['content']
-                        
-                        # Validate the repaired JSON
-                        validation_result = self.json_validator.validate(content)
-                        if validation_result.is_valid:
-                            logger.info("✅ LLM successfully repaired JSON")
-                            return validation_result.data
-                        else:
-                            logger.warning(f"⚠️ LLM repair failed validation: {validation_result.errors}")
-                            return None
+            if response.text:
+                content = response.text
+                
+                # Validate the repaired JSON
+                validation_result = self.json_validator.validate(content)
+                if validation_result.is_valid:
+                    logger.info("✅ LLM successfully repaired JSON")
+                    return validation_result.data
                 else:
-                    logger.error(f"LLM repair request failed: {response.status}")
+                    logger.warning(f"⚠️ LLM repair failed validation: {validation_result.errors}")
                     return None
+            else:
+                logger.error("LLM repair request failed: Empty response")
+                return None
                     
         except Exception as e:
             logger.error(f"Error during LLM JSON repair: {e}")
@@ -538,23 +536,57 @@ class IntelligentSkillProcessor:
 async def main():
     """Main execution"""
     
-    # Configuration
-    INPUT_FILE = "/Users/delimatsuo/Library/CloudStorage/SynologyDrive-NAS_Drive/NAS Files/Headhunter project/comprehensive_merged_candidates.json"
+    logger.info("🚀 Starting Intelligent Skill Processor (Gemini 2.5 Flash)")
     
-    # Load candidates
-    logger.info("📂 Loading candidates for INTELLIGENT SKILL ANALYSIS...")
-    with open(INPUT_FILE, 'r', encoding='utf-8') as f:
-        candidates = json.load(f)
+    # Initialize Firestore (if not already initialized by Processor, but good to have here for loading)
+    if not firebase_admin._apps:
+        try:
+            cred = credentials.ApplicationDefault()
+            firebase_admin.initialize_app(cred, {'projectId': 'headhunter-ai-0088'})
+        except Exception as e:
+            logger.error(f"Failed to init Firebase: {e}")
+            return
+
+    db = firestore.client()
     
-    logger.info(f"✅ Loaded {len(candidates)} candidates")
-    
-    # Process with intelligent analysis
-    async with IntelligentSkillProcessor() as processor:
-        # Start with smaller batch for testing
-        candidates = candidates[:50]  # Test with 50 for quality check
+    # Load candidates from Firestore
+    logger.info("📂 Loading candidates from Firestore...")
+    try:
+        candidates_ref = db.collection('candidates')
+        # Use list_documents() to get references first (lighter weight)
+        # Then fetch in batches to avoid stream timeouts
+        logger.info("   Listing document references...")
+        doc_refs = list(candidates_ref.list_documents())
+        logger.info(f"   Found {len(doc_refs)} document references. Fetching data...")
         
-        # Smaller batch size to avoid rate limits
-        await processor.process_batch_streaming(candidates, batch_size=5)
+        candidates = []
+        # Fetch in chunks of 500
+        chunk_size = 500
+        for i in range(0, len(doc_refs), chunk_size):
+            chunk = doc_refs[i:i+chunk_size]
+            # db.get_all() allows fetching multiple docs at once
+            snapshots = db.get_all(chunk)
+            for snap in snapshots:
+                if snap.exists:
+                    data = snap.to_dict()
+                    data['id'] = snap.id
+                    candidates.append(data)
+            logger.info(f"   Fetched {len(candidates)}/{len(doc_refs)} candidates...")
+            
+        logger.info(f"✅ Loaded {len(candidates)} candidates from Firestore")
+        
+        if not candidates:
+            logger.warning("⚠️ No candidates found in Firestore.")
+            return
+
+        # Process with intelligent analysis
+        async with IntelligentSkillProcessor() as processor:
+            # Process all candidates
+            # Using batch_size=20 for balance between throughput and rate limits
+            await processor.process_batch_streaming(candidates, batch_size=20)
+            
+    except Exception as e:
+        logger.error(f"❌ Error loading candidates: {e}")
 
 if __name__ == "__main__":
     asyncio.run(main())

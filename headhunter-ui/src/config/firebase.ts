@@ -59,4 +59,12 @@ export const removeAllowedUserFn = httpsCallable(functions, 'removeAllowedUser')
 export const listAllowedUsersFn = httpsCallable(functions, 'listAllowedUsers');
 export const setAllowedUserRoleFn = httpsCallable(functions, 'setAllowedUserRole');
 
+// Saved Searches
+export const saveSearch = httpsCallable(functions, 'saveSearch');
+export const getSavedSearches = httpsCallable(functions, 'getSavedSearches');
+export const deleteSavedSearch = httpsCallable(functions, 'deleteSavedSearch');
+
+// Similar Candidates
+export const findSimilarCandidates = httpsCallable(functions, 'findSimilarCandidates');
+
 export default app;

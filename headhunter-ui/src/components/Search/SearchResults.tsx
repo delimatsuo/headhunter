@@ -1,17 +1,19 @@
 import React from 'react';
 import { SearchResponse, CandidateMatch } from '../../types';
-import { CandidateCard } from '../Candidate/CandidateCard';
+import { SkillAwareCandidateCard } from '../Candidate/SkillAwareCandidateCard';
 
 interface SearchResultsProps {
   results: SearchResponse | null;
   loading: boolean;
   error: string | null;
+  onFindSimilar?: (candidateId: string) => void;
 }
 
 export const SearchResults: React.FC<SearchResultsProps> = ({
   results,
   loading,
-  error
+  error,
+  onFindSimilar
 }) => {
   if (loading) {
     return (
@@ -69,46 +71,14 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         </div>
       </div>
 
+      {/* Market Insights Hidden for MVP
       {insights && (
         <div className="search-insights">
           <h3>Market Insights</h3>
-          <div className="insights-grid">
-            <div className="insight-card">
-              <h4>Top Skills Matched</h4>
-              <div className="skill-list">
-                {insights.top_skills_matched?.map((skill, index) => (
-                  <span key={index} className="skill-tag">{skill}</span>
-                ))}
-              </div>
-            </div>
-
-            <div className="insight-card">
-              <h4>Common Gaps</h4>
-              <div className="gap-list">
-                {insights.common_gaps?.map((gap, index) => (
-                  <span key={index} className="gap-tag">{gap}</span>
-                ))}
-              </div>
-            </div>
-
-            <div className="insight-card full-width">
-              <h4>Market Analysis</h4>
-              <p>{insights.market_analysis || 'No analysis available'}</p>
-            </div>
-
-            {insights.recommendations?.length > 0 && (
-              <div className="insight-card full-width">
-                <h4>Recommendations</h4>
-                <ul>
-                  {insights.recommendations?.map((rec, index) => (
-                    <li key={index}>{rec}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
+          ...
         </div>
       )}
+      */}
 
       <div className="candidates-list">
         <h3>Candidate Matches ({matches?.length || 0})</h3>
@@ -121,13 +91,16 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         ) : (
           <div className="candidates-grid">
             {matches.map((match, index) => (
-              <CandidateCard
+              <SkillAwareCandidateCard
                 key={match.candidate?.candidate_id || index}
                 candidate={match.candidate}
                 matchScore={match.score}
                 similarity={match.similarity}
-                rationale={match.rationale}
+                // rationale is handled inside candidate object in new component, but we can pass it if needed
+                // The new component reads candidate.rationale or candidate.matchReasons
                 rank={index + 1}
+                searchSkills={[]} // TODO: Pass actual search skills from parent
+                onFindSimilar={onFindSimilar ? () => onFindSimilar(match.candidate?.candidate_id || '') : undefined}
               />
             ))}
           </div>

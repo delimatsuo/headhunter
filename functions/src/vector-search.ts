@@ -106,6 +106,12 @@ interface SkillAwareSearchResult {
     analysis_confidence?: number;
     top_skills?: Array<{ skill: string; confidence: number }>;
     summary?: string;
+    intelligent_analysis?: any;
+    resume_analysis?: any;
+    resume_url?: string;
+    linkedin_url?: string;
+    matchReasons?: string[];
+    original_data?: any;
   };
 }
 
@@ -126,7 +132,7 @@ export class VectorSearchService {
     this.firestore = admin.firestore();
 
     // Feature flag for gradual migration to pgvector
-    this.usePgVector = process.env.USE_PGVECTOR === 'true';
+    this.usePgVector = true; // Enforce pgvector usage to prevent OOM from legacy in-memory search
 
     // Project and region can be provided via environment to the provider if needed
 
@@ -158,13 +164,72 @@ export class VectorSearchService {
   extractEmbeddingText(profile: any): string {
     const textParts: string[] = [];
 
-    // Career information
+    // Basic profile information
+    if (profile.name) textParts.push(profile.name);
+    if (profile.current_role) textParts.push(profile.current_role);
+    if (profile.current_company) textParts.push(profile.current_company);
+
+    // Intelligent Analysis (New Format)
+    if (profile.intelligent_analysis) {
+      const analysis = profile.intelligent_analysis;
+
+      // Summary
+      if (analysis.executive_summary?.one_line_pitch) {
+        textParts.push(analysis.executive_summary.one_line_pitch);
+      }
+
+      // Role from competencies
+      if (analysis.role_based_competencies?.current_role_competencies?.role) {
+        textParts.push(`Current role: ${analysis.role_based_competencies.current_role_competencies.role}`);
+      }
+
+      // Skills (Explicit)
+      if (analysis.explicit_skills) {
+        const explicit = analysis.explicit_skills;
+        if (explicit.technical_skills?.length) {
+          const skills = explicit.technical_skills.map((s: any) => typeof s === 'string' ? s : s.skill).join(", ");
+          textParts.push(`Technical skills: ${skills}`);
+        }
+        if (explicit.soft_skills?.length) {
+          const skills = explicit.soft_skills.map((s: any) => typeof s === 'string' ? s : s.skill).join(", ");
+          textParts.push(`Soft skills: ${skills}`);
+        }
+      }
+
+      // Skills (Inferred - All Confidence Levels)
+      if (analysis.inferred_skills) {
+        const inferred = analysis.inferred_skills;
+        const allSkills = [
+          ...(inferred.highly_probable_skills || []),
+          ...(inferred.probable_skills || []),
+          ...(inferred.likely_skills || [])
+        ];
+
+        if (allSkills.length) {
+          const skills = allSkills.map((s: any) => s.skill).join(", ");
+          textParts.push(`Inferred skills: ${skills}`);
+        }
+      }
+
+      // Career Trajectory
+      if (analysis.career_trajectory_analysis) {
+        const trajectory = analysis.career_trajectory_analysis;
+        if (trajectory.current_level) textParts.push(`Level: ${trajectory.current_level}`);
+        if (trajectory.years_experience) textParts.push(`${trajectory.years_experience} years experience`);
+        if (trajectory.domain_expertise?.length) {
+          textParts.push(`Domain expertise: ${trajectory.domain_expertise.join(", ")}`);
+        }
+      }
+    }
+
+    // Resume Analysis (Legacy Format)
     if (profile.resume_analysis) {
       const resume = profile.resume_analysis;
 
       // Level and experience
-      textParts.push(`${resume.career_trajectory?.current_level || ""} level professional`);
-      textParts.push(`${resume.years_experience || 0} years experience`);
+      if (!textParts.some(p => p.includes("years experience"))) {
+        textParts.push(`${resume.years_experience || 0} years experience`);
+      }
 
       // Skills
       if (resume.technical_skills?.length) {
@@ -178,28 +243,6 @@ export class VectorSearchService {
       // Career trajectory
       if (resume.career_trajectory) {
         textParts.push(`Career trajectory: ${resume.career_trajectory.trajectory_type || ""}`);
-        if (resume.career_trajectory.domain_expertise?.length) {
-          textParts.push(`Domain expertise: ${resume.career_trajectory.domain_expertise.join(", ")}`);
-        }
-      }
-
-      // Leadership
-      if (resume.leadership_scope?.has_leadership) {
-        textParts.push(`Leadership experience: ${resume.leadership_scope.leadership_level || "Team Lead"}`);
-        if (resume.leadership_scope.team_size) {
-          textParts.push(`Managed team of ${resume.leadership_scope.team_size}`);
-        }
-      }
-
-      // Company background
-      if (resume.company_pedigree) {
-        textParts.push(`Company tier: ${resume.company_pedigree.tier_level || ""}`);
-        if (resume.company_pedigree.company_types?.length) {
-          textParts.push(`Company types: ${resume.company_pedigree.company_types.join(", ")}`);
-        }
-        if (resume.company_pedigree.recent_companies?.length) {
-          textParts.push(`Recent companies: ${resume.company_pedigree.recent_companies.join(", ")}`);
-        }
       }
     }
 
@@ -214,27 +257,6 @@ export class VectorSearchService {
       if (insights.key_themes?.length) {
         textParts.push(`Key themes: ${insights.key_themes.join(", ")}`);
       }
-
-      if (insights.competitive_advantages?.length) {
-        textParts.push(`Competitive advantages: ${insights.competitive_advantages.join(", ")}`);
-      }
-    }
-
-    // Enrichment insights
-    if (profile.enrichment) {
-      const enrichment = profile.enrichment;
-
-      if (enrichment.ai_summary) {
-        textParts.push(enrichment.ai_summary);
-      }
-
-      if (enrichment.career_analysis?.trajectory_insights) {
-        textParts.push(enrichment.career_analysis.trajectory_insights);
-      }
-
-      if (enrichment.strategic_fit?.competitive_positioning) {
-        textParts.push(enrichment.strategic_fit.competitive_positioning);
-      }
     }
 
     return textParts.filter(Boolean).join(". ");
@@ -247,19 +269,49 @@ export class VectorSearchService {
     const embeddingText = this.extractEmbeddingText(profile);
     const embeddingVector = await this.generateEmbedding(embeddingText);
 
-    const embeddingData: EmbeddingData = {
-      candidate_id: profile.candidate_id,
-      embedding_vector: embeddingVector,
-      embedding_text: embeddingText,
-      metadata: {
+    // Extract metadata from either legacy or new format
+    let metadata: any = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (profile.intelligent_analysis) {
+      const analysis = profile.intelligent_analysis;
+      const inferred = analysis.inferred_skills || {};
+      const allInferredSkills = [
+        ...(inferred.highly_probable_skills || []),
+        ...(inferred.probable_skills || []),
+        ...(inferred.likely_skills || [])
+      ].map((s: any) => s.skill);
+
+      metadata = {
+        ...metadata,
+        years_experience: analysis.career_trajectory_analysis?.years_experience || 0,
+        current_level: analysis.career_trajectory_analysis?.current_level || "Unknown",
+        company_tier: "Unknown", // Not present in new format directly
+        overall_score: profile.overall_score || 0,
+        technical_skills: [
+          ...(analysis.explicit_skills?.technical_skills?.map((s: any) => typeof s === 'string' ? s : s.skill) || []),
+          ...allInferredSkills
+        ],
+        leadership_level: "Unknown", // Needs extraction if available
+      };
+    } else if (profile.resume_analysis) {
+      metadata = {
+        ...metadata,
         years_experience: profile.resume_analysis?.years_experience || 0,
         current_level: profile.resume_analysis?.career_trajectory?.current_level || "Unknown",
         company_tier: profile.resume_analysis?.company_pedigree?.tier_level || "Unknown",
         overall_score: profile.overall_score || 0,
         technical_skills: profile.resume_analysis?.technical_skills || [],
         leadership_level: profile.resume_analysis?.leadership_scope?.leadership_level,
-        updated_at: new Date().toISOString(),
-      },
+      };
+    }
+
+    const embeddingData: EmbeddingData = {
+      candidate_id: profile.candidate_id,
+      embedding_vector: embeddingVector,
+      embedding_text: embeddingText,
+      metadata: metadata,
     };
 
     if (this.usePgVector) {
@@ -299,8 +351,10 @@ export class VectorSearchService {
         // Use pgvector for optimized similarity search
         await this.initializePgVectorClient();
         if (this.pgVectorClient) {
-          const similarityThreshold = 0.7; // Default threshold
+          const similarityThreshold = 0.5; // Lowered from 0.7 to capture more candidates for re-ranking
           const limit = query.limit || 20;
+
+          console.log(`Searching pgvector with threshold ${similarityThreshold} and limit ${limit}`);
 
           const pgResults = await this.pgVectorClient.searchSimilar(
             queryEmbedding,
@@ -309,6 +363,8 @@ export class VectorSearchService {
             'vertex-ai-textembedding-004',
             'full_profile'
           );
+
+          console.log(`pgvector returned ${pgResults.length} raw results`);
 
           // Convert pgvector results to VectorSearchResult format
           const results: VectorSearchResult[] = [];
@@ -526,12 +582,33 @@ export class VectorSearchService {
         org_id: query.org_id
       };
 
-      const vectorResults = await this.searchCandidates(traditionalQuery);
+      // Parallelize vector search and direct lookup
+      const [vectorResults, directResults] = await Promise.all([
+        this.searchCandidates(traditionalQuery),
+        this.searchDirectMatches(query.text_query, query.org_id)
+      ]);
+
+      // Merge results, prioritizing direct matches
+      const mergedResultsMap = new Map<string, VectorSearchResult>();
+
+      // Add direct matches first (they will have high artificial similarity)
+      for (const result of directResults) {
+        mergedResultsMap.set(result.candidate_id, result);
+      }
+
+      // Add vector results if not already present
+      for (const result of vectorResults) {
+        if (!mergedResultsMap.has(result.candidate_id)) {
+          mergedResultsMap.set(result.candidate_id, result);
+        }
+      }
+
+      const combinedResults = Array.from(mergedResultsMap.values());
 
       // Get detailed candidate data including skill assessments
       const enrichedResults: SkillAwareSearchResult[] = [];
 
-      for (const vectorResult of vectorResults) {
+      for (const vectorResult of combinedResults) {
         // Fetch full candidate profile with skill assessments
         const candidateDoc = await this.firestore
           .collection('candidates')
@@ -614,7 +691,19 @@ export class VectorSearchService {
             current_level: level,
             analysis_confidence: typeof candidateData?.analysis_confidence === 'number' ? candidateData.analysis_confidence : undefined,
             top_skills: topSkills,
-            summary: summary
+            summary: summary,
+            // Include full analysis data for frontend display
+            intelligent_analysis: candidateData?.intelligent_analysis,
+            resume_analysis: candidateData?.resume_analysis,
+            // Map resume and linkedin URLs
+            resume_url: candidateData?.resume_url || candidateData?.url || candidateData?.file_url || candidateData?.download_url,
+            linkedin_url: candidateData?.linkedin_url || candidateData?.personal?.linkedin || candidateData?.intelligent_analysis?.personal_details?.linkedin || this.extractLinkedInUrl(candidateData),
+            matchReasons: matchReasons,
+            original_data: candidateData?.original_data || {
+              experience: candidateData?.experience,
+              education: candidateData?.education,
+              summary: candidateData?.summary
+            }
           }
         });
       }
@@ -628,6 +717,26 @@ export class VectorSearchService {
       console.error("Error in searchCandidatesSkillAware:", error);
       throw error;
     }
+  }
+
+  /**
+   * Helper to extract LinkedIn URL from various sources
+   */
+  private extractLinkedInUrl(data: any): string | undefined {
+    // Check comments
+    if (Array.isArray(data.comments)) {
+      for (const comment of data.comments) {
+        const text = comment.text || '';
+        const match = text.match(/https?:\/\/(www\.)?linkedin\.com\/in\/[\w-]+/i);
+        if (match) return match[0];
+      }
+    }
+    // Check summary or other text fields if needed
+    if (data.summary) {
+      const match = data.summary.match(/https?:\/\/(www\.)?linkedin\.com\/in\/[\w-]+/i);
+      if (match) return match[0];
+    }
+    return undefined;
   }
 
   /**
@@ -920,8 +1029,8 @@ export class VectorSearchService {
     const experienceLevels: Record<string, { minYears: number, maxYears: number, keywords: string[] }> = {
       'entry': { minYears: 0, maxYears: 3, keywords: ['junior', 'entry', 'associate'] },
       'mid': { minYears: 2, maxYears: 7, keywords: ['mid', 'intermediate', 'regular'] },
-      'senior': { minYears: 5, maxYears: 12, keywords: ['senior', 'sr', 'lead'] },
-      'executive': { minYears: 8, maxYears: 50, keywords: ['principal', 'staff', 'director', 'vp', 'executive', 'head'] }
+      'senior': { minYears: 5, maxYears: 12, keywords: ['senior', 'sr', 'lead', 'principal'] },
+      'executive': { minYears: 8, maxYears: 50, keywords: ['director', 'vp', 'vice president', 'executive', 'head', 'chief', 'cto', 'ceo', 'cfo', 'co-founder', 'founder'] }
     };
 
     const targetLevel = experienceLevels[query.experience_level];
@@ -1206,5 +1315,70 @@ export class VectorSearchService {
         total_embeddings: 0,
       };
     }
+  }
+
+  /**
+   * Perform direct lookup for email or name matches
+   */
+  private async searchDirectMatches(queryText: string, orgId?: string): Promise<VectorSearchResult[]> {
+    const results: VectorSearchResult[] = [];
+    const normalizedQuery = queryText.trim();
+
+    if (!normalizedQuery) return results;
+
+    try {
+      // 1. Check if query looks like an email
+      if (normalizedQuery.includes('@')) {
+        const emailQuery = this.firestore.collection('candidates')
+          .where('email', '==', normalizedQuery);
+
+        const snapshot = await emailQuery.get();
+        for (const doc of snapshot.docs) {
+          const data = doc.data();
+          if (orgId && data.org_id !== orgId) continue;
+
+          results.push(this.createDirectMatchResult(doc.id, data, "Exact Email Match"));
+        }
+      }
+
+      // 2. Check for name match (Prefix search)
+      if (results.length === 0) {
+        // Try exact match first
+        const nameQuery = this.firestore.collection('candidates')
+          .where('name', '==', normalizedQuery)
+          .limit(5);
+
+        const snapshot = await nameQuery.get();
+        for (const doc of snapshot.docs) {
+          const data = doc.data();
+          if (orgId && data.org_id !== orgId) continue;
+
+          if (!results.some(r => r.candidate_id === doc.id)) {
+            results.push(this.createDirectMatchResult(doc.id, data, "Name Match"));
+          }
+        }
+      }
+
+      return results;
+    } catch (error) {
+      console.error("Error in searchDirectMatches:", error);
+      return [];
+    }
+  }
+
+  private createDirectMatchResult(id: string, data: any, reason: string): VectorSearchResult {
+    return {
+      candidate_id: id,
+      similarity_score: 1.0,
+      metadata: {
+        years_experience: data.intelligent_analysis?.career_trajectory_analysis?.years_experience || 0,
+        current_level: data.intelligent_analysis?.career_trajectory_analysis?.current_level || "Unknown",
+        company_tier: "Unknown",
+        overall_score: data.overall_score || 0,
+        technical_skills: [],
+        updated_at: new Date().toISOString()
+      },
+      match_reasons: [`Direct Match: ${reason}`]
+    };
   }
 }

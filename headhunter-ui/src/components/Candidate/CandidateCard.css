@@ -1,0 +1,179 @@
+/* Styles for CandidateCard expanded view */
+
+.card-details {
+  border-top: 1px solid #E5E7EB;
+  background: #FAFAFA;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+
+  to {
+    max-height: 1000px;
+    opacity: 1;
+  }
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  padding: 20px;
+}
+
+.detail-section {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+}
+
+.detail-section.full-width {
+  grid-column: 1 / -1;
+  margin: 0 20px 20px 20px;
+}
+
+.detail-section h4 {
+  margin: 0 0 12px 0;
+  color: #1F2937;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.detail-section p {
+  margin: 0 0 8px 0;
+  color: #6B7280;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.detail-section strong {
+  color: #374151;
+  font-weight: 600;
+}
+
+.domain-expertise,
+.institutions {
+  margin-top: 8px;
+}
+
+.domain-tag,
+.institution-tag {
+  display: inline-block;
+  padding: 4px 8px;
+  background: #F3F4F6;
+  border: 1px solid #D1D5DB;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #374151;
+  margin: 2px 4px 2px 0;
+}
+
+.recruiter-strengths ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.recruiter-strengths li {
+  margin: 4px 0;
+  color: #6B7280;
+  font-size: 14px;
+}
+
+.card-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #E5E7EB;
+  background: #F9FAFB;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.action-button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.action-button.primary {
+  background: #3B82F6;
+  color: white;
+  border-color: #3B82F6;
+}
+
+.action-button.primary:hover {
+  background: #2563EB;
+  border-color: #2563EB;
+}
+
+.action-button.secondary {
+  background: white;
+  color: #374151;
+  border-color: #D1D5DB;
+}
+
+.action-button.secondary:hover {
+  background: #F3F4F6;
+  border-color: #9CA3AF;
+}
+
+.expand-button {
+  background: none;
+  border: none;
+  color: #6B7280;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px 8px;
+}
+
+.expand-button:hover {
+  color: #1F2937;
+  text-decoration: none;
+  background: #F3F4F6;
+  border-radius: 4px;
+}
+
+.rationale-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #E5E7EB;
+}
+
+.rationale-section h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #374151;
+}
+
+.rationale-content .overall-assessment {
+  font-style: italic;
+  color: #4B5563;
+  margin-bottom: 8px;
+}
+
+.rationale-content ul {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.rationale-content li {
+  font-size: 13px;
+  color: #059669;
+  margin-bottom: 4px;
+}

@@ -20,6 +20,15 @@ Successfully integrated Gemini 2.5 Flash as the primary reranking provider for `
     - `RERANK_SLA_TARGET_MS` increased to `10000` (10s).
     - `GEMINI_TIMEOUT_MS` set to `8000` (8s).
 
+### 4. Search Quality Improvements (Executive Roles)
+- **Issue**: Search for "CTO" was returning "Engineering Manager" due to low weight on experience/title match.
+- **Fix**:
+    - Added C-level keywords (`cto`, `chief`, `founder`, etc.) to `executive` level in `vector-search.ts`.
+    - Adjusted ranking weights in `api.ts` to prioritize semantic context and seniority over keywords:
+        - **Executive**: `vector_similarity` (0.4), `experience_match` (0.3), `skill_match` (0.2).
+        - **General**: `vector_similarity` (0.35), `skill_match` (0.35), `experience_match` (0.15).
+- **Result**: Executive searches now prioritize title/seniority and semantic context (e.g., "scale-up", "B2B") over pure skill keyword matching.
+
 ## Current Status
 - **Primary Provider**: Gemini 2.5 Flash (`gemini-2.5-flash`).
 - **Fallback Provider**: Together AI (Qwen 2.5 32B).

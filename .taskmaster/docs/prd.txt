@@ -219,6 +219,7 @@ Acceptance criteria:
 - Optional: larger models for ambiguous cases (future; off by default). No automatic escalation in v2.0.
 - Low-Certainty Policy: Compute `analysis_confidence` and demote low-content profiles; still searchable by deterministic fields (name/company).
 - Unified Search: One endpoint blends vector similarity (ANN) + skill probabilities + experience into a single rank; UI never uses “two engines”.
+- **Executive Search Logic**: For C-level/Executive queries, the ranking algorithm dynamically adjusts to prioritize `vector_similarity` (context) and `experience_match` (title/seniority) over `skill_match` (keywords). This ensures that "CTO" searches return actual executives, not just Engineering Managers with matching technical skills.
 
 ## Implementation Tasks (Updated)
 

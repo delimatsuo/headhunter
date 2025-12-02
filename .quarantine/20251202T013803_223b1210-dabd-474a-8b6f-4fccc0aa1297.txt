@@ -1,0 +1,90 @@
+{
+  "explicit_skills": {
+    "technical_skills": [],
+    "tools_technologies": [],
+    "soft_skills": [],
+    "certifications": [],
+    "languages": []
+  },
+  "inferred_skills": {
+    "highly_probable_skills": [],
+    "probable_skills": [],
+    "likely_skills": [],
+    "possible_skills": []
+  },
+  "role_based_competencies": {
+    "current_role_competencies": {
+      "role": "",
+      "core_competencies": [],
+      "typical_tools": [],
+      "domain_knowledge": []
+    },
+    "historical_competencies": []
+  },
+  "company_context_skills": {
+    "company_specific": [],
+    "industry_skills": []
+  },
+  "skill_evolution_analysis": {
+    "skill_trajectory": "No data available to analyze skill trajectory.",
+    "emerging_skills": [],
+    "skill_gaps": [],
+    "learning_velocity": "Cannot assess without data.",
+    "skill_currency": "Cannot assess without data.",
+    "skill_timeline": [],
+    "skill_depth_analysis": {
+      "beginner_skills": [],
+      "intermediate_skills": [],
+      "advanced_skills": [],
+      "expert_skills": []
+    }
+  },
+  "composite_skill_profile": {
+    "primary_expertise": [],
+    "secondary_expertise": [],
+    "domain_specialization": "Unknown",
+    "skill_breadth": "Unknown",
+    "unique_combination": [],
+    "skill_categories": {
+      "technical_skills": [],
+      "soft_skills": [],
+      "domain_skills": [],
+      "leadership_skills": []
+    },
+    "transferable_skills": []
+  },
+  "career_trajectory_analysis": {
+    "current_level": "Unknown",
+    "years_experience": 0,
+    "promotion_velocity": "Unknown",
+    "career_progression": "Unknown",
+    "performance_indicator": "Unknown"
+  },
+  "market_positioning": {
+    "skill_market_value": "Cannot assess without candidate data.",
+    "skill_rarity": "Cannot assess without candidate data.",
+    "competitive_advantage": [],
+    "placement_difficulty": "Cannot assess without candidate data.",
+    "ideal_next_roles": [],
+    "salary_range": "Cannot assess without candidate data."
+  },
+  "recruiter_insights": {
+    "overall_rating": "Cannot assess without candidate data.",
+    "recommendation": "Cannot make a recommendation without candidate data.",
+    "confidence_in_assessment": "0",
+    ""verification_needed": [
+      "Candidate's full resume/CV",
+      "Details of experience (roles, companies, dates, responsibilities, achievements)",
+      "Education details (degrees, institutions, dates)",
+      "Specific technical skills and technologies used",
+      "Any projects or portfolios"
+    ],
+    "red_flags": [],
+    "selling_points": [],
+    "interview_focus": [
+      "Gathering basic experience and skill information",
+      "Understanding career aspirations"
+    ],
+    "one_line_pitch": "No information available for Thiago Ortiz to create a pitch."
+  }
+}

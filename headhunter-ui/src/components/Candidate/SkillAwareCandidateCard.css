@@ -441,29 +441,167 @@
     align-items: flex-start;
     gap: 16px;
   }
-  
+
   .scores {
     align-self: stretch;
     justify-content: space-between;
   }
-  
+
   .skill-match-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .details-grid {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .card-footer {
     flex-direction: column;
     gap: 12px;
     align-items: stretch;
   }
-  
+
   .load-skills-button {
     align-self: center;
+  }
+}
+
+/* Insight Section */
+.insight-section {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+  align-items: flex-start;
+}
+
+.rationale-block {
+  flex: 1;
+  background: #F0F9FF;
+  border: 1px solid #BAE6FD;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.rationale-block h4 {
+  margin: 0 0 8px 0;
+  color: #0369A1;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rationale-text {
+  margin: 0;
+  color: #0C4A6E;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.action-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 180px;
+}
+
+.action-button {
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-button.linkedin-primary {
+  background: #0A66C2;
+  color: white;
+}
+
+.action-button.linkedin-primary:hover {
+  background: #004182;
+}
+
+.action-button.secondary {
+  background: white;
+  border: 1px solid #D1D5DB;
+  color: #374151;
+}
+
+.action-button.secondary:hover {
+  background: #F3F4F6;
+  border-color: #9CA3AF;
+}
+
+/* Highlights Section */
+.highlights-section {
+  display: flex;
+  gap: 24px;
+  padding: 16px 0;
+  border-top: 1px solid #F3F4F6;
+  align-items: center;
+}
+
+.highlight-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.highlight-label {
+  color: #6B7280;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.highlight-value {
+  color: #1F2937;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.highlight-tags {
+  display: flex;
+  gap: 6px;
+}
+
+.mini-tag {
+  background: #F3F4F6;
+  color: #4B5563;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: #E5E7EB;
+  margin: 0;
+}
+
+/* Adjustments for Responsive */
+@media (max-width: 768px) {
+  .insight-section {
+    flex-direction: column;
+  }
+
+  .action-block {
+    width: 100%;
+    flex-direction: row;
+  }
+
+  .highlights-section {
+    flex-wrap: wrap;
+    gap: 16px;
   }
 }
 
@@ -477,6 +615,7 @@
     max-height: 0;
     opacity: 0;
   }
+
   to {
     max-height: 1000px;
     opacity: 1;
@@ -493,4 +632,201 @@
 .company-tag:hover {
   background: #F3F4F6;
   transition: background-color 0.2s;
+}
+
+/* Premium AI Hero Section */
+.ai-hero-section {
+  background: linear-gradient(135deg, #F5F3FF 0%, #F0F9FF 100%);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, #8B5CF6, #3B82F6);
+}
+
+.ai-hero-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ai-icon {
+  font-size: 16px;
+}
+
+.ai-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6D28D9;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.ai-rationale {
+  color: #1F2937;
+  font-size: 15px;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+/* Visual Timeline */
+.visual-timeline {
+  position: relative;
+  padding-left: 24px;
+  margin: 16px 0;
+}
+
+.visual-timeline::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 8px;
+  bottom: 0;
+  width: 2px;
+  background: #E5E7EB;
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 24px;
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -21px;
+  top: 6px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid #9CA3AF;
+  z-index: 1;
+}
+
+.timeline-item:first-child .timeline-dot {
+  border-color: #3B82F6;
+  background: #3B82F6;
+}
+
+.timeline-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.timeline-role {
+  font-weight: 600;
+  color: #1F2937;
+  font-size: 14px;
+}
+
+.timeline-company {
+  color: #4B5563;
+  font-size: 13px;
+}
+
+.timeline-date {
+  color: #9CA3AF;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+/* Smart Skill Cloud */
+.smart-skill-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.skill-chip {
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.skill-chip.matched {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+}
+
+.skill-chip.other {
+  background: #F3F4F6;
+  color: #4B5563;
+  border: 1px solid #E5E7EB;
+}
+
+.more-skills-badge {
+  font-size: 12px;
+  color: #6B7280;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.more-skills-badge:hover {
+  text-decoration: underline;
+  color: #374151;
+}
+
+/* Action Bar Polish */
+.premium-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.btn-premium {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+}
+
+.btn-linkedin {
+  background: #0A66C2;
+  color: white;
+  box-shadow: 0 2px 4px rgba(10, 102, 194, 0.2);
+}
+
+.btn-linkedin:hover {
+  background: #004182;
+  transform: translateY(-1px);
+}
+
+.btn-resume {
+  background: white;
+  border: 1px solid #D1D5DB;
+  color: #374151;
+}
+
+.btn-resume:hover {
+  background: #F9FAFB;
+  border-color: #9CA3AF;
 }

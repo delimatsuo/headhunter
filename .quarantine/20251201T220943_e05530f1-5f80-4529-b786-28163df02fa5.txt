@@ -1,0 +1,89 @@
+{
+  "explicit_skills": {
+    "technical_skills": [],
+    "tools_technologies": [],
+    "soft_skills": [],
+    "certifications": [],
+    "languages": []
+  },
+  "inferred_skills": {
+    "highly_probable_skills": [],
+    "probable_skills": [],
+    "likely_skills": [],
+    "possible_skills": []
+  },
+  "role_based_competencies": {
+    "current_role_competencies": {
+      "role": "Unknown",
+      "core_competencies": [],
+      "typical_tools": [],
+      "domain_knowledge": []
+    },
+    "historical_competencies": []
+  },
+  "company_context_skills": {
+    "company_specific": [],
+    "industry_skills": []
+  },
+  "skill_evolution_analysis": {
+    "skill_trajectory": "Unknown - No experience provided",
+    "emerging_skills": [],
+    "skill_gaps": [],
+    "learning_velocity": "Unknown - No experience provided",
+    "skill_currency": "Unknown - No experience provided",
+    "skill_timeline": [],
+    "skill_depth_analysis": {
+      "beginner_skills": [],
+      "intermediate_skills": [],
+      "advanced_skills": [],
+      "expert_skills": []
+    }
+  },
+  "composite_skill_profile": {
+    "primary_expertise": [],
+    "secondary_expertise": [],
+    "domain_specialization": "Unknown - No experience provided",
+    "skill_breadth": "Unknown - No experience provided",
+    "unique_combination": [],
+    "skill_categories": {
+      "technical_skills": [],
+      "soft_skills": [],
+      "domain_skills": [],
+      "leadership_skills": []
+    },
+    "transferable_skills": []
+  },
+  "career_trajectory_analysis": {
+    "current_level": "Unknown",
+    "years_experience": 0,
+    "promotion_velocity": "Unknown - No experience provided",
+    "career_progression": "Unknown - No experience provided",
+    "performance_indicator": "Unknown - No experience provided"
+  },
+  "market_positioning": {
+    "skill_market_value": "Cannot assess - No skills provided",
+    "skill_rarity": "Cannot assess - No skills provided",
+    "competitive_advantage": [],
+    "placement_difficulty": "Cannot assess - No skills provided",
+    "ideal_next_roles": [],
+    "salary_range": "Cannot assess - No skills provided"
+  },
+  "recruiter_insights": {
+    "overall_rating": "Cannot assess - Insufficient information",
+    "recommendation": "More information needed (full resume/experience details)",
+    "confidence_in_assessment": "0",
+    "verification_needed": [
+      "Full resume with detailed experience (roles, companies, dates, responsibilities, achievements)",
+      "Education details (degrees, institutions, dates)"
+    ],
+    "red_flags": [
+      "Lack of any provided experience or education makes assessment impossible."
+    ],
+    "selling_points": [],
+    "interview_focus": [
+      "Gathering basic career history and skill set."
+      "Understanding career aspirations and motivations."
+    ],
+    "one_line_pitch": "Candidate information is insufficient for any meaningful assessment; full resume required."
+  }
+}

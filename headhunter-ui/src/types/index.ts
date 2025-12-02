@@ -27,6 +27,8 @@ export interface CandidateProfile {
   availability?: string;
   desiredSalary?: string;
   profileUrl?: string;
+  resume_url?: string;
+  linkedin_url?: string;
   lastUpdated?: string;
   personal?: {
     name: string;
@@ -98,6 +100,7 @@ export interface CandidateProfile {
       team_size?: number;
       leadership_level?: string;
     };
+    current_role?: string;
     company_pedigree: {
       tier_level: string;
       company_types: string[];
@@ -111,11 +114,56 @@ export interface CandidateProfile {
       institutions: string[];
     };
   };
+  intelligent_analysis?: {
+    executive_summary?: {
+      one_line_pitch: string;
+    };
+    career_trajectory_analysis?: {
+      years_experience: number;
+      current_level: string;
+      promotion_velocity?: string;
+      domain_expertise?: string[];
+    };
+    explicit_skills?: {
+      technical_skills: Array<string | { skill: string; confidence?: number }>;
+      soft_skills: Array<string | { skill: string; confidence?: number }>;
+    };
+    inferred_skills?: {
+      highly_probable_skills?: Array<{ skill: string; confidence: number }>;
+      probable_skills?: Array<{ skill: string; confidence: number }>;
+      likely_skills?: Array<{ skill: string; confidence: number }>;
+    };
+    role_based_competencies?: {
+      current_role_competencies?: {
+        role: string;
+      };
+      historical_competencies?: Array<{
+        role: string;
+        company?: string;
+      }>;
+    };
+    composite_skill_profile?: {
+      domain_specialization: string;
+    };
+  };
   recruiter_insights?: {
     strengths: string[];
     key_themes: string[];
     recommendation: string;
   };
+  original_data?: {
+    education?: string;
+    experience?: string;
+    comments?: string[];
+  };
+  current_role?: string;
+  rationale?: {
+    overall_assessment: string;
+    strengths: string[];
+    gaps: string[];
+    risk_factors: string[];
+  };
+  matchReasons?: string[];
   overall_score: number;
 }
 
@@ -243,4 +291,18 @@ export interface SkillMatchData {
   match_score: number;
   evidence: string[];
   category: string;
+}
+
+export interface SavedSearch {
+  id: string;
+  userId: string;
+  name: string;
+  query: {
+    query_text?: string;
+    filters?: any;
+    job_description?: any;
+  };
+  type: 'candidate' | 'job';
+  createdAt: string;
+  lastUsed: string;
 }

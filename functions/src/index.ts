@@ -11,6 +11,7 @@ import { Storage } from "@google-cloud/storage";
 // Local processing - no external AI dependencies
 import { z } from "zod";
 import { VectorSearchService } from "./vector-search";
+import { AnalysisService } from "./analysis-service";
 import { BUCKET_PROFILES } from "./config";
 import { JobSearchService, JobDescription } from "./job-search";
 // Temporarily comment out until modules are properly exported
@@ -170,43 +171,61 @@ export const processUploadedProfile = onObjectFinalized(
         return;
       }
 
-      // Enrichment is disabled in Functions; Together processors should write enriched profiles.
-      console.log("Enrichment via Functions is disabled. Skipping and waiting for Together processors.");
-      return;
+      // Perform intelligent analysis using Vertex AI
+      console.log(`Starting intelligent analysis for: ${profile.candidate_id}`);
+      const analysisService = new AnalysisService();
 
-      /*
-      // Also store in a searchable collection with flattened data for querying
-      await firestore
-        .collection("candidates")
-        .doc(profile.candidate_id)
-        .set({
-          candidate_id: profile.candidate_id,
-          name: profile.name,
-          overall_score: profile.overall_score,
-          recommendation: profile.recommendation,
-          years_experience: profile.resume_analysis?.years_experience,
-          current_level: profile.resume_analysis?.career_trajectory.current_level,
-          leadership_level: profile.resume_analysis?.leadership_scope.leadership_level,
-          company_tier: profile.resume_analysis?.company_pedigree.tier_level,
-          technical_skills: profile.resume_analysis?.technical_skills || [],
-          enrichment_summary: enrichment.ai_summary,
-          career_insights: enrichment.career_analysis.trajectory_insights,
-          growth_potential: enrichment.career_analysis.growth_potential,
-          role_alignment_score: enrichment.strategic_fit.role_alignment_score,
-          updated_at: admin.firestore.FieldValue.serverTimestamp(),
-        });
-
-      // Generate and store vector embedding for similarity search
       try {
-        await vectorSearchService.storeEmbedding(enrichedProfile);
-        console.log(`Generated embedding for candidate: ${profile.candidate_id}`);
-      } catch (embeddingError) {
-        console.error(`Error generating embedding for ${profile.candidate_id}:`, embeddingError);
-        // Don't fail the entire process if embedding fails
-      }
-      */
+        const analysis = await analysisService.analyzeCandidate(profileData);
 
-      console.log(`Successfully enriched and stored profile for: ${profile.candidate_id}`);
+        // Create enriched profile
+        const enrichedProfile = {
+          ...profile,
+          intelligent_analysis: analysis,
+          // Ensure original data is preserved
+          original_data: {
+            experience: profileData.experience,
+            education: profileData.education,
+            comments: profileData.comments
+          },
+          // Map extracted fields to top-level for easier access
+          linkedin_url: analysis.personal_details?.linkedin || (profile as any).linkedin_url,
+          processing_metadata: {
+            timestamp: admin.firestore.FieldValue.serverTimestamp(),
+            processor: "cloud_functions_vertex_ai",
+            model: "gemini-1.5-flash"
+          }
+        };
+
+        // Store in enriched_profiles
+        await firestore
+          .collection("enriched_profiles")
+          .doc(profile.candidate_id)
+          .set(enrichedProfile);
+
+        // Also update the main candidates collection for search
+        await firestore
+          .collection("candidates")
+          .doc(profile.candidate_id)
+          .set(enrichedProfile, { merge: true });
+
+        console.log(`Successfully enriched and stored profile for: ${profile.candidate_id}`);
+
+      } catch (analysisError: any) {
+        console.error(`Error analyzing profile ${profile.candidate_id}:`, analysisError);
+        // Fallback: store without analysis but with original data
+        await firestore
+          .collection("candidates")
+          .doc(profile.candidate_id)
+          .set({
+            ...profile,
+            original_data: {
+              experience: profileData.experience,
+              education: profileData.education
+            },
+            processing_error: analysisError.message
+          }, { merge: true });
+      }
     } catch (error) {
       console.error(`Error processing profile ${filePath}:`, error);
       throw error; // This will trigger retry if retry is enabled
@@ -266,19 +285,51 @@ export const enrichProfile = onCall(
   async (request) => {
     const { profile } = request.data;
 
-    if (!profile) {
-      throw new HttpsError("invalid-argument", "Profile data is required");
+    if (!profile || !profile.candidate_id) {
+      throw new HttpsError("invalid-argument", "Profile data with candidate_id is required");
     }
 
     try {
-      // Disable enrichment endpoint; instruct clients to use Together processors
-      throw new HttpsError(
-        "failed-precondition",
-        "Cloud Functions enrichment is disabled. Use Together AI Python processors to produce enriched profiles."
-      );
-    } catch (error) {
+      console.log(`Manual enrichment requested for: ${profile.candidate_id}`);
+      const analysisService = new AnalysisService();
+      const analysis = await analysisService.analyzeCandidate(profile);
+
+      // Create enriched profile
+      const enrichedProfile = {
+        ...profile,
+        intelligent_analysis: analysis,
+        // Ensure original data is preserved
+        original_data: {
+          experience: profile.experience || profile.original_data?.experience,
+          education: profile.education || profile.original_data?.education,
+          comments: profile.comments || profile.original_data?.comments
+        },
+        // Map extracted fields to top-level
+        linkedin_url: analysis.personal_details?.linkedin || profile.linkedin_url,
+        processing_metadata: {
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          processor: "cloud_functions_manual_trigger",
+          model: "gemini-1.5-flash"
+        }
+      };
+
+      // Store in enriched_profiles
+      await firestore
+        .collection("enriched_profiles")
+        .doc(profile.candidate_id)
+        .set(enrichedProfile);
+
+      // Also update the main candidates collection for search
+      await firestore
+        .collection("candidates")
+        .doc(profile.candidate_id)
+        .set(enrichedProfile, { merge: true });
+
+      return { success: true, candidate_id: profile.candidate_id };
+
+    } catch (error: any) {
       console.error("Error enriching profile:", error);
-      throw error instanceof HttpsError ? error : new HttpsError("internal", "Enrichment unavailable in Functions");
+      throw new HttpsError("internal", error.message || "Enrichment failed");
     }
   }
 );
@@ -297,6 +348,10 @@ const SemanticSearchInputSchema = z.object({
   limit: z.number().min(1).max(100).optional().default(20),
 });
 
+import { defineSecret } from "firebase-functions/params";
+
+const dbPostgresPassword = defineSecret("db-postgres-password");
+
 /**
  * Semantic search endpoint using vector similarity
  */
@@ -304,8 +359,17 @@ export const semanticSearch = onCall(
   {
     memory: "1GiB",
     timeoutSeconds: 60,
+    secrets: [dbPostgresPassword],
+    vpcConnector: "svpc-us-central1",
+    vpcConnectorEgressSettings: "PRIVATE_RANGES_ONLY",
   },
   async (request) => {
+    // Inject DB configuration for Cloud SQL connection
+    process.env.PGVECTOR_PASSWORD = dbPostgresPassword.value();
+    process.env.PGVECTOR_HOST = "10.159.0.2";
+    process.env.PGVECTOR_USER = "postgres";
+    process.env.PGVECTOR_DATABASE = "headhunter";
+
     // Validate input
     let validatedInput;
     try {
@@ -436,19 +500,27 @@ export const generateEmbedding = onCall(
  */
 export const vectorSearchStats = onCall(
   {
-    memory: "512MiB",
-    timeoutSeconds: 30,
+    memory: "1GiB",
+    timeoutSeconds: 60,
+    secrets: [dbPostgresPassword],
+    vpcConnector: "svpc-us-central1",
+    vpcConnectorEgressSettings: "PRIVATE_RANGES_ONLY",
   },
   async (request) => {
+    // Inject DB configuration for Cloud SQL connection
+    process.env.PGVECTOR_PASSWORD = dbPostgresPassword.value();
+    process.env.PGVECTOR_HOST = "10.159.0.2";
+    process.env.PGVECTOR_USER = "postgres";
+    process.env.PGVECTOR_DATABASE = "headhunter";
+
     try {
-      const stats = await vectorSearchService.getEmbeddingStats();
-      const healthCheck = await vectorSearchService.healthCheck();
+      const vectorService = new VectorSearchService();
+      // Only run health check to avoid OOM from stats queries
+      const healthCheck = await vectorService.healthCheck();
 
       return {
-        success: true,
-        timestamp: new Date().toISOString(),
-        stats,
-        health: healthCheck,
+        healthCheck,
+        message: "Stats disabled temporarily due to OOM"
       };
     } catch (error) {
       console.error("Error getting vector search stats:", error);
@@ -721,9 +793,20 @@ export {
   skillAwareSearch,
   getCandidateSkillAssessment,
 } from './skill-aware-search';
+export * from "./debug-search";
 
 // Export REST API
 export { api } from './rest-api';
+
+// Export saved search functions
+export {
+  saveSearch,
+  getSavedSearches,
+  deleteSavedSearch,
+} from './saved-searches';
+
+// Export similar candidates function
+export { findSimilarCandidates } from './similar-candidates';
 
 // Compliance and security reporting
 export { getAuditReport, getSecuritySummary } from './compliance';

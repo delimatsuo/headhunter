@@ -27,9 +27,23 @@ export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
   // Simple keyword extraction from description
   const extractSkills = (text: string) => {
     const commonSkills = [
-      'java', 'python', 'javascript', 'typescript', 'react', 'angular', 'vue', 'node', 'aws', 'cloud',
-      'docker', 'kubernetes', 'sql', 'nosql', 'agile', 'scrum', 'leadership', 'management',
-      'communication', 'rest', 'api', 'graphql', 'ci/cd', 'devops', 'machine learning', 'ai'
+      // Languages
+      'java', 'python', 'javascript', 'typescript', 'c#', 'c++', 'go', 'ruby', 'php', 'swift', 'kotlin', 'scala', 'rust',
+      // Frontend
+      'react', 'angular', 'vue', 'node', 'html', 'css', 'sass', 'less', 'jquery', 'jsp', 'thymeleaf',
+      // Backend & Frameworks
+      'spring', 'spring boot', 'spring mvc', 'hibernate', 'jpa', 'django', 'flask', 'fastapi', 'express', 'nestjs', '.net', 'asp.net',
+      // Database
+      'sql', 'nosql', 'mysql', 'postgresql', 'oracle', 'mongodb', 'redis', 'cassandra', 'elasticsearch', 'dynamodb',
+      // Cloud & DevOps
+      'aws', 'azure', 'gcp', 'cloud', 'docker', 'kubernetes', 'jenkins', 'gitlab ci', 'github actions', 'terraform', 'ansible', 'circleci',
+      // Architecture & Concepts
+      'rest', 'restful', 'soap', 'graphql', 'microservices', 'distributed systems', 'agile', 'scrum', 'kanban',
+      'leadership', 'management', 'communication', 'problem solving', 'teamwork',
+      // Tools & Testing
+      'git', 'jira', 'junit', 'mockito', 'selenium', 'cypress', 'jest', 'cobertura', 'maven', 'gradle',
+      // AI/ML
+      'machine learning', 'ai', 'deep learning', 'nlp', 'tensorflow', 'pytorch', 'pandas', 'numpy'
     ];
 
     const foundSkills = commonSkills.filter(skill =>

@@ -8,7 +8,11 @@ import {
   healthCheck,
   skillAwareSearch,
   getCandidateSkillAssessment,
-  rerankCandidates
+  rerankCandidates,
+  saveSearch,
+  getSavedSearches,
+  deleteSavedSearch,
+  findSimilarCandidates
 } from '../config/firebase';
 import {
   JobDescription,
@@ -17,7 +21,8 @@ import {
   ApiResponse,
   DashboardStats,
   SkillAssessment,
-  SkillMatchData
+  SkillMatchData,
+  SavedSearch
 } from '../types';
 
 export class ApiError extends Error {
@@ -67,16 +72,26 @@ export const apiService = {
 
       const minExp = jobDescription.min_experience || 0;
 
+      const experienceLevel = minExp <= 3 ? 'entry' :
+        minExp <= 7 ? 'mid' :
+          minExp <= 12 ? 'senior' : 'executive';
+
       const result = await skillAwareSearch({
         text_query: queryText,
         required_skills: requiredSkills,
         preferred_skills: preferredSkills,
-        experience_level: minExp <= 3 ? 'entry' :
-          minExp <= 7 ? 'mid' :
-            minExp <= 12 ? 'senior' : 'executive',
+        experience_level: experienceLevel,
         limit: 50, // Fetch more candidates for reranking
         filters: {
           min_years_experience: minExp,
+        },
+        ranking_weights: {
+          // Boost experience match for executive roles to ensure seniority
+          // Boost vector similarity to capture semantic context (e.g. "B2B", "Scale up")
+          experience_match: experienceLevel === 'executive' ? 0.3 : 0.15,
+          skill_match: experienceLevel === 'executive' ? 0.2 : 0.35, // Reduce skill weight to avoid over-indexing on keywords
+          vector_similarity: experienceLevel === 'executive' ? 0.4 : 0.35,
+          confidence: 0.1
         }
       });
 
@@ -114,7 +129,9 @@ export const apiService = {
             candidate_id: c.candidate_id,
             // Map profile fields back to candidate structure if needed
             name: c.profile.name,
-            resume_analysis: {
+            // Ensure intelligent_analysis is passed through
+            intelligent_analysis: c.profile.intelligent_analysis,
+            resume_analysis: c.profile.resume_analysis || {
               years_experience: c.profile.years_experience,
               technical_skills: c.profile.top_skills?.map((s: any) => s.skill) || [],
               career_trajectory: {
@@ -447,6 +464,48 @@ export const apiService = {
     } catch (error) {
       console.error('Analyze skill matches error:', error);
       throw new ApiError('Failed to analyze skill matches');
+    }
+  },
+
+  // Saved Searches
+  async saveSearch(name: string, query: any, type: 'candidate' | 'job' = 'candidate'): Promise<ApiResponse<SavedSearch>> {
+    try {
+      const result = await saveSearch({ name, query, type });
+      return result.data as ApiResponse<SavedSearch>;
+    } catch (error) {
+      console.error('Save search error:', error);
+      throw new ApiError('Failed to save search');
+    }
+  },
+
+  async getSavedSearches(): Promise<ApiResponse<{ searches: SavedSearch[] }>> {
+    try {
+      const result = await getSavedSearches();
+      return result.data as ApiResponse<{ searches: SavedSearch[] }>;
+    } catch (error) {
+      console.error('Get saved searches error:', error);
+      throw new ApiError('Failed to get saved searches');
+    }
+  },
+
+  async deleteSavedSearch(searchId: string): Promise<ApiResponse<{ id: string }>> {
+    try {
+      const result = await deleteSavedSearch({ searchId });
+      return result.data as ApiResponse<{ id: string }>;
+    } catch (error) {
+      console.error('Delete saved search error:', error);
+      throw new ApiError('Failed to delete saved search');
+    }
+  },
+
+  // Similar Candidates
+  async findSimilarCandidates(candidateId: string): Promise<ApiResponse<{ results: any[] }>> {
+    try {
+      const result = await findSimilarCandidates({ candidate_id: candidateId });
+      return result.data as ApiResponse<{ results: any[] }>;
+    } catch (error) {
+      console.error('Find similar candidates error:', error);
+      throw new ApiError('Failed to find similar candidates');
     }
   },
 };

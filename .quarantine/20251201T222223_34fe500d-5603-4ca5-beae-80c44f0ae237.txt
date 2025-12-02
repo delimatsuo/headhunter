@@ -1,0 +1,39 @@
+{
+  "role": "Senior Software",
+  "core_competencies": [
+    "skill": "Python",
+      "confidence": 100,
+      "experience": "10+ years"
+    }
+  ],
+  "at_tools": [
+    "skill": "Python",
+      "confidence":100,
+      "experience": "10+ years"
+    }
+  ],
+  "domain_knowledge": [
+    "skill": "",
+      "confidence":100,
+      "experience": "10+ years"
+    }
+  ],
+  "soft_skills": [
+    "skill": "",
+      "confidence":100,
+      "experience": "10+ years"
+    }
+  ],
+  "certifs": [
+    "skill": "",
+      "confidence":100,
+      "experience": "10+ years"
+    }
+  ],
+  "langs": [
+    "skill": "",
+      "confidence":100,
+      "experience": "10+ years"
+    }
+  ]
+}

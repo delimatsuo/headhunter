@@ -57,6 +57,25 @@ Since Firebase and GCP projects were created separately, we need to:
 4. **Organization** → Tag, categorize, and organize candidates
 5. **Search Optimization** → Ensure candidates are discoverable
 
+## 3. Feature Specification
+
+### 3.1 Hybrid Search (Discovery & Recovery)
+**Goal:** Enable recruiters to find candidates by semantic match ("Senior Java Engineer") AND specific attributes ("Caio Maia", "email@example.com").
+*   **Vector Search:** Uses Vertex AI embeddings to find candidates based on skills, experience, and trajectory.
+*   **Direct Lookup:** Prioritizes exact matches for Name and Email.
+*   **Logic:** `Search = Vector(Query) + Exact(Name/Email)`. Exact matches are pinned to the top (Score: 1.0).
+
+### 3.2 Real-time Candidate Analysis
+**Goal:** Ensure immediate availability of deep insights upon upload.
+*   **Trigger:** Cloud Function `processUploadedProfile` triggers on file upload.
+*   **Analysis:** `AnalysisService` (Vertex AI) extracts skills, trajectory, and rationale synchronously.
+*   **Latency:** < 15s from upload to searchable profile.
+
+### 3.3 Batch Processing & Data Ingestion
+**Goal:** Ensure historical data is as rich as new data.
+*   **Backfill:** Scripts to ingest LinkedIn URLs and Emails from legacy CSVs.
+*   **Enrichment:** Batch processing to apply `AnalysisService` to the 29k existing candidates.
+
 #### 3. Job Management Flow
 1. **Create Job Posting** → Structured job description with requirements
 2. **AI Matching** → Automatic candidate suggestions based on job criteria

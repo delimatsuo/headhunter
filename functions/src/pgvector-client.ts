@@ -146,15 +146,15 @@ export class PgVectorClient {
   async initialize(): Promise<void> {
     try {
       const client = await this.pool.connect();
-      
+
       // Register pgvector types
       registerType(client);
-      
+
       // Verify pgvector extension exists
       const extensionResult = await client.query(
         "SELECT 1 FROM pg_extension WHERE extname = 'vector'"
       );
-      
+
       if (extensionResult.rows.length === 0) {
         throw new PgVectorException(
           PgVectorError.VALIDATION_ERROR,
@@ -199,7 +199,7 @@ export class PgVectorClient {
     metadata?: Record<string, any>
   ): Promise<string> {
     this.validateEmbedding(embedding);
-    
+
     try {
       const client = await this.pool.connect();
       try {
@@ -214,7 +214,7 @@ export class PgVectorClient {
             metadata ? JSON.stringify(metadata) : null
           ]
         );
-        
+
         return result.rows[0].id;
       } finally {
         client.release();
@@ -245,15 +245,15 @@ export class PgVectorClient {
     });
 
     const resultIds: string[] = [];
-    
+
     try {
       const client = await this.pool.connect();
       try {
         await client.query('BEGIN');
-        
+
         for (let i = 0; i < embeddings.length; i += batchSize) {
           const batch = embeddings.slice(i, i + batchSize);
-          
+
           for (const record of batch) {
             const result = await client.query(
               'SELECT upsert_candidate_embedding($1, $2, $3, $4, $5) AS id',
@@ -268,7 +268,7 @@ export class PgVectorClient {
             resultIds.push(result.rows[0].id);
           }
         }
-        
+
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -283,7 +283,7 @@ export class PgVectorClient {
         error as Error
       );
     }
-    
+
     return resultIds;
   }
 
@@ -298,7 +298,7 @@ export class PgVectorClient {
     chunkType: string = 'full_profile'
   ): Promise<SearchResult[]> {
     this.validateEmbedding(queryEmbedding);
-    
+
     try {
       const client = await this.pool.connect();
       try {
@@ -313,7 +313,7 @@ export class PgVectorClient {
             chunkType
           ]
         );
-        
+
         return result.rows.map(row => ({
           candidate_id: row.candidate_id,
           similarity: parseFloat(row.similarity),
@@ -350,16 +350,16 @@ export class PgVectorClient {
           WHERE candidate_id = $1
         `;
         const params: any[] = [candidateId];
-        
+
         if (modelVersion) {
           query += ' AND model_version = $2';
           params.push(modelVersion);
         }
-        
+
         query += ' ORDER BY created_at DESC';
-        
+
         const result = await client.query(query, params);
-        
+
         return result.rows.map(row => ({
           id: row.id,
           candidate_id: row.candidate_id,
@@ -390,20 +390,20 @@ export class PgVectorClient {
       const client = await this.pool.connect();
       try {
         await client.query('BEGIN');
-        
+
         // Delete from both tables
         const embeddingResult = await client.query(
           'DELETE FROM candidate_embeddings WHERE candidate_id = $1',
           [candidateId]
         );
-        
+
         await client.query(
           'DELETE FROM embedding_metadata WHERE candidate_id = $1',
           [candidateId]
         );
-        
+
         await client.query('COMMIT');
-        
+
         return embeddingResult.rowCount || 0;
       } catch (error) {
         await client.query('ROLLBACK');
@@ -427,35 +427,44 @@ export class PgVectorClient {
     try {
       const client = await this.pool.connect();
       try {
-        // Use the database views for statistics
-        const [embeddingStats, processingStats, totalStats] = await Promise.all([
-          client.query('SELECT * FROM embedding_stats'),
-          client.query('SELECT * FROM processing_stats'),
-          client.query(`
-            SELECT 
-              COUNT(DISTINCT candidate_id) as total_candidates,
-              COUNT(*) as total_embeddings,
-              MAX(updated_at) as last_updated
-            FROM candidate_embeddings
-          `)
-        ]);
-        
+        // Avoid using the expensive embedding_stats view which converts vectors to text
+        const totalStats = await client.query(`
+          SELECT 
+            COUNT(DISTINCT candidate_id) as total_candidates,
+            COUNT(*) as total_embeddings,
+            MAX(updated_at) as last_updated
+          FROM candidate_embeddings
+        `);
+
+        const modelStats = await client.query(`
+          SELECT 
+            model_version,
+            chunk_type,
+            COUNT(*) as total_embeddings,
+            MIN(created_at) as first_created,
+            MAX(updated_at) as last_updated
+          FROM candidate_embeddings
+          GROUP BY model_version, chunk_type
+        `);
+
+        const processingStats = await client.query('SELECT * FROM processing_stats');
+
         return {
-          total_candidates: totalStats.rows[0]?.total_candidates || 0,
-          total_embeddings: totalStats.rows[0]?.total_embeddings || 0,
+          total_candidates: parseInt(totalStats.rows[0]?.total_candidates || '0'),
+          total_embeddings: parseInt(totalStats.rows[0]?.total_embeddings || '0'),
           last_updated: totalStats.rows[0]?.last_updated?.toISOString(),
-          model_stats: embeddingStats.rows.map(row => ({
+          model_stats: modelStats.rows.map(row => ({
             model_version: row.model_version,
             chunk_type: row.chunk_type,
-            total_embeddings: row.total_embeddings,
-            avg_dimensions: row.avg_dimensions,
+            total_embeddings: parseInt(row.total_embeddings),
+            avg_dimensions: 768, // Hardcoded to avoid expensive calculation
             first_created: row.first_created,
             last_updated: row.last_updated
           })),
           processing_stats: processingStats.rows.map(row => ({
             processing_status: row.processing_status,
-            candidate_count: row.candidate_count,
-            avg_embeddings_per_candidate: row.avg_embeddings_per_candidate,
+            candidate_count: parseInt(row.candidate_count),
+            avg_embeddings_per_candidate: parseFloat(row.avg_embeddings_per_candidate),
             oldest_processed: row.oldest_processed,
             latest_processed: row.latest_processed
           }))
@@ -493,13 +502,13 @@ export class PgVectorClient {
         // Check basic connection
         await client.query('SELECT 1');
         health.database_connected = true;
-        
+
         // Check pgvector extension
         const extension = await client.query(
           "SELECT 1 FROM pg_extension WHERE extname = 'vector'"
         );
         health.pgvector_available = extension.rows.length > 0;
-        
+
         // Check required tables
         const tables = await client.query(`
           SELECT COUNT(*) as count FROM information_schema.tables 
@@ -507,7 +516,7 @@ export class PgVectorClient {
           AND table_name IN ('candidate_embeddings', 'embedding_metadata')
         `);
         health.tables_exist = tables.rows[0].count == 2;
-        
+
         // Check vector indexes
         const indexes = await client.query(`
           SELECT COUNT(*) as count FROM pg_indexes 
@@ -515,15 +524,15 @@ export class PgVectorClient {
           AND indexname LIKE '%vector%'
         `);
         health.indexes_exist = indexes.rows[0].count > 0;
-        
+
         // Get total embeddings count
         const embeddingsCount = await client.query(`
           SELECT COUNT(*) as count FROM candidate_embeddings
         `);
         health.total_embeddings = parseInt(embeddingsCount.rows[0].count);
-        
+
         health.connection_pool_size = this.pool.totalCount;
-        
+
         if (health.database_connected && health.pgvector_available && health.tables_exist) {
           health.status = 'healthy';
         } else {
@@ -535,7 +544,7 @@ export class PgVectorClient {
     } catch (error) {
       health.error = (error as Error).message;
     }
-    
+
     return health;
   }
 
@@ -557,14 +566,14 @@ export class PgVectorClient {
         'Embedding must be a non-empty array'
       );
     }
-    
+
     if (embedding.length !== 768) {
       throw new PgVectorException(
         PgVectorError.VALIDATION_ERROR,
         `Embedding must be 768-dimensional, got ${embedding.length}`
       );
     }
-    
+
     if (!embedding.every(x => typeof x === 'number' && !isNaN(x))) {
       throw new PgVectorException(
         PgVectorError.VALIDATION_ERROR,

@@ -1,0 +1,90 @@
+{
+  "explicit_skills": {
+    "technical_skills": [],
+    "tools_technologies": [],
+    "soft_skills": [],
+    "certifications": [],
+    "languages": []
+  },
+  "inferred_skills": {
+    "highly_probable_skills": [],
+    "probable_skills": [],
+    "likely_skills": [],
+    "possible_skills": []
+  },
+  "role_based_competencies": {
+    "current_role_competencies": {
+      "role": "N/A - No experience provided",
+      "core_competencies": [],
+      "typical_tools": [],
+      "domain_knowledge": []
+    },
+    "historical_competencies": []
+  },
+  "company_context_skills": {
+    "company_specific": [],
+    "industry_skills": []
+  },
+  "skill_evolution_analysis": {
+    "skill_trajectory": "N/A - No data provided",
+    "emerging_skills": [],
+    "skill_gaps": [],
+    "learning_velocity": "N/A - No data provided",
+    "skill_currency": "N/A - No data provided",
+    "skill_timeline": [],
+    "skill_depth_analysis": {
+      "beginner_skills": [],
+      "intermediate_skills": [],
+      "advanced_skills": [],
+      "expert_skills": []
+    }
+  },
+  "composite_skill_profile": {
+    "primary_expertise": [],
+    "secondary_expertise": [],
+    "domain_specialization": "N/A - No data provided",
+    "skill_breadth": "N/A - No data provided",
+    "unique_combination": [],
+    "skill_categories": {
+      "technical_skills": [],
+      "soft_skills": [],
+      "domain_skills": [],
+      "leadership_skills": []
+    },
+    "transferable_skills": []
+  },
+  "career_trajectory_analysis": {
+    "current_level": "Unknown - No data provided",
+    "years_experience": 0,
+    "promotion_velocity": "N/A - No data provided",
+    "career_progression": "N/A - No data provided",
+    "performance_indicator": "N/A - No data provided"
+  },
+  "market_positioning": {
+    "skill_market_value": "Unknown - No data provided",
+    "skill_rarity": "Unknown - No data provided",
+    "competitive_advantage": [],
+    "placement_difficulty": "Unknown - No data provided",
+    "ideal_next_roles": [],
+    "salary_range": "Unknown - No data provided"
+  },
+  "recruiter_insights": {
+    "overall_rating": "Cannot assess due to lack of data",
+    "recommendation": "Request full resume for assessment",
+    "confidence_in_assessment": "Very Low (0%)",
+    "verification_needed": [
+      "Full resume (experience, education, skills, projects, achievements)"
+    ],
+    "red_flags": [
+      "Lack of any provided information prevents assessment. Cannot determine suitability for any role."
+    ],
+    "selling_points": [
+      "Cannot determine without information."
+    ],
+    "interview_focus": [
+      "Gathering basic career history, skill set, and career aspirations."
+      "Understanding their background, even if it's non-traditional or entry-level."
+    ],
+    "one_line_pitch": "Matheus Weber: Candidate with no provided resume data; requires full information for any assessment."
+  }
+}

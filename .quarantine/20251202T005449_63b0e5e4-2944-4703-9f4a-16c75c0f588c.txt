@@ -1,0 +1,13 @@
+{
+  "role": "SeniorSeniorproject manager",
+  "company": "",
+  "years_exp": "15+",
+  "skills": [
+    "Python": "Python",
+    "framework": "framework",
+    "ל": "ל",
+    "ה": "ה",
+    "ק": "ק",
+    "ת": "ת"
+  ]
+}
