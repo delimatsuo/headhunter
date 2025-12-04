@@ -830,3 +830,16 @@
   background: #F9FAFB;
   border-color: #9CA3AF;
 }
+
+.btn-similar {
+  background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
+}
+
+.btn-similar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(99, 102, 241, 0.4);
+  filter: brightness(1.05);
+}

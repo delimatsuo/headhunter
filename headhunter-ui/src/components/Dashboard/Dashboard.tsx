@@ -4,7 +4,7 @@ import { firestoreService } from '../../services/firestore-direct';
 import { DashboardStats, CandidateProfile, JobDescription, SearchResponse } from '../../types';
 import { SkillAwareCandidateCard } from '../Candidate/SkillAwareCandidateCard';
 import { useAuth } from '../../contexts/AuthContext';
-import { AllowedUsersPanel } from '../Admin/AllowedUsersPanel';
+
 import { AddCandidateModal } from '../Upload/AddCandidateModal';
 import { JobDescriptionForm } from '../Search/JobDescriptionForm';
 import { SearchResults } from '../Search/SearchResults';
@@ -24,6 +24,7 @@ import Stack from '@mui/material/Stack';
 import Paper from '@mui/material/Paper';
 import Divider from '@mui/material/Divider';
 import Fade from '@mui/material/Fade';
+import LinearProgress from '@mui/material/LinearProgress';
 
 // Icons
 import PeopleIcon from '@mui/icons-material/PeopleRounded';
@@ -83,10 +84,16 @@ export const Dashboard: React.FC = () => {
 
     try {
       // Try direct Firestore first, fall back to API if needed
-      const [statsResult, candidatesResult] = await Promise.all([
-        firestoreService.getDashboardStats().catch(() => null),
-        firestoreService.getCandidatesDirect(6).catch(() => [])
-      ]);
+      // Add 5s timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 5000));
+
+      const [statsResult, candidatesResult] = await Promise.race([
+        Promise.all([
+          firestoreService.getDashboardStats().catch(() => null),
+          firestoreService.getCandidatesDirect(6).catch(() => [])
+        ]),
+        timeoutPromise
+      ]) as [DashboardStats | null, CandidateProfile[]];
 
       if (statsResult) {
         setStats(statsResult);
@@ -191,6 +198,7 @@ export const Dashboard: React.FC = () => {
     if (!currentSearch || !saveSearchName.trim()) return;
 
     try {
+      console.log('Saving search:', saveSearchName, currentSearch);
       await apiService.saveSearch(saveSearchName, { job_description: currentSearch }, 'candidate');
       setIsSaveSearchOpen(false);
       setSaveSearchName('');
@@ -232,11 +240,12 @@ export const Dashboard: React.FC = () => {
         const matches = similarCandidates.map((result: any) => ({
           candidate: {
             candidate_id: result.candidate_id,
-            ...result.profile,
-            // Ensure essential fields are present
-            name: result.profile?.name || 'Unknown Candidate',
-            current_role: result.profile?.current_role || 'Role not specified',
-            current_company: result.profile?.current_company || 'Company not specified',
+            ...result, // Spread the full result first
+            ...result.profile, // Then profile if it exists (though backend now flattens it)
+            // Ensure essential fields are present, prioritizing top-level fields
+            name: result.name || result.profile?.name || 'Unknown Candidate',
+            current_role: result.current_role || result.profile?.current_role || 'Role not specified',
+            current_company: result.current_company || result.profile?.current_company || 'Company not specified',
             overall_score: result.overall_score || 0,
             matchReasons: result.match_reasons || []
           },
@@ -483,62 +492,103 @@ export const Dashboard: React.FC = () => {
                 </Box>
               </Grid>
 
-              {/* Right Column: Quick Actions */}
+              {/* Right Column: Analytics & Insights */}
               <Grid item xs={12} md={4}>
                 <Box sx={{ mb: 4 }}>
                   <Typography variant="h6" fontWeight="bold" gutterBottom>
-                    Quick Actions
+                    Talent Insights
                   </Typography>
-                  <Stack spacing={2}>
-                    <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+
+                  <Stack spacing={3}>
+                    {/* Skill Heatmap */}
+                    <Paper sx={{ p: 3 }}>
+                      <Typography variant="subtitle2" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <TrendingUpIcon fontSize="small" color="primary" /> Top Skills
+                      </Typography>
+                      <Stack spacing={2} sx={{ mt: 2 }}>
+                        {stats?.topSkills?.slice(0, 5).map((item, index) => (
+                          <Box key={index}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                              <Typography variant="body2">{item.skill}</Typography>
+                              <Typography variant="caption" color="text.secondary">{item.count}</Typography>
+                            </Box>
+                            <LinearProgress
+                              variant="determinate"
+                              value={Math.min((item.count / (stats.topSkills[0]?.count || 1)) * 100, 100)}
+                              sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(0,0,0,0.05)' }}
+                            />
+                          </Box>
+                        ))}
+                      </Stack>
+                    </Paper>
+
+                    {/* Experience Distribution */}
+                    {stats?.experienceLevels && (
+                      <Paper sx={{ p: 3 }}>
+                        <Typography variant="subtitle2" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <HistoryIcon fontSize="small" color="secondary" /> Experience Level
+                        </Typography>
+                        <Stack spacing={2} sx={{ mt: 2 }}>
+                          {Object.entries(stats.experienceLevels).map(([level, count]) => (
+                            <Box key={level}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                                <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>{level}</Typography>
+                                <Typography variant="caption" color="text.secondary">{count}</Typography>
+                              </Box>
+                              <LinearProgress
+                                variant="determinate"
+                                value={Math.min((count / (stats.totalCandidates || 1)) * 100, 100)}
+                                color="secondary"
+                                sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(0,0,0,0.05)' }}
+                              />
+                            </Box>
+                          ))}
+                        </Stack>
+                      </Paper>
+                    )}
+
+                    {/* Company Pedigree */}
+                    {stats?.companyTiers && (
+                      <Paper sx={{ p: 3 }}>
+                        <Typography variant="subtitle2" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <AssessmentIcon fontSize="small" color="success" /> Company Pedigree
+                        </Typography>
+                        <Stack spacing={2} sx={{ mt: 2 }}>
+                          {Object.entries(stats.companyTiers).map(([tier, count]) => (
+                            <Box key={tier}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                                <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>{tier.replace('_', ' ')}</Typography>
+                                <Typography variant="caption" color="text.secondary">{count}</Typography>
+                              </Box>
+                              <LinearProgress
+                                variant="determinate"
+                                value={Math.min((count / (stats.totalCandidates || 1)) * 100, 100)}
+                                color="success"
+                                sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(0,0,0,0.05)' }}
+                              />
+                            </Box>
+                          ))}
+                        </Stack>
+                      </Paper>
+                    )}
+
+                    {/* Quick Actions */}
+                    <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: 'primary.main', color: 'white' }}>
                       <Box>
                         <Typography variant="subtitle2" fontWeight="bold">Add Candidate</Typography>
-                        <Typography variant="caption" color="text.secondary">Upload new resume</Typography>
+                        <Typography variant="caption" sx={{ opacity: 0.8 }}>Upload new resume</Typography>
                       </Box>
                       <Button
                         variant="contained"
                         size="small"
                         startIcon={<AddIcon />}
                         onClick={() => setIsAddModalOpen(true)}
+                        sx={{ bgcolor: 'white', color: 'primary.main', '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' } }}
                       >
                         Add
                       </Button>
                     </Paper>
-                    <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Box>
-                        <Typography variant="subtitle2" fontWeight="bold">View Analytics</Typography>
-                        <Typography variant="caption" color="text.secondary">Analyze trends</Typography>
-                      </Box>
-                      <Button variant="outlined" size="small" startIcon={<BarChartIcon />}>
-                        View
-                      </Button>
-                    </Paper>
                   </Stack>
-                </Box>
-
-                {/* Top Skills (Compact) */}
-                {stats?.topSkills && stats.topSkills.length > 0 && (
-                  <Box sx={{ mt: 4 }}>
-                    <Typography variant="h6" fontWeight="bold" gutterBottom>
-                      Trending Skills
-                    </Typography>
-                    <Paper sx={{ p: 2 }}>
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {stats.topSkills.slice(0, 10).map((item, index) => (
-                          <Chip
-                            key={index}
-                            label={item.skill}
-                            size="small"
-                            variant="outlined"
-                          />
-                        ))}
-                      </Box>
-                    </Paper>
-                  </Box>
-                )}
-
-                <Box sx={{ mt: 4 }}>
-                  <AllowedUsersPanel />
                 </Box>
               </Grid>
             </Grid>

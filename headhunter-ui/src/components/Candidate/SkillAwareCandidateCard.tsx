@@ -320,6 +320,48 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
   const displaySkills = [...topSkills, ...otherSkills].slice(0, 8);
   const remainingSkills = technicalSkills.length - 8;
 
+  const getRole = () => {
+    const role = candidate.current_role ||
+      candidate.title ||
+      candidate.resume_analysis?.current_role ||
+      candidate.analysis?.current_role?.title ||
+      candidate.searchable_data?.current_title ||
+      candidate.intelligent_analysis?.role_based_competencies?.current_role_competencies?.role;
+
+    if (role) return role;
+
+    // Fallback: If level looks like a title (long string), use it
+    const level = getLevel();
+    if (level && level.length > 20) return level;
+
+    return 'Role not specified';
+  };
+
+  const role = getRole();
+  const rawLevel = getLevel();
+
+  // Helper to extract just the seniority level if possible
+  const getDisplayLevel = () => {
+    const lowerLevel = rawLevel.toLowerCase();
+    const lowerRole = role.toLowerCase();
+
+    // If level is effectively the same as role, don't show it as "Level"
+    if (lowerRole.includes(lowerLevel) || lowerLevel.includes(lowerRole)) {
+      // Try to extract standard seniority terms
+      const seniorityTerms = ['intern', 'junior', 'associate', 'mid-level', 'senior', 'staff', 'principal', 'lead', 'manager', 'director', 'vp', 'head', 'chief', 'executive'];
+      const foundTerm = seniorityTerms.find(term => lowerLevel.includes(term));
+
+      if (foundTerm) {
+        return foundTerm.charAt(0).toUpperCase() + foundTerm.slice(1);
+      }
+      return null; // Hide level if it's just a duplicate title and we can't extract a simple level
+    }
+
+    return rawLevel;
+  };
+
+  const displayLevel = getDisplayLevel();
+
   return (
     <div className={`skill-aware-candidate-card ${expanded ? 'expanded' : ''}`}>
       <div className="card-header" onClick={handleCardClick}>
@@ -348,10 +390,10 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
               )}
             </div>
             <p className="candidate-level">
-              {getLevel()} • {getExperience()} years
+              {displayLevel ? `${displayLevel} • ` : ''}{getExperience()} years
             </p>
             <p className="candidate-role">
-              {candidate.current_role || candidate.resume_analysis?.current_role || 'Role not specified'}
+              {role}
             </p>
           </div>
         </div>
@@ -362,6 +404,14 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
               <div className={`score-badge ${getScoreColor(matchScore)}`}>
                 <span className="score-value">{formatScore(matchScore)}%</span>
                 <span className="score-label">Match</span>
+              </div>
+            </Tooltip>
+          )}
+          {similarity !== undefined && (
+            <Tooltip title="Semantic similarity between the candidate profile and job description." arrow placement="top">
+              <div className={`score-badge ${getScoreColor(similarity)}`}>
+                <span className="score-value">{formatScore(similarity)}%</span>
+                <span className="score-label">Similarity</span>
               </div>
             </Tooltip>
           )}
@@ -387,34 +437,8 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
                   e.stopPropagation();
                   onFindSimilar();
                 }}
-                style={{
-                  background: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)',
-                  color: 'white',
-                  border: 'none'
-                }}
               >
-                Find Similar
-              </button>
-            )}
-            {linkedInUrl ? (
-              <button
-                className="btn-premium btn-linkedin"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.open(linkedInUrl, '_blank');
-                }}
-              >
-                Verify on LinkedIn
-              </button>
-            ) : (
-              <button
-                className="btn-premium btn-resume"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.open(`https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(candidate.name)}`, '_blank');
-                }}
-              >
-                Search LinkedIn
+                ✨ Find Similar Candidates
               </button>
             )}
 

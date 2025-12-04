@@ -8,5 +8,5 @@ const vertex_ai = new VertexAI({ project: project, location: location });
 // Instantiate the model
 // Using gemini-3-pro-preview (latest stable as of Nov 2025)
 export const geminiModel = vertex_ai.getGenerativeModel({
-    model: 'gemini-3-pro-preview'
+    model: 'gemini-1.5-flash'
 });

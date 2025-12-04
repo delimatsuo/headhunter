@@ -62,6 +62,23 @@ Rerank Service caching is now enabled and verified.
 - Search Service: https://hh-search-svc-production-akcoqbr7sa-uc.a.run.app
 - Rerank Service: https://hh-rerank-svc-production-akcoqbr7sa-uc.a.run.app
 
+### Recent Updates (2025-12-04)
+
+**✅ Candidate Card UI/UX Improvements** (Dec 04, 2025)
+- **Fixed Role Display**: Improved `getRole()` logic in `SkillAwareCandidateCard.tsx` to check multiple fields (`current_role`, `title`, `resume_analysis`, etc.) preventing "Role not specified" labels.
+- **Fixed Duplicate Title**: Added `getDisplayLevel()` helper to extract clean seniority terms (Senior, Mid-level, etc.) and prevent the "Level" field from duplicating the "Role" field.
+- **Removed Redundant Buttons**: Removed "Search LinkedIn" and "Verify on LinkedIn" buttons from candidate cards—the LinkedIn icon next to the candidate name serves this purpose.
+- **Improved "Find Similar" Button**: Updated styling with purple gradient and sparkle icon (✨) for better visual hierarchy and AI feature emphasis.
+- **Fixed "Unknown Candidate" in Find Similar**: Updated `Dashboard.tsx` data mapping to correctly read candidate data from `findSimilarCandidates` response, prioritizing top-level fields over nested `profile` object.
+- **Backend Fixes**: Updated `gemini-client.ts` to use stable `gemini-1.5-flash` model; improved name extraction in `similar-candidates.ts` with additional fallback fields.
+
+**Files Modified**:
+- `headhunter-ui/src/components/Candidate/SkillAwareCandidateCard.tsx`
+- `headhunter-ui/src/components/Candidate/SkillAwareCandidateCard.css`
+- `headhunter-ui/src/components/Dashboard/Dashboard.tsx`
+- `functions/src/gemini-client.ts`
+- `functions/src/similar-candidates.ts`
+
 ### Recent Updates (2025-11-29)
 
 **✅ Search Repair & LLM Reranking Upgrade** (Nov 29, 2025)
