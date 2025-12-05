@@ -243,6 +243,76 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "candidates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "org_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "created_at",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "candidates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "org_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "created_at",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "candidates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "org_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "analysis.company_pedigree.tier_level",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "candidates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "org_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchable_data.experience_level",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "saved_searches",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [

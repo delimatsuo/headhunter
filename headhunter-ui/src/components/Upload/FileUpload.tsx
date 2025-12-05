@@ -71,11 +71,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       });
 
       xhr.addEventListener('load', () => {
-        if (xhr.status === 200) {
+        if (xhr.status >= 200 && xhr.status < 300) {
           setUploadProgress({ progress: 100, status: 'completed' });
           onUploadComplete?.(fileUrl);
         } else {
-          const error = `Upload failed: ${xhr.statusText}`;
+          const error = `Upload failed: ${xhr.status} ${xhr.statusText}`;
+          console.error('Upload error response:', xhr.responseText);
           setUploadProgress({ progress: 0, status: 'error', error });
           onUploadError?.(error);
         }
@@ -88,7 +89,17 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       });
 
       xhr.open('PUT', uploadUrl);
+
+      // Set content type
       xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+
+      // Add required extension headers from signed URL
+      if (requiredHeaders) {
+        Object.entries(requiredHeaders).forEach(([key, value]) => {
+          xhr.setRequestHeader(key, value as string);
+        });
+      }
+
       xhr.send(file);
     } catch (error: any) {
       const errorMessage = error.message || 'Upload failed';

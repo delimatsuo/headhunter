@@ -13,7 +13,8 @@ import {
   getSavedSearches,
   deleteSavedSearch,
   findSimilarCandidates,
-  analyzeSearchQuery
+  analyzeSearchQuery,
+  getCandidateStats
 } from '../config/firebase';
 import {
   JobDescription,
@@ -83,7 +84,7 @@ export const apiService = {
         required_skills: requiredSkills,
         preferred_skills: preferredSkills,
         experience_level: experienceLevel,
-        limit: 50, // Fetch more candidates for reranking
+        limit: 100, // Fetch more candidates for pagination support
         filters: {
           min_years_experience: minExp,
         },
@@ -234,14 +235,42 @@ export const apiService = {
 
   // Create a new candidate
   async createCandidate(candidateData: {
-    name: string;
+    candidate_id?: string;
+    name?: string;
     email?: string;
+    resume_text?: string;
+    resume_url?: string;
+    notes?: string;
     resumeText?: string;
     resumeUrl?: string;
     recruiterComments?: string;
   }): Promise<ApiResponse<CandidateProfile>> {
     try {
-      const result = await createCandidate(candidateData);
+      // Build payload dynamically - only include fields with values
+      // Firebase converts undefined to null, but backend Zod doesn't accept null for optional strings
+      const payload: Record<string, string> = {
+        name: candidateData.name || 'Unknown Candidate'
+      };
+
+      // CRITICAL: Pass candidate_id to backend so file uploads and documents use the same ID
+      if (candidateData.candidate_id) {
+        payload.candidate_id = candidateData.candidate_id;
+      }
+
+      const email = candidateData.email;
+      if (email && email.trim()) payload.email = email.trim();
+
+      const resumeText = candidateData.resume_text || candidateData.resumeText;
+      if (resumeText && resumeText.trim()) payload.resume_text = resumeText.trim();
+
+      const resumeUrl = candidateData.resume_url || candidateData.resumeUrl;
+      if (resumeUrl && resumeUrl.trim()) payload.resume_url = resumeUrl.trim();
+
+      const notes = candidateData.notes || candidateData.recruiterComments;
+      if (notes && notes.trim()) payload.notes = notes.trim();
+
+      console.log('Creating candidate with payload:', payload);
+      const result = await createCandidate(payload);
       return result.data as ApiResponse<CandidateProfile>;
     } catch (error) {
       console.error('Create candidate error:', error);
@@ -298,40 +327,27 @@ export const apiService = {
   // Get dashboard statistics
   async getDashboardStats(): Promise<DashboardStats> {
     try {
-      // This would be implemented as a separate cloud function
-      // For now, we'll derive it from getCandidates
-      const candidatesResult = await this.getCandidates({ limit: 1000 });
+      const result = await getCandidateStats();
+      const data = result.data as any;
 
-      if (candidatesResult.success && candidatesResult.data) {
-        const candidatesData = candidatesResult.data as any;
-        const candidates = Array.isArray(candidatesData) ? candidatesData : (candidatesData.candidates || []);
-        // Use server-provided total count if available, otherwise fall back to array length
-        const totalCandidates = candidatesData.pagination?.total_count || candidates.length;
-        const averageScore = candidates.reduce((sum: number, candidate: CandidateProfile) =>
-          sum + (candidate.overall_score || 0), 0) / totalCandidates || 0;
-
-        // Extract top skills
-        const skillsCount = new Map<string, number>();
-        candidates.forEach((candidate: CandidateProfile) => {
-          (candidate.resume_analysis?.technical_skills || []).forEach((skill: string) => {
-            skillsCount.set(skill, (skillsCount.get(skill) || 0) + 1);
-          });
-        });
-
-        const topSkills = Array.from(skillsCount.entries())
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 10)
-          .map(([skill, count]) => ({ skill, count }));
-
+      if (data.success && data.stats) {
+        const stats = data.stats;
         return {
-          totalCandidates,
-          averageScore: Math.round(averageScore * 100) / 100,
-          activeSearches: 0, // This would come from search tracking
-          recentSearches: 0, // This would come from search logs
-          topSkills,
+          totalCandidates: stats.total_candidates,
+          averageScore: 0, // Not currently calculated by backend
+          activeSearches: 0,
+          recentSearches: 0,
+          topSkills: stats.top_skills || [],
+          recentActivity: {
+            searches: 0,
+            newCandidates: stats.recent_candidates || 0,
+            highMatches: 0
+          },
+          experienceLevels: stats.experience_levels,
+          companyTiers: stats.company_tiers,
         };
       } else {
-        throw new ApiError('Failed to get candidates for dashboard stats');
+        throw new ApiError('Failed to get dashboard stats');
       }
     } catch (error) {
       console.error('Dashboard stats error:', error);
@@ -503,10 +519,13 @@ export const apiService = {
   // Similar Candidates
   async findSimilarCandidates(candidateId: string): Promise<ApiResponse<VectorSearchResult[]>> {
     try {
-      const result = await findSimilarCandidates({ candidateId });
+      const result = await findSimilarCandidates({ candidate_id: candidateId });
+      // The backend returns { success: true, candidate_id, results: [...] }
+      // We need to extract the results array
+      const responseData = result.data as any;
       return {
         success: true,
-        data: result.data as VectorSearchResult[]
+        data: responseData.results || []
       };
     } catch (error) {
       console.error('Error finding similar candidates:', error);

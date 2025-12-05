@@ -6,6 +6,7 @@ import { AuthModal } from './components/Auth/AuthModal';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { SearchPage } from './components/Search/SearchPage';
 import { AdminPage } from './components/Admin/AdminPage';
+import { LandingPage } from './components/Landing/LandingPage';
 
 type PageType = 'dashboard' | 'search' | 'candidates' | 'analytics' | 'profile' | 'settings' | 'admin';
 
@@ -52,43 +53,7 @@ function AppContent() {
   const renderCurrentPage = () => {
     // Show landing page for unauthenticated users
     if (!user) {
-      return (
-        <div className="landing-page">
-          <div className="hero-section">
-            <div className="hero-content">
-              <h1>Welcome to Headhunter AI</h1>
-              <p className="hero-subtitle">
-                AI-powered candidate matching and recruitment analytics
-              </p>
-              <div className="hero-features">
-                <div className="feature">
-                  <div className="feature-icon">🎯</div>
-                  <h3>Smart Matching</h3>
-                  <p>Find the perfect candidates using advanced AI algorithms</p>
-                </div>
-                <div className="feature">
-                  <div className="feature-icon">📊</div>
-                  <h3>Analytics Dashboard</h3>
-                  <p>Track recruitment metrics and optimize your hiring process</p>
-                </div>
-                <div className="feature">
-                  <div className="feature-icon">🚀</div>
-                  <h3>Fast Processing</h3>
-                  <p>Process resumes and generate insights in seconds</p>
-                </div>
-              </div>
-              <div className="hero-actions">
-                <button
-                  className="btn btn-primary btn-large"
-                  onClick={() => setShowAuth(true)}
-                >
-                  Get Started
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
+      return <LandingPage onGetStarted={() => setShowAuth(true)} />;
     }
 
     // Decode role claim for admin gating
@@ -151,6 +116,20 @@ function AppContent() {
         return <Dashboard />;
     }
   };
+
+  // For landing page, render without navbar wrapper
+  if (!user) {
+    return (
+      <div className="app app-landing">
+        {renderCurrentPage()}
+        <AuthModal
+          isOpen={showAuth}
+          onClose={() => setShowAuth(false)}
+          initialMode="login"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="app">

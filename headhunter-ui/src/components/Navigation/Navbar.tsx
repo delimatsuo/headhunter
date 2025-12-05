@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { OrganizationSwitcher } from './OrganizationSwitcher';
 import { useAuth } from '../../contexts/AuthContext';
 import { NavItem } from '../../types';
 import AppBar from '@mui/material/AppBar';
@@ -53,10 +54,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
-  const baseItems: NavItem[] = [
-    { name: 'Dashboard', path: 'dashboard', icon: '🏠' },
-    { name: 'Search', path: 'search', icon: '🔍' }
-  ];
+
 
   let role: string | undefined;
   try {
@@ -68,9 +66,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   } catch { }
 
-  const navItems: NavItem[] = role === 'admin' || role === 'super_admin'
-    ? [...baseItems, { name: 'Admin', path: 'admin', icon: '🛡️' }]
-    : baseItems;
+
 
   const handleSignOut = async () => {
     try {
@@ -100,48 +96,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             </Typography>
           </Box>
 
-          {/* Navigation Links */}
-          {user && (
-            <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, gap: 1 }}>
-              {navItems.map((item) => {
-                const isActive = currentPage === item.path;
-                return (
-                  <Button
-                    key={item.path}
-                    onClick={() => onNavigate(item.path)}
-                    startIcon={getIcon(item.name)}
-                    sx={{
-                      my: 2,
-                      color: isActive ? 'primary.main' : 'text.secondary',
-                      bgcolor: isActive ? 'primary.50' : 'transparent',
-                      fontWeight: isActive ? 600 : 500,
-                      px: 2,
-                      '&:hover': {
-                        bgcolor: isActive ? 'primary.100' : 'action.hover',
-                        color: 'primary.main',
-                      },
-                    }}
-                  >
-                    {item.name}
-                  </Button>
-                );
-              })}
-            </Box>
-          )}
+          {/* Navigation Links - REMOVED per user request */}
+
+          <Box sx={{ flexGrow: 1 }} />
+
+          <OrganizationSwitcher />
 
           {/* Right Side Actions */}
           <Box sx={{ flexGrow: 0, display: 'flex', alignItems: 'center', gap: 2 }}>
             {user ? (
               <>
-                <Tooltip title="Notifications">
-                  <IconButton size="small" sx={{ color: 'text.secondary' }}>
-                    <Badge badgeContent={3} color="error" variant="dot">
-                      <NotificationsIcon />
-                    </Badge>
-                  </IconButton>
-                </Tooltip>
-
-                <Box sx={{ height: 24, width: 1, bgcolor: 'divider' }} />
 
                 <Tooltip title="Account settings">
                   <IconButton
@@ -215,6 +179,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </ListItemIcon>
                     Profile
                   </MenuItem>
+
+                  {(role === 'admin' || role === 'super_admin') && (
+                    <MenuItem onClick={() => onNavigate('admin')}>
+                      <ListItemIcon>
+                        <AdminPanelSettingsIcon fontSize="small" />
+                      </ListItemIcon>
+                      Admin
+                    </MenuItem>
+                  )}
+
                   <MenuItem onClick={() => onNavigate('settings')}>
                     <ListItemIcon>
                       <SettingsIcon fontSize="small" />

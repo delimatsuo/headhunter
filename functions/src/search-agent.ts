@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import * as admin from 'firebase-admin';
+import { getGeminiConfig } from './ai-models';
 
 export interface SearchStrategy {
     target_role: string;
@@ -25,12 +26,7 @@ export class SearchAgent {
         }
         this.genAI = new GoogleGenerativeAI(apiKey || '');
         this.model = this.genAI.getGenerativeModel({
-            model: 'gemini-2.5-flash',
-            generationConfig: {
-                temperature: 0.2,
-                maxOutputTokens: 2048,
-                responseMimeType: 'application/json'
-            }
+            ...getGeminiConfig({ maxOutputTokens: 2048, responseMimeType: 'application/json' }),
         });
     }
 

@@ -137,8 +137,13 @@ service cloud.firestore {
 
     match /candidates/{candidateId} {
       // Allowed users can read candidates in their organization
-      allow read: if isAllowedUser() &&
-                     isOrgMember(resource.data.organization_id);
+      // Allowed users can read candidates in their organization
+      // Admins can read all candidates
+      allow read: if isAllowedUser() && (
+        isAdmin() || 
+        isOrgMember(resource.data.organization_id) ||
+        resource.data.organization_id == null // Allow access to legacy data without org_id
+      );
 
       // Only Cloud Functions can write candidate data
       allow write: if false;

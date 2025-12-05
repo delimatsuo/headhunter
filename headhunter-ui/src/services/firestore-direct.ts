@@ -27,9 +27,13 @@ export const firestoreService = {
       const candidates: CandidateProfile[] = [];
       snapshot.forEach((doc) => {
         const data = doc.data();
+        // Log data for debugging
+        console.log('Candidate Data:', data);
         candidates.push({
           id: doc.id,
-          name: data.name || 'Unknown',
+          name: (data.name && data.name !== 'Unknown Candidate' && data.name !== 'Unknown')
+            ? data.name
+            : (data.documents?.resume_ref?.split('/').pop() || 'Unknown Candidate'),
           title: data.current_role || data.ai_analysis?.experience_analysis?.current_role || 'Not specified',
           company: data.ai_analysis?.experience_analysis?.companies?.[0] || 'Unknown',
           location: data.ai_analysis?.personal_details?.location || 'Not specified',

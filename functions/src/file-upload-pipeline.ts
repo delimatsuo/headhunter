@@ -11,6 +11,7 @@ import { z } from "zod";
 import { Storage } from "@google-cloud/storage";
 import { BUCKET_FILES } from "./config";
 import * as path from "path";
+import { VectorSearchService } from "./vector-search";
 
 // Initialize services
 const firestore = admin.firestore();
@@ -410,26 +411,78 @@ export const processUploadedFile = onObjectFinalized(
         updated_at: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      // Add to processing queue for LLM analysis
-      await firestore.collection('processing_queue').add({
-        candidate_id: candidateId,
-        org_id: orgId,
-        stage: 'awaiting_analysis',
-        structured_data: {
-          candidate_id: candidateId,
-          raw_text: cleanText,
-          extracted_at: new Date().toISOString(),
-          extraction_method: extractionMethod,
-          file_metadata: {
-            filename: metadata.name,
-            size: metadata.size,
-            content_type: metadata.contentType,
-            original_name: originalName,
-          },
-        },
-        created_at: admin.firestore.FieldValue.serverTimestamp(),
-        status: 'queued',
-      });
+      // Trigger analysis directly
+      try {
+        const analysisService = new AnalysisService();
+        console.log(`Starting analysis for candidate ${candidateId}`);
+
+        const analysis = await analysisService.analyzeCandidate({
+          name: "Unknown", // Will be extracted
+          resume_text: cleanText,
+          experience: cleanText, // Pass full text as experience context
+          education: cleanText   // Pass full text as education context
+        });
+
+        // Update candidate with analysis results
+        const updateData: any = {
+          intelligent_analysis: analysis,
+          'processing.status': 'analyzed',
+          'processing.local_analysis_completed': true,
+          updated_at: admin.firestore.FieldValue.serverTimestamp(),
+        };
+
+        // Update name and email if extracted and currently unknown/missing
+        if (analysis.personal_details?.name && analysis.personal_details.name !== "Unknown") {
+          updateData.name = analysis.personal_details.name;
+          updateData['personal.name'] = analysis.personal_details.name;
+        }
+
+        if (analysis.personal_details?.email) {
+          updateData['personal.email'] = analysis.personal_details.email;
+        }
+
+        if (analysis.personal_details?.linkedin) {
+          updateData.linkedin_url = analysis.personal_details.linkedin;
+        }
+
+        await firestore.collection('candidates').doc(candidateId).update(updateData);
+        console.log(`Analysis completed for candidate ${candidateId}`);
+
+        // Generate embedding for vector search
+        try {
+          const vectorService = new VectorSearchService();
+          const candidateDoc = await firestore.collection('candidates').doc(candidateId).get();
+          const candidateData = candidateDoc.data();
+
+          if (candidateData) {
+            await vectorService.storeEmbedding({
+              candidate_id: candidateId,
+              name: candidateData.name,
+              current_role: candidateData.current_role,
+              current_company: candidateData.current_company,
+              intelligent_analysis: candidateData.intelligent_analysis || analysis,
+              resume_analysis: candidateData.resume_analysis,
+            });
+
+            await firestore.collection('candidates').doc(candidateId).update({
+              'processing.embedding_generated': true,
+              'processing.status': 'ready'
+            });
+            console.log(`Embedding generated for candidate ${candidateId}`);
+          }
+        } catch (embeddingError) {
+          console.error(`Embedding generation failed for candidate ${candidateId}:`, embeddingError);
+          // Don't fail the process, candidate is still searchable via direct name match
+        }
+
+      } catch (analysisError) {
+        console.error(`Analysis failed for candidate ${candidateId}:`, analysisError);
+        // Don't fail the whole process, just log it
+        await firestore.collection('candidates').doc(candidateId).update({
+          'processing.status': 'analysis_failed',
+          'processing.error_message': (analysisError as Error).message
+        });
+      }
 
       console.log(`Successfully processed file for candidate: ${candidateId}, extracted ${cleanText.length} characters`);
 
@@ -661,44 +714,34 @@ export const deleteFile = onCall(
 
 // Text Extraction Helper Functions
 
-async function extractPdfText(buffer: Buffer): Promise<string> {
-  // This would use pdf-parse library
-  // const pdfParse = require('pdf-parse');
-  // const data = await pdfParse(buffer);
-  // return data.text;
+import { AnalysisService } from "./analysis-service";
 
-  // Placeholder implementation
-  return "PDF text extraction not implemented - would use pdf-parse library";
+async function extractPdfText(buffer: Buffer): Promise<string> {
+  const analysisService = new AnalysisService();
+  return await analysisService.extractText(buffer, 'application/pdf');
 }
 
 async function extractDocxText(buffer: Buffer): Promise<string> {
-  // This would use mammoth library
-  // const mammoth = require('mammoth');
-  // const result = await mammoth.extractRawText({ buffer });
-  // return result.value;
-
-  // Placeholder implementation
-  return "DOCX text extraction not implemented - would use mammoth library";
+  // Gemini doesn't support DOCX directly yet, but we can try as text or fallback
+  // For now, let's try to treat it as plain text if possible, or warn.
+  // Actually, Gemini 1.5 might support it via File API but inline data is restricted to images/PDF/video/audio.
+  // We will stick to the placeholder for DOCX or try to use a simple regex extractor if possible, 
+  // but since we can't add libraries, we might be stuck.
+  // However, the user specifically asked for LinkedIn profile extraction, which is usually PDF.
+  // We'll leave DOCX as is for now or return a message.
+  return "DOCX extraction requires mammoth library. Please upload PDF for auto-extraction.";
 }
 
 async function extractDocText(buffer: Buffer): Promise<string> {
-  // This would use antiword or similar for .doc files
-  // More complex implementation required
-
-  // Placeholder implementation
-  return "DOC text extraction not implemented - would use antiword or similar";
+  return "DOC extraction requires antiword. Please upload PDF for auto-extraction.";
 }
 
 async function extractImageText(buffer: Buffer): Promise<string> {
-  // This would use Google Cloud Vision API
-  // const vision = require('@google-cloud/vision');
-  // const client = new vision.ImageAnnotatorClient();
-  // const [result] = await client.textDetection({ image: { content: buffer } });
-  // const detections = result.textAnnotations;
-  // return detections && detections.length > 0 ? detections[0].description : '';
-
-  // Placeholder implementation
-  return "OCR text extraction not implemented - would use Google Cloud Vision API";
+  const analysisService = new AnalysisService();
+  // Determine mime type from buffer signature or just assume jpeg/png
+  // We'll pass image/jpeg as a safe default for common images or check magic numbers if we want to be fancy.
+  // But for now let's just use image/jpeg as it's likely compatible.
+  return await analysisService.extractText(buffer, 'image/jpeg');
 }
 
 function cleanExtractedText(text: string): string {

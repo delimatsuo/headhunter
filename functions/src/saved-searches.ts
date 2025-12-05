@@ -2,7 +2,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { z } from "zod";
 
-const firestore = admin.firestore();
+// const firestore = admin.firestore(); // Moved inside functions
 
 // Schema for saving a search
 const SaveSearchInputSchema = z.object({
@@ -24,11 +24,14 @@ export const saveSearch = onCall(
         timeoutSeconds: 30,
     },
     async (request) => {
+        console.log("saveSearch function invoked", JSON.stringify(request.data));
         if (!request.auth) {
+            console.error("saveSearch: Unauthenticated request");
             throw new HttpsError("unauthenticated", "User must be logged in to save searches");
         }
 
         const userId = request.auth.uid;
+        console.log(`[saveSearch] User: ${userId}, Data:`, JSON.stringify(request.data));
 
         // Validate input
         let validatedInput;
@@ -53,6 +56,7 @@ export const saveSearch = onCall(
                 lastUsed: admin.firestore.FieldValue.serverTimestamp(),
             };
 
+            const firestore = admin.firestore();
             const docRef = await firestore.collection("saved_searches").add(searchData);
 
             return {
@@ -83,6 +87,7 @@ export const getSavedSearches = onCall(
         const userId = request.auth.uid;
 
         try {
+            const firestore = admin.firestore();
             const snapshot = await firestore
                 .collection("saved_searches")
                 .where("userId", "==", userId)
@@ -129,6 +134,7 @@ export const deleteSavedSearch = onCall(
         const userId = request.auth.uid;
 
         try {
+            const firestore = admin.firestore();
             const docRef = firestore.collection("saved_searches").doc(searchId);
             const doc = await docRef.get();
 

@@ -9,9 +9,9 @@ This runbook is the single source of truth for resuming work or restoring local 
 
 ## 🎯 EXECUTIVE SUMMARY FOR NEW AI CODING AGENT
 
-**Last Updated**: 2025-12-02
+**Last Updated**: 2025-12-05
 **Project Status**: Production-ready. Agency Model implemented.
-**Next Session**: Implement Organization Switcher UI.
+**Next Session**: Test resume upload search, implement Client CSV Import UI.
 
 ---
 
@@ -62,6 +62,39 @@ Rerank Service caching is now enabled and verified.
 - Search Service: https://hh-search-svc-production-akcoqbr7sa-uc.a.run.app
 - Rerank Service: https://hh-rerank-svc-production-akcoqbr7sa-uc.a.run.app
 
+### Recent Updates (2025-12-05)
+
+**✅ Centralized AI Model Configuration** (Dec 05, 2025)
+- **Created `ai-models.ts`**: Single source of truth for all Gemini model versions. Update model versions in ONE place only.
+- **Fixed Deprecated Model**: Resolved 404 errors caused by deprecated `gemini-1.5-flash` model across the codebase. All references now use `gemini-2.5-flash-001`.
+- **Refactored Consumers**: Updated `analysis-service.ts`, `search-agent.ts`, and `gemini-client.ts` to import from centralized config.
+
+**Files Created/Modified**:
+- `functions/src/ai-models.ts` (NEW - centralized model config)
+- `functions/src/analysis-service.ts`
+- `functions/src/search-agent.ts`
+- `functions/src/gemini-client.ts`
+
+**✅ UI/UX Improvements** (Dec 05, 2025)
+- **Removed Notification Bell**: Removed placeholder notification icon from navbar (was non-functional).
+- **Fixed AuthModal Layout**: Removed redundant `auth-container` wrapper from Login/Register components that caused layout issues in modal.
+- **Landing Page**: Added AI Enrichment section explaining how the system infers candidate knowledge.
+
+**Files Modified**:
+- `headhunter-ui/src/components/Navigation/Navbar.tsx`
+- `headhunter-ui/src/components/Auth/Login.tsx`
+- `headhunter-ui/src/components/Auth/Register.tsx`
+- `headhunter-ui/src/components/Landing/LandingPage.tsx`
+
+**✅ CSV Import Feature** (Dec 05, 2025)
+- **Created `importCandidatesCSV` function**: Bulk import candidates from CSV with validation, deduplication by email, and automatic embedding generation.
+- **Created `suggestColumnMapping` function**: Auto-detects common column names for field mapping.
+
+**Files Created**:
+- `functions/src/import-candidates-csv.ts`
+
+---
+
 ### Recent Updates (2025-12-04)
 
 **✅ Candidate Card UI/UX Improvements** (Dec 04, 2025)
@@ -70,7 +103,7 @@ Rerank Service caching is now enabled and verified.
 - **Removed Redundant Buttons**: Removed "Search LinkedIn" and "Verify on LinkedIn" buttons from candidate cards—the LinkedIn icon next to the candidate name serves this purpose.
 - **Improved "Find Similar" Button**: Updated styling with purple gradient and sparkle icon (✨) for better visual hierarchy and AI feature emphasis.
 - **Fixed "Unknown Candidate" in Find Similar**: Updated `Dashboard.tsx` data mapping to correctly read candidate data from `findSimilarCandidates` response, prioritizing top-level fields over nested `profile` object.
-- **Backend Fixes**: Updated `gemini-client.ts` to use stable `gemini-1.5-flash` model; improved name extraction in `similar-candidates.ts` with additional fallback fields.
+- **Backend Fixes**: Updated `gemini-client.ts` to use stable `gemini-2.5-flash-001` model; improved name extraction in `similar-candidates.ts` with additional fallback fields.
 
 **Files Modified**:
 - `headhunter-ui/src/components/Candidate/SkillAwareCandidateCard.tsx`

@@ -15,11 +15,13 @@ const storage = new Storage();
 
 // Validation Schemas
 const CreateCandidateSchema = z.object({
-  name: z.string().min(1).max(100),
+  candidate_id: z.string().max(100).optional(), // Accept frontend-provided ID
+  name: z.string().max(100).optional().default("Unknown Candidate"),
   email: z.string().email().optional(),
   phone: z.string().max(20).optional(),
   location: z.string().max(100).optional(),
   resume_text: z.string().optional(),
+  resume_url: z.string().optional(),
   notes: z.string().max(1000).optional(),
 });
 
@@ -148,7 +150,9 @@ export const createCandidate = onCall(
     }
 
     try {
-      const candidateId = firestore.collection('candidates').doc().id;
+      // Use frontend-provided candidate_id if given, otherwise generate new one
+      const candidateId = validatedInput.candidate_id || firestore.collection('candidates').doc().id;
+      console.log(`Creating candidate with ID: ${candidateId}`);
 
       const candidateData = {
         candidate_id: candidateId,
@@ -168,6 +172,7 @@ export const createCandidate = onCall(
         // Documents
         documents: {
           resume_text: validatedInput.resume_text || null,
+          resume_ref: validatedInput.resume_url || null,
         },
 
         // Processing Status
@@ -865,30 +870,97 @@ export const getCandidateStats = onCall(
       const totalSnapshot = await candidatesRef.count().get();
       const totalCandidates = totalSnapshot.data().count;
 
-      // Get processed count
-      const processedSnapshot = await candidatesRef
-        .where('processing.local_analysis_completed', '==', true)
-        .count()
+      console.log(`[getCandidateStats] User: ${userId}, Org: ${orgId}, Total Candidates: ${totalCandidates}`);
+
+      // Fetch recent candidates for in-memory aggregation (more robust than count queries on missing fields)
+      const recentDocsSnapshot = await candidatesRef
+        .where('org_id', '==', orgId)
+        .orderBy('created_at', 'desc')
+        .limit(1000)
         .get();
-      const processedCandidates = processedSnapshot.data().count;
 
-      // Get candidates by experience level
-      const experienceLevels = ['entry', 'mid', 'senior', 'lead', 'executive'];
-      const experienceStats: { [key: string]: number } = {};
+      const experienceLevels: Record<string, number> = {
+        'Entry': 0, 'Mid': 0, 'Senior': 0, 'Lead': 0, 'Executive': 0
+      };
 
-      for (const level of experienceLevels) {
-        const snapshot = await candidatesRef
-          .where('searchable_data.experience_level', '==', level)
-          .count()
-          .get();
-        experienceStats[level] = snapshot.data().count;
-      }
+      const companyTiers: Record<string, number> = {
+        'Tier 1': 0, 'High Growth': 0, 'Enterprise': 0, 'Startup': 0, 'Boutique': 0
+      };
 
-      // Get recent activity (last 7 days)
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const skillCounts: Record<string, number> = {};
+      let processedCount = 0;
+      let processedCandidates = 0; // To track candidates with local_analysis_completed
 
+      recentDocsSnapshot.forEach(doc => {
+        const data = doc.data();
+        processedCount++;
+
+        if (data.processing?.local_analysis_completed === true) {
+          processedCandidates++;
+        }
+
+        // 1. Experience Level
+        // Map 'Mid-Level' -> 'Mid', etc.
+        let level = data.current_level || data.searchable_data?.experience_level || 'Unknown';
+        if (level.includes('Entry') || level.includes('Junior')) level = 'Entry';
+        else if (level.includes('Mid')) level = 'Mid';
+        else if (level.includes('Senior')) level = 'Senior';
+        else if (level.includes('Lead') || level.includes('Staff') || level.includes('Principal')) level = 'Lead';
+        else if (level.includes('Executive') || level.includes('C-Level') || level.includes('VP') || level.includes('Director')) level = 'Executive';
+
+        if (experienceLevels[level] !== undefined) {
+          experienceLevels[level]++;
+        }
+
+        // 2. Company Pedigree
+        // Fallback to 'Unknown' if missing
+        const tier = data.analysis?.company_pedigree?.tier_level ||
+          data.intelligent_analysis?.company_pedigree?.tier_level ||
+          'Unknown';
+
+        // Map raw tier values if needed
+        let mappedTier = 'Unknown';
+        if (tier.toLowerCase().includes('tier 1') || tier.toLowerCase().includes('faang')) mappedTier = 'Tier 1';
+        else if (tier.toLowerCase().includes('high growth') || tier.toLowerCase().includes('unicorn')) mappedTier = 'High Growth';
+        else if (tier.toLowerCase().includes('enterprise') || tier.toLowerCase().includes('fortune')) mappedTier = 'Enterprise';
+        else if (tier.toLowerCase().includes('startup')) mappedTier = 'Startup';
+        else if (tier.toLowerCase().includes('boutique')) mappedTier = 'Boutique';
+
+        if (companyTiers[mappedTier] !== undefined) {
+          companyTiers[mappedTier]++;
+        }
+
+        // 3. Skills
+        const skills = data.all_probable_skills ||
+          data.technical_skills ||
+          data.intelligent_analysis?.explicit_skills?.technical_skills?.map((s: any) => s.skill) ||
+          [];
+
+        if (Array.isArray(skills)) {
+          skills.forEach((skill: string) => {
+            if (skill) {
+              skillCounts[skill] = (skillCounts[skill] || 0) + 1;
+            }
+          });
+        }
+      });
+
+      // Sort and get top skills
+      const topSkills = Object.entries(skillCounts)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 20)
+        .map(([skill, count]) => ({
+          skill,
+          count,
+          percentage: Math.round((count / processedCount) * 100)
+        }));
+
+      // Calculate recent candidates (last 7 days)
+      // We can do this from the fetched docs if they cover 7 days, or use a separate count query if volume is high.
+      // For accuracy, let's keep the separate count query for "Recent" as it's cheap.
+      const sevenDaysAgo = admin.firestore.Timestamp.fromMillis(Date.now() - 7 * 24 * 60 * 60 * 1000);
       const recentSnapshot = await candidatesRef
+        .where('org_id', '==', orgId)
         .where('created_at', '>=', sevenDaysAgo)
         .count()
         .get();
@@ -901,7 +973,9 @@ export const getCandidateStats = onCall(
           processed_candidates: processedCandidates,
           pending_processing: totalCandidates - processedCandidates,
           recent_candidates: recentCandidates,
-          experience_levels: experienceStats,
+          experience_levels: experienceLevels,
+          company_tiers: companyTiers,
+          top_skills: topSkills,
           processing_completion_rate: totalCandidates > 0
             ? Math.round((processedCandidates / totalCandidates) * 100)
             : 0,

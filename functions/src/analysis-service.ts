@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import * as admin from 'firebase-admin';
+import { GEMINI_MODEL, GEMINI_VISION_MODEL, getGeminiConfig } from './ai-models';
 
 export class AnalysisService {
   private genAI: GoogleGenerativeAI;
@@ -12,12 +13,7 @@ export class AnalysisService {
     }
     this.genAI = new GoogleGenerativeAI(apiKey || '');
     this.model = this.genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
-      generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: 8192,
-        responseMimeType: 'application/json'
-      }
+      ...getGeminiConfig({ responseMimeType: 'application/json' }),
     });
   }
 
@@ -53,6 +49,32 @@ export class AnalysisService {
       if (error.response) {
         console.error('Error response:', JSON.stringify(error.response, null, 2));
       }
+      throw error;
+    }
+  }
+
+  /**
+   * Extract text from a file using Gemini
+   */
+  async extractText(fileBuffer: Buffer, mimeType: string): Promise<string> {
+    try {
+      const model = this.genAI.getGenerativeModel({ model: GEMINI_VISION_MODEL });
+      const prompt = "Extract all text from this document. Return ONLY the text, no markdown formatting or comments.";
+
+      const imageParts = [
+        {
+          inlineData: {
+            data: fileBuffer.toString('base64'),
+            mimeType: mimeType
+          }
+        }
+      ];
+
+      const result = await model.generateContent([prompt, ...imageParts]);
+      const response = result.response;
+      return response.text() || "";
+    } catch (error) {
+      console.error('Error extracting text with Gemini:', error);
       throw error;
     }
   }
@@ -119,6 +141,7 @@ OUTPUT SCHEMA (JSON ONLY):
   "personal_details": {
     "linkedin": "Extract LinkedIn URL if present",
     "github": "Extract GitHub URL if present",
+    "name": "Extract Name if present",
     "email": "Extract Email if present",
     "location": "Inferred location"
   }

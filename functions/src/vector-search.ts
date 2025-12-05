@@ -32,7 +32,8 @@ interface VectorSearchResult {
 }
 
 interface SearchQuery {
-  query_text: string;
+  query_text?: string;
+  query_vector?: number[];
   filters?: {
     min_years_experience?: number;
     current_level?: string;
@@ -344,8 +345,16 @@ export class VectorSearchService {
    */
   async searchCandidates(query: SearchQuery): Promise<VectorSearchResult[]> {
     try {
-      // Generate embedding for query text
-      const queryEmbedding = await this.generateEmbedding(query.query_text);
+      // Generate embedding for query text if vector not provided
+      let queryEmbedding: number[];
+
+      if (query.query_vector) {
+        queryEmbedding = query.query_vector;
+      } else if (query.query_text) {
+        queryEmbedding = await this.generateEmbedding(query.query_text);
+      } else {
+        throw new Error("Either query_text or query_vector must be provided");
+      }
 
       if (this.usePgVector) {
         // Use pgvector for optimized similarity search
@@ -542,7 +551,7 @@ export class VectorSearchService {
 
       // Search for similar candidates using the reference embedding
       const query: SearchQuery = {
-        query_text: referenceEmbedding.embedding_text,
+        query_vector: referenceEmbedding.embedding_vector,
         limit: (options.limit || 10) + 1, // +1 to exclude the reference candidate
         org_id: options.org_id
       };
@@ -1341,20 +1350,36 @@ export class VectorSearchService {
         }
       }
 
-      // 2. Check for name match (Prefix search)
+      // 2. Check for name match - using multiple strategies
       if (results.length === 0) {
-        // Try exact match first
-        const nameQuery = this.firestore.collection('candidates')
-          .where('name', '==', normalizedQuery)
-          .limit(5);
+        // Get all candidates for this org and filter by name (case-insensitive)
+        // This is not ideal for large datasets but works for now
+        let candidatesQuery = this.firestore.collection('candidates');
+        if (orgId) {
+          candidatesQuery = candidatesQuery.where('org_id', '==', orgId) as any;
+        }
 
-        const snapshot = await nameQuery.get();
+        const snapshot = await candidatesQuery.limit(500).get();
+        const queryLower = normalizedQuery.toLowerCase();
+
         for (const doc of snapshot.docs) {
           const data = doc.data();
           if (orgId && data.org_id !== orgId) continue;
 
-          if (!results.some(r => r.candidate_id === doc.id)) {
-            results.push(this.createDirectMatchResult(doc.id, data, "Name Match"));
+          // Check multiple name fields (case-insensitive)
+          const candidateName = (data.name || '').toLowerCase();
+          const personalName = (data.personal?.name || '').toLowerCase();
+
+          // Check for partial match (query is contained in name OR name contains query)
+          const isMatch = candidateName.includes(queryLower) ||
+            queryLower.includes(candidateName) ||
+            personalName.includes(queryLower) ||
+            queryLower.includes(personalName);
+
+          if (isMatch && candidateName !== 'unknown candidate' && candidateName !== 'processing...') {
+            if (!results.some(r => r.candidate_id === doc.id)) {
+              results.push(this.createDirectMatchResult(doc.id, data, "Name Match"));
+            }
           }
         }
       }

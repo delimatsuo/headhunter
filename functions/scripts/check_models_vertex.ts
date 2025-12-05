@@ -11,7 +11,7 @@ async function main() {
     console.log(`Checking models for project: ${project} in ${location}`);
 
     const vertexAI = new VertexAI({ project, location });
-    const model = vertexAI.getGenerativeModel({ model: 'gemini-1.5-flash-001' });
+    const model = vertexAI.getGenerativeModel({ model: 'gemini-2.5-flash-001' });
 
     try {
         console.log('Attempting to generate content with gemini-1.5-flash-001...');

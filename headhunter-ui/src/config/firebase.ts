@@ -44,6 +44,7 @@ export const searchJobCandidates = httpsCallable(functions, 'searchJobCandidates
 export const semanticSearch = httpsCallable(functions, 'semanticSearch');
 export const getCandidates = httpsCallable(functions, 'getCandidates');
 export const createCandidate = httpsCallable(functions, 'createCandidate');
+export const getCandidateStats = httpsCallable(functions, 'getCandidateStats');
 export const generateUploadUrl = httpsCallable(functions, 'generateUploadUrl');
 export const healthCheck = httpsCallable(functions, 'healthCheck');
 export const completeOnboarding = httpsCallable(functions, 'completeOnboarding');

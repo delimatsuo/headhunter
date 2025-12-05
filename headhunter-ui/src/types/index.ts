@@ -250,6 +250,8 @@ export interface DashboardStats {
     newCandidates: number;
     highMatches: number;
   };
+  experienceLevels?: Record<string, number>;
+  companyTiers?: Record<string, number>;
 }
 
 // Navigation types

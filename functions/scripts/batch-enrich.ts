@@ -60,7 +60,7 @@ async function main() {
                     processing_metadata: {
                         timestamp: admin.firestore.FieldValue.serverTimestamp(),
                         processor: "batch_enrich_script",
-                        model: "gemini-1.5-flash"
+                        model: "gemini-2.5-flash-001"
                     }
                 };
 

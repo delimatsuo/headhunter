@@ -843,3 +843,30 @@
   box-shadow: 0 4px 6px rgba(99, 102, 241, 0.4);
   filter: brightness(1.05);
 }
+
+/* Edit icon button */
+.edit-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  margin-left: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #9CA3AF;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.edit-icon-btn:hover {
+  background: #F3F4F6;
+  border-color: #E5E7EB;
+  color: #6366F1;
+}
+
+.edit-icon-btn:active {
+  background: #E5E7EB;
+}

@@ -4,8 +4,8 @@
  * Handle new user registration, organization creation, and custom claims
  */
 
+import * as functions from "firebase-functions/v1";
 import { onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
-import { beforeUserCreated, AuthBlockingEvent } from "firebase-functions/v2/identity";
 import * as admin from "firebase-admin";
 import { z } from "zod";
 
@@ -18,16 +18,10 @@ const OnboardUserSchema = z.object({
 });
 
 /**
- * Trigger that runs before a user is created
+ * Trigger that runs after a user is created (Non-blocking)
  * Sets up organization and custom claims for new users
  */
-export const handleNewUser = beforeUserCreated(async (event: AuthBlockingEvent) => {
-  const user = event.data;
-  if (!user) {
-    console.error("No user data in event");
-    return {};
-  }
-
+export const handleNewUser = functions.region("us-central1").auth.user().onCreate(async (user: functions.auth.UserRecord) => {
   console.log(`Setting up new user: ${user.email}`);
 
   try {

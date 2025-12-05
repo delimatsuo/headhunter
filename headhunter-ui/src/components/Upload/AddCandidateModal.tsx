@@ -11,7 +11,6 @@ import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import FormControl from '@mui/material/FormControl';
-import FormLabel from '@mui/material/FormLabel';
 import RadioGroup from '@mui/material/RadioGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Radio from '@mui/material/Radio';
@@ -35,31 +34,25 @@ export const AddCandidateModal: React.FC<AddCandidateModalProps> = ({
 }) => {
   const [candidateId] = useState(`cand_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
     resumeText: '',
-    recruiterComments: ''
+    recruiterNotes: ''
   });
   const [resumeUrl, setResumeUrl] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [uploadMethod, setUploadMethod] = useState<'file' | 'text'>('file');
+  const [uploadComplete, setUploadComplete] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim()) {
-      setError('Candidate name is required');
-      return;
-    }
-
     if (uploadMethod === 'file' && !resumeUrl) {
-      setError('Please upload a resume file or switch to text input');
+      setError('Please upload a resume file');
       return;
     }
 
     if (uploadMethod === 'text' && !formData.resumeText.trim()) {
-      setError('Please enter resume text or upload a file');
+      setError('Please enter resume text');
       return;
     }
 
@@ -68,12 +61,11 @@ export const AddCandidateModal: React.FC<AddCandidateModalProps> = ({
 
     try {
       const candidateData = {
-        candidate_id: candidateId, // Pass the pre-generated ID
-        name: formData.name,
-        email: formData.email || undefined,
-        resumeText: uploadMethod === 'text' ? formData.resumeText : undefined,
-        resumeUrl: uploadMethod === 'file' ? resumeUrl : undefined,
-        recruiterComments: formData.recruiterComments || undefined
+        candidate_id: candidateId,
+        name: 'Processing...', // Will be extracted by AI
+        resume_text: uploadMethod === 'text' ? formData.resumeText : undefined,
+        resume_url: uploadMethod === 'file' ? resumeUrl : undefined,
+        notes: formData.recruiterNotes || undefined
       };
 
       const result = await apiService.createCandidate(candidateData);
@@ -92,28 +84,31 @@ export const AddCandidateModal: React.FC<AddCandidateModalProps> = ({
   };
 
   const handleClose = () => {
-    setFormData({ name: '', email: '', resumeText: '', recruiterComments: '' });
+    setFormData({ resumeText: '', recruiterNotes: '' });
     setResumeUrl('');
     setError('');
     setLoading(false);
     setUploadMethod('file');
+    setUploadComplete(false);
     onClose();
   };
 
   const handleUploadComplete = (fileUrl: string) => {
     setResumeUrl(fileUrl);
+    setUploadComplete(true);
     setError('');
   };
 
   const handleUploadError = (error: string) => {
     setError(error);
+    setUploadComplete(false);
   };
 
   return (
     <Dialog
       open={isOpen}
       onClose={handleClose}
-      maxWidth="md"
+      maxWidth="sm"
       fullWidth
       PaperProps={{
         sx: { borderRadius: 3 }
@@ -136,51 +131,36 @@ export const AddCandidateModal: React.FC<AddCandidateModalProps> = ({
             </Alert>
           )}
 
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="subtitle2" color="primary" fontWeight="bold" gutterBottom textTransform="uppercase" sx={{ fontSize: '0.75rem', letterSpacing: 1 }}>
-              Candidate Information
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-              <TextField
-                autoFocus
-                label="Full Name"
-                fullWidth
-                required
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                disabled={loading}
-                variant="outlined"
-              />
-              <TextField
-                label="Email"
-                type="email"
-                fullWidth
-                value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                disabled={loading}
-                variant="outlined"
-              />
-            </Box>
-          </Box>
-
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="subtitle2" color="primary" fontWeight="bold" gutterBottom textTransform="uppercase" sx={{ fontSize: '0.75rem', letterSpacing: 1 }}>
-              Resume
-            </Typography>
+          <Box sx={{ mb: 3 }}>
+            <Alert severity="info" sx={{ mb: 2 }}>
+              <Typography variant="body2">
+                <strong>Just upload a resume!</strong> Our AI will automatically extract the candidate's name, email, LinkedIn, and skills.
+              </Typography>
+            </Alert>
 
             <FormControl component="fieldset" sx={{ mb: 2, width: '100%' }}>
               <RadioGroup
                 row
                 value={uploadMethod}
-                onChange={(e) => setUploadMethod(e.target.value as 'file' | 'text')}
+                onChange={(e) => {
+                  setUploadMethod(e.target.value as 'file' | 'text');
+                  setUploadComplete(false);
+                  setResumeUrl('');
+                }}
               >
-                <FormControlLabel value="file" control={<Radio />} label="Upload resume file" />
-                <FormControlLabel value="text" control={<Radio />} label="Paste resume text" />
+                <FormControlLabel value="file" control={<Radio />} label="Upload file" />
+                <FormControlLabel value="text" control={<Radio />} label="Paste text" />
               </RadioGroup>
             </FormControl>
 
             {uploadMethod === 'file' ? (
-              <Box sx={{ border: '1px dashed', borderColor: 'divider', borderRadius: 2, p: 3, bgcolor: 'background.default' }}>
+              <Box sx={{
+                border: uploadComplete ? '2px solid #10B981' : '1px dashed',
+                borderColor: uploadComplete ? '#10B981' : 'divider',
+                borderRadius: 2,
+                p: 2,
+                bgcolor: uploadComplete ? 'rgba(16, 185, 129, 0.05)' : 'background.default'
+              }}>
                 <FileUpload
                   candidateId={candidateId}
                   onUploadComplete={handleUploadComplete}
@@ -192,11 +172,11 @@ export const AddCandidateModal: React.FC<AddCandidateModalProps> = ({
               <TextField
                 label="Resume Text"
                 multiline
-                rows={8}
+                rows={10}
                 fullWidth
                 value={formData.resumeText}
                 onChange={(e) => setFormData(prev => ({ ...prev, resumeText: e.target.value }))}
-                placeholder="Paste the candidate's resume text here..."
+                placeholder="Paste the candidate's resume or LinkedIn profile text here..."
                 disabled={loading}
                 variant="outlined"
               />
@@ -204,19 +184,19 @@ export const AddCandidateModal: React.FC<AddCandidateModalProps> = ({
           </Box>
 
           <Box>
-            <Typography variant="subtitle2" color="primary" fontWeight="bold" gutterBottom textTransform="uppercase" sx={{ fontSize: '0.75rem', letterSpacing: 1 }}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.75rem' }}>
               Recruiter Notes (Optional)
             </Typography>
             <TextField
-              label="Comments"
               multiline
-              rows={4}
+              rows={2}
               fullWidth
-              value={formData.recruiterComments}
-              onChange={(e) => setFormData(prev => ({ ...prev, recruiterComments: e.target.value }))}
-              placeholder="Add any recruiter insights, interview notes, or observations..."
+              value={formData.recruiterNotes}
+              onChange={(e) => setFormData(prev => ({ ...prev, recruiterNotes: e.target.value }))}
+              placeholder="Add context: where you found them, initial impressions..."
               disabled={loading}
               variant="outlined"
+              size="small"
             />
           </Box>
         </DialogContent>
@@ -230,10 +210,10 @@ export const AddCandidateModal: React.FC<AddCandidateModalProps> = ({
           <Button
             type="submit"
             variant="contained"
-            disabled={loading}
+            disabled={loading || (uploadMethod === 'file' && !uploadComplete)}
             sx={{ px: 4 }}
           >
-            {loading ? 'Adding...' : 'Add Candidate'}
+            {loading ? 'Processing...' : 'Add Candidate'}
           </Button>
         </DialogActions>
       </form>

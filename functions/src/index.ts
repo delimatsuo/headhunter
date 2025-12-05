@@ -22,10 +22,10 @@ import { getAuditLogger, AuditAction } from "./audit-logger";
 admin.initializeApp();
 
 // Set global options
-setGlobalOptions({
-  region: "us-central1",
-  maxInstances: 10,
-});
+// setGlobalOptions({
+//   region: "us-central1",
+//   maxInstances: 10,
+// });
 
 // Initialize clients
 const storage = new Storage();
@@ -193,7 +193,7 @@ export const processUploadedProfile = onObjectFinalized(
           processing_metadata: {
             timestamp: admin.firestore.FieldValue.serverTimestamp(),
             processor: "cloud_functions_vertex_ai",
-            model: "gemini-1.5-flash"
+            model: "gemini-2.5-flash-001"
           }
         };
 
@@ -309,7 +309,7 @@ export const enrichProfile = onCall(
         processing_metadata: {
           timestamp: admin.firestore.FieldValue.serverTimestamp(),
           processor: "cloud_functions_manual_trigger",
-          model: "gemini-1.5-flash"
+          model: "gemini-2.5-flash-001"
         }
       };
 
@@ -798,6 +798,14 @@ export * from "./debug-search";
 // Export REST API
 export { api } from './rest-api';
 
+
+
+// Export Organization Management
+export {
+  switchOrganization,
+  createClientOrganization
+} from './org-management';
+
 // Export saved search functions
 export {
   saveSearch,
@@ -820,3 +828,6 @@ export { verifyEnrichment } from './verify-enrichment';
 export { getMainOrgId, addUserToOrg } from './user-helpers';
 export { initAgencyModel } from './init-agency';
 export { migrateCandidates } from './migrate-candidates';
+
+// CSV Import for bulk candidate import
+export { importCandidatesCSV, suggestColumnMapping } from './import-candidates-csv';

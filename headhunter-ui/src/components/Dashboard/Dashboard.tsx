@@ -52,11 +52,13 @@ export const Dashboard: React.FC = () => {
   const [searchHistory, setSearchHistory] = useState<JobDescription[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [currentSearch, setCurrentSearch] = useState<JobDescription | null>(null);
+  const [displayLimit, setDisplayLimit] = useState(20);
 
   // Saved Searches State
   const [savedSearches, setSavedSearches] = useState<any[]>([]);
   const [isSaveSearchOpen, setIsSaveSearchOpen] = useState(false);
   const [saveSearchName, setSaveSearchName] = useState('');
+
 
   useEffect(() => {
     if (user) {
@@ -133,6 +135,7 @@ export const Dashboard: React.FC = () => {
     setSearchResults(null);
     setShowSearchResults(true);
     setCurrentSearch(jobDescription);
+    setDisplayLimit(20); // Reset pagination on new search
 
     try {
       // Step 1: Analyze the query with the Search Agent
@@ -379,14 +382,71 @@ export const Dashboard: React.FC = () => {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Typography variant="h5" fontWeight="bold">Search Results</Typography>
               <Box>
-                {currentSearch && (
+                {searchResults && searchResults.matches && searchResults.matches.length > 0 && (
                   <Button
                     variant="outlined"
-                    startIcon={<Box component="span">💾</Box>}
-                    onClick={() => setIsSaveSearchOpen(true)}
+                    startIcon={<Box component="span">📥</Box>}
+                    onClick={() => {
+                      // Generate CSV content
+                      const csvRows: string[] = [];
+
+                      // Header row
+                      csvRows.push(['Name', 'Role', 'Level', 'Experience (Years)', 'Match Score (%)', 'Similarity (%)', 'LinkedIn URL', 'Top Skills', 'AI Summary'].join(','));
+
+                      // Data rows
+                      searchResults.matches.forEach((match: any) => {
+                        const candidate = match.candidate || {};
+                        const name = (candidate.name || 'Unknown').replace(/,/g, ' ');
+                        const role = (candidate.current_role || candidate.title || 'Not specified').replace(/,/g, ' ');
+                        const level = (candidate.intelligent_analysis?.career_trajectory_analysis?.current_level ||
+                          candidate.resume_analysis?.career_trajectory?.current_level || 'Not specified').replace(/,/g, ' ');
+                        const experience = candidate.intelligent_analysis?.career_trajectory_analysis?.years_experience ||
+                          candidate.resume_analysis?.years_experience || 0;
+                        const matchScore = Math.round((match.score <= 1 ? match.score * 100 : match.score) || 0);
+                        const similarity = Math.round((match.similarity <= 1 ? match.similarity * 100 : match.similarity) || 0);
+                        const linkedInUrl = candidate.linkedin_url || candidate.personal?.linkedin || '';
+
+                        // Get top 5 technical skills
+                        const technicalSkills = candidate.intelligent_analysis?.explicit_skills?.technical_skills?.slice(0, 5).map((s: any) =>
+                          typeof s === 'string' ? s : s.skill
+                        ) || candidate.resume_analysis?.technical_skills?.slice(0, 5) || [];
+                        const skillsStr = technicalSkills.join('; ').replace(/,/g, ';');
+
+                        // AI summary (from rationale or match reasons)
+                        const aiSummary = (candidate.rationale?.overall_assessment ||
+                          candidate.matchReasons?.join('. ') ||
+                          candidate.intelligent_analysis?.executive_summary?.one_line_pitch ||
+                          '').replace(/,/g, ' ').replace(/"/g, "'").substring(0, 200);
+
+                        csvRows.push([
+                          `"${name}"`,
+                          `"${role}"`,
+                          `"${level}"`,
+                          experience,
+                          matchScore,
+                          similarity,
+                          linkedInUrl,
+                          `"${skillsStr}"`,
+                          `"${aiSummary}"`
+                        ].join(','));
+                      });
+
+                      // Create and download CSV file
+                      const csvContent = csvRows.join('\n');
+                      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                      const url = URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      const timestamp = new Date().toISOString().split('T')[0];
+                      link.download = `candidate-search-results-${timestamp}.csv`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      URL.revokeObjectURL(url);
+                    }}
                     sx={{ mr: 2 }}
                   >
-                    Save Search
+                    Export CSV
                   </Button>
                 )}
                 <Button onClick={clearSearch} color="inherit">
@@ -399,6 +459,9 @@ export const Dashboard: React.FC = () => {
               loading={searchLoading}
               error={searchError}
               onFindSimilar={handleFindSimilar}
+              displayLimit={displayLimit}
+              onLoadMore={() => setDisplayLimit(prev => prev + 20)}
+              onShowAll={() => setDisplayLimit(searchResults?.matches?.length || 1000)}
             />
           </Box>
         </Fade>

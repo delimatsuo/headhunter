@@ -1,6 +1,7 @@
 import { onCall } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { VectorSearchService } from "./vector-search";
+import * as admin from "firebase-admin";
 
 const dbPostgresPassword = defineSecret("db-postgres-password");
 
@@ -38,5 +39,30 @@ export const debugSearch = onCall(
         } catch (error) {
             return { error: (error as Error).message };
         }
+    }
+);
+
+export const inspectCandidate = onCall(
+    {
+        memory: "256MiB",
+        timeoutSeconds: 30,
+    },
+    async (request) => {
+        const db = admin.firestore();
+        // Fetch one candidate from org_ella_main
+        const snapshot = await db.collection('candidates')
+            .where('org_id', '==', 'org_ella_main')
+            .limit(1)
+            .get();
+
+        if (snapshot.empty) {
+            return { message: "No candidates found in org_ella_main" };
+        }
+
+        const doc = snapshot.docs[0];
+        return {
+            id: doc.id,
+            data: doc.data()
+        };
     }
 );

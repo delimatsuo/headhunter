@@ -58,7 +58,9 @@ OUTPUT FORMAT (JSON ONLY):
 `;
 
             // Call Gemini
+            console.log("Calling Gemini for reranking...");
             const result = await geminiModel.generateContent(prompt);
+            console.log("Gemini response received.");
             const response = await result.response;
             const text = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
@@ -84,6 +86,10 @@ OUTPUT FORMAT (JSON ONLY):
 
         } catch (error) {
             console.error("Error in rerankCandidates:", error);
+            if (error instanceof Error) {
+                console.error("Error message:", error.message);
+                console.error("Error stack:", error.stack);
+            }
             throw new HttpsError("internal", "Failed to rerank candidates");
         }
     }
