@@ -1033,20 +1033,53 @@ export class VectorSearchService {
 
   /**
    * Calculate experience level match score
+   * Enhanced with title keyword matching for executive-level searches
    */
   private calculateExperienceMatch(candidateData: any, query: SkillAwareSearchQuery): number {
     if (!query.experience_level) {
       return 100; // No preference specified
     }
 
-    const candidateYears = candidateData.resume_analysis?.years_experience || 0;
-    const candidateLevel = candidateData.resume_analysis?.career_trajectory?.current_level?.toLowerCase() || '';
+    const yearsExp = candidateData.intelligent_analysis?.career_trajectory_analysis?.years_experience ||
+      candidateData.resume_analysis?.years_experience || 0;
 
-    const experienceLevels: Record<string, { minYears: number, maxYears: number, keywords: string[] }> = {
-      'entry': { minYears: 0, maxYears: 3, keywords: ['junior', 'entry', 'associate'] },
-      'mid': { minYears: 2, maxYears: 7, keywords: ['mid', 'intermediate', 'regular'] },
-      'senior': { minYears: 5, maxYears: 12, keywords: ['senior', 'sr', 'lead', 'principal'] },
-      'executive': { minYears: 8, maxYears: 50, keywords: ['director', 'vp', 'vice president', 'executive', 'head', 'chief', 'cto', 'ceo', 'cfo', 'co-founder', 'founder'] }
+    // Get candidate's current title/level from multiple possible sources
+    const candidateLevel = (
+      candidateData.intelligent_analysis?.career_trajectory_analysis?.current_level ||
+      candidateData.resume_analysis?.career_trajectory?.current_level ||
+      candidateData.current_role ||
+      candidateData.professional?.current_title ||
+      ''
+    ).toLowerCase();
+
+    const experienceLevels: Record<string, {
+      minYears: number,
+      maxYears: number,
+      keywords: string[],
+      titleWeight: number
+    }> = {
+      'entry': {
+        minYears: 0, maxYears: 3,
+        keywords: ['junior', 'entry', 'associate', 'trainee', 'intern'],
+        titleWeight: 0.4
+      },
+      'mid': {
+        minYears: 2, maxYears: 7,
+        keywords: ['mid', 'intermediate', 'regular', 'engineer', 'developer'],
+        titleWeight: 0.4
+      },
+      'senior': {
+        minYears: 5, maxYears: 12,
+        keywords: ['senior', 'sr', 'lead', 'principal', 'staff', 'architect'],
+        titleWeight: 0.5
+      },
+      'executive': {
+        minYears: 8, maxYears: 50,
+        keywords: ['cto', 'ceo', 'cfo', 'coo', 'cio', 'chief', 'vp', 'vice president',
+          'director', 'head of', 'president', 'founder', 'co-founder',
+          'partner', 'managing', 'executive', 'evp', 'svp'],
+        titleWeight: 0.7  // Title is MORE important than years for executive searches
+      }
     };
 
     const targetLevel = experienceLevels[query.experience_level];
@@ -1054,26 +1087,40 @@ export class VectorSearchService {
       return 100;
     }
 
-    let score = 0;
-
-    // Years experience match
-    if (candidateYears >= targetLevel.minYears && candidateYears <= targetLevel.maxYears) {
-      score += 60;
-    } else if (candidateYears >= targetLevel.minYears - 1 && candidateYears <= targetLevel.maxYears + 2) {
-      score += 40; // Close match
+    // Calculate years-based score
+    let yearsScore = 0;
+    if (yearsExp >= targetLevel.minYears && yearsExp <= targetLevel.maxYears) {
+      yearsScore = 100;
+    } else if (yearsExp >= targetLevel.minYears - 1 && yearsExp <= targetLevel.maxYears + 2) {
+      yearsScore = 70; // Close match
+    } else if (yearsExp < targetLevel.minYears) {
+      yearsScore = Math.max(20, 60 - (targetLevel.minYears - yearsExp) * 10);
     } else {
-      score += 20; // Some experience
+      yearsScore = 80; // Overqualified but still good
     }
 
-    // Level keyword match
+    // Calculate title-based score
+    let titleScore = 0;
     const levelKeywordMatch = targetLevel.keywords.some(keyword =>
       candidateLevel.includes(keyword)
     );
+
     if (levelKeywordMatch) {
-      score += 40;
+      titleScore = 100;
+    } else if (query.experience_level === 'executive') {
+      // For executive searches, heavily penalize non-executive titles
+      const anyExecutiveKeywords = ['cto', 'ceo', 'chief', 'vp', 'vice president', 'director', 'head', 'president', 'founder'];
+      const hasAnyExecutiveTitle = anyExecutiveKeywords.some(kw => candidateLevel.includes(kw));
+      titleScore = hasAnyExecutiveTitle ? 70 : 15; // Severe penalty for non-executives
+    } else {
+      titleScore = 50; // Neutral for non-executive searches
     }
 
-    return Math.min(score, 100);
+    // Weighted combination
+    const yearsWeight = 1 - targetLevel.titleWeight;
+    const finalScore = (yearsScore * yearsWeight) + (titleScore * targetLevel.titleWeight);
+
+    return Math.round(Math.min(finalScore, 100));
   }
 
   /**
