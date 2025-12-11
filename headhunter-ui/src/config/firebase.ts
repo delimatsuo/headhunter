@@ -46,6 +46,7 @@ export const getCandidates = httpsCallable(functions, 'getCandidates');
 export const createCandidate = httpsCallable(functions, 'createCandidate');
 export const getCandidateStats = httpsCallable(functions, 'getCandidateStats');
 export const generateUploadUrl = httpsCallable(functions, 'generateUploadUrl');
+export const confirmUpload = httpsCallable(functions, 'confirmUpload');
 export const healthCheck = httpsCallable(functions, 'healthCheck');
 export const completeOnboarding = httpsCallable(functions, 'completeOnboarding');
 

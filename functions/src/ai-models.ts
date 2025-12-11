@@ -1,10 +1,20 @@
 /**
  * Centralized AI Model Configuration
  * 
- * IMPORTANT: Update model versions here. All AI calls should import from this file.
+ * IMPORTANT: Update model versions here ONLY. All AI calls import from this file.
  * This is the single source of truth for model configuration.
  * 
- * Last updated: 2025-12-05
+ * Last updated: 2025-12-08
+ * 
+ * VERIFIED AVAILABLE MODELS (December 2025):
+ * - gemini-2.5-flash (GA since June 17, 2025) ✅ CURRENT
+ * - gemini-2.5-pro (GA since June 17, 2025)
+ * - gemini-3.0-pro (latest, Nov 18, 2025)
+ * 
+ * DO NOT USE THESE (deprecated or non-existent):
+ * - gemini-1.5-flash (deprecated)
+ * - gemini-2.5-flash-001 (DOES NOT EXIST - use gemini-2.5-flash)
+ * - gemini-2.0-flash (superseded by 2.5)
  */
 
 // ============================================================================
@@ -13,15 +23,21 @@
 
 /**
  * Primary Gemini model for text generation, analysis, and enrichment
- * Used by: analysis-service, search-agent, file-upload-pipeline
+ * VERIFIED: gemini-2.5-flash is GA since June 17, 2025
+ * 
+ * ⚠️ DO NOT CHANGE THIS MODEL WITHOUT SEARCHING ONLINE FOR THE LATEST
+ * AVAILABLE GEMINI MODEL FIRST. VERIFY IT EXISTS BEFORE DEPLOYING.
  */
-export const GEMINI_MODEL = 'gemini-2.5-flash-001';
+export const GEMINI_MODEL = 'gemini-2.5-flash';
 
 /**
  * Gemini model for document/image processing (PDF text extraction)
- * May need multimodal capabilities
+ * VERIFIED: gemini-2.5-flash supports multimodal input
+ * 
+ * ⚠️ DO NOT CHANGE THIS MODEL WITHOUT SEARCHING ONLINE FOR THE LATEST
+ * AVAILABLE GEMINI MODEL FIRST. VERIFY IT EXISTS BEFORE DEPLOYING.
  */
-export const GEMINI_VISION_MODEL = 'gemini-2.5-flash-001';
+export const GEMINI_VISION_MODEL = 'gemini-2.5-flash';
 
 // ============================================================================
 // EMBEDDING MODELS
@@ -30,6 +46,8 @@ export const GEMINI_VISION_MODEL = 'gemini-2.5-flash-001';
 /**
  * Model for generating text embeddings (vector search)
  * Used by: vector-search, pgvector-client
+ * 
+ * ⚠️ DO NOT CHANGE THIS MODEL WITHOUT VERIFYING THE LATEST VERSION FIRST.
  */
 export const EMBEDDING_MODEL = 'text-embedding-004';
 
@@ -42,6 +60,7 @@ export const EMBEDDING_DIMENSIONS = 768;
 // TOGETHER AI MODELS (if used for reranking)
 // ============================================================================
 
+// ⚠️ DO NOT CHANGE THESE MODELS WITHOUT VERIFYING THE LATEST VERSION FIRST.
 export const TOGETHER_RERANK_MODEL = 'rerank-advanced-v2';
 export const TOGETHER_EMBED_MODEL = 'text-embedding-3-large';
 

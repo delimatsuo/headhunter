@@ -170,6 +170,13 @@ export class VectorSearchService {
     if (profile.current_role) textParts.push(profile.current_role);
     if (profile.current_company) textParts.push(profile.current_company);
 
+    // Fallback: use raw resume_text if no analysis is available
+    // This ensures embeddings can be generated even when Gemini analysis fails
+    if (profile.resume_text && !profile.intelligent_analysis && !profile.resume_analysis) {
+      textParts.push(profile.resume_text);
+      return textParts.filter(Boolean).join(". ");
+    }
+
     // Intelligent Analysis (New Format)
     if (profile.intelligent_analysis) {
       const analysis = profile.intelligent_analysis;

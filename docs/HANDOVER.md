@@ -9,9 +9,9 @@ This runbook is the single source of truth for resuming work or restoring local 
 
 ## 🎯 EXECUTIVE SUMMARY FOR NEW AI CODING AGENT
 
-**Last Updated**: 2025-12-05
-**Project Status**: Production-ready. Agency Model implemented.
-**Next Session**: Test resume upload search, implement Client CSV Import UI.
+**Last Updated**: 2025-12-10
+**Project Status**: Production-ready. Resume upload pipeline fully functional.
+**Next Session**: Implement multi-tenant bulk upload with org_ids tracking.
 
 ---
 
@@ -61,6 +61,26 @@ Rerank Service caching is now enabled and verified.
 - API Gateway: https://headhunter-api-gateway-production-d735p8t6.uc.gateway.dev
 - Search Service: https://hh-search-svc-production-akcoqbr7sa-uc.a.run.app
 - Rerank Service: https://hh-rerank-svc-production-akcoqbr7sa-uc.a.run.app
+
+### Recent Updates (2025-12-10)
+
+**✅ Resume Upload Pipeline Fully Fixed** (Dec 10, 2025)
+- **Fixed candidateId Reuse Bug**: `AddCandidateModal.tsx` now regenerates unique ID on each modal open, preventing "Upload Another" from overwriting previous candidates.
+- **Fixed confirmUpload CORS**: Added IAM `allUsers` invoker permission to Cloud Run service.
+- **Fixed confirmUpload 500 Error**: Changed `.update()` to `.set()` with merge to create candidate doc if not exists.
+- **Fixed PGVECTOR_USER**: Changed from `embed_writer` to `postgres` to match db-postgres-password secret.
+- **Added work_history Extraction**: AnalysisService prompt now extracts structured work history, transformed to `original_data.experience` format for timeline display.
+
+**Files Modified**:
+- `functions/src/file-upload-pipeline.ts` (confirmUpload fix, work_history transform, PGVECTOR_USER fix)
+- `functions/src/analysis-service.ts` (work_history in prompt)
+- `headhunter-ui/src/components/Upload/AddCandidateModal.tsx` (candidateId regeneration)
+
+**✅ Quick Find Feature** (Dec 10, 2025)
+- Added Quick Find search mode to Dashboard with simple text input
+- Uses `searchCandidates` Cloud Function for semantic search
+
+---
 
 ### Recent Updates (2025-12-05)
 

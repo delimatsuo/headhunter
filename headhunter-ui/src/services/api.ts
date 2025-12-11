@@ -5,6 +5,7 @@ import {
   getCandidates,
   createCandidate,
   generateUploadUrl,
+  confirmUpload,
   healthCheck,
   skillAwareSearch,
   getCandidateSkillAssessment,
@@ -301,6 +302,17 @@ export const apiService = {
     } catch (error) {
       console.error('Generate upload URL error:', error);
       throw new ApiError('Failed to generate upload URL');
+    }
+  },
+
+  // Confirm upload to trigger processing pipeline
+  async confirmUpload(uploadSessionId: string): Promise<ApiResponse<any>> {
+    try {
+      const result = await confirmUpload({ upload_session_id: uploadSessionId });
+      return result.data as ApiResponse<any>;
+    } catch (error) {
+      console.error('Confirm upload error:', error);
+      throw new ApiError('Failed to confirm upload');
     }
   },
 

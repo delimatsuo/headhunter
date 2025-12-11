@@ -109,6 +109,11 @@ CRITICAL INSTRUCTIONS FOR EDUCATION:
 2.  **IGNORE**: Short courses, bootcamps, certifications, "nanodegrees", and non-degree programs.
 3.  **VALIDATE**: If the education section lists a university but no degree (e.g., "Coursework in CS"), do NOT list it as a degree.
 
+CRITICAL INSTRUCTIONS FOR WORK HISTORY:
+1.  **EXTRACT ALL JOBS**: List every position mentioned, in reverse chronological order (most recent first).
+2.  **DATE FORMAT**: Use "YYYY/MM" format. If only year is available, use "YYYY/01". For current positions, use "current" for end date.
+3.  **BE PRECISE**: Extract exact company names and job titles as written.
+
 CRITICAL INSTRUCTIONS FOR ANALYSIS:
 1.  **Company Tiering**: Recognize the caliber of companies (e.g., FAANG, high-growth startups, consultancies) and use this to infer skill depth.
 2.  **Career Velocity**: Analyze the speed of promotion and tenure. Is this a job hopper or a pillar?
@@ -116,6 +121,10 @@ CRITICAL INSTRUCTIONS FOR ANALYSIS:
 
 OUTPUT SCHEMA (JSON ONLY):
 {
+  "work_history": [
+    {"start_date": "YYYY/MM", "end_date": "YYYY/MM or current", "company": "Company Name", "role": "Job Title"},
+    {"start_date": "YYYY/MM", "end_date": "YYYY/MM", "company": "Previous Company", "role": "Previous Title"}
+  ],
   "explicit_skills": {
     "technical_skills": [{"skill": "...", "confidence": 100, "evidence": ["mentioned in experience"]}],
     "tools_technologies": [{"skill": "...", "confidence": 100}],

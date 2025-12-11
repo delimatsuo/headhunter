@@ -32,7 +32,9 @@ export const AddCandidateModal: React.FC<AddCandidateModalProps> = ({
   onClose,
   onCandidateAdded
 }) => {
-  const [candidateId] = useState(`cand_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+  // Generate a new unique candidate ID - regenerate each time modal opens
+  const generateCandidateId = () => `cand_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const [candidateId, setCandidateId] = useState(generateCandidateId);
   const [formData, setFormData] = useState({
     resumeText: '',
     recruiterNotes: ''
@@ -42,6 +44,13 @@ export const AddCandidateModal: React.FC<AddCandidateModalProps> = ({
   const [error, setError] = useState<string>('');
   const [uploadMethod, setUploadMethod] = useState<'file' | 'text'>('file');
   const [uploadComplete, setUploadComplete] = useState(false);
+
+  // Regenerate candidateId when modal opens to ensure fresh ID for each upload session
+  React.useEffect(() => {
+    if (isOpen) {
+      setCandidateId(generateCandidateId());
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

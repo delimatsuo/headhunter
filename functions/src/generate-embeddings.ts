@@ -98,10 +98,19 @@ export const generateAllEmbeddings = functions.https.onRequest(
 
 export const generateEmbeddingForCandidate = functions.https.onCall(
   {
-    memory: '512MiB',
-    timeoutSeconds: 60,
+    memory: '1GiB',
+    timeoutSeconds: 120,
+    secrets: [dbPostgresPassword],
+    vpcConnector: "svpc-us-central1",
+    vpcConnectorEgressSettings: "PRIVATE_RANGES_ONLY",
   },
   async (request) => {
+    // Inject PgVector password from secret
+    process.env.PGVECTOR_PASSWORD = dbPostgresPassword.value();
+    process.env.PGVECTOR_HOST = "10.159.0.2";
+    process.env.PGVECTOR_USER = "postgres";
+    process.env.PGVECTOR_DATABASE = "headhunter";
+
     const { candidateId } = request.data;
 
     if (!candidateId) {
@@ -122,42 +131,21 @@ export const generateEmbeddingForCandidate = functions.https.onCall(
         throw new functions.https.HttpsError('not-found', 'Candidate data not found');
       }
 
-      // Create text content for embedding
-      const textContent = [
-        candidateData.name || '',
-        candidateData.current_role || '',
-        candidateData.current_company || '',
-        (candidateData.resume_analysis?.technical_skills || []).join(' '),
-        (candidateData.resume_analysis?.soft_skills || []).join(' '),
-        (candidateData.resume_analysis?.career_trajectory?.current_level || ''),
-        (candidateData.resume_analysis?.career_trajectory?.trajectory_type || ''),
-        (candidateData.resume_analysis?.company_pedigree?.tier_level || ''),
-        (candidateData.recruiter_insights?.strengths || []).join(' '),
-        (candidateData.recruiter_insights?.key_themes || []).join(' ')
-      ].filter(Boolean).join(' ');
+      // Store embedding using VectorSearchService (handles PgVector)
+      await vectorService.storeEmbedding({
+        ...candidateData,
+        candidate_id: candidateId
+      });
 
-      // Generate embedding
-      const embedding = await vectorService.generateEmbedding(textContent);
-
-      // Store embedding in standardized collection
-      await db.collection('candidate_embeddings').doc(candidateId).set({
-        candidate_id: candidateId,
-        embedding_vector: embedding,
-        embedding_text: textContent,
-        updated_at: new Date().toISOString(),
-        metadata: {
-          technical_skills_count: candidateData.resume_analysis?.technical_skills?.length || 0,
-          years_experience: candidateData.resume_analysis?.years_experience || 0,
-          current_level: candidateData.resume_analysis?.career_trajectory?.current_level,
-          overall_score: candidateData.overall_score || 0
-        }
+      // Update candidate document to mark embedding as generated
+      await db.collection('candidates').doc(candidateId).update({
+        'processing.embedding_generated': true
       });
 
       return {
         success: true,
         message: `Generated embedding for candidate ${candidateId}`,
-        candidateId,
-        embeddingSize: embedding.length
+        candidateId
       };
 
     } catch (error) {

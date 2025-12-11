@@ -6,6 +6,7 @@
 
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onObjectFinalized } from "firebase-functions/v2/storage";
+import { defineSecret } from "firebase-functions/params";
 import * as admin from "firebase-admin";
 import { z } from "zod";
 import { Storage } from "@google-cloud/storage";
@@ -13,9 +14,22 @@ import { BUCKET_FILES } from "./config";
 import * as path from "path";
 import { VectorSearchService } from "./vector-search";
 
+// Define secret for PgVector password
+const dbPostgresPassword = defineSecret("db-postgres-password");
+
 // Initialize services
 const firestore = admin.firestore();
 const storage = new Storage();
+
+// Set PgVector environment variables for Cloud SQL connection
+// This is required for embedding generation to work in Cloud Functions
+if (!process.env.PGVECTOR_HOST) {
+  process.env.PGVECTOR_HOST = "10.159.0.2";
+  process.env.PGVECTOR_PORT = "5432";
+  process.env.PGVECTOR_DATABASE = "headhunter";
+  process.env.PGVECTOR_USER = "postgres";  // Must match the db-postgres-password secret user
+  process.env.PGVECTOR_SSL_MODE = "disable";
+}
 
 // For text extraction (would need to add these dependencies)
 // import * as pdfParse from 'pdf-parse';
@@ -205,6 +219,10 @@ export const confirmUpload = onCall(
   {
     memory: "256MiB",
     timeoutSeconds: 60,
+    cors: true,
+    // Allow unauthenticated Cloud Run invocation for CORS preflight
+    // Firebase onCall still handles auth at the application level via request.auth
+    invoker: "public",
   },
   async (request) => {
     const { userId, orgId } = validateAuth(request);
@@ -243,16 +261,20 @@ export const confirmUpload = onCall(
       const fileSize = parseInt(String(metadata.size || '0'));
 
       // Update candidate with file information
+      // Use set with merge to create doc if it doesn't exist
       const candidateUpdateData = {
+        name: 'Processing...', // Will be updated by AI analysis
+        org_id: orgId,
         'documents.resume_file_url': sessionData.file_path,
         'documents.resume_file_name': sessionData.original_file_name,
         'documents.resume_file_size': fileSize,
         'documents.resume_uploaded_at': admin.firestore.FieldValue.serverTimestamp(),
         'processing.status': 'awaiting_text_extraction',
+        created_at: admin.firestore.FieldValue.serverTimestamp(),
         updated_at: admin.firestore.FieldValue.serverTimestamp(),
       };
 
-      await firestore.collection('candidates').doc(sessionData.candidate_id).update(candidateUpdateData);
+      await firestore.collection('candidates').doc(sessionData.candidate_id).set(candidateUpdateData, { merge: true });
 
       // Add to processing queue for text extraction
       await firestore.collection('processing_queue').add({
@@ -305,8 +327,14 @@ export const processUploadedFile = onObjectFinalized(
     memory: "2GiB",
     timeoutSeconds: 540, // 9 minutes
     retry: true,
+    secrets: [dbPostgresPassword],
+    vpcConnector: "svpc-us-central1",
+    vpcConnectorEgressSettings: "PRIVATE_RANGES_ONLY",
   },
   async (event) => {
+    // Inject PgVector password from secret
+    process.env.PGVECTOR_PASSWORD = dbPostgresPassword.value();
+
     const filePath = event.data.name;
     const bucket = event.data.bucket;
 
@@ -376,12 +404,12 @@ export const processUploadedFile = onObjectFinalized(
         console.error(`Text extraction failed for ${filePath}:`, extractionError);
 
         // Update candidate with extraction failure
-        await firestore.collection('candidates').doc(candidateId).update({
+        await firestore.collection('candidates').doc(candidateId).set({
           'processing.status': 'extraction_failed',
           'processing.error_message': `Text extraction failed: ${(extractionError as Error).message}`,
           'processing.last_processed': admin.firestore.FieldValue.serverTimestamp(),
           updated_at: admin.firestore.FieldValue.serverTimestamp(),
-        });
+        }, { merge: true });
 
         return;
       }
@@ -392,11 +420,11 @@ export const processUploadedFile = onObjectFinalized(
       if (!cleanText || cleanText.length < 50) {
         console.warn(`Insufficient text extracted from ${filePath}: ${cleanText.length} characters`);
 
-        await firestore.collection('candidates').doc(candidateId).update({
+        await firestore.collection('candidates').doc(candidateId).set({
           'processing.status': 'extraction_insufficient',
           'processing.error_message': 'Insufficient text extracted from document',
           updated_at: admin.firestore.FieldValue.serverTimestamp(),
-        });
+        }, { merge: true });
 
         return;
       }
@@ -412,11 +440,14 @@ export const processUploadedFile = onObjectFinalized(
       });
 
       // Trigger analysis directly
+      let analysisSucceeded = false;
+      let analysis: any = null;
+
       try {
         const analysisService = new AnalysisService();
         console.log(`Starting analysis for candidate ${candidateId}`);
 
-        const analysis = await analysisService.analyzeCandidate({
+        analysis = await analysisService.analyzeCandidate({
           name: "Unknown", // Will be extracted
           resume_text: cleanText,
           experience: cleanText, // Pass full text as experience context
@@ -445,43 +476,69 @@ export const processUploadedFile = onObjectFinalized(
           updateData.linkedin_url = analysis.personal_details.linkedin;
         }
 
+        // Transform work_history array into original_data.experience string format
+        // This matches the format used by CSV imports: "- YYYY/MM - YYYY/MM\nCompany : Role\n\n"
+        if (analysis.work_history && Array.isArray(analysis.work_history) && analysis.work_history.length > 0) {
+          const experienceString = analysis.work_history
+            .map((job: { start_date?: string; end_date?: string; company?: string; role?: string }) => {
+              const start = job.start_date || '';
+              const end = job.end_date || 'current';
+              const company = job.company || '';
+              const role = job.role || '';
+              return `- ${start} - ${end}\n${company} : ${role}`;
+            })
+            .join('\n\n');
+
+          updateData['original_data.experience'] = experienceString;
+        }
+
         await firestore.collection('candidates').doc(candidateId).update(updateData);
         console.log(`Analysis completed for candidate ${candidateId}`);
-
-        // Generate embedding for vector search
-        try {
-          const vectorService = new VectorSearchService();
-          const candidateDoc = await firestore.collection('candidates').doc(candidateId).get();
-          const candidateData = candidateDoc.data();
-
-          if (candidateData) {
-            await vectorService.storeEmbedding({
-              candidate_id: candidateId,
-              name: candidateData.name,
-              current_role: candidateData.current_role,
-              current_company: candidateData.current_company,
-              intelligent_analysis: candidateData.intelligent_analysis || analysis,
-              resume_analysis: candidateData.resume_analysis,
-            });
-
-            await firestore.collection('candidates').doc(candidateId).update({
-              'processing.embedding_generated': true,
-              'processing.status': 'ready'
-            });
-            console.log(`Embedding generated for candidate ${candidateId}`);
-          }
-        } catch (embeddingError) {
-          console.error(`Embedding generation failed for candidate ${candidateId}:`, embeddingError);
-          // Don't fail the process, candidate is still searchable via direct name match
-        }
+        analysisSucceeded = true;
 
       } catch (analysisError) {
         console.error(`Analysis failed for candidate ${candidateId}:`, analysisError);
-        // Don't fail the whole process, just log it
-        await firestore.collection('candidates').doc(candidateId).update({
+        // Don't fail the whole process, continue to embedding generation
+        await firestore.collection('candidates').doc(candidateId).set({
           'processing.status': 'analysis_failed',
           'processing.error_message': (analysisError as Error).message
-        });
+        }, { merge: true });
+      }
+
+      // Generate embedding for vector search - ALWAYS try this, even if analysis failed
+      // This ensures the candidate is searchable via vector search
+      try {
+        const vectorService = new VectorSearchService();
+        const candidateDoc = await firestore.collection('candidates').doc(candidateId).get();
+        const candidateData = candidateDoc.data();
+
+        if (candidateData) {
+          // Build profile for embedding - use analysis if available, otherwise use raw text
+          const profileForEmbedding: any = {
+            candidate_id: candidateId,
+            name: candidateData.name || candidateData.personal?.name || 'Unknown',
+            current_role: candidateData.current_role || candidateData.intelligent_analysis?.career_trajectory_analysis?.current_level,
+            current_company: candidateData.current_company,
+            intelligent_analysis: candidateData.intelligent_analysis || analysis,
+            resume_analysis: candidateData.resume_analysis,
+          };
+
+          // If we don't have analysis, add the raw resume text so embedding can be generated
+          if (!profileForEmbedding.intelligent_analysis && cleanText) {
+            profileForEmbedding.resume_text = cleanText.substring(0, 5000); // First 5000 chars
+          }
+
+          await vectorService.storeEmbedding(profileForEmbedding);
+
+          await firestore.collection('candidates').doc(candidateId).set({
+            'processing.embedding_generated': true,
+            'processing.status': analysisSucceeded ? 'ready' : 'ready_without_analysis'
+          }, { merge: true });
+          console.log(`Embedding generated for candidate ${candidateId}`);
+        }
+      } catch (embeddingError) {
+        console.error(`Embedding generation failed for candidate ${candidateId}:`, embeddingError);
+        // Log the error but don't fail the process
       }
 
       console.log(`Successfully processed file for candidate: ${candidateId}, extracted ${cleanText.length} characters`);

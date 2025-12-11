@@ -83,12 +83,13 @@ service cloud.firestore {
 
     /**
      * Check if user is member of a specific organization
-     * Uses organization_id from custom claims in Firebase Auth token
+     * Uses org_id from custom claims in Firebase Auth token
+     * Note: Custom claims use 'org_id' (not 'organization_id')
      */
     function isOrgMember(orgId) {
       return isAllowedUser() &&
-             request.auth.token.organization_id != null &&
-             request.auth.token.organization_id == orgId;
+             request.auth.token.org_id != null &&
+             request.auth.token.org_id == orgId;
     }
 
     // ========================================================================
@@ -136,13 +137,14 @@ service cloud.firestore {
     // Only allowed users (recruiters+) can read candidates in their org
 
     match /candidates/{candidateId} {
-      // Allowed users can read candidates in their organization
-      // Allowed users can read candidates in their organization
-      // Admins can read all candidates
-      allow read: if isAllowedUser() && (
-        isAdmin() || 
-        isOrgMember(resource.data.organization_id) ||
-        resource.data.organization_id == null // Allow access to legacy data without org_id
+      // Simplified rule: Allow read for authenticated users with ella domain OR whose org_id matches
+      // Note: Using direct checks instead of isAllowedUser() to avoid exists() call overhead
+      allow read: if isAuthenticated() && (
+        // Allow Ella team members to read all candidates
+        getUserEmail().matches('.*@ella.com.br') ||
+        getUserEmail().matches('.*@ellaexecutivesearch.com') ||
+        // Allow users to read candidates in their organization
+        (request.auth.token.org_id != null && request.auth.token.org_id == resource.data.org_id)
       );
 
       // Only Cloud Functions can write candidate data

@@ -279,7 +279,12 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
     }
   };
 
-  const linkedInUrl = candidate.linkedin_url || candidate.personal?.linkedin;
+  // Extract and normalize LinkedIn URL - add https:// if missing
+  const rawLinkedIn = candidate.linkedin_url || candidate.personal?.linkedin ||
+    candidate.intelligent_analysis?.personal_details?.linkedin || '';
+  const linkedInUrl = rawLinkedIn && !rawLinkedIn.startsWith('http')
+    ? `https://${rawLinkedIn}`
+    : rawLinkedIn;
 
   // Generate a dynamic rationale if the backend one is generic
   const generateDynamicRationale = () => {

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiService } from '../../services/api';
 import { firestoreService } from '../../services/firestore-direct';
+import { searchCandidates } from '../../config/firebase';
 import { DashboardStats, CandidateProfile, JobDescription, SearchResponse } from '../../types';
 import { SkillAwareCandidateCard } from '../Candidate/SkillAwareCandidateCard';
 import { useAuth } from '../../contexts/AuthContext';
@@ -54,6 +55,10 @@ export const Dashboard: React.FC = () => {
   const [currentSearch, setCurrentSearch] = useState<JobDescription | null>(null);
   const [displayLimit, setDisplayLimit] = useState(20);
 
+  // Search Mode State (Quick Find vs AI Match)
+  const [searchMode, setSearchMode] = useState<'quickfind' | 'aimatch'>('quickfind');
+  const [quickFindQuery, setQuickFindQuery] = useState('');
+
   // Saved Searches State
   const [savedSearches, setSavedSearches] = useState<any[]>([]);
   const [isSaveSearchOpen, setIsSaveSearchOpen] = useState(false);
@@ -85,21 +90,31 @@ export const Dashboard: React.FC = () => {
     setDashboardError('');
 
     try {
-      // Try direct Firestore first, fall back to API if needed
-      // Add 5s timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 5000));
+      // Get user's org_id from their Firebase token claims
+      let orgId: string | undefined;
+      if (user) {
+        try {
+          const tokenResult = await user.getIdTokenResult();
+          orgId = tokenResult.claims.org_id as string | undefined;
+          console.log('User org_id:', orgId);
+        } catch (tokenError) {
+          console.warn('Could not get user token claims:', tokenError);
+        }
+      }
 
-      const [statsResult, candidatesResult] = await Promise.race([
-        Promise.all([
-          firestoreService.getDashboardStats().catch(() => null),
-          firestoreService.getCandidatesDirect(6).catch(() => [])
-        ]),
-        timeoutPromise
-      ]) as [DashboardStats | null, CandidateProfile[]];
+      // Fetch data without timeout - the 29k candidate iteration takes time
+      console.log('Starting Firestore data fetch...');
+      const [statsResult, candidatesResult] = await Promise.all([
+        firestoreService.getDashboardStats(orgId).catch((err) => { console.error('getDashboardStats error:', err); return null; }),
+        firestoreService.getCandidatesDirect(6, orgId).catch((err) => { console.error('getCandidatesDirect error:', err); return []; })
+      ]);
+      console.log('Firestore data fetch complete. Stats:', statsResult?.totalCandidates, 'Candidates:', candidatesResult?.length);
 
       if (statsResult) {
         setStats(statsResult);
+        console.log('Stats set successfully:', statsResult.totalCandidates);
       } else {
+        console.log('No statsResult, trying API fallback...');
         try {
           const apiStats = await apiService.getDashboardStats();
           setStats(apiStats);
@@ -110,7 +125,9 @@ export const Dashboard: React.FC = () => {
 
       if (candidatesResult && candidatesResult.length > 0) {
         setRecentCandidates(candidatesResult);
+        console.log('Candidates set successfully:', candidatesResult.length);
       } else {
+        console.log('No candidatesResult, trying API fallback...');
         // Fallback to API if Firestore direct fails
         try {
           const apiCandidates = await apiService.getCandidates({ limit: 6, offset: 0 });
@@ -123,6 +140,7 @@ export const Dashboard: React.FC = () => {
         }
       }
     } catch (error: any) {
+      console.error('loadDashboardData error:', error);
       setDashboardError(error.message || 'Failed to load dashboard data');
     } finally {
       setDashboardLoading(false);
@@ -186,6 +204,164 @@ export const Dashboard: React.FC = () => {
       });
     } catch (error: any) {
       setSearchError(error.message || 'Search failed');
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Quick Find: keyword search by name, company, title
+  const handleQuickFind = async () => {
+    if (!quickFindQuery.trim()) return;
+
+    setSearchLoading(true);
+    setSearchError('');
+    setSearchResults(null);
+    setShowSearchResults(true);
+    setCurrentSearch(null);
+    setDisplayLimit(50);
+
+    try {
+      console.log('Quick Find: calling searchCandidates Cloud Function with query:', quickFindQuery);
+
+      // Call the server-side searchCandidates Cloud Function
+      const response = await searchCandidates({
+        query: quickFindQuery,
+        pagination: { page: 1, limit: 50 }
+      });
+
+      const result = response.data as any;
+      console.log('Quick Find: server returned', result?.data?.candidates?.length, 'candidates');
+      console.log('Quick Find: first candidate structure:', JSON.stringify(result?.data?.candidates?.[0], null, 2));
+
+      if (result?.success && result?.data?.candidates) {
+        // Filter out unprocessed/incomplete candidates and transform to SearchResponse format
+        const processedCandidates = result.data.candidates.filter((candidate: any) => {
+          const name = candidate.name || candidate.personal?.name;
+          // Filter out candidates with name "Processing..." or missing names
+          return name && name !== 'Processing...' && name !== 'Unknown' && name.trim() !== '';
+        });
+
+        const matches = processedCandidates.map((candidate: any) => {
+          // Handle both schema versions: ai_analysis and intelligent_analysis
+          const analysis = candidate.ai_analysis || candidate.intelligent_analysis || {};
+
+          // Extract name - prioritize root level (most common in existing data)
+          const name = candidate.name ||
+            candidate.personal?.name ||
+            analysis.personal_details?.name ||
+            'Unknown';
+
+          // Extract title/role - check career_trajectory_analysis for intelligent_analysis format
+          const title = candidate.current_role ||
+            analysis.career_trajectory_analysis?.current_level ||
+            analysis.experience_analysis?.current_role ||
+            candidate.personal?.current_role ||
+            '';
+
+          // Extract company - check multiple locations
+          const company = candidate.current_company ||
+            analysis.experience_analysis?.companies?.[0] ||
+            analysis.career_trajectory_analysis?.current_company ||
+            candidate.personal?.current_company ||
+            '';
+
+          // Extract skills - handle both explicit_skills object and array formats
+          let skills: string[] = [];
+          if (candidate.primary_skills && Array.isArray(candidate.primary_skills)) {
+            skills = candidate.primary_skills;
+          } else if (analysis.explicit_skills) {
+            // explicit_skills might be an object with skill names as keys
+            if (typeof analysis.explicit_skills === 'object' && !Array.isArray(analysis.explicit_skills)) {
+              skills = Object.keys(analysis.explicit_skills).slice(0, 10);
+            } else if (Array.isArray(analysis.explicit_skills)) {
+              skills = analysis.explicit_skills.map((s: any) => s.skill || s);
+            }
+          } else if (analysis.inferred_skills?.highly_probable_skills) {
+            skills = analysis.inferred_skills.highly_probable_skills.map((s: any) => s.skill || s);
+          }
+
+          // Extract summary from recruiter_insights or career_progression
+          const summary = analysis.recruiter_insights?.one_liner ||
+            analysis.recruiter_insights?.summary ||
+            analysis.career_trajectory_analysis?.career_progression?.substring(0, 200) ||
+            '';
+
+          // Extract experience from career_trajectory_analysis.years_experience
+          const experience = candidate.years_experience ||
+            analysis.career_trajectory_analysis?.years_experience ||
+            analysis.personal_details?.years_of_experience ||
+            candidate.searchable_data?.experience_level ||
+            '';
+
+          // Extract LinkedIn URL from multiple possible locations
+          const linkedinUrl = candidate.linkedin_url ||
+            analysis.personal_details?.linkedin ||
+            candidate.personal?.linkedin ||
+            '';
+
+          return {
+            candidate: {
+              id: candidate.id,
+              candidate_id: candidate.id || candidate.candidate_id,
+              name,
+              title,
+              company,
+              location: analysis.personal_details?.location || candidate.personal?.location || '',
+              skills: Array.isArray(skills) ? skills.slice(0, 10) : [],
+              experience,
+              summary,
+              matchScore: 1,
+              overall_score: 1,
+              strengths: analysis.recruiter_insights?.strengths || [],
+              fitReasons: [],
+              availability: 'Unknown',
+              desiredSalary: analysis.recruiter_insights?.ideal_roles || '',
+              profileUrl: '#',
+              lastUpdated: candidate.updated_at || candidate.processing_metadata?.timestamp || new Date().toISOString(),
+              // Pass raw objects for CandidateCard to read directly
+              intelligent_analysis: candidate.intelligent_analysis,
+              resume_analysis: candidate.resume_analysis,
+              original_data: candidate.original_data,
+              linkedin_url: linkedinUrl,
+              personal: candidate.personal,
+              documents: candidate.documents
+            },
+            score: 100,
+            similarity: 1,
+            match_reasons: [`Matched keyword: "${quickFindQuery}"`],
+            rationale: {
+              overall_assessment: `Found via Quick Find for "${quickFindQuery}"`,
+              strengths: analysis.recruiter_insights?.strengths || [],
+              gaps: [],
+              risk_factors: []
+            }
+          };
+        });
+
+        setSearchResults({
+          success: true,
+          matches,
+          query_time_ms: 0,
+          insights: {
+            total_candidates: result.data.pagination?.total_count || matches.length,
+            avg_match_score: 100,
+            top_skills_matched: [],
+            common_gaps: [],
+            market_analysis: `Found ${result.data.pagination?.total_count || matches.length} candidates matching "${quickFindQuery}"`,
+            recommendations: []
+          }
+        });
+      } else {
+        setSearchResults({
+          success: true,
+          matches: [],
+          query_time_ms: 0,
+          insights: { total_candidates: 0, avg_match_score: 0, top_skills_matched: [], common_gaps: [], market_analysis: 'No results', recommendations: [] }
+        });
+      }
+    } catch (error: any) {
+      console.error('Quick Find error:', error);
+      setSearchError(error.message || 'Quick Find failed');
     } finally {
       setSearchLoading(false);
     }
@@ -342,14 +518,86 @@ export const Dashboard: React.FC = () => {
             Find Your Next Hire
           </Typography>
           <Typography variant="h6" color="text.secondary" sx={{ maxWidth: '600px', mx: 'auto' }}>
-            Paste a job description below to instantly match with {stats?.totalCandidates ? stats.totalCandidates.toLocaleString() : 'thousands of'} candidates using AI.
+            Search {stats?.totalCandidates ? stats.totalCandidates.toLocaleString() : 'thousands of'} candidates by name, company, or skills.
           </Typography>
         </Box>
 
         <Paper elevation={3} sx={{ p: 0, overflow: 'hidden', borderRadius: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
-          <Box sx={{ p: 3, bgcolor: '#f8fafc', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-            <JobDescriptionForm onSearch={handleSearch} loading={searchLoading} />
+          {/* Search Mode Tabs */}
+          <Box sx={{ display: 'flex', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
+            <Button
+              onClick={() => setSearchMode('quickfind')}
+              sx={{
+                flex: 1,
+                py: 1.5,
+                borderRadius: 0,
+                borderBottom: searchMode === 'quickfind' ? '3px solid #3B82F6' : '3px solid transparent',
+                bgcolor: searchMode === 'quickfind' ? '#f8fafc' : 'white',
+                fontWeight: searchMode === 'quickfind' ? 700 : 500,
+                color: searchMode === 'quickfind' ? '#3B82F6' : 'text.secondary',
+              }}
+            >
+              🔍 Quick Find
+            </Button>
+            <Button
+              onClick={() => setSearchMode('aimatch')}
+              sx={{
+                flex: 1,
+                py: 1.5,
+                borderRadius: 0,
+                borderBottom: searchMode === 'aimatch' ? '3px solid #3B82F6' : '3px solid transparent',
+                bgcolor: searchMode === 'aimatch' ? '#f8fafc' : 'white',
+                fontWeight: searchMode === 'aimatch' ? 700 : 500,
+                color: searchMode === 'aimatch' ? '#3B82F6' : 'text.secondary',
+              }}
+            >
+              ✨ AI Match
+            </Button>
           </Box>
+
+          {/* Quick Find Mode */}
+          {searchMode === 'quickfind' && (
+            <Box sx={{ p: 3, bgcolor: '#f8fafc' }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Search by candidate name, company, title, or skills
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <input
+                  type="text"
+                  value={quickFindQuery}
+                  onChange={(e) => setQuickFindQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleQuickFind()}
+                  placeholder="Name, company, title, or skills..."
+                  style={{
+                    flex: 1,
+                    padding: '12px 16px',
+                    fontSize: '16px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    outline: 'none',
+                  }}
+                />
+                <Button
+                  variant="contained"
+                  onClick={handleQuickFind}
+                  disabled={searchLoading || !quickFindQuery.trim()}
+                  sx={{ px: 4, fontWeight: 600 }}
+                >
+                  {searchLoading ? 'Searching...' : 'Search'}
+                </Button>
+              </Box>
+            </Box>
+          )}
+
+          {/* AI Match Mode (existing job description form) */}
+          {searchMode === 'aimatch' && (
+            <Box sx={{ p: 3, bgcolor: '#f8fafc' }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Paste a job description for AI-powered candidate matching
+              </Typography>
+              <JobDescriptionForm onSearch={handleSearch} loading={searchLoading} />
+            </Box>
+          )}
         </Paper>
 
         {/* Recent Searches (Quick Access) */}

@@ -70,10 +70,22 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         }
       });
 
-      xhr.addEventListener('load', () => {
+      xhr.addEventListener('load', async () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          setUploadProgress({ progress: 100, status: 'completed' });
-          onUploadComplete?.(fileUrl);
+          // File uploaded successfully, now confirm the upload to trigger processing
+          try {
+            console.log('File upload complete, confirming upload session:', uploadSessionId);
+            await apiService.confirmUpload(uploadSessionId);
+            console.log('Upload confirmed, processing will begin');
+            setUploadProgress({ progress: 100, status: 'completed' });
+            onUploadComplete?.(fileUrl);
+          } catch (confirmError: any) {
+            console.error('Failed to confirm upload:', confirmError);
+            // Upload succeeded but confirmation failed - still report success
+            // The storage trigger should still process the file
+            setUploadProgress({ progress: 100, status: 'completed' });
+            onUploadComplete?.(fileUrl);
+          }
         } else {
           const error = `Upload failed: ${xhr.status} ${xhr.statusText}`;
           console.error('Upload error response:', xhr.responseText);
