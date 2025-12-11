@@ -175,11 +175,12 @@ export const Dashboard: React.FC = () => {
               title: strategy.target_role, // Use standardized role
               description: strategy.search_query, // Use optimized vector query
               min_experience: strategy.filters?.min_years_experience || 0,
+              seniority: strategy.seniority, // CRITICAL: Pass seniority from Agent
               // We could also map context/requirements to skills if needed
               required_skills: strategy.key_requirements
             };
 
-            console.log('Agent Strategy:', strategy);
+            console.log('Agent Strategy (seniority:', strategy.seniority, '):', strategy);
           }
         } catch (agentError) {
           console.warn('Agent analysis failed, falling back to raw search:', agentError);

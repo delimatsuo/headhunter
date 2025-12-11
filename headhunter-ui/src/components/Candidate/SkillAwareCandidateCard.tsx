@@ -281,7 +281,7 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
 
   // Extract and normalize LinkedIn URL - add https:// if missing
   const rawLinkedIn = candidate.linkedin_url || candidate.personal?.linkedin ||
-    candidate.intelligent_analysis?.personal_details?.linkedin || '';
+    (candidate.intelligent_analysis as any)?.personal_details?.linkedin || '';
   const linkedInUrl = rawLinkedIn && !rawLinkedIn.startsWith('http')
     ? `https://${rawLinkedIn}`
     : rawLinkedIn;

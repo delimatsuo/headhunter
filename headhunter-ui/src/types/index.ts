@@ -8,6 +8,7 @@ export interface JobDescription {
   min_experience?: number;
   max_experience?: number;
   leadership_required?: boolean;
+  seniority?: 'entry' | 'mid' | 'senior' | 'executive'; // From SearchAgent analysis
 }
 
 export interface CandidateProfile {

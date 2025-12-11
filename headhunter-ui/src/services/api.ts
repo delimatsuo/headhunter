@@ -76,9 +76,14 @@ export const apiService = {
 
       const minExp = jobDescription.min_experience || 0;
 
-      const experienceLevel = minExp <= 3 ? 'entry' :
-        minExp <= 7 ? 'mid' :
-          minExp <= 12 ? 'senior' : 'executive';
+      // Use seniority from SearchAgent if provided, otherwise calculate from min_experience
+      const experienceLevel = jobDescription.seniority || (
+        minExp <= 3 ? 'entry' :
+          minExp <= 7 ? 'mid' :
+            minExp <= 12 ? 'senior' : 'executive'
+      );
+
+      console.log('Search experience level:', experienceLevel, '(from', jobDescription.seniority ? 'SearchAgent' : 'min_experience', ')');
 
       const result = await skillAwareSearch({
         text_query: queryText,
