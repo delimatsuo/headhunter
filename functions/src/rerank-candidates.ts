@@ -28,13 +28,20 @@ export const rerankCandidates = onCall(
 
             // Construct prompt
             const prompt = `
-You are a Senior Executive Recruiter with 20+ years of experience. Your task is to rank the following candidates for a specific job description.
+You are a Senior Executive Recruiter with 20+ years of experience. Your task is to rank candidates for the job description below.
 
-CRITICAL INSTRUCTIONS - READ CAREFULLY:
-1. **ROLE-LEVEL MATCHING IS THE #1 PRIORITY**. If the job is for a CTO, prioritize candidates with executive titles (CTO, VP of Engineering, Chief Architect, Head of Technology, etc.). Do NOT rank individual contributors (Data Scientists, Software Engineers, Analysts) highly just because they share technical skills.
-2. A senior recruiter understands that "cloud computing" in a CTO job description means strategic oversight, not hands-on coding. Match candidates by ROLE and RESPONSIBILITY LEVEL, not just keywords.
-3. For executive roles: Look for leadership scope (team size, P&L ownership, board exposure), strategic decision-making, and executive presence.
-4. A Data Scientist with 15 years experience is NOT a good match for a CTO role unless they have transitioned into executive leadership.
+CRITICAL PRINCIPLE - ROLE-LEVEL MATCHING:
+The most important factor is whether a candidate's CURRENT ROLE AND LEVEL matches what the job requires. This applies to ALL positions:
+
+- For executive roles (CTO, VP, Director): Look for candidates currently in executive/leadership positions. Individual contributors (engineers, analysts, scientists) are NOT good matches even with relevant skills.
+- For senior individual contributors (Staff Engineer, Principal Architect): Look for senior IC experience. Junior developers are poor matches; executives might be overqualified.
+- For mid-level roles (Software Engineer, Data Analyst): Look for 3-7 years experience in similar roles. Interns are too junior; Directors are overqualified.
+- For junior/entry roles: Look for early-career candidates or new graduates. Senior professionals are overqualified.
+
+A senior recruiter understands that SKILLS IN CONTEXT matter:
+- "Machine Learning" for a Data Scientist vs for a CTO means different things (hands-on vs strategic oversight)
+- A candidate with the right title but wrong industry is often better than wrong title but right industry
+- Years of experience in a DIFFERENT role don't transfer directly (15yr Data Scientist ≠ CTO candidate)
 
 JOB DESCRIPTION:
 ${job_description}
@@ -45,18 +52,24 @@ ${candidates.map((c, i) => `
 Profile: ${JSON.stringify(c.profile).substring(0, 1500)}
 `).join('\n')}
 
-EVALUATION CRITERIA (in priority order):
-1. Role/Title Match: Does the candidate's current role align with the job level? (70% weight)
-2. Leadership Scope: For executive roles, do they have executive-level responsibilities? (20% weight)
-3. Skill Overlap: Technical skills are secondary to role fit. (10% weight)
+EVALUATION CRITERIA (apply these to ANY role):
+1. Role/Title Alignment (60%): Is the candidate's current role at the same level as the job? 
+2. Responsibility Match (25%): Does their scope of work (team size, decision authority, domain) match?
+3. Skill Relevance (15%): Do they have the required skills for THIS role level?
+
+SCORING GUIDE:
+- 90-100: Perfect role match (same title/level, relevant experience)
+- 70-89: Adjacent role (one level away, strong transferable experience) 
+- 50-69: Significant mismatch (different level but some relevant skills)
+- <50: Wrong candidate type (fundamentally different career track)
 
 OUTPUT FORMAT (JSON ONLY, no markdown):
 {
   "ranked_candidates": [
     {
       "candidate_id": "string",
-      "score": number (0-100, where 90+ = perfect role match, 70-89 = adjacent role, <70 = wrong level),
-      "rationale": "1 sentence explaining role fit, not just skills"
+      "score": number,
+      "rationale": "1 sentence explaining role fit, e.g. 'Current VP of Engineering aligns perfectly with CTO role' or 'Senior Data Scientist lacks executive experience for this CTO position'"
     }
   ]
 }
