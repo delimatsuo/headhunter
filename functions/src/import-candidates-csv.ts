@@ -1,9 +1,11 @@
 /**
  * CSV Import for Candidates
  * Allows admins to bulk import candidates from CSV/Excel data
+ * Supports multi-tenant: candidates can belong to multiple orgs via org_ids[]
  */
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import * as admin from 'firebase-admin';
 import { VectorSearchService } from './vector-search';
 import * as z from 'zod';
 
@@ -27,8 +29,9 @@ const CandidateRowSchema = z.object({
 const ImportRequestSchema = z.object({
     rows: z.array(z.record(z.string())),
     columnMapping: z.record(z.string()), // Maps CSV columns to our fields
-    dedupeStrategy: z.enum(['skip', 'update', 'merge']).default('skip'),
+    dedupeStrategy: z.enum(['skip', 'update', 'merge', 'add_org']).default('add_org'), // add_org: add this org to existing candidate
     source: z.string().default('CSV Import'),
+    targetOrgId: z.string().optional(), // For Ella admins importing for client orgs
 });
 
 type CandidateRow = z.infer<typeof CandidateRowSchema>;
@@ -97,23 +100,33 @@ export const importCandidatesCSV = onCall(
             candidateIds: [],
         };
 
-        // Get existing emails for deduplication
-        const existingEmails = new Map<string, string>(); // email -> candidate_id
-        if (dedupeStrategy !== 'update') {
-            const existingCandidates = await db
-                .collection('candidates')
-                .where('org_id', '==', orgId)
-                .select('email', 'personal.email')
-                .get();
+        // Determine target org (for Ella importing for clients)
+        const targetOrgId = validatedInput.targetOrgId || orgId;
 
-            existingCandidates.forEach(doc => {
-                const data = doc.data();
-                const email = data.email || data.personal?.email;
-                if (email) {
-                    existingEmails.set(email.toLowerCase(), doc.id);
-                }
-            });
+        // Verify user can import to target org (Ella admins can import anywhere)
+        const isEllaUser = orgId === 'org_ella_main';
+        if (targetOrgId !== orgId && !isEllaUser) {
+            throw new HttpsError('permission-denied', 'Only Ella admins can import for other organizations');
         }
+
+        // Get org name for source tracking
+        const orgDoc = await db.collection('organizations').doc(targetOrgId).get();
+        const orgName = orgDoc.exists ? orgDoc.data()?.name || targetOrgId : targetOrgId;
+
+        // Get ALL existing emails for GLOBAL deduplication (not org-scoped)
+        const existingEmails = new Map<string, string>(); // email -> candidate_id
+        const existingCandidates = await db
+            .collection('candidates')
+            .select('email', 'personal.email', 'canonical_email')
+            .get();
+
+        existingCandidates.forEach(doc => {
+            const data = doc.data();
+            const email = data.canonical_email || data.email || data.personal?.email;
+            if (email) {
+                existingEmails.set(email.toLowerCase().trim(), doc.id);
+            }
+        });
 
         // Process each row
         const batch = db.batch();
@@ -144,19 +157,43 @@ export const importCandidatesCSV = onCall(
 
                 const candidate = candidateData.data;
 
-                // Check for duplicates
-                const email = candidate.email?.toLowerCase();
-                if (email && existingEmails.has(email)) {
-                    if (dedupeStrategy === 'skip') {
-                        result.skipped++;
-                        continue;
-                    }
-                    // For 'merge' or 'update', we'll update the existing document
+                // Check for duplicates by email
+                const email = candidate.email?.toLowerCase().trim();
+                const isExisting = email && existingEmails.has(email);
+
+                if (isExisting && dedupeStrategy === 'skip') {
+                    result.skipped++;
+                    continue;
                 }
 
-                // Generate candidate ID
-                const candidateId = email && existingEmails.has(email)
-                    ? existingEmails.get(email)!
+                // For add_org strategy: just add this org to existing candidate
+                if (isExisting && dedupeStrategy === 'add_org') {
+                    const existingCandidateId = existingEmails.get(email!)!;
+                    const docRef = db.collection('candidates').doc(existingCandidateId);
+
+                    // Add org to org_ids array and track source
+                    batch.update(docRef, {
+                        org_ids: admin.firestore.FieldValue.arrayUnion(targetOrgId),
+                        source_orgs: admin.firestore.FieldValue.arrayUnion({
+                            org_id: targetOrgId,
+                            org_name: orgName,
+                            added_at: Timestamp.now(),
+                            source: source,
+                        }),
+                        updated_at: Timestamp.now(),
+                    });
+
+                    result.candidateIds.push(existingCandidateId);
+                    result.imported++;
+                    batchCount++;
+
+                    // Note: don't add to existingEmails since already there
+                    continue;
+                }
+
+                // Generate candidate ID for new candidates
+                const candidateId = isExisting
+                    ? existingEmails.get(email!)!
                     : `cand_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
                 // Parse skills
@@ -164,11 +201,19 @@ export const importCandidatesCSV = onCall(
                     ? candidate.skills.split(',').map(s => s.trim()).filter(Boolean)
                     : [];
 
-                // Build candidate document
+                // Build candidate document with multi-org support
                 const now = Timestamp.now();
-                const candidateDoc = {
+                const candidateDoc: any = {
                     candidate_id: candidateId,
-                    org_id: orgId,
+                    org_id: targetOrgId, // Primary org (for backward compatibility)
+                    org_ids: [targetOrgId], // All orgs with access
+                    source_orgs: [{
+                        org_id: targetOrgId,
+                        org_name: orgName,
+                        added_at: now,
+                        source: source,
+                    }],
+                    canonical_email: email || null, // Normalized email for dedup
                     name: candidate.name,
                     email: candidate.email || null,
                     personal: {
@@ -192,13 +237,13 @@ export const importCandidatesCSV = onCall(
                     processing: {
                         status: 'imported',
                         imported_at: now.toDate().toISOString(),
-                        needs_resume: true, // Flag that resume is missing
+                        needs_resume: true,
                     },
                 };
 
                 // Add to batch
                 const docRef = db.collection('candidates').doc(candidateId);
-                if (dedupeStrategy === 'merge' && existingEmails.has(email!)) {
+                if ((dedupeStrategy === 'merge' || dedupeStrategy === 'update') && isExisting) {
                     batch.set(docRef, candidateDoc, { merge: true });
                 } else {
                     batch.set(docRef, candidateDoc);

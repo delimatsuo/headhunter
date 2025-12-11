@@ -1360,10 +1360,16 @@ export class VectorSearchService {
       // 2. Check for name match - using multiple strategies
       if (results.length === 0) {
         // Get all candidates for this org and filter by name (case-insensitive)
-        // This is not ideal for large datasets but works for now
-        let candidatesQuery = this.firestore.collection('candidates');
-        if (orgId) {
-          candidatesQuery = candidatesQuery.where('org_id', '==', orgId) as any;
+        // Note: Ella (org_ella_main) sees ALL candidates regardless of org
+        // Other orgs only see candidates where org_ids contains their org
+        const isEllaOrg = orgId === 'org_ella_main';
+        let candidatesQuery: any = this.firestore.collection('candidates');
+
+        // Non-Ella orgs filter by org_ids array
+        // We first try the new org_ids field, then fallback to legacy org_id
+        if (orgId && !isEllaOrg) {
+          // Try org_ids first (new multi-tenant model)
+          candidatesQuery = candidatesQuery.where('org_ids', 'array-contains', orgId);
         }
 
         const snapshot = await candidatesQuery.limit(500).get();
@@ -1371,7 +1377,11 @@ export class VectorSearchService {
 
         for (const doc of snapshot.docs) {
           const data = doc.data();
-          if (orgId && data.org_id !== orgId) continue;
+
+          // Additional org filter for legacy data without org_ids
+          if (orgId && !isEllaOrg && !data.org_ids) {
+            if (data.org_id !== orgId) continue;
+          }
 
           // Check multiple name fields (case-insensitive)
           const candidateName = (data.name || '').toLowerCase();

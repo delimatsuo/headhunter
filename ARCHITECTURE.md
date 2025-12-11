@@ -79,6 +79,35 @@ Compose networking mirrors Cloud Run service-to-service calls. Environment varia
 - Redis namespaces include tenant identifiers to prevent cache poisoning. Postgres schemas isolate tenant data via composite keys and check constraints.
 - Local tests rely on the Firestore emulator seeded with tenant-specific collections; reset via helper scripts before destructive integration test runs.
 
+## Multi-Tenant Candidate Data Model
+
+Candidates use a **shared database, shared schema** approach with multi-org visibility:
+
+```typescript
+{
+  org_id: string,           // Primary org (for backward compatibility)
+  org_ids: string[],        // All orgs with access to this candidate
+  source_orgs: [{           // Track who added this candidate
+    org_id: string,
+    org_name: string,
+    added_at: Timestamp,
+    source: string          // "CSV Import", "Resume Upload", etc.
+  }],
+  canonical_email: string,  // Normalized email for deduplication
+  // ...other fields
+}
+```
+
+**Access Control:**
+- **Ella (org_ella_main)**: Sees ALL candidates regardless of org_ids
+- **Client orgs**: See only candidates where `org_ids.includes(their_org_id)`
+
+**Deduplication:**
+- Primary key: `canonical_email` (normalized, lowercase)
+- When importing duplicate: `add_org` strategy adds new org to existing candidate's `org_ids[]`
+- Fallback identifier when no email: `name + linkedin_url` or `name + phone`
+
+
 ## Observability & Troubleshooting
 
 - **Metrics:** Scrape `/metrics` from each service. Hook into the optional `docker/prometheus` stack when deeper analysis is required.
