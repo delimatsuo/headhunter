@@ -52,7 +52,11 @@ Headhunter AI is an intelligent recruitment platform that uses LLMs to enrich ca
 - **Central Hub:** All 29k+ candidates reside in `org_ella_main`.
 - **Auto-Onboarding:** Users with `@ella.com.br` or `@ellaexecutivesearch.com` emails are automatically assigned to `org_ella_main`.
 - **Client Isolation:** External users are assigned to new, private organizations.
-- **Organization Switching:** (Future) Ability for Admins to switch contexts between Ella and Client orgs.
+- **Multi-Org Data Model (Dec 2025):**
+  - Candidates have `org_ids[]` array for multi-org access
+  - `source_orgs[]` tracks who added each candidate
+  - `canonical_email` enables global deduplication
+  - Ella sees ALL candidates; clients see only their `org_ids`
 
 ### 3.2 Search & Discovery
 - **Hybrid Search:** Vector + Keyword search.

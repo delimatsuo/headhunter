@@ -9,9 +9,9 @@ This runbook is the single source of truth for resuming work or restoring local 
 
 ## 🎯 EXECUTIVE SUMMARY FOR NEW AI CODING AGENT
 
-**Last Updated**: 2025-12-10
-**Project Status**: Production-ready. Resume upload pipeline fully functional.
-**Next Session**: Implement multi-tenant bulk upload with org_ids tracking.
+**Last Updated**: 2025-12-11
+**Project Status**: Production-ready. Multi-tenant bulk upload fully implemented.
+**Next Session**: Build client CSV import UI, test client org isolation.
 
 ---
 
@@ -61,6 +61,31 @@ Rerank Service caching is now enabled and verified.
 - API Gateway: https://headhunter-api-gateway-production-d735p8t6.uc.gateway.dev
 - Search Service: https://hh-search-svc-production-akcoqbr7sa-uc.a.run.app
 - Rerank Service: https://hh-rerank-svc-production-akcoqbr7sa-uc.a.run.app
+
+### Recent Updates (2025-12-11)
+
+**✅ Multi-Tenant Bulk Upload System** (Dec 11, 2025)
+- **Data Model Enhancement**: Candidates now support multi-org access via `org_ids[]` array
+- **Source Tracking**: `source_orgs[]` tracks which orgs added each candidate
+- **Global Deduplication**: `canonical_email` field for cross-org email matching
+- **Import Enhancements**:
+  - `targetOrgId` param for Ella admins to import for client orgs
+  - `add_org` dedup strategy: adds new org to existing candidate
+  - Global email dedup (not org-scoped)
+- **Access Control**:
+  - Ella (`org_ella_main`) sees ALL candidates
+  - Client orgs see only candidates where `org_ids.includes(their_org_id)`
+
+**✅ Migration Complete** (Dec 11, 2025)
+- **29,161 candidates migrated** with `org_ids`, `source_orgs`, `canonical_email`
+- Zero errors, ~$0.05 cost, 5 min 12 sec runtime
+
+**Files Modified**:
+- `functions/src/import-candidates-csv.ts` (multi-org import)
+- `functions/src/vector-search.ts` (org_ids array-contains queries)
+- `ARCHITECTURE.md` (data model documentation)
+
+---
 
 ### Recent Updates (2025-12-10)
 
