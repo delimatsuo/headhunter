@@ -4,11 +4,13 @@ import { JobDescription } from '../../types';
 interface JobDescriptionFormProps {
   onSearch: (jobDescription: JobDescription) => void;
   loading?: boolean;
+  loadingStatus?: string;
 }
 
 export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
   onSearch,
-  loading = false
+  loading = false,
+  loadingStatus = 'Analyzing...'
 }) => {
   const [formData, setFormData] = useState<JobDescription>({
     title: '',
@@ -181,7 +183,7 @@ export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
           disabled={loading}
           style={{ marginTop: '20px' }}
         >
-          {loading ? 'Analyzing...' : 'Search Candidates'}
+          {loading ? (loadingStatus || 'Analyzing...') : 'Search Candidates'}
         </button>
       </form>
     </div>

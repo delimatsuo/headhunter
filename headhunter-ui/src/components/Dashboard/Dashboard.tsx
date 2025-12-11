@@ -147,8 +147,13 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  const [searchStatus, setSearchStatus] = useState<string>(''); // For progress updates
+
+  // ... (existing state)
+
   const handleSearch = async (jobDescription: JobDescription) => {
     setSearchLoading(true);
+    setSearchStatus('Starting search...');
     setSearchError('');
     setSearchResults(null);
     setShowSearchResults(true);
@@ -162,6 +167,7 @@ export const Dashboard: React.FC = () => {
       let agentAnalysis = null;
 
       if (jobDescription.title && !jobDescription.min_experience) {
+        setSearchStatus('AI analyzing job requirements...');
         // This looks like a raw query, let's analyze it
         try {
           const analysisResponse = await apiService.analyzeSearchQuery(jobDescription.title + ' ' + (jobDescription.description || ''));
@@ -188,7 +194,7 @@ export const Dashboard: React.FC = () => {
       }
 
       // Step 2: Execute the search
-      const results = await apiService.searchCandidates(searchParams);
+      const results = await apiService.searchCandidates(searchParams, (status) => setSearchStatus(status));
 
       // Attach agent reasoning to the results for display (optional, if UI supports it)
       if (agentAnalysis && results.success) {
@@ -207,6 +213,7 @@ export const Dashboard: React.FC = () => {
       setSearchError(error.message || 'Search failed');
     } finally {
       setSearchLoading(false);
+      setSearchStatus('');
     }
   };
 
@@ -596,7 +603,11 @@ export const Dashboard: React.FC = () => {
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Paste a job description for AI-powered candidate matching
               </Typography>
-              <JobDescriptionForm onSearch={handleSearch} loading={searchLoading} />
+              <JobDescriptionForm
+                onSearch={handleSearch}
+                loading={searchLoading}
+                loadingStatus={searchStatus}
+              />
             </Box>
           )}
         </Paper>

@@ -49,8 +49,10 @@ export const apiService = {
 
   // Search candidates based on job description
   // Search candidates based on job description using semantic search
-  async searchCandidates(jobDescription: JobDescription): Promise<SearchResponse> {
+  async searchCandidates(jobDescription: JobDescription, onProgress?: (status: string) => void): Promise<SearchResponse> {
     try {
+      if (onProgress) onProgress('Searching candidate database...');
+
       // Construct query text from job description
       const queryText = `
         Title: ${jobDescription.title}
@@ -111,6 +113,8 @@ export const apiService = {
 
         // Perform LLM Reranking
         try {
+          if (onProgress) onProgress('AI evaluating candidates (this may take 30-60s)...');
+
           const rerankResult = await rerankCandidates({
             job_description: queryText,
             candidates: candidates.map((c: any) => ({

@@ -53,7 +53,7 @@ export const completeOnboarding = httpsCallable(functions, 'completeOnboarding')
 // Skill-aware search and assessment (ensure backend functions are deployed)
 export const skillAwareSearch = httpsCallable(functions, 'skillAwareSearch');
 export const getCandidateSkillAssessment = httpsCallable(functions, 'getCandidateSkillAssessment');
-export const rerankCandidates = httpsCallable(functions, 'rerankCandidates');
+export const rerankCandidates = httpsCallable(functions, 'rerankCandidates', { timeout: 300000 }); // 5 min timeout for LLM
 
 // Admin callables
 export const addAllowedUserFn = httpsCallable(functions, 'addAllowedUser');

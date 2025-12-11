@@ -15,8 +15,8 @@ const RerankInputSchema = z.object({
 
 export const rerankCandidates = onCall(
     {
-        memory: "1GiB",
-        timeoutSeconds: 60,
+        memory: "2GiB",
+        timeoutSeconds: 300,
     },
     async (request) => {
         try {
