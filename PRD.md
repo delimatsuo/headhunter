@@ -59,9 +59,12 @@ Headhunter AI is an intelligent recruitment platform that uses LLMs to enrich ca
   - Ella sees ALL candidates; clients see only their `org_ids`
 
 ### 3.2 Search & Discovery
-- **Hybrid Search:** Vector + Keyword search.
+- **Hybrid Search:** Vector (Embeddings) + Keyword search.
 - **Global Search:** Ella Recruiters search the entire central pool.
+- **[NEW] AI Job Analysis:** One-click analysis of Job Descriptions to extract structured requirements (Skills, Level, Summary) before searching.
 - **Reranking:** LLM-based candidate scoring.
+  - **Reasoning Engine:** Uses "Few-Shot" examples to mimic human recruiter intuition (e.g. Scope vs Skills).
+  - **Disqualification Logic:** Automatically deprioritizes candidates with mismatched seniority (e.g. IC vs Executive).
 
 ### 3.3 User Interface
 - **Simplified Navigation:** Dashboard and Search only.

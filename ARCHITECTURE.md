@@ -1,12 +1,21 @@
 # Headhunter System Architecture
 
-> Canonical repository path: `/Volumes/Extreme Pro/myprojects/headhunter`. Do not use the deprecated `/Users/delimatsuo/Documents/Coding/headhunter` clone.
+> Canonical repository path: `/Volumes/Extreme Pro/myprojects/headhunter`. Do not use the deprecated legacy clone location.
 
 ## Overview
 
 Headhunter is delivered as a Fastify microservice mesh. Eight HTTP services run in concert with shared infrastructure (Postgres with pgvector, Redis, Firestore emulator, Pub/Sub emulator, mock external providers). Each service is an npm workspace under `services/`, with shared middleware, telemetry, and error handling supplied by `@hh/common`.
 
 `docker-compose.local.yml` is the authoritative definition for local parity. The same topology informs Cloud Run deployments, with managed equivalents for each infrastructure dependency.
+
+
+## Current Production State (Dec 2025)
+> **Note**: The current active AI Search Pipeline operates on **Firebase Cloud Functions** and connects directly to the React Frontend.
+> - **Search**: `skillAwareSearch` (Firebase Function) -> Postgres (pgvector).
+> - **Analysis**: `analyzeJob` (Firebase Function) -> Gemini.
+> - **Reranking**: `rerankCandidates` (Firebase Function) -> Gemini.
+>
+> The Fastify Mesh described below is the **Target Architecture** for high-scale independence.
 
 ## Service Topology
 

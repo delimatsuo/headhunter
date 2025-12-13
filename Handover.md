@@ -29,6 +29,16 @@ Successfully integrated Gemini 2.5 Flash as the primary reranking provider for `
         - **General**: `vector_similarity` (0.35), `skill_match` (0.35), `experience_match` (0.15).
 - **Result**: Executive searches now prioritize title/seniority and semantic context (e.g., "scale-up", "B2B") over pure skill keyword matching.
 
+### 5. AI-First Architecture (Dec 2025)
+- **Job Analysis**: Implemented `analyzeJob` (Gemini) to extract structured requirements (Skills, Level, Key Focus) from raw job descriptions.
+  - *Impact*: Eliminates regex-guessing; provides richer signals for Vector Search.
+- **Reasoning Reranker**: Updated `rerankCandidates` to use **Few-Shot Reasoning** instead of hard rules.
+  - *Logic*: "Recruiter Mentality" prompt teaches Gemini to penalize Title/Scope mismatches (e.g. "Senior Dev != CTO") via examples.
+- **Latency Optimization**:
+  - **Batch Size**: Reduced from 75 to 50 to prevent 5-minute timeouts.
+  - **Payload**: Truncated candidate content to 4000 chars (approx 1000 tokens) to speed up generation.
+  - *Result*: Search latency < 45s.
+
 ## Current Status
 - **Primary Provider**: Gemini 2.5 Flash (`gemini-2.5-flash`).
 - **Fallback Provider**: Together AI (Qwen 2.5 32B).
