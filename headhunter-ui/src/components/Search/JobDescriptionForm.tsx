@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { JobDescription } from '../../types';
+import { apiService } from '../../services/api';
 
 interface JobDescriptionFormProps {
   onSearch: (jobDescription: JobDescription) => void;
@@ -26,46 +27,38 @@ export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [skillInput, setSkillInput] = useState('');
 
-  // Simple keyword extraction from description
-  const extractSkills = (text: string) => {
-    const commonSkills = [
-      // Languages
-      'java', 'python', 'javascript', 'typescript', 'c#', 'c++', 'go', 'ruby', 'php', 'swift', 'kotlin', 'scala', 'rust',
-      // Frontend
-      'react', 'angular', 'vue', 'node', 'html', 'css', 'sass', 'less', 'jquery', 'jsp', 'thymeleaf',
-      // Backend & Frameworks
-      'spring', 'spring boot', 'spring mvc', 'hibernate', 'jpa', 'django', 'flask', 'fastapi', 'express', 'nestjs', '.net', 'asp.net',
-      // Database
-      'sql', 'nosql', 'mysql', 'postgresql', 'oracle', 'mongodb', 'redis', 'cassandra', 'elasticsearch', 'dynamodb',
-      // Cloud & DevOps
-      'aws', 'azure', 'gcp', 'cloud', 'docker', 'kubernetes', 'jenkins', 'gitlab ci', 'github actions', 'terraform', 'ansible', 'circleci',
-      // Architecture & Concepts
-      'rest', 'restful', 'soap', 'graphql', 'microservices', 'distributed systems', 'agile', 'scrum', 'kanban',
-      'leadership', 'management', 'communication', 'problem solving', 'teamwork',
-      // Tools & Testing
-      'git', 'jira', 'junit', 'mockito', 'selenium', 'cypress', 'jest', 'cobertura', 'maven', 'gradle',
-      // AI/ML
-      'machine learning', 'ai', 'deep learning', 'nlp', 'tensorflow', 'pytorch', 'pandas', 'numpy'
-    ];
-
-    const foundSkills = commonSkills.filter(skill =>
-      text.toLowerCase().includes(skill.toLowerCase())
-    );
-
-    return Array.from(new Set(foundSkills));
-  };
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState<any>(null);
 
   const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
     setFormData(prev => ({ ...prev, description: text }));
+  };
 
-    // Auto-extract if description is long enough
-    if (text.length > 50) {
-      const extracted = extractSkills(text);
+  const handleAnalyze = async () => {
+    if (!formData.description || formData.description.length < 50) return;
+
+    setAnalyzing(true);
+    setAnalysis(null);
+
+    try {
+      const result = await apiService.analyzeJob(formData.description);
+      setAnalysis(result);
+
+      // Auto-populate form
       setFormData(prev => ({
         ...prev,
-        required_skills: extracted
+        title: prev.title || result.job_title,
+        required_skills: result.required_skills || [],
+        nice_to_have: result.preferred_skills || [],
+        min_experience: result.experience_level === 'executive' ? 10 :
+          result.experience_level === 'senior' ? 5 :
+            result.experience_level === 'mid' ? 3 : 0
       }));
+    } catch (error) {
+      console.error("Analysis failed", error);
+    } finally {
+      setAnalyzing(false);
     }
   };
 
@@ -145,10 +138,35 @@ export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
                 <button type="button" onClick={() => removeSkill(index)}>×</button>
               </span>
             ))}
-            {(!formData.required_skills || formData.required_skills.length === 0) && (
-              <span className="no-skills">Type description to detect skills...</span>
+            {(!formData.required_skills || formData.required_skills.length === 0) && !analyzing && (
+              <span className="no-skills">Analysis needed...</span>
             )}
+            {analyzing && <span className="analyzing-status">AI is analyzing requirements...</span>}
           </div>
+
+          <div style={{ marginTop: '10px' }}>
+            <button
+              type="button"
+              onClick={handleAnalyze}
+              disabled={analyzing || !formData.description}
+              style={{
+                background: '#8B5CF6', color: 'white', border: 'none',
+                padding: '8px 16px', borderRadius: '6px', cursor: 'pointer'
+              }}
+            >
+              {analyzing ? 'Processing...' : '✨ Analyze Requirements with AI'}
+            </button>
+          </div>
+
+          {analysis && (
+            <div className="analysis-results" style={{ marginTop: '15px', padding: '15px', background: '#F3F4F6', borderRadius: '8px' }}>
+              <h4>AI Analysis Summary</h4>
+              <p><strong>Role:</strong> {analysis.job_title}</p>
+              <p><strong>Level:</strong> {analysis.experience_level}</p>
+              <p><strong>Summary:</strong> {analysis.summary}</p>
+              <p><strong>Key Focus:</strong> {(analysis.key_responsibilities || []).slice(0, 3).join(', ')}</p>
+            </div>
+          )}
         </div>
 
         <button
@@ -159,23 +177,25 @@ export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
           {showAdvanced ? 'Hide Advanced Options' : 'Show Advanced Options'}
         </button>
 
-        {showAdvanced && (
-          <div className="advanced-options">
-            <div className="form-group">
-              <label>Add Manual Skill</label>
-              <div className="skill-input">
-                <input
-                  type="text"
-                  value={skillInput}
-                  onChange={(e) => setSkillInput(e.target.value)}
-                  placeholder="Add skill"
-                />
-                <button type="button" onClick={addSkill} className="btn btn-small">Add</button>
+        {
+          showAdvanced && (
+            <div className="advanced-options">
+              <div className="form-group">
+                <label>Add Manual Skill</label>
+                <div className="skill-input">
+                  <input
+                    type="text"
+                    value={skillInput}
+                    onChange={(e) => setSkillInput(e.target.value)}
+                    placeholder="Add skill"
+                  />
+                  <button type="button" onClick={addSkill} className="btn btn-small">Add</button>
+                </div>
               </div>
+              {/* Add other advanced fields here if needed */}
             </div>
-            {/* Add other advanced fields here if needed */}
-          </div>
-        )}
+          )
+        }
 
         <button
           type="submit"
@@ -185,7 +205,7 @@ export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
         >
           {loading ? (loadingStatus || 'Analyzing...') : 'Search Candidates'}
         </button>
-      </form>
-    </div>
+      </form >
+    </div >
   );
 };

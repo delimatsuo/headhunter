@@ -41,7 +41,17 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     console.log('Candidate updated:', updatedCandidate.name);
   };
 
-  if (loading) {
+  const { matches = [], insights = {
+    total_candidates: 0,
+    avg_match_score: 0,
+    top_skills_matched: [],
+    common_gaps: [],
+    market_analysis: '',
+    recommendations: []
+  } } = results || {};
+
+  // Show full screen loading only if we have no results yet
+  if (loading && (!matches || matches.length === 0)) {
     return (
       <div className="search-results">
         <div className="loading-container">
@@ -68,14 +78,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     return null;
   }
 
-  const { matches = [], insights = {
-    total_candidates: 0,
-    avg_match_score: 0,
-    top_skills_matched: [],
-    common_gaps: [],
-    market_analysis: '',
-    recommendations: []
-  } } = results || {};
+
 
   const totalMatches = matches?.length || 0;
   const displayedMatches = matches?.slice(0, displayLimit) || [];
@@ -140,9 +143,10 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                 marginTop: '24px',
                 paddingBottom: '16px'
               }}>
-                {onLoadMore && (
+                {onLoadMore && !loading && (
                   <button
                     onClick={onLoadMore}
+                    disabled={loading}
                     style={{
                       padding: '12px 24px',
                       fontSize: '14px',
@@ -152,19 +156,28 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                       border: '2px solid #3B82F6',
                       borderRadius: '8px',
                       cursor: 'pointer',
-                      transition: 'all 0.2s'
+                      transition: 'all 0.2s',
+                      opacity: loading ? 0.5 : 1
                     }}
                     onMouseOver={(e) => {
-                      e.currentTarget.style.background = '#EFF6FF';
+                      if (!loading) e.currentTarget.style.background = '#EFF6FF';
                     }}
                     onMouseOut={(e) => {
-                      e.currentTarget.style.background = 'white';
+                      if (!loading) e.currentTarget.style.background = 'white';
                     }}
                   >
                     Load More (+20)
                   </button>
                 )}
-                {onShowAll && (
+
+                {loading && matches.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#666' }}>
+                    <div className="loading-spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }}></div>
+                    <span>Loading more...</span>
+                  </div>
+                )}
+
+                {onShowAll && !loading && (
                   <button
                     onClick={onShowAll}
                     style={{

@@ -36,7 +36,25 @@ The most important factor is whether a candidate's CURRENT ROLE AND LEVEL matche
 - For executive roles (CTO, VP, Director): Look for candidates currently in executive/leadership positions. Individual contributors (engineers, analysts, scientists) are NOT good matches even with relevant skills.
 - For senior individual contributors (Staff Engineer, Principal Architect): Look for senior IC experience. Junior developers are poor matches; executives might be overqualified.
 - For mid-level roles (Software Engineer, Data Analyst): Look for 3-7 years experience in similar roles. Interns are too junior; Directors are overqualified.
-- For junior/entry roles: Look for early-career candidates or new graduates. Senior professionals are overqualified.
+
+RECRUITER MENTALITY (Examples of Reasoning):
+
+case "Senior Software Engineer" applying for "CTO":
+- REASONING: "Candidate has strong technical skills (React, Node) but current scope is individual contribution. CTO requires organizational leadership, budget management, and boardroom presence. This is a severe scope mismatch."
+- SCORE: Low (30-50).
+- VERDICT: Individual Contributors generally lack the executive scope for C-Level roles, regardless of technical prowess.
+
+case "VP of Engineering" applying for "CTO":
+- REASONING: "Candidate manages managers, owns a budget, and drives strategy. The scope is aligned. Even if they don't know the exact stack (e.g. usage of Vue vs React), their leadership experience transfers."
+- SCORE: High (85-95).
+- VERDICT: Leadership Scope > Specific Stack Match for Executive roles.
+
+case "Data Scientist" applying for "Principal Data Scientist":
+- REASONING: "Candidate has the exact technical skills and seniority level. Perfect match."
+- SCORE: Very High (90+).
+
+GUIDING PRINCIPLE:
+Evalute the **Scope of Responsibility** first. If the scope is mismatched (e.g. IC vs Executive), the score must be low, even if the keyword match is 100%. Don't get distracted by keyword density.
 
 A senior recruiter understands that SKILLS IN CONTEXT matter:
 - "Machine Learning" for a Data Scientist vs for a CTO means different things (hands-on vs strategic oversight)
@@ -49,19 +67,32 @@ ${job_description}
 CANDIDATES:
 ${candidates.map((c, i) => `
 [Candidate ${i + 1}] ID: ${c.candidate_id}
-Profile: ${JSON.stringify(c.profile).substring(0, 1500)}
+Profile: ${JSON.stringify(c.profile).substring(0, 4000)}
 `).join('\n')}
 
-EVALUATION CRITERIA (apply these to ANY role):
-1. Role/Title Alignment (60%): Is the candidate's current role at the same level as the job? 
-2. Responsibility Match (25%): Does their scope of work (team size, decision authority, domain) match?
-3. Skill Relevance (15%): Do they have the required skills for THIS role level?
+EVALUATION FRAMEWORK (Analyze Complexity & Scope):
 
-SCORING GUIDE:
-- 90-100: Perfect role match (same title/level, relevant experience)
-- 70-89: Adjacent role (one level away, strong transferable experience) 
-- 50-69: Significant mismatch (different level but some relevant skills)
-- <50: Wrong candidate type (fundamentally different career track)
+1. SCOPE OF INFLUENCE (The "Executive" Test):
+   - Assess the candidate's current management scope (Team size, Budget, Strategic influence).
+   - Compare it to the Target Role.
+   - Example: A "Director of Data Science" usually manages a specific vertical (Data). A "CTO" manages the entire horizontal engineering org. Is the candidate's scope broad enough?
+   - Context Matters: A "VP" at a massive tech giant might be overqualified for a Seed startup CTO role, while a "Senior Engineer" might be underqualified. Use your judgment on Company Tier.
+
+2. FUNCTIONAL BREADTH (Generalist vs Specialist):
+   - Executive roles (CTO, VP Eng) require Generalist Engineering leadership (Infra, Product, People, Security).
+   - Candidates stuck in a Niche (only Data Science, only QA, only DevOps) are often poor matches for broad C-Level roles, even if their title is high.
+   - Look for evidence of cross-functional leadership.
+
+3. CAREER TRAJECTORY (Logical Progression):
+   - Is this role a logical next step?
+   - Logical: VP -> CTO, Director -> VP.
+   - Illogical/Risk: IC (Data Scientist) -> CTO.
+   
+SCORING PHILOSOPHY:
+- Score based on *Probability of Success* in the target role.
+- High Score (85+): Candidate has done this job before or is the perfect "Step Up" candidate with all necessary foundations.
+- Mid Score (60-84): Candidate has the skills but the jump is large (e.g. pivoting domain or skipping a level). 
+- Low Score (<60): Fundamental mismatch in scope or track (e.g. Specialist trying to be Generalist Executive).
 
 OUTPUT FORMAT (JSON ONLY, no markdown):
 {

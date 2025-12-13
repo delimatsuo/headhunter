@@ -15,6 +15,7 @@ import {
   deleteSavedSearch,
   findSimilarCandidates,
   analyzeSearchQuery,
+  analyzeJob,
   getCandidateStats
 } from '../config/firebase';
 import {
@@ -47,9 +48,21 @@ export const apiService = {
     }
   },
 
+  // Analyze Job Description with AI
+  async analyzeJob(jobDescription: string): Promise<any> {
+    try {
+      const result = await analyzeJob({ job_description: jobDescription });
+      const data = result.data as any;
+      return data.analysis || data; // Unwrap the analysis object if present
+    } catch (error) {
+      console.error("AI Analysis Failed", error);
+      throw error;
+    }
+  },
+
   // Search candidates based on job description
   // Search candidates based on job description using semantic search
-  async searchCandidates(jobDescription: JobDescription, onProgress?: (status: string) => void): Promise<SearchResponse> {
+  async searchCandidates(jobDescription: JobDescription, onProgress?: (status: string) => void, page: number = 1): Promise<SearchResponse> {
     try {
       if (onProgress) onProgress('Searching candidate database...');
 
@@ -92,17 +105,24 @@ export const apiService = {
         required_skills: requiredSkills,
         preferred_skills: preferredSkills,
         experience_level: experienceLevel,
-        limit: 100, // Fetch more candidates for pagination support
+        limit: 50, // Reduced from 75 to improve latency (50 * 4k chars = ~200k chars)
+        offset: (page - 1) * 50,
         filters: {
           min_years_experience: minExp,
         },
         ranking_weights: {
           // Boost experience match for executive roles to ensure seniority
           // Boost vector similarity to capture semantic context (e.g. "B2B", "Scale up")
-          experience_match: experienceLevel === 'executive' ? 0.3 : 0.15,
-          skill_match: experienceLevel === 'executive' ? 0.2 : 0.35, // Reduce skill weight to avoid over-indexing on keywords
-          vector_similarity: experienceLevel === 'executive' ? 0.4 : 0.35,
-          confidence: 0.1
+          // Boost experience match for executive roles to ensure seniority
+          // Title is the most important factor for C-Level (weight 0.5)
+          // Skills are secondary (weight 0.1) because executives hire for skills
+          // AI-First Strategy: Trust the Vector Embeddings (Semantic Understanding)
+          // Experience match is just a sanity check (weight 0.2)
+          // Vector Similarity is the primary driver (weight 0.7)
+          experience_match: 0.2, // Low weight, don't let rules override AI
+          skill_match: 0.1,
+          vector_similarity: 0.7, // High weight: Embeddings capture 'CTOness' better than keyword rules
+          confidence: 0.0
         }
       });
 
@@ -115,9 +135,12 @@ export const apiService = {
         try {
           if (onProgress) onProgress('AI evaluating candidates (this may take 30-60s)...');
 
+          // Optimization: Rerank the current batch
+          const candidatesToRerank = candidates;
+
           const rerankResult = await rerankCandidates({
             job_description: queryText,
-            candidates: candidates.map((c: any) => ({
+            candidates: candidatesToRerank.map((c: any) => ({
               candidate_id: c.candidate_id,
               profile: c.profile,
               initial_score: c.overall_score
@@ -127,7 +150,13 @@ export const apiService = {
 
           const rerankData = rerankResult.data as any;
           if (rerankData.success && rerankData.results.length > 0) {
-            candidates = rerankData.results;
+            // Filter out candidates with low LLM scores (< 70) to remove irrelevant matches (e.g. Data Scientist for CTO)
+            // And ensure they are sorted by score descending
+            candidates = rerankData.results
+              .filter((c: any) => c.overall_score >= 70)
+              .sort((a: any, b: any) => b.overall_score - a.overall_score);
+
+            console.log(`Reranking complete. Kept ${candidates.length} candidates with score >= 70.`);
           }
         } catch (err) {
           console.warn("Reranking failed, falling back to vector sort:", err);

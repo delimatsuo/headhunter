@@ -831,3 +831,4 @@ export { migrateCandidates } from './migrate-candidates';
 
 // CSV Import for bulk candidate import
 export { importCandidatesCSV, suggestColumnMapping } from './import-candidates-csv';
+export { analyzeJob } from "./analyze-job";

@@ -30,6 +30,7 @@ const SearchQuerySchema = z.object({
     location: z.string().optional()
   }).optional(),
   limit: z.number().min(1).max(100).default(20),
+  offset: z.number().min(0).default(0),
   org_id: z.string().optional(),
   ranking_weights: z.object({
     skill_match: z.number().min(0).max(1).default(0.4),
@@ -464,6 +465,7 @@ class SkillAwareSearchService {
         minimum_overall_confidence: searchQuery.minimum_overall_confidence,
         filters: searchQuery.filters,
         limit: searchQuery.limit,
+        offset: searchQuery.offset,
         ranking_weights: searchQuery.ranking_weights,
         org_id: searchQuery.org_id
       };
@@ -571,7 +573,8 @@ export const skillAwareSearch = onCall(
         text_query: searchQuery.text_query,
         required_skills: searchQuery.required_skills.length,
         experience_level: searchQuery.experience_level,
-        limit: searchQuery.limit
+        limit: searchQuery.limit,
+        offset: searchQuery.offset
       });
 
       // Perform search

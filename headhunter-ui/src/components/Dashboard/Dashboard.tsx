@@ -148,6 +148,8 @@ export const Dashboard: React.FC = () => {
   };
 
   const [searchStatus, setSearchStatus] = useState<string>(''); // For progress updates
+  const [page, setPage] = useState(1);
+  const [activeSearchParams, setActiveSearchParams] = useState<JobDescription | null>(null);
 
   // ... (existing state)
 
@@ -194,7 +196,9 @@ export const Dashboard: React.FC = () => {
       }
 
       // Step 2: Execute the search
-      const results = await apiService.searchCandidates(searchParams, (status) => setSearchStatus(status));
+      setActiveSearchParams(searchParams);
+      setPage(1);
+      const results = await apiService.searchCandidates(searchParams, (status) => setSearchStatus(status), 1);
 
       // Attach agent reasoning to the results for display (optional, if UI supports it)
       if (agentAnalysis && results.success) {
@@ -214,6 +218,36 @@ export const Dashboard: React.FC = () => {
     } finally {
       setSearchLoading(false);
       setSearchStatus('');
+    }
+  };
+  const handleLoadMoreBackend = async () => {
+    if (!activeSearchParams) return;
+
+    setSearchLoading(true);
+
+    try {
+      const nextPage = page + 1;
+      const response = await apiService.searchCandidates(activeSearchParams, undefined, nextPage);
+
+      if (response && response.matches && response.matches.length > 0) {
+        setSearchResults(prev => {
+          if (!prev) return response;
+          return {
+            ...prev,
+            matches: [...(prev.matches || []), ...response.matches],
+            insights: {
+              ...prev.insights,
+              total_candidates: response.insights?.total_candidates || prev.insights?.total_candidates
+            }
+          };
+        });
+        setPage(nextPage);
+        setDisplayLimit(prev => prev + 20);
+      }
+    } catch (error) {
+      console.error('Error loading more:', error);
+    } finally {
+      setSearchLoading(false);
     }
   };
 
@@ -720,7 +754,17 @@ export const Dashboard: React.FC = () => {
               error={searchError}
               onFindSimilar={handleFindSimilar}
               displayLimit={displayLimit}
-              onLoadMore={() => setDisplayLimit(prev => prev + 20)}
+              onLoadMore={() => {
+                const currentCount = searchResults?.matches?.length || 0;
+                // If we're near the end of the list, or the user asks for more than we have
+                if (displayLimit + 20 >= currentCount) {
+                  // Fetch next batch from backend
+                  handleLoadMoreBackend();
+                } else {
+                  // Just show more local results
+                  setDisplayLimit(prev => prev + 20);
+                }
+              }}
               onShowAll={() => setDisplayLimit(searchResults?.matches?.length || 1000)}
             />
           </Box>

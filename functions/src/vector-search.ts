@@ -41,6 +41,7 @@ interface SearchQuery {
     min_score?: number;
   };
   limit?: number;
+  offset?: number;
   org_id?: string;
 }
 
@@ -68,6 +69,7 @@ interface SkillAwareSearchQuery {
     location?: string;
   };
   limit?: number;
+  offset?: number;
   ranking_weights?: {
     skill_match?: number;
     confidence?: number;
@@ -369,21 +371,23 @@ export class VectorSearchService {
         if (this.pgVectorClient) {
           const similarityThreshold = 0.5; // Lowered from 0.7 to capture more candidates for re-ranking
           const limit = query.limit || 20;
+          const offset = query.offset || 0;
+          const fetchLimit = limit + offset;
 
-          console.log(`Searching pgvector with threshold ${similarityThreshold} and limit ${limit}`);
+          console.log(`Searching pgvector with threshold ${similarityThreshold}, limit ${limit}, offset ${offset} (fetching ${fetchLimit})`);
 
           const pgResults = await this.pgVectorClient.searchSimilar(
             queryEmbedding,
             similarityThreshold,
-            limit,
+            fetchLimit,
             'vertex-ai-textembedding-004',
             'full_profile'
           );
 
           console.log(`pgvector returned ${pgResults.length} raw results`);
 
-          // Convert pgvector results to VectorSearchResult format
-          const results: VectorSearchResult[] = [];
+          // Apply offset slicing after filtering
+          let filteredResults = [];
 
           for (const pgResult of pgResults) {
             // Apply additional filters
@@ -436,7 +440,7 @@ export class VectorSearchService {
             };
             const matchReasons = this.generateMatchReasons(embeddingData, pgResult.similarity);
 
-            results.push({
+            filteredResults.push({
               candidate_id: pgResult.candidate_id,
               similarity_score: pgResult.similarity,
               metadata: embeddingData.metadata,
@@ -444,7 +448,7 @@ export class VectorSearchService {
             });
           }
 
-          return results.slice(0, limit);
+          return filteredResults.slice(offset, offset + limit);
         }
       }
 
@@ -591,10 +595,12 @@ export class VectorSearchService {
   async searchCandidatesSkillAware(query: SkillAwareSearchQuery): Promise<SkillAwareSearchResult[]> {
     try {
       // First, perform traditional vector similarity search
+      // First, perform traditional vector similarity search
       const traditionalQuery: SearchQuery = {
         query_text: query.text_query,
         filters: query.filters,
         limit: (query.limit || 20) * 2, // Get more results for re-ranking
+        offset: query.offset,
         org_id: query.org_id
       };
 
@@ -1075,10 +1081,10 @@ export class VectorSearchService {
       },
       'executive': {
         minYears: 8, maxYears: 50,
+        // Standard keywords, used for broad verification only. usage is lightweight.
         keywords: ['cto', 'ceo', 'cfo', 'coo', 'cio', 'chief', 'vp', 'vice president',
-          'director', 'head of', 'president', 'founder', 'co-founder',
-          'partner', 'managing', 'executive', 'evp', 'svp'],
-        titleWeight: 0.7  // Title is MORE important than years for executive searches
+          'president', 'founder', 'director', 'head of', 'partner', 'executive'],
+        titleWeight: 0.3 // Reduced weight: Let Vector Similarity (AI) drive the match
       }
     };
 
@@ -1101,19 +1107,14 @@ export class VectorSearchService {
 
     // Calculate title-based score
     let titleScore = 0;
-    const levelKeywordMatch = targetLevel.keywords.some(keyword =>
-      candidateLevel.includes(keyword)
-    );
+    // Simplistic check - trust the Embedding Model for nuance
+    const baseMatch = targetLevel.keywords.some(keyword => candidateLevel.includes(keyword));
 
-    if (levelKeywordMatch) {
+    if (baseMatch) {
       titleScore = 100;
-    } else if (query.experience_level === 'executive') {
-      // For executive searches, heavily penalize non-executive titles
-      const anyExecutiveKeywords = ['cto', 'ceo', 'chief', 'vp', 'vice president', 'director', 'head', 'president', 'founder'];
-      const hasAnyExecutiveTitle = anyExecutiveKeywords.some(kw => candidateLevel.includes(kw));
-      titleScore = hasAnyExecutiveTitle ? 70 : 15; // Severe penalty for non-executives
     } else {
-      titleScore = 50; // Neutral for non-executive searches
+      // Gentle falloff, don't punish too hard if the Embedding likes them
+      titleScore = 50;
     }
 
     // Weighted combination
