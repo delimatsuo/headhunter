@@ -1,7 +1,7 @@
 
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { z } from "zod";
-import { geminiModel } from "./gemini-client";
+import { geminiReasoningModel } from "./gemini-client";
 
 const RerankInputSchema = z.object({
     job_description: z.string(),
@@ -30,36 +30,42 @@ export const rerankCandidates = onCall(
             const prompt = `
 You are a Senior Executive Recruiter with 20+ years of experience. Your task is to rank candidates for the job description below.
 
-CRITICAL PRINCIPLE - ROLE-LEVEL MATCHING:
-The most important factor is whether a candidate's CURRENT ROLE AND LEVEL matches what the job requires. This applies to ALL positions:
+CRITICAL PRINCIPLE - THE "NEURAL MATCH" FRAMEWORK:
+Evaluate the candidate against the 4 Cognitive Dimensions of the job:
 
-- For executive roles (CTO, VP, Director): Look for candidates currently in executive/leadership positions. Individual contributors (engineers, analysts, scientists) are NOT good matches even with relevant skills.
-- For senior individual contributors (Staff Engineer, Principal Architect): Look for senior IC experience. Junior developers are poor matches; executives might be overqualified.
-- For mid-level roles (Software Engineer, Data Analyst): Look for 3-7 years experience in similar roles. Interns are too junior; Directors are overqualified.
+1. ROLE IDENTITY Match (Weight: 40%):
+   - Does he/she identify as the person we need? (e.g. "Strategic Executive" vs "Hands-on Builder").
+   - Mismatch here is fatal for Senior roles.
 
-RECRUITER MENTALITY (Examples of Reasoning):
+2. DOMAIN EXPERTISE Match (Weight: 30%):
+   - Is their domain relevant? (e.g. Fintech knowledge for a Fintech role).
+   - "Generalist" is OK if the JD is generic. but "Specialist" (e.g. Data Science) for a Generalist Role is a MISMATCH.
 
-case "Senior Software Engineer" applying for "CTO":
-- REASONING: "Candidate has strong technical skills (React, Node) but current scope is individual contribution. CTO requires organizational leadership, budget management, and boardroom presence. This is a severe scope mismatch."
-- SCORE: Low (30-50).
-- VERDICT: Individual Contributors generally lack the executive scope for C-Level roles, regardless of technical prowess.
+3. LEADERSHIP SCOPE Match (Weight: 20%):
+   - Do they manage the right blast radius? (Team size, P&L, Strategy).
+   - Avoid "Title Inflation" - look at actual responsibilities.
 
-case "VP of Engineering" applying for "CTO":
-- REASONING: "Candidate manages managers, owns a budget, and drives strategy. The scope is aligned. Even if they don't know the exact stack (e.g. usage of Vue vs React), their leadership experience transfers."
-- SCORE: High (85-95).
-- VERDICT: Leadership Scope > Specific Stack Match for Executive roles.
+4. TECHNICAL ENVIRONMENT Match (Weight: 10%):
+   - Have they worked in a similar stage/scale? (e.g. Startup vs Big Tech).
 
-case "Data Scientist" applying for "Principal Data Scientist":
-- REASONING: "Candidate has the exact technical skills and seniority level. Perfect match."
-- SCORE: Very High (90+).
+REASONING EXAMPLES:
 
-GUIDING PRINCIPLE:
-Evalute the **Scope of Responsibility** first. If the scope is mismatched (e.g. IC vs Executive), the score must be low, even if the keyword match is 100%. Don't get distracted by keyword density.
+case "VP of Data" applying for "Generalist CTO":
+- ROLE: Mismatch. They are a functional leader, not a generalist tech executive.
+- DOMAIN: Mismatch. Too niche (Data) vs Broad (Engineering/Product).
+- SCORE: Low (45).
+- REASONING: "Candidate is a high-level executive (VP), BUT their domain is too narrow (Data Science). We need a Generalist CTO who can manage Web/Mobile/DevOps, not just AI."
 
-A senior recruiter understands that SKILLS IN CONTEXT matter:
-- "Machine Learning" for a Data Scientist vs for a CTO means different things (hands-on vs strategic oversight)
-- A candidate with the right title but wrong industry is often better than wrong title but right industry
-- Years of experience in a DIFFERENT role don't transfer directly (15yr Data Scientist ≠ CTO candidate)
+case "Principal Engineer" applying for "CTO":
+- ROLE: Partial Match. Technical depth is there, but Identity is "IC".
+- SCOPE: Mismatch. Lacks organizational leadership experience.
+- SCORE: Medium-Low (55).
+- REASONING: "Strong technical builder, but lacks the strategic/political scope required for a C-Level role."
+
+case "Director of Engineering" applying for "VP of Engineering":
+- ROLE: Match.
+- SCOPE: Match (Stepping up).
+- SCORE: High (90).
 
 JOB DESCRIPTION:
 ${job_description}
@@ -87,6 +93,15 @@ EVALUATION FRAMEWORK (Analyze Complexity & Scope):
    - Is this role a logical next step?
    - Logical: VP -> CTO, Director -> VP.
    - Illogical/Risk: IC (Data Scientist) -> CTO.
+
+4. HIERARCHY & LEVEL PROGRESSION (The "Ladder"):
+   - Standard path: IC -> Manager -> Director -> VP -> C-Level.
+   - VALID JUMP (+1 Step): Director -> VP, or VP -> C-Level.
+   - RISKY JUMP (+2 Steps): Manager -> VP. (Score limit: 70).
+   - INVALID JUMP (+3 Steps): Manager -> C-Level (e.g. Eng Manager -> CTO).
+     - REASONING: "Candidate is currently a Manager. jumping to CTO skips Director and VP levels. Taking a Manager to generic C-Level is extremely rare and risky."
+     - SCORE: Must be < 60.
+     - EXCEPTION: If they held the title "CTO" or "VP" in the PAST (check history), then they are qualified.
    
 SCORING PHILOSOPHY:
 - Score based on *Probability of Success* in the target role.
@@ -106,9 +121,9 @@ OUTPUT FORMAT (JSON ONLY, no markdown):
 }
 `;
 
-            // Call Gemini
-            console.log("Calling Gemini for reranking...");
-            const result = await geminiModel.generateContent(prompt);
+            // Call Gemini Pro (Reasoning Model)
+            console.log("Calling Gemini Pro for reranking...");
+            const result = await geminiReasoningModel.generateContent(prompt);
             console.log("Gemini response received.");
             const response = await result.response;
             const text = response.candidates?.[0]?.content?.parts?.[0]?.text || "";

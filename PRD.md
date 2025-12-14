@@ -65,6 +65,9 @@ Headhunter AI is an intelligent recruitment platform that uses LLMs to enrich ca
 - **Reranking:** LLM-based candidate scoring.
   - **Reasoning Engine:** Uses "Few-Shot" examples to mimic human recruiter intuition (e.g. Scope vs Skills).
   - **Disqualification Logic:** Automatically deprioritizes candidates with mismatched seniority (e.g. IC vs Executive).
+- **[NEW] Neural Match Architecture:**
+  - **Cognitive Decomposition:** Breaks JDs into Identity, Domain, Scope, and Environment.
+  - **Semantic Anchor:** Searches using a weighted intent query, ensuring "Generalist" roles don't match "Specialist" candidates.
 
 ### 3.3 User Interface
 - **Simplified Navigation:** Dashboard and Search only.

@@ -295,32 +295,78 @@ export class PgVectorClient {
     similarityThreshold: number = 0.7,
     maxResults: number = 10,
     modelVersion?: string,
-    chunkType: string = 'full_profile'
+    chunkType: string = 'full_profile',
+    filters?: { current_level?: string | string[] }
   ): Promise<SearchResult[]> {
     this.validateEmbedding(queryEmbedding);
 
     try {
       const client = await this.pool.connect();
       try {
-        // Use the database function for optimized search
-        const result = await client.query(
-          'SELECT * FROM similarity_search($1, $2, $3, $4, $5)',
-          [
-            JSON.stringify(queryEmbedding), // Serialize embedding as JSON
-            similarityThreshold,
-            maxResults,
-            modelVersion,
-            chunkType
-          ]
-        );
+        if (!filters || Object.keys(filters).length === 0) {
+          // Use the optimized stored procedure if no filters (Legacy path)
+          const result = await client.query(
+            'SELECT * FROM similarity_search($1, $2, $3, $4, $5)',
+            [
+              JSON.stringify(queryEmbedding),
+              similarityThreshold,
+              maxResults,
+              modelVersion,
+              chunkType
+            ]
+          );
+          return result.rows.map(row => ({
+            candidate_id: row.candidate_id,
+            similarity: parseFloat(row.similarity),
+            metadata: row.metadata || {},
+            model_version: row.model_version,
+            chunk_type: row.chunk_type
+          }));
+        } else {
+          // Dynamic SQL for filtering (Agentic Sourcing path)
+          // standard cosine similarity: 1 - (embedding <=> query)
+          let sql = `
+             SELECT candidate_id, 1 - (embedding <=> $1) as similarity, 
+                    metadata, model_version, chunk_type
+             FROM candidate_embeddings
+             WHERE model_version = $2 
+               AND chunk_type = $3
+               AND 1 - (embedding <=> $1) > $4
+           `;
 
-        return result.rows.map(row => ({
-          candidate_id: row.candidate_id,
-          similarity: parseFloat(row.similarity),
-          metadata: row.metadata || {},
-          model_version: row.model_version,
-          chunk_type: row.chunk_type
-        }));
+          const params: any[] = [
+            JSON.stringify(queryEmbedding),
+            modelVersion || 'vertex-ai-textembedding-004',
+            chunkType,
+            similarityThreshold
+          ];
+
+          // Apply Strict Level Filtering
+          if (filters.current_level) {
+            const levels = Array.isArray(filters.current_level)
+              ? filters.current_level
+              : [filters.current_level];
+
+            // Postgres JSONB containment or text match
+            // Simplest: Check if metadata->>'current_level' is in the array
+            sql += ` AND metadata->>'current_level' = ANY($${params.length + 1})`;
+            params.push(levels);
+          }
+
+          sql += ` ORDER BY similarity DESC LIMIT $${params.length + 1}`;
+          params.push(maxResults);
+
+          const result = await client.query(sql, params);
+
+          return result.rows.map(row => ({
+            candidate_id: row.candidate_id,
+            similarity: parseFloat(row.similarity),
+            metadata: row.metadata || {},
+            model_version: row.model_version,
+            chunk_type: row.chunk_type
+          }));
+        }
+
       } finally {
         client.release();
       }

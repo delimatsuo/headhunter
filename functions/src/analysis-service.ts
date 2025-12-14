@@ -139,7 +139,7 @@ OUTPUT SCHEMA (JSON ONLY):
     "notes": "Brief comment on education quality/relevance"
   },
   "career_trajectory_analysis": {
-    "current_level": "...", "years_experience": 0, "promotion_velocity": "Fast/Average/Slow", "career_progression": "..."
+    "current_level": "One of: ['Entry', 'Mid', 'Senior', 'Staff', 'Principal', 'Executive', 'Director', 'VP', 'C-Level']", "years_experience": 0, "promotion_velocity": "Fast/Average/Slow", "career_progression": "..."
   },
   "recruiter_insights": {
     "overall_rating": "Top 1% / Top 10% / Strong / Average / Weak",

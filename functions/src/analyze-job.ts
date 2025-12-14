@@ -27,14 +27,13 @@ ${job_description}
 """
 
 TASK:
-1. Identify the **Core Technical Skills** (Must Haves).
-2. Identify **Preferred Skills** (Nice to Haves).
-3. Determine the **Experience Level** (entry, mid, senior, executive).
-   - "Executive" = CTO, VP, Director, Head of.
-   - "Senior" = Senior Eng, Staff, Principal, Lead.
-   - "Mid" = Intermediate.
-   - "Entry" = Junior, Intern.
-4. Extract 3-5 **Key Responsibilities**.
+3. **COGNITIVE DECOMPOSITION (The "Neural Match" Brain)**:
+   Break the job down into 4 distinct dimensions.
+   - **Role Identity**: Who are they? (e.g., "Strategic Technical Executive", "Hands-on Architect").
+   - **Domain Expertise**: What field? (e.g., "Fintech", "Healthtech").
+     * CRITICAL: If the JD is generic (e.g., "Tech Company"), label as "Generalist Software Engineering". DO NOT hallucinate a specific niche like "Data Science" unless explicitly stated.
+   - **Technical Environment**: Where do they thrive? (e.g., "High Scale", "Zero-to-One", "Cloud Native").
+   - **Leadership Scope**: How do they lead? (e.g., "Manager of Managers", "Org Builder", "IC").
 
 OUTPUT FORMAT (JSON ONLY):
 {
@@ -43,7 +42,13 @@ OUTPUT FORMAT (JSON ONLY):
   "required_skills": ["skill1", "skill2", ...],
   "preferred_skills": ["skill1", ...],
   "experience_level": "entry" | "mid" | "senior" | "executive",
-  "key_responsibilities": ["string", "string", ...]
+  "key_responsibilities": ["string", "string", ...],
+  "neural_dimensions": {
+    "role_identity": "string",
+    "domain_expertise": "string",
+    "technical_env": "string",
+    "leadership_scope": "string"
+  }
 }
 `;
 

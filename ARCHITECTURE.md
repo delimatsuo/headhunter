@@ -12,10 +12,17 @@ Headhunter is delivered as a Fastify microservice mesh. Eight HTTP services run 
 ## Current Production State (Dec 2025)
 > **Note**: The current active AI Search Pipeline operates on **Firebase Cloud Functions** and connects directly to the React Frontend.
 > - **Search**: `skillAwareSearch` (Firebase Function) -> Postgres (pgvector).
-> - **Analysis**: `analyzeJob` (Firebase Function) -> Gemini.
-> - **Reranking**: `rerankCandidates` (Firebase Function) -> Gemini.
+> - **Analysis**: `analyzeJob` (Firebase Function) -> Gemini (Cognitive Decomposition).
+> - **Search**: `JobDescriptionForm` -> `vector-search.ts` (Structured Semantic Anchor).
+> - **Reranking**: `rerankCandidates` (Firebase Function) -> Gemini (Reasoning Judge).
 >
 > The Fastify Mesh described below is the **Target Architecture** for high-scale independence.
+
+## Neural Match Architecture (Agentic RAG)
+The system currently implements a **Cognitive Matchmaking** architecture:
+1.  **Brain**: Decomposes JDs into 4 Semantic Dimensions (Role, Domain, Env, Scope).
+2.  **Body**: Retrieves candidates using a Weighted Semantic Anchor (not keywords, not hard filters).
+3.  **Judge**: Scores candidates based on "Blast Radius" and "Domain Fit".
 
 ## Service Topology
 

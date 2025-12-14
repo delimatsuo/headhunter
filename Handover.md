@@ -32,8 +32,12 @@ Successfully integrated Gemini 2.5 Flash as the primary reranking provider for `
 ### 5. AI-First Architecture (Dec 2025)
 - **Job Analysis**: Implemented `analyzeJob` (Gemini) to extract structured requirements (Skills, Level, Key Focus) from raw job descriptions.
   - *Impact*: Eliminates regex-guessing; provides richer signals for Vector Search.
-- **Reasoning Reranker**: Updated `rerankCandidates` to use **Few-Shot Reasoning** instead of hard rules.
-  - *Logic*: "Recruiter Mentality" prompt teaches Gemini to penalize Title/Scope mismatches (e.g. "Senior Dev != CTO") via examples.
+  - *Impact*: Eliminates regex-guessing; provides richer signals for Vector Search.
+- **Neural Match (Agentic RAG)**: Replaced "Hard Level Filters" and "HyDE" with a Cognitive Decomposition pipeline.
+  - **Logic**: `analyzeJob` extracts 4 Dimensions (Role, Domain, Scope, Env).
+  - **Search**: Uses a "Structured Semantic Anchor" to bias vector space naturally.
+  - **Ranking**: Penalizes "Domain Mismatches" (e.g. Data Scientist -> CTO) and "Scope Mismatches" (Principal -> CTO).
+- **Latency Optimization**:
 - **Latency Optimization**:
   - **Batch Size**: Reduced from 75 to 50 to prevent 5-minute timeouts.
   - **Payload**: Truncated candidate content to 4000 chars (approx 1000 tokens) to speed up generation.

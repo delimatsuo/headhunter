@@ -374,14 +374,13 @@ export class VectorSearchService {
           const offset = query.offset || 0;
           const fetchLimit = limit + offset;
 
-          console.log(`Searching pgvector with threshold ${similarityThreshold}, limit ${limit}, offset ${offset} (fetching ${fetchLimit})`);
-
           const pgResults = await this.pgVectorClient.searchSimilar(
             queryEmbedding,
             similarityThreshold,
             fetchLimit,
             'vertex-ai-textembedding-004',
-            'full_profile'
+            'full_profile',
+            query.filters // Pass strict filters (e.g. current_level)
           );
 
           console.log(`pgvector returned ${pgResults.length} raw results`);

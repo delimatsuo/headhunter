@@ -62,17 +62,63 @@ export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.description.trim()) {
       alert('Please provide a job description');
       return;
     }
+
+    // Neural Search Strategy:
+    // If analysis is missing, run it first (One-Click Search).
+    // Then, inject the High-Quality AI Summary into the search query for better Embeddings.
+
+    let currentAnalysis = analysis;
+    let enrichedData = { ...formData };
+
+    if (!currentAnalysis && formData.description.length > 50) {
+      // Auto-Analyze Logic
+      setAnalyzing(true);
+      try {
+        currentAnalysis = await apiService.analyzeJob(formData.description);
+        setAnalysis(currentAnalysis);
+
+        // Apply analysis to data
+        enrichedData = {
+          ...enrichedData,
+          title: enrichedData.title || currentAnalysis.job_title,
+          required_skills: currentAnalysis.required_skills || [],
+          nice_to_have: currentAnalysis.preferred_skills || [],
+          min_experience: currentAnalysis.experience_level === 'executive' ? 10 :
+            currentAnalysis.experience_level === 'senior' ? 5 :
+              currentAnalysis.experience_level === 'mid' ? 3 : 0,
+          seniority: currentAnalysis.experience_level // explicit seniority signal
+        };
+
+        // Update UI form state too so user sees it
+        setFormData(enrichedData);
+
+      } catch (err) {
+        console.error("Auto-analysis failed, falling back to raw search", err);
+      } finally {
+        setAnalyzing(false);
+      }
+    }
+
     // Ensure title is set
     const finalData = {
-      ...formData,
-      title: formData.title || 'Untitled Position'
+      ...enrichedData,
+      title: enrichedData.title || 'Untitled Position',
+      // COGNITIVE ANCHOR: Use the 4 Structured Dimensions for the Embedding
+      description: currentAnalysis?.neural_dimensions
+        ? `ROLE: ${currentAnalysis.neural_dimensions.role_identity}\n` +
+        `DOMAIN: ${currentAnalysis.neural_dimensions.domain_expertise}\n` +
+        `SCOPE: ${currentAnalysis.neural_dimensions.leadership_level}\n` +
+        `TECH: ${currentAnalysis.neural_dimensions.technical_env}\n\n` +
+        `CONTEXT: ${enrichedData.description}`
+        : enrichedData.description
     };
+
     onSearch(finalData);
   };
 

@@ -39,6 +39,13 @@ export const GEMINI_MODEL = 'gemini-2.5-flash';
  */
 export const GEMINI_VISION_MODEL = 'gemini-2.5-flash';
 
+/**
+ * High-intelligence model for Reranking and Complex Reasoning
+ * VERIFIED: gemini-2.5-pro (GA since June 17, 2025)
+ * Slower but significantly better at instructions and nuance.
+ */
+export const GEMINI_REASONING_MODEL = 'gemini-2.5-pro';
+
 // ============================================================================
 // EMBEDDING MODELS
 // ============================================================================

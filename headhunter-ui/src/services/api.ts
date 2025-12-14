@@ -100,6 +100,15 @@ export const apiService = {
 
       console.log('Search experience level:', experienceLevel, '(from', jobDescription.seniority ? 'SearchAgent' : 'min_experience', ')');
 
+      // NEURAL MATCH: No Strict Filters.
+      // We rely on the "Structured Semantic Anchor" to bias the vector space,
+      // and the "Reasoning Judge" (Reranker) to enforce seniority.
+      // This preserves serendipity (e.g. strong Principal Engineers acting as CTOs).
+
+      // This preserves serendipity (e.g. strong Principal Engineers acting as CTOs).
+
+      console.log('Search experience level:', experienceLevel, '-> Neural Match Mode (No Filters)');
+
       const result = await skillAwareSearch({
         text_query: queryText,
         required_skills: requiredSkills,
@@ -109,6 +118,7 @@ export const apiService = {
         offset: (page - 1) * 50,
         filters: {
           min_years_experience: minExp,
+          // current_level: Removed for Neural Match
         },
         ranking_weights: {
           // Boost experience match for executive roles to ensure seniority
