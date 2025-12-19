@@ -1,101 +1,233 @@
-# [DEPRECATED] Headhunter PRD – reference only
-
-⚠️ **Do not use this file for active planning or delivery.** The authoritative requirements live in `.taskmaster/docs/prd.txt`. All Fastify architecture, service contracts, and current milestones are documented there and in the canonical documentation set (`README.md`, `ARCHITECTURE.md`, `docs/HANDOVER.md`).
-
-## Where to Find Source of Truth
-
-- Product requirements and backlog: `.taskmaster/docs/prd.txt`
-- Architecture and service topology: `ARCHITECTURE.md`
-- Operational runbook: `docs/HANDOVER.md`
-- Bootstrap and workflow guidance: `README.md`
-
-## Current Architecture Snapshot (2025 Fastify Mesh)
-
-
-- **Fastify services**: Eight HTTP services (`hh-embed-svc`, `hh-search-svc`, `hh-rerank-svc`, `hh-evidence-svc`, `hh-eco-svc`, `hh-msgs-svc`, `hh-admin-svc`, `hh-enrich-svc`) exposing ports 7101–7108. Responsibilities and dependencies are described in `ARCHITECTURE.md`.
-- **Shared infrastructure**: Redis (redis:7-alpine), Postgres with pgvector (ankane/pgvector:v0.5.1), Firestore + Pub/Sub emulators (Cloud SDK), mock Together AI, mock OAuth, and Python enrichment workers. Topology is defined in `docker-compose.local.yml`.
-- **Integration baseline**: `SKIP_JEST=1 npm run test:integration --prefix services` must report `cacheHitRate=1.0` and rerank latency ≈ 0 ms before code is promoted. Metrics are exported via `/metrics` on each Fastify service.
-- **Bootstrap automation**: `scripts/prepare-local-env.sh` is planned to consolidate dependency installs, env hydration, emulator seeding, compose startup, and integration smoke tests. Until it lands, follow the manual procedures in `README.md` and `docs/HANDOVER.md` and annotate gaps with `TODO prepare-local-env`.
-
-## Migration Context – Why Fastify?
-
-The platform moved from Cloud Functions to the Fastify mesh to address:
-
-- **Multi-tenant isolation**: Shared middleware (`@hh/common`) enforces issuer/audience validation, per-tenant cache namespaces, and schema guards that were cumbersome in Functions.
-- **Latency and determinism**: Redis-backed rerank caching delivers near-zero latency; Functions cold starts routinely violated SLOs.
-- **Local parity**: `docker-compose.local.yml` mirrors production services, allowing deterministic integration tests and offline work (mock Together AI, mock OAuth, emulators).
-- **Operational control**: Cloud Run deployments expose consistent `/health`/`/metrics` endpoints, easing observability and incident response.
-- **Extensibility**: The enrichment service integrates Python workers through bind mounts, enabling rapid iteration on ML-heavy tasks without redeploying Functions.
-
-## Legacy Content (Cloud Functions Era)
-
-The remainder of this document is preserved for historical reference only. Use it to understand legacy decisions or compare past scope; do not base current implementation work on these sections.
-
----
-
-# Headhunter v2.0 - AI-Powered Recruitment Analytics Platform
-
-Note: This document contains legacy content from earlier iterations. The authoritative PRD is maintained at `.taskmaster/docs/prd.txt` and reflects the current single-pass Qwen 2.5 32B architecture, unified search pipeline, and the “no mock fallbacks” policy.
-
-# Product Requirements Document (PRD) - Headhunter AI
+# Headhunter AI - Product Requirements Document
 
 ## 1. Executive Summary
-Headhunter AI is an intelligent recruitment platform that uses LLMs to enrich candidate profiles, perform semantic search, and rank candidates against job descriptions.
-**Update (Dec 2025):** The platform now operates on an **Agency Model**, featuring a centralized candidate database ("Ella Executive Search") accessible to all Ella employees, with support for isolated Client Organizations.
+
+Headhunter AI is an intelligent recruitment platform that helps executive recruiters find and evaluate candidates using AI-powered analysis, semantic search, and intelligent ranking. The platform manages 29,000+ candidate profiles and provides multi-signal search capabilities to match candidates to job descriptions.
+
+**Current State (Dec 2025):** Production system running on Firebase Cloud Functions with React frontend.
 
 ## 2. User Roles
-- **Ella Recruiter (Admin):** Access to the central `org_ella_main` database (29k+ candidates). Can create and manage Client Organizations.
-- **Client User:** Access to their specific private organization. Can view candidates explicitly shared or added to their org.
 
-## 3. Key Features
-### 3.1 Agency Model & Centralization
-- **Central Hub:** All 29k+ candidates reside in `org_ella_main`.
-- **Auto-Onboarding:** Users with `@ella.com.br` or `@ellaexecutivesearch.com` emails are automatically assigned to `org_ella_main`.
-- **Client Isolation:** External users are assigned to new, private organizations.
-- **Multi-Org Data Model (Dec 2025):**
-  - Candidates have `org_ids[]` array for multi-org access
-  - `source_orgs[]` tracks who added each candidate
-  - `canonical_email` enables global deduplication
-  - Ella sees ALL candidates; clients see only their `org_ids`
+| Role | Access | Capabilities |
+|------|--------|--------------|
+| **Ella Recruiter** | Central database (`org_ella_main`, 29k+ candidates) | Full search, upload, edit, org management |
+| **Client User** | Private organization only | View/search candidates shared to their org |
+
+**Auto-Onboarding:**
+- `@ella.com.br` / `@ellaexecutivesearch.com` → `org_ella_main`
+- External emails → New private organization
+
+## 3. Core Features
+
+### 3.1 Candidate Management
+
+#### Resume Upload & Processing
+- **File Types:** PDF, DOCX, DOC, TXT, RTF, JPG, PNG
+- **Upload Flow:** Signed URL generation → Direct upload to Cloud Storage → Processing trigger
+- **AI Processing Pipeline:**
+  1. Text extraction (PDF parsing, OCR for images)
+  2. Gemini 2.5 Flash analysis (career trajectory, skills, experience)
+  3. Embedding generation (VertexAI `text-embedding-004`, 768 dimensions)
+  4. Searchable classification (function, level, companies)
+- **Files:** `file-upload-pipeline.ts`, `processUploadedFile`
+
+#### CSV Bulk Import
+- Upload CSV with candidate data
+- AI-powered column mapping suggestions
+- Deduplication by canonical email
+- **Files:** `import-candidates-csv.ts`
+
+#### CRUD Operations
+- Create, Read, Update, Delete candidates
+- Fuzzy name matching for duplicate detection
+- Status tracking: active, interviewing, hired, rejected, withdrawn
+- **Files:** `candidates-crud.ts`
 
 ### 3.2 Search & Discovery
-- **Hybrid Search:** Vector (Embeddings) + Keyword search.
-- **Global Search:** Ella Recruiters search the entire central pool.
-- **[NEW] AI Job Analysis:** One-click analysis of Job Descriptions to extract structured requirements (Skills, Level, Summary) before searching.
-- **Reranking:** LLM-based candidate scoring.
-  - **Reasoning Engine:** Uses "Few-Shot" examples to mimic human recruiter intuition (e.g. Scope vs Skills).
-  - **Disqualification Logic:** Automatically deprioritizes candidates with mismatched seniority (e.g. IC vs Executive).
-- **[NEW] Multi-Signal Retrieval (Dec 2025):**
-  - **Pre-Index Classification:** Candidates classified by `function` (product, engineering, data) and `level` (c-level, vp, director).
-  - **Multi-Pronged Query:** Combines function-filtered Firestore query + vector similarity.
-  - **Scoring:** Function (60pts) + Level (25pts) + Company (30pts) + Vector (15pts).
-  - **Result:** CPO search returns 16/20 Product people (was 0/10 with pure vector search).
-- **Neural Match Architecture:**
-  - **Cognitive Decomposition:** Breaks JDs into Identity, Domain, Scope, and Environment.
-  - **Semantic Anchor:** Searches using a weighted intent query, ensuring "Generalist" roles don't match "Specialist" candidates.
+
+#### Multi-Signal Retrieval (v4.0 - Dec 2025)
+- **Pre-Index Classification:** Candidates classified by:
+  - `function`: product, engineering, data, design, sales, marketing, hr, finance, operations
+  - `level`: c-level, vp, director, manager, senior, mid, junior, intern
+  - `companies`: Past employers
+  - `domain`: fintech, delivery, e-commerce, big-tech
+
+- **Multi-Pronged Query:**
+  - Pool A: Firestore function-filtered query (up to 500 candidates)
+  - Pool B: Vector similarity (pgvector, 300 candidates)
+  - Merge and deduplicate
+
+- **Scoring Formula:**
+  | Signal | Points |
+  |--------|--------|
+  | Function match | 60 |
+  | Level match | 25 |
+  | Company pedigree | 30 |
+  | Vector similarity | 15 |
+
+- **Files:** `engines/legacy-engine.ts`, `engine-search.ts`
+
+#### AI Job Analysis
+- One-click analysis of job descriptions
+- Extracts: Skills, Level, Domain, Key Requirements
+- Feeds into search strategy
+- **Files:** `analyze-job.ts`
+
+#### AI Reranking
+- Vertex AI Ranking API (cross-encoder)
+- Fallback: Gemini 2.5 Flash reasoning
+- "Senior Recruiter" level judgment
+- **Files:** `vertex-ranking-service.ts`, `rerank-candidates.ts`
+
+#### Quick Find
+- Keyword search by name, company, title
+- Fuzzy matching with typo tolerance
+- **Files:** Dashboard.tsx `handleQuickFind`
+
+#### Similar Candidates
+- Find candidates similar to a selected profile
+- Vector similarity based
+- **Files:** `similar-candidates.ts`
+
+#### Saved Searches
+- Save job descriptions with search parameters
+- Quick re-run of previous searches
+- **Files:** `saved-searches.ts`
 
 ### 3.3 User Interface
-- **Simplified Navigation:** Dashboard and Search only.
-- **Admin Portal:** For managing users and organizations.
+
+#### Dashboard
+- Candidate count statistics
+- Quick Find search bar
+- Job Description form for full AI search
+- Recent/saved searches
+- **Files:** `Dashboard.tsx`
+
+#### Search Results
+- Skill-aware candidate cards
+- Match score percentage
+- AI-generated rationale (strengths, concerns)
+- Find Similar button
+- Engine selector (Legacy vs Agentic)
+- **Files:** `SearchResults.tsx`, `SkillAwareCandidateCard.tsx`
+
+#### Candidate Cards
+- Profile summary
+- Experience highlights
+- Skills tags
+- AI insights
+- Edit/View actions
+- **Files:** `CandidateCard.tsx`, `SkillAwareCandidateCard.tsx`
+
+#### Upload Interface
+- Drag-and-drop file upload
+- Manual candidate creation form
+- Progress indicators
+- **Files:** `FileUpload.tsx`, `AddCandidateModal.tsx`
+
+### 3.4 Organization Management
+
+- **Agency Model:** Ella sees ALL candidates; clients see only their org
+- **Organization Switching:** Users can switch between orgs they have access to
+- **Client Creation:** Ella admins can create client organizations
+- **Multi-Org Candidates:** `org_ids[]` array for multi-org access
+- **Files:** `org-management.ts`, `user-onboarding.ts`
 
 ## 4. Technical Architecture
 
-### 4.1 Hybrid Infrastructure
-The platform uses a hybrid architecture to optimize for both search performance and ease of management:
-- **Search & Rerank:** 8 Fastify microservices on Cloud Run (optimized for high-concurrency, low-latency search).
-- **Agency Management:** Firebase Cloud Functions (handling User Onboarding, Organization Logic, and Data Migration).
+### 4.1 Current Production Stack
 
-### 4.2 AI Processing Pipeline
-- **Enrichment:** Candidates are processed to extract structured data (Skills, Experience, etc.).
-- **Embeddings:** VertexAI `text-embedding-004` (768 dimensions).
-- **Reranking:** **Gemini 1.5 Pro** (Primary) with Together AI (Fallback).
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| **Frontend** | React + TypeScript + MUI | Single-page application |
+| **Backend** | Firebase Cloud Functions (Node.js 20) | API endpoints |
+| **Database** | Firestore | Candidate profiles, users, orgs |
+| **Vector DB** | Cloud SQL PostgreSQL + pgvector | Embeddings for similarity search |
+| **AI Models** | Gemini 2.5 Flash, VertexAI Ranking | Analysis, reranking |
+| **Embeddings** | VertexAI `text-embedding-004` | 768-dimension vectors |
+| **Storage** | Cloud Storage | Resume files |
+| **Auth** | Firebase Auth | User authentication |
+| **Hosting** | Firebase Hosting | Static frontend |
 
-### 4.3 Data Storage
-- **Firestore:** Stores enriched candidate profiles and user/org data.
-- **Cloud SQL (pgvector):** Stores candidate embeddings for fast vector search.
-- **Redis:** Caches search results and embeddings for performance.
+### 4.2 Key Cloud Functions
+
+| Function | Purpose |
+|----------|---------|
+| `engineSearch` | Multi-signal candidate search |
+| `analyzeJob` | AI job description analysis |
+| `processUploadedFile` | Resume processing pipeline |
+| `generateUploadUrl` / `confirmUpload` | Signed URL upload flow |
+| `rerankCandidates` | LLM-based reranking |
+| `findSimilarCandidates` | Vector similarity search |
+| `importCandidatesCSV` | Bulk CSV import |
+| `createCandidate` / `updateCandidate` / `deleteCandidate` | CRUD |
+| `onboardUser` | User registration and org assignment |
+| `backfillClassifications` | One-time classification migration |
+
+### 4.3 Data Model
+
+```typescript
+// Candidate Document
+{
+  candidate_id: string,
+  org_id: string,           // Primary org
+  org_ids: string[],        // All orgs with access
+  name: string,
+  email?: string,
+  canonical_email?: string, // For deduplication
+  
+  // AI Analysis
+  intelligent_analysis: {
+    career_trajectory_analysis: {...},
+    work_history: [...],
+    skills: [...],
+  },
+  
+  // Multi-Signal Search Indexes
+  searchable: {
+    function: 'product' | 'engineering' | 'data' | ...,
+    level: 'c-level' | 'vp' | 'director' | ...,
+    title_keywords: string[],
+    companies: string[],
+    domain: string[],
+  },
+  
+  // Documents
+  documents: {
+    resume_file_url: string,
+    resume_text: string,
+  },
+}
+```
 
 ## 5. Success Metrics
-- **Search Latency:** p95 < 1.2s.
-- **Rerank Quality:** "Senior Recruiter" level reasoning via Gemini.
-- **Migration:** 100% of candidates in `org_ella_main`.
+
+| Metric | Target | Current |
+|--------|--------|---------|
+| Search Latency | < 30s | ~25s |
+| Product candidates in CPO search | > 80% | 80% (16/20) |
+| Candidate classification coverage | 100% | 98% |
+| Active candidates | 29,000+ | 29,161 |
+
+## 6. Classification Distribution
+
+| Function | Count | Level | Count |
+|----------|-------|-------|-------|
+| Product | 1,836 | C-level | 2,367 |
+| Engineering | 13,899 | VP | 278 |
+| Data | 474 | Director | 999 |
+| Sales | 406 | Manager | 5,182 |
+| Marketing | 240 | Senior | 10,346 |
+| HR | 161 | Mid | 9,043 |
+| Finance | 137 | Junior | 285 |
+| Operations | 191 | Intern | 44 |
+| Design | 111 | | |
+| General | 11,089 | | |
+
+## 7. Future Roadmap
+
+- [ ] Agentic Engine (deep reasoning for complex searches)
+- [ ] Batch enrichment improvements
+- [ ] Real-time collaboration features
+- [ ] Advanced analytics dashboard
+- [ ] LinkedIn integration
