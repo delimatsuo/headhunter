@@ -29,7 +29,7 @@ const SearchQuerySchema = z.object({
     min_score: z.number().optional(),
     location: z.string().optional()
   }).optional(),
-  limit: z.number().min(1).max(100).default(20),
+  limit: z.number().min(1).max(300).default(20), // Increased for recruiter workflow
   offset: z.number().min(0).default(0),
   org_id: z.string().optional(),
   ranking_weights: z.object({

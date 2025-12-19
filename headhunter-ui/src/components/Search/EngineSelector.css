@@ -1,0 +1,89 @@
+/**
+ * Engine Selector Styles
+ */
+
+.engine-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.engine-selector__label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.engine-selector__options {
+  display: flex;
+  gap: 8px;
+}
+
+.engine-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.engine-option:hover:not(:disabled) {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.engine-option--active {
+  border-color: #6366f1;
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+.engine-option--active:hover {
+  border-color: #6366f1;
+  background: #e0e7ff;
+}
+
+.engine-option:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.engine-option__icon {
+  font-size: 16px;
+}
+
+.engine-option__label {
+  font-size: 13px;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .engine-selector__label {
+    color: #9ca3af;
+  }
+  
+  .engine-option {
+    background: #1f2937;
+    border-color: #374151;
+    color: #e5e7eb;
+  }
+  
+  .engine-option:hover:not(:disabled) {
+    border-color: #4b5563;
+    background: #374151;
+  }
+  
+  .engine-option--active {
+    border-color: #818cf8;
+    background: #312e81;
+    color: #a5b4fc;
+  }
+}

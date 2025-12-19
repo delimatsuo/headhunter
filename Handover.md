@@ -65,3 +65,48 @@ Successfully integrated Gemini 2.5 Flash as the primary reranking provider for `
 - **Model**: Gemini 2.5 Flash.
 - **Functionality**: Converts natural language queries into structured search parameters (Role, Seniority, Context, Filters).
 - **Integration**: Frontend `Dashboard.tsx` intercepts queries and displays AI analysis before searching.
+
+## Multi-Signal Candidate Retrieval (Dec 2025)
+
+### Problem Solved
+CPO/Product searches were returning mostly Engineering candidates because vector search finds semantically similar resume TEXT, not job function.
+
+### Solution: Multi-Signal Retrieval (v4.0)
+Replaced single-pass vector search with recruiter-style multi-signal retrieval:
+
+1. **Pre-Index Classification** - Each candidate is classified by:
+   - `function`: product, engineering, data, design, sales, marketing, hr, finance, operations
+   - `level`: c-level, vp, director, manager, senior, mid, junior, intern
+   - `companies`: List of past employers
+   - `domain`: fintech, delivery, e-commerce, big-tech, etc.
+
+2. **Multi-Pronged Retrieval**:
+   - **Pool A**: Firestore query by function (e.g., `function = 'product'`) → 500 candidates
+   - **Pool B**: Vector similarity → 300 candidates
+   - Merge and deduplicate
+
+3. **Scoring Formula**:
+   | Signal | Points |
+   |--------|--------|
+   | Function match | 60 |
+   | Level match | 25 |
+   | Company pedigree | 30 |
+   | Vector similarity | 15 |
+
+4. **Cross-Encoder Rerank**: Vertex AI Ranking API on top 50
+
+### Classification Stats (29K candidates)
+- Product: 1,836
+- Engineering: 13,899
+- Data: 474
+- C-level: 2,367
+- VP: 278
+- Director: 999
+
+### Files Modified
+- `functions/src/engines/legacy-engine.ts` - Multi-signal retrieval v4.0
+- `functions/src/backfill-classifications.ts` - Backfill script for existing candidates
+- `functions/src/file-upload-pipeline.ts` - Classify new candidates on upload
+
+### Result
+CPO search now returns **16/20 Product people** in top results (was 0/10 before).

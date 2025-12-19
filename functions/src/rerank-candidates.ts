@@ -10,7 +10,7 @@ const RerankInputSchema = z.object({
         profile: z.any(), // Flexible profile structure
         initial_score: z.number().optional()
     })),
-    limit: z.number().min(1).max(20).default(10)
+    limit: z.number().min(1).max(50).default(20) // Increased for recruiter workflows
 });
 
 export const rerankCandidates = onCall(
@@ -23,125 +23,129 @@ export const rerankCandidates = onCall(
             const { job_description, candidates, limit } = RerankInputSchema.parse(request.data);
 
             if (candidates.length === 0) {
+                console.log("No candidates to rerank.");
                 return { success: true, results: [] };
             }
+            console.log(`[Reranker] Received ${candidates.length} candidates. Requesting Top ${limit}.`);
 
-            // Construct prompt
+            // Construct prompt for LISTWISE Reranking
             const prompt = `
-You are a Senior Executive Recruiter with 20+ years of experience. Your task is to rank candidates for the job description below.
+You are a Senior Executive Recruiter acting as a "Calibration Expert".
+Your task is to RE-ORDER the following list of candidates for the role: **${(job_description.match(/Role: (.*?)\n/)?.[1] || job_description).substring(0, 200)}**
 
-CRITICAL PRINCIPLE - THE "NEURAL MATCH" FRAMEWORK:
-Evaluate the candidate against the 4 Cognitive Dimensions of the job:
+**THE PROBLEM:**
+The current search results are "noisy". We have legitimate "Chief Product Officers" mixed with "Senior Product Managers".
+We need strictly hierarchical ordering.
 
-1. ROLE IDENTITY Match (Weight: 40%):
-   - Does he/she identify as the person we need? (e.g. "Strategic Executive" vs "Hands-on Builder").
-   - Mismatch here is fatal for Senior roles.
+**YOUR RANKING RULES (The "Hierarchy of Value"):**
 
-2. DOMAIN EXPERTISE Match (Weight: 30%):
-   - Is their domain relevant? (e.g. Fintech knowledge for a Fintech role).
-   - "Generalist" is OK if the JD is generic. but "Specialist" (e.g. Data Science) for a Generalist Role is a MISMATCH.
+1.  **TIER 1 (The "Perfect Match"):**
+    *   **Exact Title Match**: Must hold the *target title* NOW (e.g. "CPO" for a CPO role).
+    *   **Domain Fit**: Experience in the exact target industry (e.g. Fintech).
+    *   **Scale Fit**: Experience at similar company size.
 
-3. LEADERSHIP SCOPE Match (Weight: 20%):
-   - Do they manage the right blast radius? (Team size, P&L, Strategy).
-   - Avoid "Title Inflation" - look at actual responsibilities.
+2.  **TIER 2 (The "Step Up" / "Stretch"):
+    *   One level below (e.g. "VP of Product" for a CPO role).
+    *   MUST be from a *better* or *larger* company to justify the step up.
 
-4. TECHNICAL ENVIRONMENT Match (Weight: 10%):
-   - Have they worked in a similar stage/scale? (e.g. Startup vs Big Tech).
+3.  **TIER 3 (The "Fallbacks"):**
+    *   Incorrect title (e.g. "Senior PM" for CPO role - usually too junior).
+    *   Irrelevant domain.
 
-REASONING EXAMPLES:
+**INSTRUCTIONS:**
+1.  **Compare** the candidates against each other.
+2.  **Sort** them from Best Fit (#1) to Worst Fit.
+3.  **Disqualify** clearly unqualified candidates (e.g. a "Customer Support" agent for a "CTO" role) by putting them at the bottom.
 
-case "VP of Data" applying for "Generalist CTO":
-- ROLE: Mismatch. They are a functional leader, not a generalist tech executive.
-- DOMAIN: Mismatch. Too niche (Data) vs Broad (Engineering/Product).
-- SCORE: Low (45).
-- REASONING: "Candidate is a high-level executive (VP), BUT their domain is too narrow (Data Science). We need a Generalist CTO who can manage Web/Mobile/DevOps, not just AI."
-
-case "Principal Engineer" applying for "CTO":
-- ROLE: Partial Match. Technical depth is there, but Identity is "IC".
-- SCOPE: Mismatch. Lacks organizational leadership experience.
-- SCORE: Medium-Low (55).
-- REASONING: "Strong technical builder, but lacks the strategic/political scope required for a C-Level role."
-
-case "Director of Engineering" applying for "VP of Engineering":
-- ROLE: Match.
-- SCOPE: Match (Stepping up).
-- SCORE: High (90).
-
-JOB DESCRIPTION:
+**JOB DESCRIPTION:**
 ${job_description}
 
-CANDIDATES:
+**CANDIDATES TO RANK:**
 ${candidates.map((c, i) => `
-[Candidate ${i + 1}] ID: ${c.candidate_id}
-Profile: ${JSON.stringify(c.profile).substring(0, 4000)}
+---
+ID: ${c.candidate_id}
+Profile Summary:
+${JSON.stringify(c.profile).substring(0, 3000)}
+---
 `).join('\n')}
 
-EVALUATION FRAMEWORK (Analyze Complexity & Scope):
+**OUTPUT FORMAT:**
+Return a valid JSON object containing a SINGLE list called "ranked_ids".
+The list must contain the \`candidate_id\` strings in your proposed order (Best to Worst).
+Include a brief \`rationale\` for the top 3 choices.
 
-1. SCOPE OF INFLUENCE (The "Executive" Test):
-   - Assess the candidate's current management scope (Team size, Budget, Strategic influence).
-   - Compare it to the Target Role.
-   - Example: A "Director of Data Science" usually manages a specific vertical (Data). A "CTO" manages the entire horizontal engineering org. Is the candidate's scope broad enough?
-   - Context Matters: A "VP" at a massive tech giant might be overqualified for a Seed startup CTO role, while a "Senior Engineer" might be underqualified. Use your judgment on Company Tier.
-
-2. FUNCTIONAL BREADTH (Generalist vs Specialist):
-   - Executive roles (CTO, VP Eng) require Generalist Engineering leadership (Infra, Product, People, Security).
-   - Candidates stuck in a Niche (only Data Science, only QA, only DevOps) are often poor matches for broad C-Level roles, even if their title is high.
-   - Look for evidence of cross-functional leadership.
-
-3. CAREER TRAJECTORY (Logical Progression):
-   - Is this role a logical next step?
-   - Logical: VP -> CTO, Director -> VP.
-   - Illogical/Risk: IC (Data Scientist) -> CTO.
-
-4. HIERARCHY & LEVEL PROGRESSION (The "Ladder"):
-   - Standard path: IC -> Manager -> Director -> VP -> C-Level.
-   - VALID JUMP (+1 Step): Director -> VP, or VP -> C-Level.
-   - RISKY JUMP (+2 Steps): Manager -> VP. (Score limit: 70).
-   - INVALID JUMP (+3 Steps): Manager -> C-Level (e.g. Eng Manager -> CTO).
-     - REASONING: "Candidate is currently a Manager. jumping to CTO skips Director and VP levels. Taking a Manager to generic C-Level is extremely rare and risky."
-     - SCORE: Must be < 60.
-     - EXCEPTION: If they held the title "CTO" or "VP" in the PAST (check history), then they are qualified.
-   
-SCORING PHILOSOPHY:
-- Score based on *Probability of Success* in the target role.
-- High Score (85+): Candidate has done this job before or is the perfect "Step Up" candidate with all necessary foundations.
-- Mid Score (60-84): Candidate has the skills but the jump is large (e.g. pivoting domain or skipping a level). 
-- Low Score (<60): Fundamental mismatch in scope or track (e.g. Specialist trying to be Generalist Executive).
-
-OUTPUT FORMAT (JSON ONLY, no markdown):
+Example:
 {
-  "ranked_candidates": [
-    {
-      "candidate_id": "string",
-      "score": number,
-      "rationale": "1 sentence explaining role fit, e.g. 'Current VP of Engineering aligns perfectly with CTO role' or 'Senior Data Scientist lacks executive experience for this CTO position'"
-    }
+  "ranked_ids": ["id_123", "id_456", "id_789"],
+  "top_3_rationale": [
+    "Candidate id_123 is a current CPO at a Fintech unicorn (Perfect Match).",
+    "Candidate id_456 is a VP Product at a major bank (Strong Step-up).",
+    "Candidate id_789 is a Head of Product but lacks scale."
   ]
 }
 `;
 
             // Call Gemini Pro (Reasoning Model)
-            console.log("Calling Gemini Pro for reranking...");
+            console.log("Calling Gemini Pro for Listwise Reranking...");
             const result = await geminiReasoningModel.generateContent(prompt);
             console.log("Gemini response received.");
             const response = await result.response;
             const text = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
             // Clean and parse JSON
-            const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-            const parsed = JSON.parse(jsonStr);
+            let jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+            if (jsonMatch) jsonStr = jsonMatch[0];
+            jsonStr = jsonStr.replace(/,(\s*[\]}])/g, '$1');
 
-            // Merge with original candidate data
-            const rankedResults = parsed.ranked_candidates.map((r: any) => {
-                const original = candidates.find(c => c.candidate_id === r.candidate_id);
+            let parsed;
+            try {
+                parsed = JSON.parse(jsonStr);
+                if (!parsed.ranked_ids || !Array.isArray(parsed.ranked_ids)) {
+                    throw new Error("Invalid response format: missing ranked_ids array");
+                }
+            } catch (parseError) {
+                console.error("JSON parse failed or invalid format:", parseError);
+                console.log("Raw Text:", text);
+                return { success: true, results: [] }; // Fallback
+            }
+
+            const rankedIds = parsed.ranked_ids;
+            console.log(`LLM returned ${rankedIds.length} ranked items.`);
+
+            // Reconstruct the list in the new order and assign artificial scores
+            // Score = 95 - (index * 1). So #1=95, #2=94, #3=93...#45=50
+            // This ensures they appear sorted in the UI which uses 'score'
+            // Gentler decay allows more candidates to pass the 50 threshold
+            const rankedResults = rankedIds.map((id: string, index: number) => {
+                const original = candidates.find(c => c.candidate_id === id);
                 if (!original) return null;
+
+                // Artificial score decay to enforce order in frontend (1 point per rank)
+                const newScore = Math.max(50, 95 - index);
+
+                // Get rationale if available for top 3, otherwise generic
+                let rationaleText = "AI Reranked based on comparative fit.";
+                if (index < 3 && parsed.top_3_rationale && parsed.top_3_rationale[index]) {
+                    rationaleText = parsed.top_3_rationale[index];
+                }
+
                 return {
                     ...original,
-                    overall_score: r.score,
-                    rationale: [r.rationale] // Override rationale
+                    overall_score: newScore,
+                    rationale: [rationaleText]
                 };
             }).filter(Boolean);
+
+            // Append any candidates that were missed by the LLM (safety net)
+            const missedCandidates = candidates.filter(c => !rankedIds.includes(c.candidate_id));
+            missedCandidates.forEach((c, i) => {
+                rankedResults.push({
+                    ...c,
+                    overall_score: 49 - i, // Bottom of the pile
+                    rationale: ["Ranked lower by AI comparison."]
+                });
+            });
 
             return {
                 success: true,

@@ -65,7 +65,12 @@ Headhunter AI is an intelligent recruitment platform that uses LLMs to enrich ca
 - **Reranking:** LLM-based candidate scoring.
   - **Reasoning Engine:** Uses "Few-Shot" examples to mimic human recruiter intuition (e.g. Scope vs Skills).
   - **Disqualification Logic:** Automatically deprioritizes candidates with mismatched seniority (e.g. IC vs Executive).
-- **[NEW] Neural Match Architecture:**
+- **[NEW] Multi-Signal Retrieval (Dec 2025):**
+  - **Pre-Index Classification:** Candidates classified by `function` (product, engineering, data) and `level` (c-level, vp, director).
+  - **Multi-Pronged Query:** Combines function-filtered Firestore query + vector similarity.
+  - **Scoring:** Function (60pts) + Level (25pts) + Company (30pts) + Vector (15pts).
+  - **Result:** CPO search returns 16/20 Product people (was 0/10 with pure vector search).
+- **Neural Match Architecture:**
   - **Cognitive Decomposition:** Breaks JDs into Identity, Domain, Scope, and Environment.
   - **Semantic Anchor:** Searches using a weighted intent query, ensuring "Generalist" roles don't match "Specialist" candidates.
 

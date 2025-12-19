@@ -26,7 +26,8 @@ export const handleNewUser = functions.region("us-central1").auth.user().onCreat
 
   try {
     const email = user.email || '';
-    const isEllaUser = email.endsWith('@ella.com.br') || email.endsWith('@ellaexecutivesearch.com');
+    const normalizedEmail = email.toLowerCase();
+    const isEllaUser = normalizedEmail.endsWith('@ellaexecutivesearch.com');
 
     let orgId: string;
     let role = 'admin'; // Default role
@@ -151,9 +152,31 @@ export const completeOnboarding = onCall(
         admin: true
       };
 
+      // Determine organization based on email domain
+      const normalizedEmail = userEmail ? userEmail.toLowerCase() : '';
+      const isEllaUser = normalizedEmail && normalizedEmail.endsWith('@ellaexecutivesearch.com');
+
       if (userDoc.exists && userDoc.data()?.organization_id) {
-        // User already onboarded, just refresh their custom claims and ensure permissions are correct
+        // User already onboarded, check if they need an Org Fix
         const userData = userDoc.data()!;
+        let currentOrgId = userData.organization_id;
+
+        // FORCE FIX: If Ella user is in wrong org, move them
+        if (isEllaUser && currentOrgId !== 'org_ella_main') {
+          console.log(`Fixing Org ID for Ella user ${userEmail}: ${currentOrgId} -> org_ella_main`);
+          currentOrgId = 'org_ella_main';
+
+          // Update Firestore
+          await userDoc.ref.update({
+            organization_id: 'org_ella_main',
+            organizations: admin.firestore.FieldValue.arrayUnion('org_ella_main')
+          });
+
+          // Add user to org members if not already there
+          await firestore.collection('organizations').doc('org_ella_main').update({
+            members: admin.firestore.FieldValue.arrayUnion(userId)
+          });
+        }
 
         // Update Firestore permissions if they are missing or in wrong format (array vs object)
         if (Array.isArray(userData.permissions) || !userData.permissions) {
@@ -163,20 +186,17 @@ export const completeOnboarding = onCall(
         }
 
         await admin.auth().setCustomUserClaims(userId, {
-          org_id: userData.organization_id,
+          org_id: currentOrgId,
           role: userData.role || 'admin',
           permissions: adminPermissions
         });
 
         return {
           success: true,
-          message: "User already onboarded, refreshed access",
-          organization_id: userData.organization_id
+          message: "User onboarded/repaired, refreshed access",
+          organization_id: currentOrgId
         };
       }
-
-      // Determine organization based on email domain
-      const isEllaUser = userEmail && (userEmail.endsWith('@ella.com.br') || userEmail.endsWith('@ellaexecutivesearch.com'));
 
       let orgId: string;
       let organizationName: string;

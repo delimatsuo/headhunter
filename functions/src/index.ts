@@ -831,4 +831,14 @@ export { migrateCandidates } from './migrate-candidates';
 
 // CSV Import for bulk candidate import
 export { importCandidatesCSV, suggestColumnMapping } from './import-candidates-csv';
-export { analyzeJob } from "./analyze-job";
+// Export debug CPO count
+export { countCPO } from './count-cpo-function';
+
+// Export Job Analysis (Strategy Phase)
+export { analyzeJob } from './analyze-job';
+
+// Export AI Engine Search (Modular Search Engines)
+export { engineSearch, getAvailableEngines } from './engine-search';
+
+// Export Backfill Classifications (one-time migration)
+export { backfillClassifications, getClassificationStats } from './backfill-classifications';

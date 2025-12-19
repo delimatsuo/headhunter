@@ -110,6 +110,28 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         </div>
       </div>
 
+      {/* Fallback Warning Banner */}
+      {matches?.some((m: any) => m.candidate?.usedFallback || m.usedFallback) && (
+        <div className="fallback-warning" style={{
+          backgroundColor: '#fff3cd',
+          border: '1px solid #ffc107',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          marginBottom: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
+        }}>
+          <span style={{ fontSize: '20px' }}>⚠️</span>
+          <div>
+            <strong style={{ color: '#856404' }}>AI Ranking Unavailable</strong>
+            <p style={{ margin: '4px 0 0 0', color: '#856404', fontSize: '14px' }}>
+              Results are sorted using keyword-based matching. For best results, please try your search again.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="candidates-list">
         <h3>Candidate Matches ({totalMatches})</h3>
         {(!matches || matches.length === 0) ? (

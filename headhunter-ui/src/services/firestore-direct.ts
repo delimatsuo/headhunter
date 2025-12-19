@@ -178,13 +178,19 @@ export const firestoreService = {
 
       for (let batch = 0; batch < maxBatches; batch++) {
         let q;
-        if (orgId) {
+        // Ella org (org_ella_main) sees ALL candidates regardless of org
+        // This is a security policy exception for the main recruiting agency
+        const isEllaOrg = orgId === 'org_ella_main';
+
+        if (orgId && !isEllaOrg) {
+          // Non-Ella orgs filter by org_id
           if (lastDoc) {
             q = query(candidatesRef, where('org_id', '==', orgId), limit(batchSize));
           } else {
             q = query(candidatesRef, where('org_id', '==', orgId), limit(batchSize));
           }
         } else {
+          // Ella org OR no org restriction: search all candidates
           q = query(candidatesRef, limit(batchSize));
         }
 

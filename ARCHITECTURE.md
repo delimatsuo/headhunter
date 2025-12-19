@@ -19,7 +19,17 @@ Headhunter is delivered as a Fastify microservice mesh. Eight HTTP services run 
 > The Fastify Mesh described below is the **Target Architecture** for high-scale independence.
 
 ## Neural Match Architecture (Agentic RAG)
-The system currently implements a **Cognitive Matchmaking** architecture:
+The system currently implements a **Multi-Signal Retrieval** architecture:
+
+### Multi-Signal Retrieval (v4.0 - Dec 2025)
+1. **Classification**: Each candidate is pre-indexed with `searchable.function` (product, engineering, data, etc.) and `searchable.level` (c-level, vp, director, etc.)
+2. **Multi-Pronged Query**:
+   - Pool A: Firestore query by function (e.g., `function = 'product'`)
+   - Pool B: Vector similarity (pgvector)
+3. **Scoring**: Function match (60pts) + Level match (25pts) + Company pedigree (30pts) + Vector similarity (15pts)
+4. **Cross-Encoder Rerank**: Vertex AI Ranking API on top 50
+
+### Cognitive Matchmaking (Legacy)
 1.  **Brain**: Decomposes JDs into 4 Semantic Dimensions (Role, Domain, Env, Scope).
 2.  **Body**: Retrieves candidates using a Weighted Semantic Anchor (not keywords, not hard filters).
 3.  **Judge**: Scores candidates based on "Blast Radius" and "Domain Fit".

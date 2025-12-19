@@ -496,6 +496,17 @@ export const processUploadedFile = onObjectFinalized(
         console.log(`Analysis completed for candidate ${candidateId}`);
         analysisSucceeded = true;
 
+        // ===== ADD SEARCHABLE CLASSIFICATION FOR MULTI-SIGNAL RETRIEVAL =====
+        try {
+          const searchable = extractSearchableClassification(analysis);
+          await firestore.collection('candidates').doc(candidateId).update({
+            searchable: searchable
+          });
+          console.log(`Searchable classification added for candidate ${candidateId}:`, searchable);
+        } catch (classError) {
+          console.error(`Failed to add searchable classification for ${candidateId}:`, classError);
+        }
+
       } catch (analysisError) {
         console.error(`Analysis failed for candidate ${candidateId}:`, analysisError);
         // Don't fail the whole process, continue to embedding generation
@@ -772,6 +783,166 @@ export const deleteFile = onCall(
 // Text Extraction Helper Functions
 
 import { AnalysisService } from "./analysis-service";
+
+/**
+ * Extract searchable classification from AI analysis for multi-signal retrieval
+ * This enables function-based filtering before vector search
+ */
+function extractSearchableClassification(analysis: any): {
+  function: string;
+  level: string;
+  title_keywords: string[];
+  companies: string[];
+  domain: string[];
+} {
+  // Extract job function from career trajectory analysis
+  const currentLevel = (analysis?.career_trajectory_analysis?.current_level || '').toLowerCase();
+  const workHistory = analysis?.work_history || [];
+  const latestRole = workHistory[0]?.role || '';
+
+  // Combine current level and latest role for function detection
+  const textToClassify = `${currentLevel} ${latestRole}`.toLowerCase();
+
+  let jobFunction = 'general';
+
+  // Product function detection
+  if (textToClassify.includes('product') ||
+    textToClassify.includes('cpo') ||
+    textToClassify.match(/\bpm\b/) ||
+    textToClassify.includes('produto')) {
+    jobFunction = 'product';
+  }
+  // Engineering function detection
+  else if (textToClassify.includes('engineer') ||
+    textToClassify.includes('developer') ||
+    textToClassify.includes('software') ||
+    textToClassify.includes('cto') ||
+    textToClassify.includes('devops') ||
+    textToClassify.includes('arquiteto') ||
+    textToClassify.includes('desenvolvedor') ||
+    textToClassify.includes('engenheiro')) {
+    jobFunction = 'engineering';
+  }
+  // Data function detection
+  else if (textToClassify.includes('data') ||
+    textToClassify.includes('analytics') ||
+    textToClassify.includes('scientist') ||
+    textToClassify.includes('machine learning') ||
+    textToClassify.includes('dados') ||
+    textToClassify.includes('cientista')) {
+    jobFunction = 'data';
+  }
+  // Design function detection
+  else if (textToClassify.includes('design') ||
+    textToClassify.includes('ux') ||
+    textToClassify.includes('ui')) {
+    jobFunction = 'design';
+  }
+  // Sales function detection
+  else if (textToClassify.includes('sales') ||
+    textToClassify.includes('vendas') ||
+    textToClassify.includes('account') ||
+    textToClassify.includes('revenue')) {
+    jobFunction = 'sales';
+  }
+  // Marketing function detection
+  else if (textToClassify.includes('marketing') ||
+    textToClassify.includes('growth') ||
+    textToClassify.includes('brand')) {
+    jobFunction = 'marketing';
+  }
+  // HR function detection
+  else if (textToClassify.includes('hr') ||
+    textToClassify.includes('people') ||
+    textToClassify.includes('talent') ||
+    textToClassify.includes('recruit') ||
+    textToClassify.includes('rh')) {
+    jobFunction = 'hr';
+  }
+  // Finance function detection
+  else if (textToClassify.includes('finance') ||
+    textToClassify.includes('cfo') ||
+    textToClassify.includes('accounting') ||
+    textToClassify.includes('financeiro')) {
+    jobFunction = 'finance';
+  }
+  // Operations function detection
+  else if (textToClassify.includes('operations') ||
+    textToClassify.includes('coo') ||
+    textToClassify.includes('logistics') ||
+    textToClassify.includes('operações')) {
+    jobFunction = 'operations';
+  }
+
+  // Extract seniority level
+  let level = 'mid';
+  if (currentLevel.includes('c-level') || currentLevel.includes('executive') ||
+    currentLevel.includes('ceo') || currentLevel.includes('cto') ||
+    currentLevel.includes('cpo') || currentLevel.includes('cfo') ||
+    currentLevel.includes('chief')) {
+    level = 'c-level';
+  } else if (currentLevel.includes('vp') || currentLevel.includes('vice president')) {
+    level = 'vp';
+  } else if (currentLevel.includes('director') || currentLevel.includes('diretor') ||
+    currentLevel.includes('head')) {
+    level = 'director';
+  } else if (currentLevel.includes('manager') || currentLevel.includes('gerente') ||
+    currentLevel.includes('lead') || currentLevel.includes('líder')) {
+    level = 'manager';
+  } else if (currentLevel.includes('senior') || currentLevel.includes('sênior') ||
+    currentLevel.includes('staff') || currentLevel.includes('principal')) {
+    level = 'senior';
+  } else if (currentLevel.includes('junior') || currentLevel.includes('júnior') ||
+    currentLevel.includes('entry')) {
+    level = 'junior';
+  } else if (currentLevel.includes('intern') || currentLevel.includes('estagiário')) {
+    level = 'intern';
+  }
+
+  // Extract title keywords for text search
+  const titleKeywords: string[] = [];
+  if (latestRole) {
+    titleKeywords.push(latestRole);
+  }
+  if (currentLevel && currentLevel !== latestRole.toLowerCase()) {
+    titleKeywords.push(currentLevel);
+  }
+
+  // Extract companies from work history
+  const companies = workHistory
+    .map((job: any) => job.company)
+    .filter((c: string) => c && c.length > 0)
+    .slice(0, 5);
+
+  // Extract domain/industry keywords
+  const domain: string[] = [];
+  const companyText = companies.join(' ').toLowerCase();
+  if (companyText.includes('nubank') || companyText.includes('stone') ||
+    companyText.includes('banco') || companyText.includes('fintech')) {
+    domain.push('fintech');
+  }
+  if (companyText.includes('ifood') || companyText.includes('rappi') ||
+    companyText.includes('delivery')) {
+    domain.push('delivery');
+  }
+  if (companyText.includes('mercado') || companyText.includes('amazon') ||
+    companyText.includes('magazineluiza') || companyText.includes('e-commerce')) {
+    domain.push('e-commerce');
+  }
+  if (companyText.includes('google') || companyText.includes('meta') ||
+    companyText.includes('microsoft') || companyText.includes('aws')) {
+    domain.push('big-tech');
+  }
+
+  return {
+    function: jobFunction,
+    level,
+    title_keywords: titleKeywords,
+    companies,
+    domain
+  };
+}
+
 
 async function extractPdfText(buffer: Buffer): Promise<string> {
   const analysisService = new AnalysisService();

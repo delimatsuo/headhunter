@@ -83,10 +83,82 @@ async function validatePermissions(userId: string, permission: string): Promise<
   return userData?.permissions?.[permission] === true;
 }
 
+/**
+ * Levenshtein distance - measures how many edits needed to transform one string to another
+ * Used for fuzzy matching names with typos
+ */
+function levenshteinDistance(str1: string, str2: string): number {
+  const m = str1.length;
+  const n = str2.length;
+
+  // Create matrix
+  const dp: number[][] = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+
+  // Initialize
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+  // Fill matrix
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (str1[i - 1] === str2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+      }
+    }
+  }
+
+  return dp[m][n];
+}
+
+/**
+ * Fuzzy match - checks if query matches target with tolerance for typos
+ * Returns true if any word in query fuzzy-matches any word in target
+ */
+function fuzzyMatch(query: string, target: string, maxDistance: number = 2): boolean {
+  if (!query || !target) return false;
+
+  // First check exact contains (fast path)
+  if (target.includes(query)) return true;
+
+  // Split into words and check each
+  const queryWords = query.split(/\s+/).filter(w => w.length > 2);
+  const targetWords = target.split(/\s+/).filter(w => w.length > 2);
+
+  for (const qWord of queryWords) {
+    // Check if this query word matches any target word
+    let wordMatched = false;
+
+    for (const tWord of targetWords) {
+      // Exact contains
+      if (tWord.includes(qWord) || qWord.includes(tWord)) {
+        wordMatched = true;
+        break;
+      }
+
+      // Fuzzy match - allow edit distance proportional to word length
+      const allowedDistance = Math.min(maxDistance, Math.floor(qWord.length / 3));
+      if (levenshteinDistance(qWord, tWord) <= allowedDistance) {
+        wordMatched = true;
+        break;
+      }
+    }
+
+    if (!wordMatched) return false; // All query words must match
+  }
+
+  return queryWords.length > 0;
+}
+
 function buildSearchQuery(orgId: string, filters: any = {}, sort: any = {}) {
-  let query: admin.firestore.Query = firestore
-    .collection('candidates')
-    .where('org_id', '==', orgId);
+  // Ella org (org_ella_main) sees ALL candidates regardless of org
+  // This is a policy exception for the main recruiting agency
+  const isEllaOrg = orgId === 'org_ella_main';
+
+  let query: admin.firestore.Query = isEllaOrg
+    ? firestore.collection('candidates')
+    : firestore.collection('candidates').where('org_id', '==', orgId);
 
   // Apply filters
   if (filters.experience_level) {
@@ -502,41 +574,69 @@ export const searchCandidates = onCall(
       const { query: searchQuery, filters, sort, pagination } = validatedInput;
       const page = pagination?.page || 1;
       const limit = pagination?.limit || 20;
-      const offset = (page - 1) * limit;
 
       // Build Firestore query
       let firestoreQuery = buildSearchQuery(orgId, filters, sort);
 
-      // Get total count for pagination
-      const countSnapshot = await firestoreQuery.count().get();
-      const totalCount = countSnapshot.data().count;
+      // For TEXT SEARCH: We need to fetch a larger batch first, then filter, then paginate
+      // This is because Firestore doesn't support full-text search
+      const hasTextSearch = searchQuery && searchQuery.trim();
 
-      // Apply pagination
-      const resultsSnapshot = await firestoreQuery
-        .offset(offset)
-        .limit(limit)
-        .get();
+      let candidates: any[];
+      let totalCount: number;
 
-      const candidates = resultsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      if (hasTextSearch) {
+        // For text search, fetch a large batch and filter client-side
+        // Then apply pagination to the filtered results
+        const largeBatchSize = 5000; // Fetch up to 5000 candidates for text search
+        const snapshot = await firestoreQuery.limit(largeBatchSize).get();
 
-      // If text query provided, perform additional filtering
-      let filteredCandidates = candidates;
-      if (searchQuery && searchQuery.trim()) {
         const queryLower = searchQuery.toLowerCase();
-        filteredCandidates = candidates.filter((candidate: any) => {
-          const name = candidate.personal?.name?.toLowerCase() || '';
-          const skills = (candidate.searchable_data?.skills_combined || []).join(' ').toLowerCase();
-          const resumeText = candidate.documents?.resume_text?.toLowerCase() || '';
-          const location = candidate.personal?.location?.toLowerCase() || '';
+        const allCandidates = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-          return name.includes(queryLower) ||
+        // Filter by text search - check both legacy and new field structures
+        // Use fuzzyMatch for typo tolerance (e.g., "trontini" matches "trentini")
+        const filteredCandidates = allCandidates.filter((candidate: any) => {
+          const name = (candidate.personal?.name || candidate.name || '').toLowerCase();
+          const title = (candidate.current_role || candidate.title || candidate.current_title || '').toLowerCase();
+          const company = (candidate.current_company || candidate.company || '').toLowerCase();
+          const skills = (candidate.searchable_data?.skills_combined || candidate.primary_skills || []).join(' ').toLowerCase();
+          const resumeText = (candidate.documents?.resume_text || '').toLowerCase();
+          const location = (candidate.personal?.location || candidate.location || '').toLowerCase();
+
+          // Use fuzzy matching for name (most likely to have typos)
+          // Use exact contains for other fields for performance
+          return fuzzyMatch(queryLower, name) ||
+            fuzzyMatch(queryLower, title) ||
+            fuzzyMatch(queryLower, company) ||
             skills.includes(queryLower) ||
             resumeText.includes(queryLower) ||
             location.includes(queryLower);
         });
+
+        totalCount = filteredCandidates.length;
+
+        // Apply pagination to filtered results
+        const offset = (page - 1) * limit;
+        candidates = filteredCandidates.slice(offset, offset + limit);
+      } else {
+        // No text search - use normal pagination
+        const countSnapshot = await firestoreQuery.count().get();
+        totalCount = countSnapshot.data().count;
+
+        const offset = (page - 1) * limit;
+        const resultsSnapshot = await firestoreQuery
+          .offset(offset)
+          .limit(limit)
+          .get();
+
+        candidates = resultsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
       }
 
       // Calculate pagination info
@@ -547,7 +647,7 @@ export const searchCandidates = onCall(
       return {
         success: true,
         data: {
-          candidates: filteredCandidates,
+          candidates: candidates,
           pagination: {
             page,
             limit,

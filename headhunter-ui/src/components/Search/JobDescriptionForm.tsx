@@ -2,8 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { JobDescription } from '../../types';
 import { apiService } from '../../services/api';
 
+// Sourcing Strategy type from analyzeJob
+export interface SourcingStrategy {
+  target_companies?: string[];
+  target_industries?: string[];
+  tech_stack?: { core?: string[]; avoid?: string[] };
+  title_variations?: string[];
+}
+
 interface JobDescriptionFormProps {
-  onSearch: (jobDescription: JobDescription) => void;
+  onSearch: (jobDescription: JobDescription, sourcingStrategy?: SourcingStrategy) => void;
   loading?: boolean;
   loadingStatus?: string;
 }
@@ -110,16 +118,22 @@ export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
       ...enrichedData,
       title: enrichedData.title || 'Untitled Position',
       // COGNITIVE ANCHOR: Use the 4 Structured Dimensions for the Embedding
-      description: currentAnalysis?.neural_dimensions
-        ? `ROLE: ${currentAnalysis.neural_dimensions.role_identity}\n` +
-        `DOMAIN: ${currentAnalysis.neural_dimensions.domain_expertise}\n` +
-        `SCOPE: ${currentAnalysis.neural_dimensions.leadership_level}\n` +
-        `TECH: ${currentAnalysis.neural_dimensions.technical_env}\n\n` +
-        `CONTEXT: ${enrichedData.description}`
+      description: currentAnalysis?.synthetic_perfect_candidate_profile
+        // HyDE STRATEGY: Use the AI-generated "Perfect Candidate Profile" as the anchor.
+        // This automatically handles the balance of Strategy vs. Tech for each role type.
+        ? `JOB TITLE: ${enrichedData.title || currentAnalysis.job_title}\n` +
+        `PROFILE: ${currentAnalysis.synthetic_perfect_candidate_profile}`
         : enrichedData.description
     };
 
-    onSearch(finalData);
+    // DEBUG: Trace HyDE profile usage
+    console.log('[HyDE Debug] Analysis object:', currentAnalysis);
+    console.log('[HyDE Debug] Has synthetic_perfect_candidate_profile?', !!currentAnalysis?.synthetic_perfect_candidate_profile);
+    console.log('[HyDE Debug] Final search description:', finalData.description?.substring(0, 500));
+    console.log('[Wide Net] Passing sourcing_strategy:', currentAnalysis?.sourcing_strategy);
+
+    // Pass sourcing_strategy to parent for Wide Net search
+    onSearch(finalData, currentAnalysis?.sourcing_strategy);
   };
 
   const addSkill = () => {
@@ -161,20 +175,6 @@ export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
           />
         </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="title">Job Title (Optional)</label>
-            <input
-              type="text"
-              id="title"
-              value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              placeholder="e.g., Senior Software Engineer"
-              disabled={loading}
-            />
-          </div>
-        </div>
-
         <div className="extracted-skills-preview">
           <label>Detected Skills:</label>
           <div className="skill-tags">
@@ -210,7 +210,19 @@ export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
               <p><strong>Role:</strong> {analysis.job_title}</p>
               <p><strong>Level:</strong> {analysis.experience_level}</p>
               <p><strong>Summary:</strong> {analysis.summary}</p>
-              <p><strong>Key Focus:</strong> {(analysis.key_responsibilities || []).slice(0, 3).join(', ')}</p>
+              {analysis.sourcing_strategy?.target_companies && analysis.sourcing_strategy.target_companies.length > 0 && (
+                <div style={{ marginTop: '10px', padding: '10px', background: '#EEF2FF', borderRadius: '6px', border: '1px solid #818CF8' }}>
+                  <p style={{ margin: 0, color: '#4F46E5', fontWeight: 'bold' }}>🎯 AI Sourcing Strategy</p>
+                  <p style={{ margin: '5px 0', fontSize: '14px' }}>
+                    <strong>Target Companies:</strong> {analysis.sourcing_strategy.target_companies.slice(0, 5).join(', ')}
+                  </p>
+                  {analysis.sourcing_strategy.target_industries && (
+                    <p style={{ margin: '5px 0', fontSize: '14px' }}>
+                      <strong>Industries:</strong> {analysis.sourcing_strategy.target_industries.join(', ')}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

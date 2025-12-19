@@ -370,7 +370,7 @@ export class VectorSearchService {
         await this.initializePgVectorClient();
         if (this.pgVectorClient) {
           const similarityThreshold = 0.5; // Lowered from 0.7 to capture more candidates for re-ranking
-          const limit = query.limit || 20;
+          const limit = query.limit || 100; // Increased default to 100 to capture tail candidates
           const offset = query.offset || 0;
           const fetchLimit = limit + offset;
 
@@ -410,8 +410,11 @@ export class VectorSearchService {
               continue;
             }
 
-            // Organization filter - check if candidate belongs to the requested org
-            if (query.org_id) {
+            // Organization filter - Ella org sees ALL candidates, other orgs filtered
+            // This is a security policy for multi-tenant access control
+            const isEllaOrg = query.org_id === 'org_ella_main';
+
+            if (query.org_id && !isEllaOrg) {
               const candidateDoc = await this.firestore
                 .collection('candidates')
                 .doc(pgResult.candidate_id)
@@ -535,7 +538,7 @@ export class VectorSearchService {
     // Sort by similarity score and apply limit
     results.sort((a, b) => b.similarity_score - a.similarity_score);
 
-    const limit = query.limit || 20;
+    const limit = query.limit || 100; // Increased default to 100 to capture tail candidates
     return results.slice(0, limit);
   }
 
@@ -706,8 +709,15 @@ export class VectorSearchService {
           match_reasons: matchReasons,
           profile: {
             name: candidateData?.name,
-            current_role: candidateData?.current_role || candidateData?.resume_analysis?.current_role,
-            current_company: candidateData?.current_company || candidateData?.resume_analysis?.current_company,
+            // Extract actual job title from experience data (most accurate)
+            current_role: this.extractCurrentJobTitle(candidateData)
+              || candidateData?.current_role
+              || candidateData?.resume_analysis?.current_role
+              || candidateData?.intelligent_analysis?.career_trajectory_analysis?.current_level,
+            current_company: this.extractCurrentCompany(candidateData)
+              || candidateData?.current_company
+              || candidateData?.resume_analysis?.current_company
+              || candidateData?.intelligent_analysis?.personal_details?.current_company,
             years_experience: typeof years === 'number' ? years : undefined,
             current_level: level,
             analysis_confidence: typeof candidateData?.analysis_confidence === 'number' ? candidateData.analysis_confidence : undefined,
@@ -756,6 +766,71 @@ export class VectorSearchService {
     if (data.summary) {
       const match = data.summary.match(/https?:\/\/(www\.)?linkedin\.com\/in\/[\w-]+/i);
       if (match) return match[0];
+    }
+    return undefined;
+  }
+
+  /**
+   * Extract actual current job title from experience data
+   * Parses "Company : Role" format from original_data.experience
+   */
+  private extractCurrentJobTitle(candidateData: any): string | undefined {
+    const exp = candidateData?.original_data?.experience;
+    if (!exp) return undefined;
+
+    const lines = exp.split('\n').filter((l: string) => l.trim());
+    let foundDate = false;
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+
+      // Look for current position (contains "current" or is the first date entry)
+      if (trimmed.startsWith('-') && /\d{4}/.test(trimmed)) {
+        foundDate = true;
+        continue;
+      }
+
+      // After a date line, the next line contains "Company : Role"
+      if (foundDate && trimmed.includes(':')) {
+        const parts = trimmed.split(':');
+        if (parts.length > 1) {
+          const role = parts[1].trim();
+          if (role && role.length > 0 && role !== 'Role not specified') {
+            return role;
+          }
+        }
+        break; // Only get the first (most recent) role
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Extract current company from experience data
+   */
+  private extractCurrentCompany(candidateData: any): string | undefined {
+    const exp = candidateData?.original_data?.experience;
+    if (!exp) return undefined;
+
+    const lines = exp.split('\n').filter((l: string) => l.trim());
+    let foundDate = false;
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+
+      if (trimmed.startsWith('-') && /\d{4}/.test(trimmed)) {
+        foundDate = true;
+        continue;
+      }
+
+      if (foundDate && trimmed.includes(':')) {
+        const parts = trimmed.split(':');
+        const company = parts[0].trim();
+        if (company && company.length > 0 && company.length < 100) {
+          return company;
+        }
+        break;
+      }
     }
     return undefined;
   }
@@ -1172,6 +1247,43 @@ export class VectorSearchService {
   ): string[] {
     const reasons: string[] = [];
 
+    // Check if this is an executive role (skill counts matter less)
+    const isExecutiveSearch = query.experience_level === 'executive' ||
+      query.text_query?.toLowerCase().match(/\b(cto|cpo|cfo|coo|ceo|chief|vp|vice president|head of)\b/);
+
+    // For executive roles, focus on title and domain, not skill counts
+    if (isExecutiveSearch) {
+      const candidateTitle = candidateData?.current_title || candidateData?.title || '';
+      const candidateLevel = candidateData?.current_level || '';
+
+      // Title-based assessment
+      if (candidateTitle.toLowerCase().match(/\b(chief|cto|cpo|cfo|coo|ceo)\b/)) {
+        reasons.push("C-Level Executive");
+      } else if (candidateTitle.toLowerCase().match(/\b(vp|vice president)\b/)) {
+        reasons.push("VP-level leadership");
+      } else if (candidateTitle.toLowerCase().match(/\b(head of|director)\b/)) {
+        reasons.push("Senior leadership role");
+      }
+
+      // Experience alignment for executives is critical
+      const expAlignment = skillScores.ranking_factors.experience_alignment;
+      if (expAlignment === 'excellent') {
+        reasons.push("Perfect experience level match");
+      } else if (expAlignment === 'good') {
+        reasons.push("Good experience level match");
+      }
+
+      // Vector similarity for semantic match
+      if (vectorResult.similarity_score > 0.85) {
+        reasons.push("Excellent profile similarity");
+      } else if (vectorResult.similarity_score > 0.75) {
+        reasons.push("Strong profile match");
+      }
+
+      return reasons;
+    }
+
+    // Non-executive roles: show skill match details
     // Overall match quality
     if (skillScores.skill_match_score >= 90) {
       reasons.push("Exceptional skill match");

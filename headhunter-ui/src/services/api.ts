@@ -16,7 +16,9 @@ import {
   findSimilarCandidates,
   analyzeSearchQuery,
   analyzeJob,
-  getCandidateStats
+  getCandidateStats,
+  engineSearch,
+  getAvailableEngines
 } from '../config/firebase';
 import {
   JobDescription,
@@ -62,13 +64,25 @@ export const apiService = {
 
   // Search candidates based on job description
   // Search candidates based on job description using semantic search
-  async searchCandidates(jobDescription: JobDescription, onProgress?: (status: string) => void, page: number = 1): Promise<SearchResponse> {
+  async searchCandidates(
+    jobDescription: JobDescription,
+    onProgress?: (status: string) => void,
+    page: number = 1,
+    sourcingStrategy?: {
+      target_companies?: string[];
+      target_industries?: string[];
+      tech_stack?: { core?: string[]; avoid?: string[] };
+      title_variations?: string[];
+    }
+  ): Promise<SearchResponse> {
     try {
       if (onProgress) onProgress('Searching candidate database...');
 
       // Construct query text from job description
+      // Append title_variations to query for better recall
+      const titleVariations = sourcingStrategy?.title_variations?.join(' OR ') || '';
       const queryText = `
-        Title: ${jobDescription.title}
+        Title: ${jobDescription.title} ${titleVariations ? `(${titleVariations})` : ''}
         Description: ${jobDescription.description}
         Required Skills: ${(jobDescription.required_skills || []).join(', ')}
         Experience: ${jobDescription.min_experience}-${jobDescription.max_experience} years
@@ -99,6 +113,7 @@ export const apiService = {
       );
 
       console.log('Search experience level:', experienceLevel, '(from', jobDescription.seniority ? 'SearchAgent' : 'min_experience', ')');
+      console.log('Sourcing Strategy:', sourcingStrategy ? `Target Companies: ${sourcingStrategy.target_companies?.join(', ')}` : 'None');
 
       // NEURAL MATCH: No Strict Filters.
       // We rely on the "Structured Semantic Anchor" to bias the vector space,
@@ -114,8 +129,8 @@ export const apiService = {
         required_skills: requiredSkills,
         preferred_skills: preferredSkills,
         experience_level: experienceLevel,
-        limit: 50, // Reduced from 75 to improve latency (50 * 4k chars = ~200k chars)
-        offset: (page - 1) * 50,
+        limit: 300, // Recruiter-friendly: Fetch large pool for progressive loading
+        offset: 0, // Always start from 0, pagination handled client-side
         filters: {
           min_years_experience: minExp,
           // current_level: Removed for Neural Match
@@ -129,10 +144,10 @@ export const apiService = {
           // AI-First Strategy: Trust the Vector Embeddings (Semantic Understanding)
           // Experience match is just a sanity check (weight 0.2)
           // Vector Similarity is the primary driver (weight 0.7)
-          experience_match: 0.2, // Low weight, don't let rules override AI
-          skill_match: 0.1,
-          vector_similarity: 0.7, // High weight: Embeddings capture 'CTOness' better than keyword rules
-          confidence: 0.0
+          experience_match: 0.1,
+          skill_match: 0.0,
+          vector_similarity: 0.1, // Low weight: Don't let fuzzy match override the "CEO" filter
+          confidence: 0.8 // High weight: Trust the "Recruiter Brain" (Logic)
         }
       });
 
@@ -140,38 +155,232 @@ export const apiService = {
 
       if (data && data.success) {
         let candidates = data.results.candidates || [];
+        console.log(`Vector search returned ${candidates.length} candidates`);
 
-        // Perform LLM Reranking
+        // ===== STEP 1: Apply Target Company Boost =====
+        if (sourcingStrategy?.target_companies && sourcingStrategy.target_companies.length > 0) {
+          const targetCompaniesLower = sourcingStrategy.target_companies.map(c => c.toLowerCase());
+          candidates = candidates.map((c: any) => {
+            const profile = c.profile || {};
+            const currentCompany = (profile.current_company || '').toLowerCase();
+            const isTargetCompany = targetCompaniesLower.some(tc => currentCompany.includes(tc));
+            const companyBoost = isTargetCompany ? 15 : 0;
+            return { ...c, overall_score: c.overall_score + companyBoost, isTargetCompanyMatch: isTargetCompany };
+          });
+          console.log(`Target Company boost applied to ${candidates.filter((c: any) => c.isTargetCompanyMatch).length} candidates`);
+        }
+
+        // ===== STEP 2: Apply GENERIC Title Affinity Boost to ALL candidates =====
+        // Parse target role from job description
+        const targetTitle = (jobDescription.title || '').toLowerCase();
+        const descriptionText = (jobDescription.description || '').toLowerCase();
+
+        // Try to extract role from title or first line of description that mentions a role
+        const roleFromTitle = targetTitle;
+        const roleFromDesc = descriptionText.match(/(?:role|position|title)[:\s]+([^.\n,]+)/i)?.[1]?.trim() || '';
+        const targetRole = roleFromTitle || roleFromDesc || '';
+
+        // ===== GENERIC TITLE AFFINITY SYSTEM =====
+        // Parse any title into Level (1-5) and Function (engineering, product, etc.)
+
+        const parseLevel = (title: string): number => {
+          const t = title.toLowerCase();
+          // C-suite = 5
+          if (t.includes('chief') || t.match(/\bc[etpfo]o\b/) || t.includes('president')) return 5;
+          // VP = 4
+          if (t.includes('vp') || t.includes('vice president')) return 4;
+          // Director / Head = 3
+          if (t.includes('director') || t.includes('head of')) return 3;
+          // Manager / Lead = 2
+          if (t.includes('manager') || t.includes('lead') || t.includes('principal') || t.includes('staff')) return 2;
+          // IC = 1
+          return 1;
+        };
+
+        const parseFunction = (title: string): string => {
+          const t = title.toLowerCase();
+
+          // Handle C-suite abbreviations FIRST (these often don't include full keywords)
+          if (t.includes('cto') || t.match(/chief\s+tech/)) return 'engineering';
+          if (t.includes('cpo') || t.match(/chief\s+product/)) return 'product';
+          if (t.includes('cdo') || t.match(/chief\s+data/)) return 'data';
+          if (t.includes('cro') || t.match(/chief\s+revenue/)) return 'sales';
+          if (t.includes('cmo') || t.match(/chief\s+market/)) return 'marketing';
+          if (t.includes('coo') || t.match(/chief\s+operat/)) return 'operations';
+          if (t.includes('chro') || t.match(/chief\s+(people|human)/)) return 'hr';
+          if (t.includes('cfo') || t.match(/chief\s+finan/)) return 'finance';
+
+          // Then check general keywords
+          if (t.includes('engineer') || t.includes('software') || t.includes('devops') || t.includes('infrastructure')) return 'engineering';
+          if (t.includes('product') || t.match(/\bpm\b/)) return 'product';
+          if (t.includes('data') || t.includes('analytics') || t.includes('scientist')) return 'data';
+          if (t.includes('sales') || t.includes('revenue') || t.includes('account')) return 'sales';
+          if (t.includes('marketing') || t.includes('growth') || t.includes('brand')) return 'marketing';
+          if (t.includes('finance') || t.includes('accounting')) return 'finance';
+          if (t.includes('hr') || t.includes('people') || t.includes('talent') || t.includes('recruit')) return 'hr';
+          if (t.includes('operations')) return 'operations';
+          if (t.includes('design') || t.includes('ux') || t.includes('ui')) return 'design';
+          return 'general';
+        };
+
+        const calculateTitleAffinity = (targetTitle: string, candidateTitle: string): number => {
+          const targetLevel = parseLevel(targetTitle);
+          const candidateLevel = parseLevel(candidateTitle);
+          const targetFunction = parseFunction(targetTitle);
+          const candidateFunction = parseFunction(candidateTitle);
+
+          // Level distance penalty: 5 points per level of distance
+          const levelDistance = Math.abs(targetLevel - candidateLevel);
+          const levelPenalty = levelDistance * 5;
+
+          // Function penalty: 0 = same function, 40 = different function
+          // This ensures wrong function gets NEGATIVE boost (20 - 40 = -20)
+          let functionPenalty = 0;
+          if (targetFunction !== candidateFunction && targetFunction !== 'general' && candidateFunction !== 'general') {
+            functionPenalty = 40; // Increased from 20 to ensure negative score
+          }
+
+          // Range: +20 (perfect match) to -25 (4 levels + different function)
+          return 20 - levelPenalty - functionPenalty;
+        };
+
+        // Apply affinity to ALL candidates
+        if (targetRole) {
+          console.log(`Generic title affinity for "${targetRole}" (Level: ${parseLevel(targetRole)}, Function: ${parseFunction(targetRole)})`);
+          candidates = candidates.map((c: any) => {
+            const profile = c.profile || {};
+            const candidateTitle = (profile.current_role || profile.current_title || c.current_role || '').toLowerCase();
+            const titleBoost = calculateTitleAffinity(targetRole, candidateTitle);
+            return { ...c, overall_score: c.overall_score + titleBoost, titleAffinityBoost: titleBoost };
+          });
+        }
+
+        // Sort by boosted score
+        candidates.sort((a: any, b: any) => b.overall_score - a.overall_score);
+        console.log(`After title boost, top 5 candidates:`, candidates.slice(0, 5).map((c: any) =>
+          `${c.profile?.current_role || 'Unknown'} (boost: ${c.titleAffinityBoost || 0}, score: ${c.overall_score})`));
+
+        // ===== STEP 3: LLM Rerank only TOP 50 for quality =====
+        const topCandidates = candidates.slice(0, 50);
+        const remainingCandidates = candidates.slice(50);
+
         try {
-          if (onProgress) onProgress('AI evaluating candidates (this may take 30-60s)...');
-
-          // Optimization: Rerank the current batch
-          const candidatesToRerank = candidates;
+          if (onProgress) onProgress('AI evaluating top candidates (this may take 15-30s)...');
 
           const rerankResult = await rerankCandidates({
             job_description: queryText,
-            candidates: candidatesToRerank.map((c: any) => ({
+            candidates: topCandidates.map((c: any) => ({
               candidate_id: c.candidate_id,
               profile: c.profile,
               initial_score: c.overall_score
             })),
-            limit: 20 // Final display limit
+            limit: 50
           });
 
           const rerankData = rerankResult.data as any;
-          if (rerankData.success && rerankData.results.length > 0) {
-            // Filter out candidates with low LLM scores (< 70) to remove irrelevant matches (e.g. Data Scientist for CTO)
-            // And ensure they are sorted by score descending
-            candidates = rerankData.results
-              .filter((c: any) => c.overall_score >= 70)
-              .sort((a: any, b: any) => b.overall_score - a.overall_score);
 
-            console.log(`Reranking complete. Kept ${candidates.length} candidates with score >= 70.`);
+          if (rerankData.success && rerankData.results && rerankData.results.length > 0) {
+            console.log(`Reranking complete. Got ${rerankData.results.length} reranked candidates.`);
+
+            // ===== STEP 4: Re-apply title boost AFTER reranker (so it affects final order) =====
+            let rerankedCandidates = rerankData.results;
+            if (targetRole) {
+              rerankedCandidates = rerankedCandidates.map((c: any) => {
+                const profile = c.profile || {};
+                const candidateTitle = (profile.current_role || profile.current_title || '').toLowerCase();
+                const titleBoost = calculateTitleAffinity(targetRole, candidateTitle);
+                return { ...c, overall_score: c.overall_score + titleBoost, titleAffinityBoost: titleBoost };
+              });
+              rerankedCandidates.sort((a: any, b: any) => b.overall_score - a.overall_score);
+              console.log(`Post-rerank title boost applied. Top 10:`, rerankedCandidates.slice(0, 10).map((c: any) =>
+                `${c.profile?.current_role || 'Unknown'}: ${c.overall_score} (boost: ${c.titleAffinityBoost || 0})`));
+            }
+
+            // ===== STEP 5: Merge reranked top 50 + remaining candidates =====
+            // Adjust remaining candidates' scores to be below the reranked ones
+            const lowestRerankedScore = Math.min(...rerankedCandidates.map((c: any) => c.overall_score));
+            const adjustedRemaining = remainingCandidates.map((c: any, i: number) => ({
+              ...c,
+              overall_score: Math.max(10, lowestRerankedScore - 10 - i), // Below reranked, decaying
+              rationale: ['Vector match (not AI-evaluated)']
+            }));
+
+            candidates = [...rerankedCandidates, ...adjustedRemaining];
+
+            // ===== STEP 6: Remove duplicates by candidate name =====
+            const seenNames = new Set<string>();
+            candidates = candidates.filter((c: any) => {
+              const name = (c.profile?.name || c.name || '').toLowerCase().trim();
+              if (!name || seenNames.has(name)) {
+                return false;
+              }
+              seenNames.add(name);
+              return true;
+            });
+
+            console.log(`Final list: ${candidates.length} candidates after deduplication`);
+          } else {
+            console.warn("Reranking returned empty results. Using vector+title scores.");
+            // If reranking fails or returns empty, candidates remain as they were after initial boosts.
+            // No explicit fallback needed here, as `candidates` already holds the pre-reranked list.
           }
         } catch (err) {
-          console.warn("Reranking failed, falling back to vector sort:", err);
-          // Fallback to top 20 from vector search
-          candidates = candidates.slice(0, 20);
+          console.warn("Reranking failed or returned empty, applying rule-based fallback:", err);
+
+          // RULE-BASED FALLBACK: When AI fails, use deterministic ranking
+          // This is transparent and explainable, unlike raw vector similarity
+          const jobTitle = jobDescription.title?.toLowerCase() || '';
+          const requiredSkills = jobDescription.required_skills || [];
+          const targetLevel = experienceLevel; // 'executive', 'senior', 'mid', 'entry'
+
+          candidates = candidates.map((c: any) => {
+            const profile = c.profile || {};
+            const candidateTitle = (profile.current_title || profile.job_title || '').toLowerCase();
+            const candidateLevel = (profile.current_level || '').toLowerCase();
+            const candidateSkills = profile.top_skills?.map((s: any) => s.skill?.toLowerCase() || s.toLowerCase()) || [];
+
+            // Title Match: +30 if candidate title contains key words from job title
+            const titleWords = jobTitle.split(/\s+/).filter((w: string) => w.length > 3);
+            const titleMatch = titleWords.some((w: string) => candidateTitle.includes(w)) ? 30 : 0;
+
+            // Level Match: +20 if levels align
+            const levelMatch = (
+              (targetLevel === 'executive' && ['executive', 'c-level', 'vp', 'director'].some(l => candidateLevel.includes(l))) ||
+              (targetLevel === 'senior' && ['senior', 'lead', 'principal'].some(l => candidateLevel.includes(l))) ||
+              (targetLevel === 'mid' && candidateLevel.includes('mid'))
+            ) ? 20 : 0;
+
+            // Skill Match: +2 per matching skill
+            const skillMatchCount = requiredSkills.filter((skill: string) =>
+              candidateSkills.some((cs: string) => cs.includes(skill.toLowerCase()))
+            ).length;
+            const skillScore = skillMatchCount * 2;
+
+            // Calculate fallback score
+            const fallbackScore = 50 + titleMatch + levelMatch + skillScore;
+
+            return {
+              ...c,
+              overall_score: Math.min(fallbackScore, 95),
+            };
+          })
+            .sort((a: any, b: any) => b.overall_score - a.overall_score);
+
+          // Also include remaining candidates after the top 50
+          const adjustedRemaining = remainingCandidates.map((c: any, i: number) => ({
+            ...c,
+            overall_score: Math.max(10, 40 - i), // Below fallback scores
+            rationale: ['Vector match (fallback mode)']
+          }));
+          candidates = [...candidates, ...adjustedRemaining];
+
+          console.log(`Fallback complete. ${candidates.length} total candidates.`);
+
+          // Update rationale to reflect fallback status
+          candidates = candidates.slice(0, 50).map((c: any) => ({
+            ...c,
+            rationale: c.rationale || [`⚠️ AI Ranking Unavailable. Ranked by Title/Level heuristic.`]
+          })).concat(candidates.slice(50));
         }
 
         // Map skill-aware search results to frontend format
@@ -608,6 +817,162 @@ export const apiService = {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  },
+
+  // AI Engine-based search - allows switching between Legacy and Agentic engines
+  async searchWithEngine(
+    engine: 'legacy' | 'agentic',
+    jobDescription: JobDescription,
+    options?: {
+      limit?: number;
+      page?: number;
+      sourcingStrategy?: {
+        target_companies?: string[];
+        target_industries?: string[];
+      };
+    },
+    onProgress?: (status: string) => void
+  ): Promise<SearchResponse> {
+    try {
+      if (onProgress) {
+        onProgress(`Using ${engine === 'legacy' ? '⚡ Fast Match' : '🧠 Deep Analysis'} engine...`);
+      }
+
+      const result = await engineSearch({
+        engine: engine,
+        job: {
+          title: jobDescription.title,
+          description: jobDescription.description,
+          required_skills: jobDescription.required_skills,
+          nice_to_have: jobDescription.nice_to_have,
+          min_experience: jobDescription.min_experience,
+          max_experience: jobDescription.max_experience,
+        },
+        options: {
+          limit: options?.limit || 50,
+          page: options?.page || 0,
+          sourcingStrategy: options?.sourcingStrategy,
+        }
+      });
+
+      const data = result.data as any;
+
+      if (onProgress) {
+        onProgress(`Found ${data.results?.length || 0} candidates`);
+      }
+
+      // Transform engine results to match SearchResponse format
+      // IMPORTANT: Pass through the FULL candidate data including intelligent_analysis
+      const candidates = (data.results || []).map((match: any, index: number) => {
+        const rawCandidate = match.candidate || {};
+        const profile = rawCandidate.profile || rawCandidate;
+
+        // Pass through the FULL profile with all analysis data intact
+        return {
+          candidate_id: match.candidate_id || rawCandidate.candidate_id || `candidate-${index}`,
+          overall_score: match.score || 0,
+          skill_match_score: match.match_metadata?.skill_match_score || match.score,
+          confidence_score: match.match_metadata?.confidence_score || 85,
+          vector_similarity_score: match.match_metadata?.vector_score || match.score,
+          experience_match_score: match.match_metadata?.experience_match || 80,
+          skill_breakdown: rawCandidate.skill_breakdown || {},
+          ranking_factors: rawCandidate.ranking_factors || {},
+          // Pass through the FULL profile, not a stripped version
+          profile: profile,
+          // Keep all intelligent_analysis and resume_analysis
+          intelligent_analysis: profile.intelligent_analysis || rawCandidate.intelligent_analysis,
+          resume_analysis: profile.resume_analysis || rawCandidate.resume_analysis,
+          original_data: profile.original_data || rawCandidate.original_data,
+          // Rationale from engine
+          summary: match.rationale?.overall_assessment || '',
+          rationale: match.rationale?.strengths || [],
+          matchReasons: profile.matchReasons || rawCandidate.match_reasons || [],
+          // Agentic-specific fields
+          concerns: match.rationale?.concerns || [],
+          interview_questions: match.rationale?.interview_questions || [],
+        };
+      });
+
+      // Transform to CandidateMatch format for SearchResponse
+      // Pass through the FULL candidate object
+      const matches = candidates.map((c: any) => ({
+        candidate: {
+          ...c,
+          candidate_id: c.candidate_id,
+          name: c.profile?.name || 'Unknown',
+          current_role: c.profile?.current_role || c.profile?.current_level,
+          current_company: c.profile?.current_company,
+          years_experience: c.profile?.years_experience,
+          skills: c.profile?.skills || c.profile?.top_skills?.map((s: any) => s.skill) || [],
+          linkedin_url: c.profile?.linkedin_url,
+          resume_url: c.profile?.resume_url,
+          overall_score: c.overall_score,
+          // Pass through all analysis data
+          intelligent_analysis: c.intelligent_analysis,
+          resume_analysis: c.resume_analysis,
+          original_data: c.original_data,
+          // Include rationale for display
+          summary: c.summary,
+          rationale: c.rationale?.[0] ? {
+            overall_assessment: c.summary,
+            strengths: c.rationale,
+            gaps: c.concerns || [],
+            risk_factors: []
+          } : undefined,
+          matchReasons: c.matchReasons || c.rationale,
+        },
+        score: c.overall_score,
+        similarity: c.vector_similarity_score || c.overall_score,
+        rationale: {
+          overall_assessment: c.summary || 'Matched based on profile similarity',
+          strengths: c.rationale || [],
+          gaps: c.concerns || [],
+          risk_factors: []
+        }
+      }));
+
+      const avgScore = matches.length > 0
+        ? matches.reduce((sum: number, m: any) => sum + m.score, 0) / matches.length
+        : 0;
+
+      return {
+        success: true,
+        matches,
+        insights: {
+          total_candidates: data.total_candidates || matches.length,
+          avg_match_score: avgScore,
+          top_skills_matched: [],
+          common_gaps: [],
+          market_analysis: `Found ${matches.length} candidates using ${data.engine_used === 'agentic' ? 'Deep Analysis' : 'Fast Match'} engine.`,
+          recommendations: matches.length > 0 ? ['Review top matches'] : ['Try adjusting search terms']
+        },
+        query_time_ms: data.execution_time_ms || 0
+      };
+    } catch (error) {
+      console.error('[searchWithEngine] Error:', error);
+      throw new ApiError(
+        error instanceof Error ? error.message : 'Engine search failed',
+        500
+      );
+    }
+  },
+
+  // Get list of available AI engines
+  async getAvailableEngines(): Promise<{ engines: Array<{ id: string; label: string; description: string }>; default: string }> {
+    try {
+      const result = await getAvailableEngines();
+      return result.data as any;
+    } catch (error) {
+      console.error('[getAvailableEngines] Error:', error);
+      // Return default engines if function call fails
+      return {
+        engines: [
+          { id: 'legacy', label: '⚡ Fast Match', description: 'Vector + Title boost + LLM rerank' },
+          { id: 'agentic', label: '🧠 Deep Analysis', description: 'Comparative reasoning with insights' }
+        ],
+        default: 'legacy'
       };
     }
   }

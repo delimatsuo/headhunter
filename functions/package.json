@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@google-cloud/aiplatform": "^3.35.0",
+    "@google-cloud/discoveryengine": "^2.5.2",
     "@google-cloud/firestore": "^7.10.0",
     "@google-cloud/storage": "^7.14.0",
     "@google-cloud/vertexai": "^1.10.0",

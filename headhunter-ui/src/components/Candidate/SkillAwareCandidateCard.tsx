@@ -113,15 +113,21 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
     return Math.round((getMatchedSkillsCount() / searchSkills.length) * 100);
   };
 
-  // Data extraction helpers
+  // Data extraction helpers - cast to any for flexible property access
+  const c = candidate as any;
+
   const getExperience = () =>
-    candidate.intelligent_analysis?.career_trajectory_analysis?.years_experience ||
-    candidate.resume_analysis?.years_experience ||
+    c.years_experience ||
+    c.profile?.years_experience ||
+    c.intelligent_analysis?.career_trajectory_analysis?.years_experience ||
+    c.resume_analysis?.years_experience ||
     0;
 
   const getLevel = () =>
-    candidate.intelligent_analysis?.career_trajectory_analysis?.current_level ||
-    candidate.resume_analysis?.career_trajectory?.current_level ||
+    c.current_level ||
+    c.profile?.current_level ||
+    c.intelligent_analysis?.career_trajectory_analysis?.current_level ||
+    c.resume_analysis?.career_trajectory?.current_level ||
     'Not specified';
 
   const getTechnicalSkills = () => {
@@ -328,16 +334,40 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
   const remainingSkills = technicalSkills.length - 8;
 
   const getRole = () => {
-    const role = candidate.current_role ||
-      candidate.title ||
-      candidate.resume_analysis?.current_role ||
-      candidate.analysis?.current_role?.title ||
-      candidate.searchable_data?.current_title ||
-      candidate.intelligent_analysis?.role_based_competencies?.current_role_competencies?.role;
+    // First, try to get actual job title from experience timeline (most accurate)
+    const timelineData = parseExperience(c.original_data?.experience);
+    if (timelineData.length > 0 && timelineData[0].role && timelineData[0].role !== 'Role not specified') {
+      return timelineData[0].role;
+    }
 
-    if (role) return role;
+    // Try intelligent_analysis for role competencies
+    const iaRole = c.intelligent_analysis?.role_based_competencies?.current_role_competencies?.role;
+    if (iaRole) return iaRole;
 
-    // Fallback: If level looks like a title (long string), use it
+    // Fallback to other sources - but filter out generic seniority-only values
+    const candidates = [
+      c.current_role,
+      c.profile?.current_role,
+      c.title,
+      c.resume_analysis?.current_role,
+      c.analysis?.current_role?.title,
+      c.searchable_data?.current_title
+    ].filter(Boolean);
+
+    for (const role of candidates) {
+      // Skip if it's just a generic level like "Senior" or "Senior Leadership"
+      const seniorityOnlyPattern = /^(intern|junior|associate|mid-level|senior|staff|principal|lead|manager|director|vp|head|chief|executive|leadership|member)$/i;
+      const tokens = role.toLowerCase().split(/[\s-]+/);
+      const isOnlySeniority = tokens.every((t: string) =>
+        seniorityOnlyPattern.test(t) || t === 'level' || t === 'technical'
+      );
+
+      if (!isOnlySeniority) {
+        return role;
+      }
+    }
+
+    // Last resort: use level if it looks like a title
     const level = getLevel();
     if (level && level.length > 20) return level;
 

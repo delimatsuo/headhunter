@@ -71,4 +71,8 @@ export const findSimilarCandidates = httpsCallable(functions, 'findSimilarCandid
 export const analyzeSearchQuery = httpsCallable(functions, 'analyzeSearchQuery');
 export const analyzeJob = httpsCallable(functions, 'analyzeJob');
 
+// AI Engine Search (Modular Search Engines)
+export const engineSearch = httpsCallable(functions, 'engineSearch', { timeout: 300000 }); // 5 min timeout
+export const getAvailableEngines = httpsCallable(functions, 'getAvailableEngines');
+
 export default app;

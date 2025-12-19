@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { JobDescriptionForm } from './JobDescriptionForm';
+import { JobDescriptionForm, SourcingStrategy } from './JobDescriptionForm';
 import { SearchResults } from './SearchResults';
 import { AddCandidateModal } from '../Upload/AddCandidateModal';
+import { EngineSelector, EngineType } from './EngineSelector';
 import { apiService } from '../../services/api';
 import { JobDescription, SearchResponse, CandidateProfile } from '../../types';
 
@@ -11,26 +12,45 @@ export const SearchPage: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [showAddCandidate, setShowAddCandidate] = useState(false);
   const [searchHistory, setSearchHistory] = useState<JobDescription[]>([]);
+  const [displayLimit, setDisplayLimit] = useState(50); // Progressive loading: show 50 at a time
+  const [selectedEngine, setSelectedEngine] = useState<EngineType>('legacy');
 
-  const handleSearch = async (jobDescription: JobDescription) => {
+  const handleSearch = async (jobDescription: JobDescription, sourcingStrategy?: SourcingStrategy) => {
     setLoading(true);
     setError('');
     setSearchResults(null);
+    setDisplayLimit(50); // Reset to 50 on new search
 
     try {
-      const results = await apiService.searchCandidates(jobDescription);
+      // Use the selected AI engine for the search
+      const results = await apiService.searchWithEngine(
+        selectedEngine,
+        jobDescription,
+        {
+          limit: 50,
+          sourcingStrategy: {
+            target_companies: sourcingStrategy?.target_companies,
+            target_industries: sourcingStrategy?.target_industries,
+          }
+        }
+      );
       setSearchResults(results);
-      
+
       // Add to search history
       setSearchHistory(prev => {
         const updated = [jobDescription, ...prev];
         return updated.slice(0, 5); // Keep only last 5 searches
       });
     } catch (error: any) {
+      console.error('Search error:', error);
       setError(error.message || 'Search failed');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLoadMore = () => {
+    setDisplayLimit(prev => prev + 50); // Load 50 more candidates
   };
 
   const handleCandidateAdded = (candidate: CandidateProfile) => {
@@ -49,7 +69,7 @@ export const SearchPage: React.FC = () => {
           <h1>Candidate Search</h1>
           <p>Find the perfect candidates for your job requirements using AI-powered matching</p>
         </div>
-        <button 
+        <button
           className="btn btn-secondary"
           onClick={() => setShowAddCandidate(true)}
         >
@@ -60,8 +80,13 @@ export const SearchPage: React.FC = () => {
 
       <div className="search-container">
         <div className="search-form-section">
-          <JobDescriptionForm 
-            onSearch={handleSearch} 
+          <EngineSelector
+            selected={selectedEngine}
+            onChange={setSelectedEngine}
+            disabled={loading}
+          />
+          <JobDescriptionForm
+            onSearch={handleSearch}
             loading={loading}
           />
 
@@ -87,7 +112,7 @@ export const SearchPage: React.FC = () => {
                         </span>
                       </div>
                     </div>
-                    <button 
+                    <button
                       className="btn btn-outline btn-small"
                       onClick={() => handleQuickSearch(search)}
                       disabled={loading}
@@ -102,10 +127,12 @@ export const SearchPage: React.FC = () => {
         </div>
 
         <div className="search-results-section">
-          <SearchResults 
+          <SearchResults
             results={searchResults}
             loading={loading}
             error={error}
+            displayLimit={displayLimit}
+            onLoadMore={handleLoadMore}
           />
 
           {/* Tips for better results */}
@@ -118,19 +145,19 @@ export const SearchPage: React.FC = () => {
                   <h4>Be Specific</h4>
                   <p>Include specific technologies, frameworks, and tools in your job description for more accurate matching.</p>
                 </div>
-                
+
                 <div className="tip-card">
                   <div className="tip-icon">🎯</div>
                   <h4>Skills Matter</h4>
                   <p>Separate required skills from nice-to-have skills to help the AI understand your priorities.</p>
                 </div>
-                
+
                 <div className="tip-card">
                   <div className="tip-icon">📊</div>
                   <h4>Experience Range</h4>
                   <p>Set realistic experience ranges to find candidates who match your seniority requirements.</p>
                 </div>
-                
+
                 <div className="tip-card">
                   <div className="tip-icon">👥</div>
                   <h4>Leadership Needs</h4>
