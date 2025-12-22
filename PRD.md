@@ -4,7 +4,7 @@
 
 Headhunter AI is an intelligent recruitment platform that helps executive recruiters find and evaluate candidates using AI-powered analysis, semantic search, and intelligent ranking. The platform manages 29,000+ candidate profiles and provides multi-signal search capabilities to match candidates to job descriptions.
 
-**Current State (Dec 2025):** Production system running on Firebase Cloud Functions with React frontend.
+**Current State (Dec 2025):** Production system running on Firebase Cloud Functions with React frontend. Rebranded as "Ellatech".
 
 ## 2. User Roles
 
@@ -108,7 +108,7 @@ Headhunter AI is an intelligent recruitment platform that helps executive recrui
 - Match score percentage
 - AI-generated rationale (strengths, concerns)
 - Find Similar button
-- Engine selector (Legacy vs Agentic)
+- Export to CSV
 - **Files:** `SearchResults.tsx`, `SkillAwareCandidateCard.tsx`
 
 #### Candidate Cards

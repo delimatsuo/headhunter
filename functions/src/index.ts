@@ -842,3 +842,6 @@ export { engineSearch, getAvailableEngines } from './engine-search';
 
 // Export Backfill Classifications (one-time migration)
 export { backfillClassifications, getClassificationStats } from './backfill-classifications';
+
+// Export LLM-Based Multi-Function Classification Backfill
+export { backfillLLMClassifications, getLLMClassificationStats } from './backfill-llm-classification';

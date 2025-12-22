@@ -22,43 +22,72 @@ class LocalDeterministicProvider implements EmbeddingProvider {
 
 class VertexProvider implements EmbeddingProvider {
   name = "vertex";
+
+  private async generateEmbeddingWithRetry(text: string, retries = 3): Promise<number[]> {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        return await this.callVertexAPI(text);
+      } catch (err: any) {
+        const isRetryable = err?.code === 4 || // DEADLINE_EXCEEDED
+          err?.code === 14 || // UNAVAILABLE
+          err?.message?.includes('DEADLINE_EXCEEDED');
+
+        if (isRetryable && attempt < retries) {
+          console.log(`Vertex embedding attempt ${attempt} failed, retrying in ${attempt * 2}s...`);
+          await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw new Error("Max retries exceeded for Vertex embedding");
+  }
+
+  private async callVertexAPI(text: string): Promise<number[]> {
+    const { PredictionServiceClient } = require("@google-cloud/aiplatform").v1;
+    const projectId = process.env.GOOGLE_CLOUD_PROJECT || "headhunter-ai-0088";
+    const location = "us-central1";
+    const model = "text-embedding-004";
+    const predictionClient = new PredictionServiceClient({
+      apiEndpoint: `${location}-aiplatform.googleapis.com`,
+    });
+    const endpoint = `projects/${projectId}/locations/${location}/publishers/google/models/${model}`;
+    const instances = [{ content: text.substring(0, 3000) }];
+    const parameters = { outputDimensionality: 768 } as const;
+
+    // Add timeout to prevent DEADLINE_EXCEEDED
+    const [response] = await predictionClient.predict({
+      endpoint,
+      instances: instances.map((i) => ({
+        structValue: {
+          fields: {
+            content: { stringValue: i.content }
+          }
+        }
+      })),
+      parameters: {
+        structValue: {
+          fields: Object.fromEntries(
+            Object.entries(parameters).map(([k, v]) => [k, { numberValue: v as number }])
+          )
+        }
+      },
+    }, {
+      timeout: 120000, // 2 minute timeout
+    });
+
+    const pred = (response as any).predictions?.[0];
+    const embeddingsStruct = pred?.structValue?.fields?.embeddings?.structValue?.fields;
+    const valuesList = embeddingsStruct?.values?.listValue?.values;
+    const embed = valuesList?.map((v: any) => v.numberValue || 0);
+
+    if (Array.isArray(embed) && embed.length === 768) return embed;
+    throw new Error("Vertex embeddings response missing or invalid");
+  }
+
   async generateEmbedding(text: string): Promise<number[]> {
     try {
-      const { PredictionServiceClient } = require("@google-cloud/aiplatform").v1;
-      const projectId = process.env.GOOGLE_CLOUD_PROJECT || "headhunter-ai-0088";
-      const location = "us-central1";
-      const model = "text-embedding-004";
-      const predictionClient = new PredictionServiceClient({
-        apiEndpoint: `${location}-aiplatform.googleapis.com`,
-      });
-      const endpoint = `projects/${projectId}/locations/${location}/publishers/google/models/${model}`;
-      const instances = [{ content: text.substring(0, 3000) }];
-      const parameters = { outputDimensionality: 768 } as const;
-      const [response] = await predictionClient.predict({
-        endpoint,
-        instances: instances.map((i) => ({
-          structValue: {
-            fields: {
-              content: { stringValue: i.content }
-            }
-          }
-        })),
-        parameters: {
-          structValue: {
-            fields: Object.fromEntries(
-              Object.entries(parameters).map(([k, v]) => [k, { numberValue: v as number }])
-            )
-          }
-        },
-      });
-      console.log('Vertex Response:', JSON.stringify(response, null, 2));
-      const pred = (response as any).predictions?.[0];
-      const embeddingsStruct = pred?.structValue?.fields?.embeddings?.structValue?.fields;
-      const valuesList = embeddingsStruct?.values?.listValue?.values;
-      const embed = valuesList?.map((v: any) => v.numberValue || 0);
-
-      if (Array.isArray(embed) && embed.length === 768) return embed;
-      throw new Error("Vertex embeddings response missing or invalid");
+      return await this.generateEmbeddingWithRetry(text);
     } catch (err) {
       // Do not return mock/deterministic data in production paths
       throw err instanceof Error ? err : new Error("Vertex embeddings unavailable");

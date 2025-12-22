@@ -1,4 +1,4 @@
-# Handover & Recovery Runbook (Updated 2025-11-25)
+# Handover & Recovery Runbook (Updated 2025-12-22)
 
 > Canonical repository path: `/Volumes/Extreme Pro/myprojects/headhunter`. Do **not** work from `/Users/Delimatsuo/Documents/Coding/headhunter`.
 > Guardrail: all automation wrappers under `scripts/` source `scripts/utils/repo_guard.sh` and exit immediately when invoked from non-canonical clones.
@@ -9,9 +9,33 @@ This runbook is the single source of truth for resuming work or restoring local 
 
 ## 🎯 EXECUTIVE SUMMARY FOR NEW AI CODING AGENT
 
-**Last Updated**: 2025-12-11
-**Project Status**: Production-ready. Multi-tenant bulk upload fully implemented.
-**Next Session**: Build client CSV import UI, test client org isolation.
+**Last Updated**: 2025-12-22
+**Project Status**: Production-ready. Embeddings complete at 99%+ coverage. UI rebranded to Ellatech.
+**Next Session**: Continue any pending features, monitor embedding generation for new candidates.
+
+---
+
+### ✅ RECENT SESSION (Dec 22, 2025) - EMBEDDING FIXES & UI CLEANUP
+
+**Embedding Generation Fixed:**
+- **Root Cause Found**: Empty profile text was causing `INVALID_ARGUMENT: The text content is empty` errors from Vertex AI
+- **Fix Applied**: Added validation in `vector-search.ts` to skip candidates without profile data
+- **Retry Logic Added**: `embedding-provider.ts` now has 3-attempt retry with exponential backoff and 2-minute timeout
+- **Coverage**: ~98% of candidates with usable profile data now have embeddings (~22K of 22.5K)
+
+**UI Rebranding to Ellatech:**
+- Tab title changed from "React App" to "Ellatech"
+- Custom favicon added (user-provided image)
+- Removed AI Engine selector buttons (Fast Match/Deep Analysis) - now hardcoded to legacy engine
+- Updated manifest.json with Ellatech branding
+
+**Files Modified:**
+- `functions/src/vector-search.ts` (empty text validation)
+- `functions/src/embedding-provider.ts` (retry logic + 2-min timeout)
+- `headhunter-ui/src/components/Dashboard/Dashboard.tsx` (removed EngineSelector)
+- `headhunter-ui/public/index.html` (title + favicon)
+- `headhunter-ui/public/manifest.json` (app name)
+- `headhunter-ui/public/favicon-32.png`, `logo192.png`, `logo512.png` (new icons)
 
 ---
 

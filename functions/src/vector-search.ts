@@ -277,6 +277,13 @@ export class VectorSearchService {
    */
   async storeEmbedding(profile: any): Promise<EmbeddingData> {
     const embeddingText = this.extractEmbeddingText(profile);
+
+    // Skip candidates with empty profile text - Vertex AI requires non-empty content
+    if (!embeddingText || embeddingText.trim().length === 0) {
+      console.log(`Skipping embedding for candidate ${profile.candidate_id}: no profile text available`);
+      throw new Error(`No profile text available for embedding generation`);
+    }
+
     const embeddingVector = await this.generateEmbedding(embeddingText);
 
     // Extract metadata from either legacy or new format

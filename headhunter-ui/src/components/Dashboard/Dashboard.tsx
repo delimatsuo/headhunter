@@ -9,7 +9,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { AddCandidateModal } from '../Upload/AddCandidateModal';
 import { JobDescriptionForm } from '../Search/JobDescriptionForm';
 import { SearchResults } from '../Search/SearchResults';
-import { EngineSelector, EngineType } from '../Search/EngineSelector';
 
 // MUI Components
 import Container from '@mui/material/Container';
@@ -59,7 +58,6 @@ export const Dashboard: React.FC = () => {
   // Search Mode State (Quick Find vs AI Match)
   const [searchMode, setSearchMode] = useState<'quickfind' | 'aimatch'>('quickfind');
   const [quickFindQuery, setQuickFindQuery] = useState('');
-  const [selectedEngine, setSelectedEngine] = useState<EngineType>('legacy');
 
   // Saved Searches State
   const [savedSearches, setSavedSearches] = useState<any[]>([]);
@@ -157,7 +155,7 @@ export const Dashboard: React.FC = () => {
 
   const handleSearch = async (jobDescription: JobDescription) => {
     setSearchLoading(true);
-    setSearchStatus(`Using ${selectedEngine === 'legacy' ? '⚡ Fast Match' : '🧠 Deep Analysis'} engine...`);
+    setSearchStatus('⚡ AI Search: Finding best matches...');
     setSearchError('');
     setSearchResults(null);
     setShowSearchResults(true);
@@ -169,7 +167,7 @@ export const Dashboard: React.FC = () => {
       let searchParams = jobDescription;
       let agentAnalysis = null;
 
-      if (selectedEngine === 'legacy' && jobDescription.title && !jobDescription.min_experience) {
+      if (jobDescription.title && !jobDescription.min_experience) {
         setSearchStatus('AI analyzing job requirements...');
         // This looks like a raw query, let's analyze it
         try {
@@ -200,23 +198,13 @@ export const Dashboard: React.FC = () => {
       setPage(1);
 
       let results: SearchResponse;
-      if (selectedEngine === 'agentic') {
-        // Use the new Agentic Engine (Deep Analysis)
-        setSearchStatus('🧠 Deep Analysis: Understanding role requirements...');
-        results = await apiService.searchWithEngine(
-          selectedEngine,
-          searchParams,
-          { limit: 50 }
-        );
-      } else {
-        // Use Fast Match engine (with Vertex AI cross-encoder ranking)
-        setSearchStatus('⚡ Fast Match: Cross-encoder ranking...');
-        results = await apiService.searchWithEngine(
-          'legacy',
-          searchParams,
-          { limit: 50 }
-        );
-      }
+      // Use Fast Match engine (with Vertex AI cross-encoder ranking)
+      setSearchStatus('⚡ AI Search: Cross-encoder ranking...');
+      results = await apiService.searchWithEngine(
+        'legacy',
+        searchParams,
+        { limit: 50 }
+      );
 
       // Attach agent reasoning to the results for display (optional, if UI supports it)
       if (agentAnalysis && results.success) {
@@ -656,11 +644,6 @@ export const Dashboard: React.FC = () => {
                 <Typography variant="body2" color="text.secondary">
                   Paste a job description for AI-powered candidate matching
                 </Typography>
-                <EngineSelector
-                  selected={selectedEngine}
-                  onChange={setSelectedEngine}
-                  disabled={searchLoading}
-                />
               </Box>
               <JobDescriptionForm
                 onSearch={handleSearch}

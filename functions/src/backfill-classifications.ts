@@ -48,34 +48,64 @@ function extractRoleFromExperience(experience: string): { role: string; company:
 
 /**
  * Classify job function from text
+ * IMPORTANT: Order matters! C-level titles must be checked first.
  */
 function classifyFunction(text: string): string {
     const t = text.toLowerCase();
 
-    // Product function - higher priority
-    if (t.includes('product') || t.includes('cpo') || t.includes('produto') ||
+    // STEP 1: Check C-level titles FIRST (most specific)
+    // This prevents CMO being classified as engineering just because they worked at tech companies
+    if (t.includes('chief marketing officer') || t.includes(' cmo ') || t.includes(' cmo,')) {
+        return 'marketing';
+    }
+    if (t.includes('chief financial officer') || t.includes(' cfo ') || t.includes(' cfo,') ||
+        t.includes('financial director') || t.includes('finance director')) {
+        return 'finance';
+    }
+    if (t.includes('chief data officer') || t.includes(' cdo ') || t.includes('head of data') ||
+        t.includes('director of data') || t.includes('data director')) {
+        return 'data';
+    }
+    if (t.includes('chief people officer') || t.includes('chief hr officer') ||
+        t.includes('hr director') || t.includes('people director')) {
+        return 'hr';
+    }
+    if (t.includes('chief operating officer') || t.includes(' coo ') || t.includes(' coo,')) {
+        return 'operations';
+    }
+    if (t.includes('chief revenue officer') || t.includes(' cro ') || t.includes('sales director') ||
+        t.includes('vp of sales') || t.includes('vp sales')) {
+        return 'sales';
+    }
+
+    // STEP 2: Product function (CPO, Product roles)
+    if (t.includes('chief product officer') || t.includes(' cpo ') || t.includes(' cpo,') ||
+        t.includes('product') || t.includes('produto') ||
         /\bpm\b/.test(t) || t.includes('product manager') || t.includes('product owner')) {
         return 'product';
     }
 
-    // Engineering function
-    if (t.includes('engineer') || t.includes('developer') || t.includes('software') ||
-        t.includes('cto') || t.includes('devops') || t.includes('frontend') ||
-        t.includes('backend') || t.includes('full stack') || t.includes('fullstack') ||
-        t.includes('sre') || t.includes('infrastructure') || t.includes('platform') ||
-        t.includes('arquiteto') || t.includes('desenvolvedor') || t.includes('engenheiro') ||
-        t.includes('programador') || t.includes('tech lead') || t.includes('technical lead')) {
-        return 'engineering';
-    }
-
-    // Data function
-    if (t.includes('data') || t.includes('analytics') || t.includes('scientist') ||
-        t.includes('machine learning') || t.includes('ml ') || t.includes(' ml') ||
-        t.includes('dados') || t.includes('cientista') || t.includes('bi ') ||
-        t.includes('business intelligence')) {
+    // STEP 3: Data function - check BEFORE engineering
+    // Data Scientists and Analysts should not be classified as Engineers
+    if (t.includes('data scientist') || t.includes('data analyst') || t.includes('data engineer') ||
+        t.includes('machine learning') || t.includes('ml engineer') || t.includes('ai ') ||
+        t.includes('analytics') || t.includes('business intelligence') || t.includes(' bi ') ||
+        t.includes('cientista de dados') || t.includes('analista de dados')) {
         return 'data';
     }
 
+    // STEP 4: Engineering function (CTO, Engineers, Developers)
+    if (t.includes('chief technology officer') || t.includes(' cto ') || t.includes(' cto,') ||
+        t.includes('engineer') || t.includes('developer') || t.includes('software') ||
+        t.includes('devops') || t.includes('frontend') || t.includes('backend') ||
+        t.includes('full stack') || t.includes('fullstack') || t.includes('sre') ||
+        t.includes('infrastructure') || t.includes('platform') || t.includes('arquiteto') ||
+        t.includes('desenvolvedor') || t.includes('engenheiro') || t.includes('programador') ||
+        t.includes('tech lead') || t.includes('technical lead')) {
+        return 'engineering';
+    }
+
+    // STEP 5: Other functions (less common in tech industry)
     // Design function
     if (t.includes('design') || t.includes('ux') || t.includes('ui ') ||
         t.includes(' ui') || t.includes('creative') || t.includes('visual')) {
@@ -92,7 +122,7 @@ function classifyFunction(text: string): string {
     // Marketing function
     if (t.includes('marketing') || t.includes('growth') || t.includes('brand') ||
         t.includes('content') || t.includes('social media') || t.includes('acquisition') ||
-        t.includes('performance') || t.includes('digital marketing')) {
+        t.includes('digital marketing')) {
         return 'marketing';
     }
 
@@ -104,16 +134,16 @@ function classifyFunction(text: string): string {
     }
 
     // Finance function
-    if (t.includes('finance') || t.includes('cfo') || t.includes('accounting') ||
-        t.includes('financeiro') || t.includes('controller') || t.includes('treasury') ||
-        t.includes('contabil') || t.includes('fiscal')) {
+    if (t.includes('finance') || t.includes('accounting') || t.includes('financeiro') ||
+        t.includes('controller') || t.includes('treasury') || t.includes('contabil') ||
+        t.includes('fiscal')) {
         return 'finance';
     }
 
     // Operations function
-    if (t.includes('operations') || t.includes('coo') || t.includes('logistics') ||
-        t.includes('operações') || t.includes('supply chain') || t.includes('customer success') ||
-        t.includes('customer support') || t.includes('cs ')) {
+    if (t.includes('operations') || t.includes('logistics') || t.includes('operações') ||
+        t.includes('supply chain') || t.includes('customer success') ||
+        t.includes('customer support')) {
         return 'operations';
     }
 
