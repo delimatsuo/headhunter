@@ -107,7 +107,7 @@ git push origin main
 Headhunter is an AI-powered recruitment analytics system delivered as **eight Fastify microservices** working with shared infrastructure (Postgres+pgvector, Redis, Firestore, Pub/Sub). The system processes candidate data using **Together AI** for enrichment, stores enhanced profiles in Firestore, embeddings in Cloud SQL (pgvector), and exposes search/admin APIs via Cloud Run services.
 
 **Canonical repository path:** `/Volumes/Extreme Pro/myprojects/headhunter`
-**DO NOT** use deprecated clone: `/Users/delimatsuo/Documents/Coding/headhunter`
+**DO NOT** use deprecated clone in `~/Documents/Coding/` - use only the canonical path above.
 
 TDD is mandatory for all work. See `docs/TDD_PROTOCOL.md`.
 
@@ -232,7 +232,9 @@ python3 scripts/prd_compliant_validation.py
 
 ### Production Stack
 - **AI Processing**: Together AI (meta-llama/Llama-3.1-8B-Instruct-Turbo)
-- **Embeddings**: VertexAI text-embedding-004 OR Together AI
+- **Embeddings**: Gemini (`gemini-embedding-001`) default, Vertex AI (`text-embedding-004`) fallback
+  - Set `EMBEDDING_PROVIDER=gemini|vertex|local|together` in environment
+  - See `docs/EMBEDDING_QUALITY_COMPARISON.md` for benchmarks
 - **Storage**: Firebase Firestore (profiles), Cloud SQL PostgreSQL + pgvector (search, embeddings)
 - **Cache**: Redis (Memorystore in production)
 - **API**: Fastify services on Cloud Run

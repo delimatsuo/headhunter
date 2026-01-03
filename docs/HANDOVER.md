@@ -1,6 +1,6 @@
-# Handover & Recovery Runbook (Updated 2025-12-22)
+# Handover & Recovery Runbook (Updated 2026-01-03)
 
-> Canonical repository path: `/Volumes/Extreme Pro/myprojects/headhunter`. Do **not** work from `/Users/Delimatsuo/Documents/Coding/headhunter`.
+> Canonical repository path: `/Volumes/Extreme Pro/myprojects/headhunter`. Do **not** work from deprecated clones in `~/Documents/Coding/`.
 > Guardrail: all automation wrappers under `scripts/` source `scripts/utils/repo_guard.sh` and exit immediately when invoked from non-canonical clones.
 
 This runbook is the single source of truth for resuming work or restoring local parity with production. It reflects the **Hybrid Architecture** (Fastify microservices for Search + Firebase Cloud Functions for Agency Management).
@@ -9,13 +9,55 @@ This runbook is the single source of truth for resuming work or restoring local 
 
 ## 🎯 EXECUTIVE SUMMARY FOR NEW AI CODING AGENT
 
-**Last Updated**: 2025-12-22
-**Project Status**: Production-ready. Embeddings complete at 99%+ coverage. UI rebranded to Ellatech.
-**Next Session**: Continue any pending features, monitor embedding generation for new candidates.
+**Last Updated**: 2026-01-03
+**Project Status**: Production-ready. Gemini embedding provider implemented for cost savings. CI pipeline fixed.
+**Next Session**: Deploy Gemini embeddings to production, monitor cost reduction.
 
 ---
 
-### ✅ RECENT SESSION (Dec 22, 2025) - EMBEDDING FIXES & UI CLEANUP
+### ✅ RECENT SESSION (Jan 03, 2026) - COST OPTIMIZATION & GEMINI EMBEDDINGS
+
+**Cost Analysis Completed:**
+- Analyzed GCP billing: ~$523/month (Dec 2025)
+- Vertex AI embeddings: $206/month (39% of total cost)
+- Identified opportunity to switch to Gemini embeddings for significant savings
+
+**Gemini Embedding Provider Implemented:**
+- **New Provider**: `gemini-embedding-001` added to `functions/src/embedding-provider.ts`
+- **Quality Improvement**: 68% vs 66.3% on MTEB benchmark (+2.5%)
+- **Cost Savings**: FREE tier (1,500 req/day) or $0.15/1M tokens vs $0.025/1M chars
+- **Estimated Savings**: ~$150-200/month (~$2,000/year)
+- **Compatibility**: 768 dimensions (matches existing pgvector setup)
+
+**To Deploy Gemini Embeddings:**
+```bash
+./scripts/switch-to-gemini-embeddings.sh deploy
+```
+
+**CI Pipeline Fixed:**
+- Added missing dependencies to `services/package.json`:
+  - `lodash`, `@types/lodash`
+  - `@google-cloud/monitoring`
+  - `simple-statistics`
+  - `date-fns`
+  - `remove-accents`
+- Added missing env vars to CI workflows: `GOOGLE_CLOUD_PROJECT`, `FIREBASE_PROJECT_ID`
+
+**Files Created:**
+- `functions/src/embedding-provider.ts` (modified - added GeminiEmbeddingProvider)
+- `scripts/switch-to-gemini-embeddings.sh` (deployment script)
+- `scripts/cost-optimization.sh` (general cost optimization)
+- `docs/COST_OPTIMIZATION_REPORT.md`
+- `docs/EMBEDDING_QUALITY_COMPARISON.md`
+- `docs/EMBEDDING_COST_COMPARISON.md`
+
+**Commits Pushed:**
+- `4e4f64f` - fix: add missing dependencies and env vars for CI
+- `c7aed21` - feat: add Gemini embedding provider for cost optimization
+
+---
+
+### ✅ PREVIOUS SESSION (Dec 22, 2025) - EMBEDDING FIXES & UI CLEANUP
 
 **Embedding Generation Fixed:**
 - **Root Cause Found**: Empty profile text was causing `INVALID_ARGUMENT: The text content is empty` errors from Vertex AI

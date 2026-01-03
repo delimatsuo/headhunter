@@ -161,8 +161,27 @@ Job Description
 | Model | Provider | Purpose |
 |-------|----------|---------|
 | `gemini-2.5-flash` | Google AI | Resume analysis, job analysis |
-| `text-embedding-004` | Vertex AI | 768-dim embeddings |
+| `gemini-embedding-001` | Gemini API | 768-dim embeddings (default, recommended) |
+| `text-embedding-004` | Vertex AI | 768-dim embeddings (fallback) |
 | Ranking API | Vertex AI | Cross-encoder reranking |
+
+### Embedding Provider Configuration
+
+The embedding provider is configurable via the `EMBEDDING_PROVIDER` environment variable:
+
+| Provider | Model | Quality (MTEB) | Cost | Notes |
+|----------|-------|----------------|------|-------|
+| `gemini` (default) | gemini-embedding-001 | 68% | FREE tier (1,500 req/day) | Recommended |
+| `vertex` | text-embedding-004 | 66.3% | ~$0.025/1M chars | Legacy default |
+| `local` | deterministic hash | N/A | Free | Development only |
+| `together` | M2-BERT-80M | ~58% | ~$0.008/1M tokens | Budget option |
+
+To switch providers, set in `functions/.env`:
+```bash
+EMBEDDING_PROVIDER=gemini  # or vertex, local, together
+```
+
+See `docs/EMBEDDING_QUALITY_COMPARISON.md` for detailed benchmarks.
 
 ## Key Directories
 

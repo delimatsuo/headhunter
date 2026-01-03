@@ -3,7 +3,7 @@
 This section supersedes prior PRD content. Region: `us-central1` (current). MVP will:
 
 - Use Together AI (Qwen 2.5 32B) single‑pass enrichment with PII‑minimizing prompts; no retention/training.
-- Generate embeddings with Gemini Embeddings by default (configure for current availability); keep provider pluggable with Vertex as fallback.
+- Generate embeddings with Gemini Embeddings (`gemini-embedding-001`) by default; keep provider pluggable with Vertex AI (`text-embedding-004`) as fallback. Gemini provides better quality (68% vs 66.3% MTEB) at lower cost (FREE tier available).
 - Retrieve via Postgres hybrid: pgvector (HNSW/cosine) + PostgreSQL FTS (Portuguese); score fusion; Together Rerank on top‑K≈200 → top‑20.
 - Persist explainability evidence per skill; show “Why match” bullets in UI.
 - Store LinkedIn URLs; resumes in GCS (encrypted, signed URLs). No automated scraping in MVP.
@@ -54,7 +54,7 @@ Key change: AI analysis and enrichment run via Together AI’s hosted models (si
   - File upload pipeline (`file-upload-pipeline.ts`)
   - Enrichment orchestration and Firestore writes (`index.ts`)
   - Semantic search + embeddings (`vector-search.ts`, `generate-embeddings.ts`)
-- **Embeddings**: `VectorSearchService` currently generates embeddings via Vertex AI `text-embedding-004`. No implicit mock/deterministic fallback is used in production; for development only, you may explicitly set `EMBEDDING_PROVIDER=local`. Canonical collection is `candidate_embeddings` for similarity search. Unify any writers previously using `embeddings/`.
+- **Embeddings**: `VectorSearchService` generates embeddings via configurable provider (default: Gemini `gemini-embedding-001`, fallback: Vertex AI `text-embedding-004`). Set `EMBEDDING_PROVIDER=gemini|vertex|local|together` in environment. No implicit mock/deterministic fallback in production; for development only, use `EMBEDDING_PROVIDER=local`. Canonical collection is `candidate_embeddings` for similarity search (768 dimensions).
 - **Frontend**: React app on Firebase Hosting calling secure Cloud Functions.
 
 **Data models**
@@ -203,13 +203,23 @@ Acceptance criteria:
   - Add/remove allowed users, set role
   - View system health (Firestore counts, embedding stats)
 
-## Bake-off: Embeddings and Model Choice
+## Embedding Provider Decision (Jan 2026)
 
-- Baseline: Vertex `text-embedding-004` (768-dim, cosine)
-- Alternatives: Together AI embeddings (strong retrieval models), open models (e.g., BGE, Nomic, Embedding Gemma via self-hosting)
-- Dataset: ~2,000 candidates × 30–50 representative JDs (or candidate-to-candidate similarity)
-- Metrics: NDCG@10, MRR@10, Hit@10; latency and cost per 10k embeddings
-- Outcome: Standardize on best performer; keep provider pluggable via env
+**Decision**: Use Gemini `gemini-embedding-001` as default provider.
+
+| Provider | Model | Quality (MTEB) | Cost | Status |
+|----------|-------|----------------|------|--------|
+| **Gemini** | gemini-embedding-001 | 68% | FREE tier (1,500 req/day) | **Default** |
+| Vertex AI | text-embedding-004 | 66.3% | ~$0.025/1M chars | Fallback |
+| Together AI | M2-BERT-80M-32k | ~58% | ~$0.008/1M tokens | Budget option |
+
+**Rationale**:
+- Better quality: +2.5% on MTEB benchmark
+- Lower cost: FREE tier sufficient for typical usage, or $0.15/1M tokens at scale
+- Same ecosystem: Google-to-Google, simpler auth
+- Compatible: 768 dimensions match existing pgvector setup
+
+See `docs/EMBEDDING_QUALITY_COMPARISON.md` for detailed analysis.
 
 ## Development Process (TDD Required)
 
