@@ -15,6 +15,34 @@ This runbook is the single source of truth for resuming work or restoring local 
 
 ---
 
+## 📋 START HERE: Read Session Summaries First
+
+**Before diving into this full document, read the most recent session summary for quick context:**
+
+```bash
+# List all session summaries (most recent first)
+ls -t docs/SESSION_SUMMARY_*.md
+
+# Read the most recent one
+cat docs/SESSION_SUMMARY_2026-01-03.md
+```
+
+**Available Session Summaries:**
+| File | Date | Key Topics |
+|------|------|------------|
+| `docs/SESSION_SUMMARY_2026-01-03.md` | Jan 03, 2026 | Cost optimization, Gemini embeddings, CI fixes |
+
+Session summaries provide:
+- What was accomplished in the last session
+- What needs to be done next (prioritized)
+- Key files modified
+- Git commits made
+- Quick start commands
+
+**After reading the session summary**, continue with this document for full project context.
+
+---
+
 ### ✅ RECENT SESSION (Jan 03, 2026) - COST OPTIMIZATION & GEMINI EMBEDDINGS
 
 **Cost Analysis Completed:**
