@@ -1,3 +1,5 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
 export interface EmbeddingProvider {
   generateEmbedding(text: string): Promise<number[]>;
   name: string;
@@ -114,15 +116,126 @@ class TogetherStubProvider implements EmbeddingProvider {
   }
 }
 
+/**
+ * Gemini Embedding Provider
+ * Uses Google's gemini-embedding-001 model via the Gemini API.
+ *
+ * Benefits over Vertex AI text-embedding-004:
+ * - Better quality: 68% vs 66.3% on MTEB benchmark
+ * - Lower cost: $0.15/1M tokens (with FREE tier) vs $0.025/1M chars
+ * - Free tier: 1,500 requests/day
+ *
+ * Configuration:
+ * - GEMINI_API_KEY or GOOGLE_API_KEY environment variable required
+ * - EMBEDDING_DIMENSIONS (optional, default 768 for pgvector compatibility)
+ */
+class GeminiEmbeddingProvider implements EmbeddingProvider {
+  name = "gemini";
+  private genAI: GoogleGenerativeAI;
+  private model: string = "gemini-embedding-001";
+  private dimensions: number;
+
+  constructor() {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY or GOOGLE_API_KEY environment variable required for Gemini embeddings");
+    }
+    this.genAI = new GoogleGenerativeAI(apiKey);
+    // Default to 768 dimensions for compatibility with existing pgvector setup
+    this.dimensions = parseInt(process.env.EMBEDDING_DIMENSIONS || "768", 10);
+  }
+
+  private async generateEmbeddingWithRetry(text: string, retries = 3): Promise<number[]> {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        return await this.callGeminiAPI(text);
+      } catch (err: any) {
+        const isRetryable =
+          err?.status === 429 || // Rate limited
+          err?.status === 503 || // Service unavailable
+          err?.status === 500 || // Internal server error
+          err?.message?.includes('RESOURCE_EXHAUSTED') ||
+          err?.message?.includes('UNAVAILABLE');
+
+        if (isRetryable && attempt < retries) {
+          const backoffMs = attempt * 2000 + Math.random() * 1000;
+          console.log(`Gemini embedding attempt ${attempt} failed (${err?.status || err?.message}), retrying in ${Math.round(backoffMs)}ms...`);
+          await new Promise(resolve => setTimeout(resolve, backoffMs));
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw new Error("Max retries exceeded for Gemini embedding");
+  }
+
+  private async callGeminiAPI(text: string): Promise<number[]> {
+    // Truncate text to reasonable length (Gemini supports up to 2048 tokens input)
+    const truncatedText = text.substring(0, 8000); // ~2000 tokens worth
+
+    const embeddingModel = this.genAI.getGenerativeModel({ model: this.model });
+
+    // Use embedContent method for generating embeddings
+    // Content requires 'role' field (use 'user' for embedding requests)
+    const result = await embeddingModel.embedContent({
+      content: { role: "user", parts: [{ text: truncatedText }] },
+      taskType: "RETRIEVAL_DOCUMENT" as any, // Optimized for retrieval
+    });
+
+    const embedding = result.embedding;
+    if (!embedding || !embedding.values || !Array.isArray(embedding.values)) {
+      throw new Error("Gemini embeddings response missing or invalid");
+    }
+
+    // If dimensions don't match expected, truncate or error
+    let values = embedding.values;
+    if (values.length !== this.dimensions) {
+      if (values.length > this.dimensions) {
+        // Truncate to match pgvector dimension (Matryoshka property)
+        console.log(`Truncating Gemini embedding from ${values.length} to ${this.dimensions} dimensions`);
+        values = values.slice(0, this.dimensions);
+      } else {
+        console.warn(`Gemini returned ${values.length} dimensions, expected ${this.dimensions}`);
+      }
+    }
+
+    return values;
+  }
+
+  async generateEmbedding(text: string): Promise<number[]> {
+    if (!text || text.trim().length === 0) {
+      throw new Error("Cannot generate embedding for empty text");
+    }
+
+    try {
+      return await this.generateEmbeddingWithRetry(text);
+    } catch (err) {
+      console.error("Gemini embedding error:", err);
+      throw err instanceof Error ? err : new Error("Gemini embeddings unavailable");
+    }
+  }
+}
+
 export function getEmbeddingProvider(): EmbeddingProvider {
   const provider = (process.env.EMBEDDING_PROVIDER || "vertex").toLowerCase();
+  console.log(`Initializing embedding provider: ${provider}`);
+
   switch (provider) {
     case "local":
       return new LocalDeterministicProvider();
     case "together":
       return new TogetherStubProvider();
+    case "gemini":
+      return new GeminiEmbeddingProvider();
     case "vertex":
     default:
       return new VertexProvider();
   }
+}
+
+/**
+ * Get available embedding providers for documentation/debugging
+ */
+export function getAvailableEmbeddingProviders(): string[] {
+  return ["vertex", "gemini", "together", "local"];
 }
