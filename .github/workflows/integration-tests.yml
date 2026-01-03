@@ -89,9 +89,12 @@ jobs:
     - name: Set up test environment variables
       run: |
         echo "FIREBASE_TEST_CREDENTIALS=test_credentials" >> $GITHUB_ENV
+        echo "FIREBASE_PROJECT_ID=headhunter-test" >> $GITHUB_ENV
+        echo "GOOGLE_CLOUD_PROJECT=headhunter-test" >> $GITHUB_ENV
         echo "POSTGRES_TEST_URL=postgresql://test_user:test_password@localhost:5432/headhunter_test" >> $GITHUB_ENV
         echo "TOGETHER_AI_API_KEY=test_together_key" >> $GITHUB_ENV
         echo "VERTEX_AI_PROJECT_ID=headhunter-test" >> $GITHUB_ENV
+        echo "NODE_ENV=test" >> $GITHUB_ENV
         
     - name: Run smoke tests
       run: |

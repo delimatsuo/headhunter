@@ -31,6 +31,10 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
+    env:
+      GOOGLE_CLOUD_PROJECT: headhunter-test
+      FIREBASE_PROJECT_ID: headhunter-test
+      NODE_ENV: test
     steps:
       - uses: actions/checkout@v4
 
