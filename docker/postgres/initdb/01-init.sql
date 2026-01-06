@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS search.candidate_profiles (
     current_title TEXT,
     headline TEXT,
     location TEXT,
+    country TEXT,
     industries TEXT[] DEFAULT ARRAY[]::TEXT[],
     skills TEXT[] DEFAULT ARRAY[]::TEXT[],
     years_experience NUMERIC(4,1),

@@ -53,6 +53,69 @@ function computeSkillMatches(
   };
 }
 
+// Country indicators for auto-extraction from job descriptions
+const BRAZIL_INDICATORS = [
+  'são paulo', 'sao paulo', 'rio de janeiro', 'brasil', 'brazil',
+  'belo horizonte', 'curitiba', 'porto alegre', 'brasília', 'brasilia',
+  'recife', 'salvador', 'fortaleza', 'campinas', 'manaus'
+];
+
+const US_INDICATORS = [
+  'united states', 'usa', 'u.s.', 'us only', 'new york', 'san francisco',
+  'los angeles', 'seattle', 'boston', 'chicago', 'austin', 'remote us'
+];
+
+function extractCountryFromJobDescription(jobDescription: string | undefined): string | null {
+  if (!jobDescription) return null;
+
+  const text = jobDescription.toLowerCase();
+
+  // Check for explicit location requirements
+  const locationPatterns = [
+    /based in\s+([^,.\n]+)/i,
+    /located in\s+([^,.\n]+)/i,
+    /position in\s+([^,.\n]+)/i,
+    /role in\s+([^,.\n]+)/i,
+    /office in\s+([^,.\n]+)/i,
+    /location:\s*([^,.\n]+)/i
+  ];
+
+  for (const pattern of locationPatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      const location = match[1].toLowerCase().trim();
+      // Check if extracted location is a Brazil indicator
+      for (const indicator of BRAZIL_INDICATORS) {
+        if (location.includes(indicator)) {
+          return 'Brazil';
+        }
+      }
+      // Check if extracted location is a US indicator
+      for (const indicator of US_INDICATORS) {
+        if (location.includes(indicator)) {
+          return 'United States';
+        }
+      }
+    }
+  }
+
+  // Check for Brazil indicators anywhere in text
+  for (const indicator of BRAZIL_INDICATORS) {
+    if (text.includes(indicator)) {
+      return 'Brazil';
+    }
+  }
+
+  // Check for US indicators anywhere in text
+  for (const indicator of US_INDICATORS) {
+    if (text.includes(indicator)) {
+      return 'United States';
+    }
+  }
+
+  return null;
+}
+
 export class SearchService {
   private readonly config: SearchServiceConfig;
   private readonly pgClient: PgVectorClient;
@@ -123,6 +186,19 @@ export class SearchService {
     const timings: HybridSearchResponse['timings'] = {
       totalMs: 0
     };
+
+    // Auto-extract country from job description if not explicitly provided
+    const detectedCountry = extractCountryFromJobDescription(request.jobDescription);
+    if (detectedCountry && (!request.filters?.countries || request.filters.countries.length === 0)) {
+      request = {
+        ...request,
+        filters: {
+          ...request.filters,
+          countries: [detectedCountry]
+        }
+      };
+      this.logger.info({ requestId: context.requestId, detectedCountry }, 'Auto-detected country from job description.');
+    }
 
     let embedding = request.embedding;
     let embeddingCacheKey: string | null = null;
@@ -274,6 +350,12 @@ export class SearchService {
       }
     }
 
+    if (request.filters?.countries && row.country) {
+      if (request.filters.countries.includes(row.country)) {
+        matchReasons.push(`Located in ${row.country}`);
+      }
+    }
+
     if (typeof request.filters?.minExperienceYears === 'number' && row.years_experience) {
       if (row.years_experience >= request.filters.minExperienceYears) {
         matchReasons.push('Meets minimum experience threshold');
@@ -317,6 +399,7 @@ export class SearchService {
       title: row.current_title ?? undefined,
       headline: row.headline ?? undefined,
       location: row.location ?? undefined,
+      country: row.country ?? undefined,
       industries: row.industries ?? undefined,
       yearsExperience: row.years_experience ?? undefined,
       skills:

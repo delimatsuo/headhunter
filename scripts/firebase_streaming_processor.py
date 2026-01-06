@@ -17,6 +17,7 @@ import logging
 import firebase_admin
 from firebase_admin import credentials, firestore
 from dotenv import load_dotenv
+from country_extractor import extract_country_from_address
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LOCAL_BATCH_DIR = REPO_ROOT / "data" / "processed_batches"
@@ -195,6 +196,10 @@ Return ONLY the JSON object, no other text."""
                             
                             analysis = json.loads(content)
                             
+                            # Extract country from address
+                            address = candidate_data.get('address', '')
+                            country, city = extract_country_from_address(address)
+
                             # Create enhanced document
                             enhanced_data = {
                                 "candidate_id": candidate_id,
@@ -202,15 +207,21 @@ Return ONLY the JSON object, no other text."""
                                 "original_data": {
                                     "education": candidate_data.get('education', ''),
                                     "experience": candidate_data.get('experience', ''),
-                                    "comments": candidate_data.get('comments', [])
+                                    "comments": candidate_data.get('comments', []),
+                                    "address": address,
+                                    "headline": candidate_data.get('headline', ''),
                                 },
                                 "ai_analysis": analysis,
                                 "processing_metadata": {
                                     "timestamp": firestore.SERVER_TIMESTAMP,
                                     "processor": "firebase_streaming",
                                     "model": self.model,
-                                    "version": "2.0"
+                                    "version": "2.1"
                                 },
+                                # Location fields for filtering
+                                "country": country,
+                                "city": city,
+                                "address": address,
                                 # Flattened fields for querying
                                 "seniority_level": analysis.get("personal_details", {}).get("seniority_level", "Unknown"),
                                 "years_experience": analysis.get("personal_details", {}).get("years_of_experience", 0),

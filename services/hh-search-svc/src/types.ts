@@ -4,6 +4,7 @@ export type EmbeddingVector = number[];
 
 export interface HybridSearchFilters {
   locations?: string[];
+  countries?: string[];
   skills?: string[];
   industries?: string[];
   seniorityLevels?: string[];
@@ -37,6 +38,7 @@ export interface HybridSearchResultItem {
   fullName?: string;
   title?: string;
   location?: string;
+  country?: string;
   headline?: string;
   skills?: CandidateSkillMatch[];
   industries?: string[];
@@ -81,6 +83,7 @@ export interface PgHybridSearchRow {
   current_title?: string | null;
   headline?: string | null;
   location?: string | null;
+  country?: string | null;
   industries?: string[] | null;
   skills?: string[] | null;
   years_experience?: number | null;

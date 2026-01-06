@@ -122,6 +122,17 @@ export class PgVectorClient {
         }
       }
 
+      if (query.filters?.countries && query.filters.countries.length > 0) {
+        const normalizedCountries = query.filters.countries
+          .map((c) => c.trim())
+          .filter((c) => c.length > 0);
+        if (normalizedCountries.length > 0) {
+          values.push(normalizedCountries);
+          parameterIndex += 1;
+          filters.push(`cp.country = ANY($${parameterIndex}::text[])`);
+        }
+      }
+
       if (query.filters?.industries && query.filters.industries.length > 0) {
         values.push(query.filters.industries);
         parameterIndex += 1;
@@ -195,6 +206,7 @@ export class PgVectorClient {
             cp.current_title,
             cp.headline,
             cp.location,
+            cp.country,
             cp.industries,
             cp.skills,
             cp.years_experience,
@@ -227,6 +239,7 @@ export class PgVectorClient {
             cp.current_title,
             cp.headline,
             cp.location,
+            cp.country,
             cp.industries,
             cp.skills,
             cp.years_experience,
@@ -242,6 +255,7 @@ export class PgVectorClient {
           current_title,
           headline,
           location,
+          country,
           industries,
           skills,
           years_experience,
