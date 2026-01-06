@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node", "jest"],
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": [
+    "common/src/**/*.ts",
+    "hh-search-svc/src/**/*.ts",
+    "hh-msgs-svc/**/*.ts"
+  ]
+}
