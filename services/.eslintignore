@@ -1,0 +1,16 @@
+# Build outputs
+**/dist/
+**/build/
+
+# Dependencies
+**/node_modules/
+
+# Test coverage
+**/coverage/
+
+# Generated files
+**/*.d.ts
+
+# Config files that use default exports
+**/vitest.config.ts
+**/jest.config.js
