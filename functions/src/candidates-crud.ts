@@ -606,6 +606,14 @@ export const searchCandidates = onCall(
           const skills = (candidate.searchable_data?.skills_combined || candidate.primary_skills || []).join(' ').toLowerCase();
           const resumeText = (candidate.documents?.resume_text || '').toLowerCase();
           const location = (candidate.personal?.location || candidate.location || '').toLowerCase();
+          // Work history - stored as plain text string in original_data.experience
+          const workHistory = (typeof candidate.original_data?.experience === 'string'
+            ? candidate.original_data.experience
+            : '').toLowerCase();
+          // Education - also stored as plain text string
+          const education = (typeof candidate.original_data?.education === 'string'
+            ? candidate.original_data.education
+            : '').toLowerCase();
 
           // Use fuzzy matching for name (most likely to have typos)
           // Use exact contains for other fields for performance
@@ -614,7 +622,9 @@ export const searchCandidates = onCall(
             fuzzyMatch(queryLower, company) ||
             skills.includes(queryLower) ||
             resumeText.includes(queryLower) ||
-            location.includes(queryLower);
+            location.includes(queryLower) ||
+            workHistory.includes(queryLower) ||
+            education.includes(queryLower);
         });
 
         totalCount = filteredCandidates.length;
