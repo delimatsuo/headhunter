@@ -287,11 +287,21 @@ export class LegacyEngine implements IAIEngine {
 
             if (rankings && rankings.length > 0) {
                 console.log(`[LegacyEngine] Gemini Reranking returned ${rankings.length} results`);
+
+                // Debug: Log sample IDs to diagnose matching issues
+                const sampleInputIds = candidatesForRanking.slice(0, 3).map(c => c.candidate_id);
+                const sampleOutputIds = rankings.slice(0, 3).map(r => r.candidate_id);
+                console.log(`[LegacyEngine] Sample input IDs: ${JSON.stringify(sampleInputIds)}`);
+                console.log(`[LegacyEngine] Sample output IDs: ${JSON.stringify(sampleOutputIds)}`);
+
                 const rankedMap = new Map(rankings.map(r => [r.candidate_id, r]));
 
+                // Track match rate for debugging
+                let matchCount = 0;
                 const rerankedTop = topCandidates.map((c: any) => {
                     const candidateId = c.candidate_id || c.id || '';
                     const ranking = rankedMap.get(candidateId);
+                    if (ranking) matchCount++;
                     const geminiScore = ranking ? ranking.score : 0;
                     const retrievalScore = c.retrieval_score || 0;
 

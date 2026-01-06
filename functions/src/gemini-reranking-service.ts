@@ -134,11 +134,13 @@ ${this.getGeneralizedHiringCriteria(func, level)}
 ${candidateList}
 
 ## REQUIRED OUTPUT FORMAT
-Return a JSON array with ALL candidates ranked from best to worst fit:
+Return a JSON array with ALL candidates ranked from best to worst fit.
+CRITICAL: The "id" field MUST be the EXACT candidate ID value shown after "ID:" for each candidate (e.g., if a candidate shows "ID: abc123xyz", use "abc123xyz" as the id).
+
 \`\`\`json
 [
-  {"id": "candidate_id_1", "score": 95, "reason": "One sentence explanation"},
-  {"id": "candidate_id_2", "score": 88, "reason": "One sentence explanation"},
+  {"id": "<exact_candidate_id_from_above>", "score": 95, "reason": "One sentence explanation"},
+  {"id": "<exact_candidate_id_from_above>", "score": 88, "reason": "One sentence explanation"},
   ...
 ]
 \`\`\`
@@ -278,12 +280,39 @@ WEAKER CANDIDATES:
                 throw new Error('Response is not an array');
             }
 
-            // Map to our format
-            return parsed.map((item: any) => ({
-                candidate_id: item.id || item.candidate_id || '',
-                score: typeof item.score === 'number' ? item.score : 50,
-                rationale: item.reason || item.rationale || 'No explanation provided'
-            }));
+            // Build a map of original candidates for ID validation
+            const originalIdMap = new Map(originalCandidates.map(c => [c.candidate_id, c]));
+            const originalByIndex = new Map(originalCandidates.map((c, idx) => [String(idx + 1), c.candidate_id]));
+
+            // Debug: Log first few returned IDs
+            const sampleReturned = parsed.slice(0, 3).map((item: any) => item.id || item.candidate_id);
+            console.log(`[GeminiRerank] Sample returned IDs: ${JSON.stringify(sampleReturned)}`);
+
+            // Map to our format with ID recovery
+            const results = parsed.map((item: any) => {
+                let candidateId = item.id || item.candidate_id || '';
+
+                // If the returned ID is a number (1, 2, 3...), map it back to actual candidate_id
+                if (/^\d+$/.test(candidateId)) {
+                    const actualId = originalByIndex.get(candidateId);
+                    if (actualId) {
+                        console.log(`[GeminiRerank] Recovered ID: ${candidateId} -> ${actualId}`);
+                        candidateId = actualId;
+                    }
+                }
+
+                return {
+                    candidate_id: candidateId,
+                    score: typeof item.score === 'number' ? item.score : 50,
+                    rationale: item.reason || item.rationale || 'No explanation provided'
+                };
+            });
+
+            // Track match rate
+            const matchedCount = results.filter(r => originalIdMap.has(r.candidate_id)).length;
+            console.log(`[GeminiRerank] ID match rate: ${matchedCount}/${results.length}`);
+
+            return results;
 
         } catch (error) {
             console.error('[GeminiRerank] Failed to parse response:', error);
