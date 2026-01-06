@@ -1,35 +1,34 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
+// Jest provides beforeEach, describe, expect, it as globals
 import { MsgsRedisClient } from '../../src/redis-client';
 import type { MsgsRedisConfig } from '../../src/config';
 
 const clusterCalls: Array<{ nodes: unknown; options: unknown }> = [];
 
-const redisMock = vi.fn().mockImplementation(() => ({
-  on: vi.fn(),
-  get: vi.fn().mockResolvedValue(null),
-  setex: vi.fn()
+const redisMock = jest.fn().mockImplementation(() => ({
+  on: jest.fn(),
+  get: jest.fn().mockResolvedValue(null),
+  setex: jest.fn()
 }));
 
-const clusterMock = vi.fn().mockImplementation((nodes, options) => {
+const clusterMock = jest.fn().mockImplementation((nodes: unknown, options: unknown) => {
   clusterCalls.push({ nodes, options });
   return {
-    on: vi.fn(),
-    get: vi.fn().mockResolvedValue(null),
-    setex: vi.fn()
+    on: jest.fn(),
+    get: jest.fn().mockResolvedValue(null),
+    setex: jest.fn()
   };
 });
 
-vi.mock('ioredis', () => ({
+jest.mock('ioredis', () => ({
   __esModule: true,
   default: redisMock,
   Cluster: clusterMock
 }));
 
 const loggerStub = {
-  warn: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn()
+  warn: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn()
 };
 
 function buildConfig(url: string): MsgsRedisConfig {

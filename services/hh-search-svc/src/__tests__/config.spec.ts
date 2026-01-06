@@ -1,5 +1,4 @@
-import { describe, expect, it, afterEach } from 'vitest';
-
+// Jest provides describe, expect, it, afterEach as globals
 const ORIGINAL_ENV = { ...process.env };
 
 afterEach(async () => {

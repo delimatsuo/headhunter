@@ -110,28 +110,28 @@ describe('registerRoutes', () => {
     const config = baseConfig();
 
     const pgClient = {
-      healthCheck: vi.fn().mockResolvedValue({ status: 'healthy' }),
-      close: vi.fn()
+      healthCheck: jest.fn().mockResolvedValue({ status: 'healthy' }),
+      close: jest.fn()
     } as unknown as PgVectorClient;
 
     const redisClient = {
-      healthCheck: vi.fn().mockResolvedValue({ status: 'healthy' }),
-      get: vi.fn(),
-      set: vi.fn(),
-      buildHybridKey: vi.fn(),
-      close: vi.fn(),
-      isDisabled: vi.fn(() => false)
+      healthCheck: jest.fn().mockResolvedValue({ status: 'healthy' }),
+      get: jest.fn(),
+      set: jest.fn(),
+      buildHybridKey: jest.fn(),
+      close: jest.fn(),
+      isDisabled: jest.fn(() => false)
     } as unknown as SearchRedisClient;
 
     const embedClient = {
-      healthCheck: vi.fn().mockResolvedValue({ status: 'healthy' }),
-      embed: vi.fn()
+      healthCheck: jest.fn().mockResolvedValue({ status: 'healthy' }),
+      embed: jest.fn()
     } as unknown as EmbedClient;
 
     const rerankClient = {
-      healthCheck: vi.fn().mockResolvedValue({ status: 'healthy' }),
-      rerank: vi.fn(),
-      isEnabled: vi.fn().mockReturnValue(true)
+      healthCheck: jest.fn().mockResolvedValue({ status: 'healthy' }),
+      rerank: jest.fn(),
+      isEnabled: jest.fn().mockReturnValue(true)
     } as unknown as RerankClient;
 
     const performanceSnapshot: PerformanceSnapshot = {
@@ -148,8 +148,8 @@ describe('registerRoutes', () => {
     };
 
     const performanceTracker = {
-      record: vi.fn(),
-      getSnapshot: vi.fn().mockReturnValue(performanceSnapshot)
+      record: jest.fn(),
+      getSnapshot: jest.fn().mockReturnValue(performanceSnapshot)
     } as unknown as PerformanceTracker;
 
     const state = { isReady: true };
@@ -222,7 +222,7 @@ describe('registerRoutes', () => {
     (redisClient.get as jest.Mock).mockResolvedValue(cachedResponse);
 
     const service = {
-      computeCacheToken: vi.fn(() => 'token')
+      computeCacheToken: jest.fn(() => 'token')
     } as unknown as SearchService;
     dependencies.service = service;
 

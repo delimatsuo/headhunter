@@ -11,5 +11,7 @@ module.exports = {
   },
   moduleDirectories: ['node_modules', '<rootDir>/node_modules', '<rootDir>/../node_modules'],
   modulePathIgnorePatterns: ['<rootDir>/../.git-rewrite'],
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js']
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  testMatch: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.spec.ts', '**/tests/**/*.test.ts'],
+  testPathIgnorePatterns: ['/node_modules/', 'setup\\.ts$']
 };

@@ -19,13 +19,13 @@ import type { HybridSearchRequest, HybridSearchResponse, PgHybridSearchRow } fro
 import type { PerformanceTracker } from '../performance-tracker';
 
 const logger = {
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-  debug: vi.fn(),
-  child: vi.fn()
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  debug: jest.fn(),
+  child: jest.fn()
 };
-(logger.child as any).mockReturnValue(logger);
+(logger.child as jest.Mock).mockReturnValue(logger);
 
 const baseConfigTemplate = (): SearchServiceConfig => ({
   base: {
@@ -119,45 +119,45 @@ const createBaseConfig = (): SearchServiceConfig =>
   JSON.parse(JSON.stringify(baseConfigTemplate())) as SearchServiceConfig;
 
 const createPgClient = (): PgVectorClient => ({
-  hybridSearch: vi.fn(),
-  close: vi.fn(),
-  healthCheck: vi.fn().mockResolvedValue({ status: 'healthy' }),
-  initialize: vi.fn()
+  hybridSearch: jest.fn(),
+  close: jest.fn(),
+  healthCheck: jest.fn().mockResolvedValue({ status: 'healthy' }),
+  initialize: jest.fn()
 } as unknown as PgVectorClient);
 
 const createRedisClient = (): SearchRedisClient => ({
-  get: vi.fn(),
-  set: vi.fn(),
-  delete: vi.fn(),
-  buildHybridKey: vi.fn().mockReturnValue('hybrid-key'),
-  buildEmbeddingKey: vi.fn().mockReturnValue('embedding-key'),
-  healthCheck: vi.fn().mockResolvedValue({ status: 'healthy' }),
-  close: vi.fn(),
-  isDisabled: vi.fn().mockReturnValue(false)
+  get: jest.fn(),
+  set: jest.fn(),
+  delete: jest.fn(),
+  buildHybridKey: jest.fn().mockReturnValue('hybrid-key'),
+  buildEmbeddingKey: jest.fn().mockReturnValue('embedding-key'),
+  healthCheck: jest.fn().mockResolvedValue({ status: 'healthy' }),
+  close: jest.fn(),
+  isDisabled: jest.fn().mockReturnValue(false)
 } as unknown as SearchRedisClient);
 
 const createEmbedClient = (): EmbedClient => ({
-  generateEmbedding: vi.fn(),
-  healthCheck: vi.fn().mockResolvedValue({ status: 'healthy' })
+  generateEmbedding: jest.fn(),
+  healthCheck: jest.fn().mockResolvedValue({ status: 'healthy' })
 } as unknown as EmbedClient);
 
 const createRerankClient = (): RerankClient => ({
-  rerank: vi.fn(),
-  healthCheck: vi.fn().mockResolvedValue({ status: 'healthy' }),
-  isEnabled: vi.fn().mockReturnValue(true)
+  rerank: jest.fn(),
+  healthCheck: jest.fn().mockResolvedValue({ status: 'healthy' }),
+  isEnabled: jest.fn().mockReturnValue(true)
 } as unknown as RerankClient);
 
 const createPerformanceTracker = () => ({
-  record: vi.fn()
+  record: jest.fn()
 });
 
 describe('SearchService', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   afterEach(() => {
-    vi.resetModules();
+    jest.resetModules();
   });
 
   afterAll(() => {
@@ -349,9 +349,9 @@ describe('SearchService', () => {
     };
 
     const rerankClient = {
-      isEnabled: vi.fn(() => true),
-      rerank: vi.fn().mockResolvedValue(rerankResponse),
-      healthCheck: vi.fn()
+      isEnabled: jest.fn(() => true),
+      rerank: jest.fn().mockResolvedValue(rerankResponse),
+      healthCheck: jest.fn()
     } as unknown as RerankClient;
 
     const performanceTracker = createPerformanceTracker() as unknown as PerformanceTracker;

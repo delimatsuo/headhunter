@@ -1,37 +1,37 @@
 import type { PgVectorConfig } from '../config';
 import { PgVectorClient, PG_FTS_DICTIONARY } from '../pgvector-client';
 
-const connectMock = vi.fn();
-const releaseMock = vi.fn();
-const queryMock = vi.fn();
+const connectMock = jest.fn();
+const releaseMock = jest.fn();
+const queryMock = jest.fn();
 
 const poolInstance = {
   connect: connectMock,
-  end: vi.fn(),
-  on: vi.fn(),
+  end: jest.fn(),
+  on: jest.fn(),
   totalCount: 0,
   idleCount: 0,
   waitingCount: 0
 };
 
-vi.mock('pg', () => {
+jest.mock('pg', () => {
   return {
-    Pool: vi.fn(() => poolInstance)
+    Pool: jest.fn(() => poolInstance)
   };
 });
 
-vi.mock('pgvector/pg', () => ({
-  registerType: vi.fn(),
-  toSql: vi.fn((v) => JSON.stringify(v))
+jest.mock('pgvector/pg', () => ({
+  registerType: jest.fn(),
+  toSql: jest.fn((v: unknown) => JSON.stringify(v))
 }));
 
 describe('PgVectorClient', () => {
   const logger = {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-    child: vi.fn()
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+    child: jest.fn()
   };
 
   const baseConfig: PgVectorConfig = {

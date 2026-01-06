@@ -16,7 +16,7 @@ describe('MetricsClient', () => {
   };
 
   function createClient(mockResponse: { status: number; ok: boolean; body: unknown }) {
-    const fetchFn = vi.fn(async () => ({
+    const fetchFn = jest.fn(async () => ({
       status: mockResponse.status,
       ok: mockResponse.ok,
       json: async () => mockResponse.body
