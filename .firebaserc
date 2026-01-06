@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "headhunter-ai-0088"
-  }
+  },
+  "targets": {
+    "headhunter-ai-0088": {
+      "hosting": {
+        "production": [
+          "headhunter-ai-0088"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
