@@ -162,7 +162,7 @@ export class GeminiClient {
             },
             required: ['candidates']
           },
-          // @ts-ignore - thinking_config is a new feature not yet in the types
+          // @ts-expect-error - thinking_config is a new feature not yet in the types
           thinking_config: {
             thinking_budget: 0
           }
@@ -316,7 +316,7 @@ Return your analysis in JSON format matching this exact structure:
             const generateRequest: GenerateContentRequest = {
               contents: [{ role: 'user', parts: [{ text: prompt }] }],
               generationConfig: {
-                // @ts-ignore - thinking_config is a new feature
+                // @ts-expect-error - thinking_config is a new feature
                 thinking_config: {
                   thinking_budget: 0
                 }

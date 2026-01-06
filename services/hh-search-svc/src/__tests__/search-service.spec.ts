@@ -15,7 +15,7 @@ import type { PgVectorClient } from '../pgvector-client';
 import type { SearchRedisClient } from '../redis-client';
 import type { RerankClient, RerankResponse } from '../rerank-client';
 import { SearchService } from '../search-service';
-import type { HybridSearchRequest, HybridSearchResponse, PgHybridSearchRow } from '../types';
+import type { PgHybridSearchRow } from '../types';
 import type { PerformanceTracker } from '../performance-tracker';
 
 const logger = {
@@ -141,11 +141,13 @@ const createEmbedClient = (): EmbedClient => ({
   healthCheck: jest.fn().mockResolvedValue({ status: 'healthy' })
 } as unknown as EmbedClient);
 
-const createRerankClient = (): RerankClient => ({
+// Unused factory - tests create inline mocks for specific scenarios
+const _createRerankClient = (): RerankClient => ({
   rerank: jest.fn(),
   healthCheck: jest.fn().mockResolvedValue({ status: 'healthy' }),
   isEnabled: jest.fn().mockReturnValue(true)
 } as unknown as RerankClient);
+void _createRerankClient; // Silence unused warning
 
 const createPerformanceTracker = () => ({
   record: jest.fn()
