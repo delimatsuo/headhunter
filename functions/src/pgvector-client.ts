@@ -296,14 +296,17 @@ export class PgVectorClient {
     maxResults: number = 10,
     modelVersion?: string,
     chunkType: string = 'full_profile',
-    filters?: { current_level?: string | string[] }
+    filters?: { current_level?: string | string[]; countries?: string[] }
   ): Promise<SearchResult[]> {
     this.validateEmbedding(queryEmbedding);
 
     try {
       const client = await this.pool.connect();
       try {
-        if (!filters || Object.keys(filters).length === 0) {
+        // Check if we need country filtering
+        const hasCountryFilter = filters?.countries && filters.countries.length > 0;
+
+        if (!filters || (Object.keys(filters).length === 0 && !hasCountryFilter)) {
           // Use the optimized stored procedure if no filters (Legacy path)
           const result = await client.query(
             'SELECT * FROM similarity_search($1, $2, $3, $4, $5)',
@@ -325,13 +328,11 @@ export class PgVectorClient {
         } else {
           // Dynamic SQL for filtering (Agentic Sourcing path)
           // standard cosine similarity: 1 - (embedding <=> query)
+          // Join with candidate_profiles for country filtering
           let sql = `
-             SELECT candidate_id, 1 - (embedding <=> $1) as similarity, 
-                    metadata, model_version, chunk_type
-             FROM candidate_embeddings
-             WHERE model_version = $2 
-               AND chunk_type = $3
-               AND 1 - (embedding <=> $1) > $4
+             SELECT ce.candidate_id, 1 - (ce.embedding <=> $1) as similarity,
+                    ce.metadata, ce.model_version, ce.chunk_type
+             FROM candidate_embeddings ce
            `;
 
           const params: any[] = [
@@ -341,15 +342,33 @@ export class PgVectorClient {
             similarityThreshold
           ];
 
+          // Add JOIN for country filtering if needed
+          if (hasCountryFilter) {
+            sql += ` LEFT JOIN search.candidate_profiles cp ON ce.candidate_id = cp.candidate_id`;
+          }
+
+          sql += `
+             WHERE ce.model_version = $2
+               AND ce.chunk_type = $3
+               AND 1 - (ce.embedding <=> $1) > $4
+           `;
+
+          // Apply Country Filtering (include specified countries OR NULL)
+          // This ensures we show candidates in the target country plus those with unknown location
+          if (hasCountryFilter) {
+            sql += ` AND (cp.country = ANY($${params.length + 1}::text[]) OR cp.country IS NULL)`;
+            params.push(filters!.countries);
+          }
+
           // Apply Strict Level Filtering
-          if (filters.current_level) {
+          if (filters?.current_level) {
             const levels = Array.isArray(filters.current_level)
               ? filters.current_level
               : [filters.current_level];
 
             // Postgres JSONB containment or text match
             // Simplest: Check if metadata->>'current_level' is in the array
-            sql += ` AND metadata->>'current_level' = ANY($${params.length + 1})`;
+            sql += ` AND ce.metadata->>'current_level' = ANY($${params.length + 1})`;
             params.push(levels);
           }
 

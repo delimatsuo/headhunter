@@ -39,6 +39,7 @@ interface SearchQuery {
     current_level?: string;
     company_tier?: string;
     min_score?: number;
+    countries?: string[];
   };
   limit?: number;
   offset?: number;
@@ -67,6 +68,7 @@ interface SkillAwareSearchQuery {
     company_tier?: string;
     min_score?: number;
     location?: string;
+    countries?: string[];
   };
   limit?: number;
   offset?: number;
@@ -116,6 +118,73 @@ interface SkillAwareSearchResult {
     matchReasons?: string[];
     original_data?: any;
   };
+}
+
+// Country indicators for auto-extraction from job descriptions
+const BRAZIL_INDICATORS = [
+  'são paulo', 'sao paulo', 'rio de janeiro', 'brasil', 'brazil',
+  'belo horizonte', 'curitiba', 'porto alegre', 'brasília', 'brasilia',
+  'recife', 'salvador', 'fortaleza', 'campinas', 'manaus'
+];
+
+const US_INDICATORS = [
+  'united states', 'usa', 'u.s.', 'us only', 'new york', 'san francisco',
+  'los angeles', 'seattle', 'boston', 'chicago', 'austin', 'remote us'
+];
+
+/**
+ * Extract country from job description text
+ * Returns the detected country or null if no clear indicator found
+ */
+function extractCountryFromJobDescription(jobDescription: string | undefined): string | null {
+  if (!jobDescription) return null;
+
+  const text = jobDescription.toLowerCase();
+
+  // Check for explicit location requirements
+  const locationPatterns = [
+    /based in\s+([^,.\n]+)/i,
+    /located in\s+([^,.\n]+)/i,
+    /position in\s+([^,.\n]+)/i,
+    /role in\s+([^,.\n]+)/i,
+    /office in\s+([^,.\n]+)/i,
+    /location:\s*([^,.\n]+)/i
+  ];
+
+  for (const pattern of locationPatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      const location = match[1].toLowerCase().trim();
+      // Check if extracted location is a Brazil indicator
+      for (const indicator of BRAZIL_INDICATORS) {
+        if (location.includes(indicator)) {
+          return 'Brazil';
+        }
+      }
+      // Check if extracted location is a US indicator
+      for (const indicator of US_INDICATORS) {
+        if (location.includes(indicator)) {
+          return 'United States';
+        }
+      }
+    }
+  }
+
+  // Check for Brazil indicators anywhere in text
+  for (const indicator of BRAZIL_INDICATORS) {
+    if (text.includes(indicator)) {
+      return 'Brazil';
+    }
+  }
+
+  // Check for US indicators anywhere in text
+  for (const indicator of US_INDICATORS) {
+    if (text.includes(indicator)) {
+      return 'United States';
+    }
+  }
+
+  return null;
 }
 
 export class VectorSearchService {
@@ -372,6 +441,19 @@ export class VectorSearchService {
         throw new Error("Either query_text or query_vector must be provided");
       }
 
+      // Auto-detect country from query text if not explicitly provided in filters
+      const detectedCountry = extractCountryFromJobDescription(query.query_text);
+      const effectiveFilters = {
+        ...query.filters,
+        countries: query.filters?.countries?.length
+          ? query.filters.countries
+          : detectedCountry ? [detectedCountry] : undefined
+      };
+
+      if (detectedCountry && !query.filters?.countries?.length) {
+        console.log(`[VectorSearch] Auto-detected country filter: ${detectedCountry}`);
+      }
+
       if (this.usePgVector) {
         // Use pgvector for optimized similarity search
         await this.initializePgVectorClient();
@@ -387,7 +469,7 @@ export class VectorSearchService {
             fetchLimit,
             'vertex-ai-textembedding-004',
             'full_profile',
-            query.filters // Pass strict filters (e.g. current_level)
+            effectiveFilters // Pass filters including auto-detected country
           );
 
           console.log(`pgvector returned ${pgResults.length} raw results`);
