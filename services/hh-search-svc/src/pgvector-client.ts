@@ -129,7 +129,9 @@ export class PgVectorClient {
         if (normalizedCountries.length > 0) {
           values.push(normalizedCountries);
           parameterIndex += 1;
-          filters.push(`cp.country = ANY($${parameterIndex}::text[])`);
+          // Include candidates in specified countries OR with unknown location (NULL)
+          // This avoids excluding potentially relevant candidates just because we don't have their location
+          filters.push(`(cp.country = ANY($${parameterIndex}::text[]) OR cp.country IS NULL)`);
         }
       }
 
