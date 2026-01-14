@@ -8,6 +8,7 @@ import * as functions from "firebase-functions/v1";
 import { onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { z } from "zod";
+import { emailToDocId } from "./types/allowed-users";
 
 const firestore = admin.firestore();
 
@@ -28,6 +29,21 @@ export const handleNewUser = functions.region("us-central1").auth.user().onCreat
     const email = user.email || '';
     const normalizedEmail = email.toLowerCase();
     const isEllaUser = normalizedEmail.endsWith('@ellaexecutivesearch.com');
+
+    // Authorization check: Non-Ella users must be in allowed_users collection
+    if (!isEllaUser) {
+      const docId = emailToDocId(normalizedEmail);
+      const allowedUserDoc = await firestore.collection('allowed_users').doc(docId).get();
+
+      if (!allowedUserDoc.exists) {
+        console.log(`BLOCKED: Unauthorized user attempted sign-in: ${email}`);
+        // Delete the Firebase Auth user to prevent future sign-in attempts
+        await admin.auth().deleteUser(user.uid);
+        console.log(`Deleted unauthorized user from Firebase Auth: ${user.uid}`);
+        return { blocked: true, reason: 'User not in allowed_users collection' };
+      }
+      console.log(`Authorized client user from allowed_users: ${email}`);
+    }
 
     let orgId: string;
     let role = 'admin'; // Default role
@@ -155,6 +171,20 @@ export const completeOnboarding = onCall(
       // Determine organization based on email domain
       const normalizedEmail = userEmail ? userEmail.toLowerCase() : '';
       const isEllaUser = normalizedEmail && normalizedEmail.endsWith('@ellaexecutivesearch.com');
+
+      // Authorization check: Non-Ella users must be in allowed_users collection
+      if (!isEllaUser && normalizedEmail) {
+        const docId = emailToDocId(normalizedEmail);
+        const allowedUserDoc = await firestore.collection('allowed_users').doc(docId).get();
+
+        if (!allowedUserDoc.exists) {
+          console.log(`BLOCKED: Unauthorized completeOnboarding attempt: ${userEmail}`);
+          throw new HttpsError("permission-denied",
+            "Access denied: Your email is not authorized. Please contact your administrator to request access."
+          );
+        }
+        console.log(`Authorized client user completing onboarding: ${userEmail}`);
+      }
 
       if (userDoc.exists && userDoc.data()?.organization_id) {
         // User already onboarded, check if they need an Org Fix

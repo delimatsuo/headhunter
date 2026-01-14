@@ -46,7 +46,6 @@ service cloud.firestore {
     function isAllowedUser() {
       return isAuthenticated() && (
         exists(/databases/$(database)/documents/allowed_users/$(emailToDocId(getUserEmail()))) ||
-        getUserEmail().matches('.*@ella.com.br') ||
         getUserEmail().matches('.*@ellaexecutivesearch.com')
       );
     }
@@ -141,7 +140,6 @@ service cloud.firestore {
       // Note: Using direct checks instead of isAllowedUser() to avoid exists() call overhead
       allow read: if isAuthenticated() && (
         // Allow Ella team members to read all candidates
-        getUserEmail().matches('.*@ella.com.br') ||
         getUserEmail().matches('.*@ellaexecutivesearch.com') ||
         // Allow users to read candidates in their organization
         (request.auth.token.org_id != null && request.auth.token.org_id == resource.data.org_id)

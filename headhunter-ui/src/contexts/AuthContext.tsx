@@ -22,7 +22,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Allowed email domains for authentication
-const ALLOWED_DOMAINS = ['ella.com.br', 'ellaexecutivesearch.com'];
+const ALLOWED_DOMAINS = ['ellaexecutivesearch.com'];
 
 /**
  * Validates if the email domain is in the allowed list
@@ -94,23 +94,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let result: any = null;
 
     try {
-      // Validate domain before attempting sign-in
-      if (!isAllowedDomain(email)) {
-        throw new Error(
-          `Access denied: Only @ella.com.br and @ellaexecutivesearch.com email addresses are allowed. Your domain: @${email.split('@')[1] || 'unknown'}`
-        );
+      // Authorization check: Ella employees auto-allowed, others must be in allowed_users
+      const isEllaEmployee = isAllowedDomain(email);
+      if (!isEllaEmployee) {
+        // Not an Ella employee - check if they're in allowed_users collection BEFORE attempting sign-in
+        const isAllowed = await isUserAllowed(email);
+        if (!isAllowed) {
+          throw new Error(
+            'Access denied: Your email address is not authorized. Please contact your administrator to request access.'
+          );
+        }
       }
 
       result = await signInWithEmailAndPassword(auth, email, password);
-
-      // Check if user is in allowed_users collection
-      // const isAllowed = await isUserAllowed(email);
-      // if (!isAllowed) {
-      //   await firebaseSignOut(auth);
-      //   throw new Error(
-      //     'Access denied: Your email address is not authorized. Please contact your administrator to request access.'
-      //   );
-      // }
 
       // Complete onboarding for users without org access
       try {
@@ -156,23 +152,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userEmail = userResult.user.email;
       console.log('User signed in:', userEmail);
 
-      // Validate domain
-      if (!isAllowedDomain(userEmail)) {
-        await firebaseSignOut(auth);
-        throw new Error(
-          `Access denied: Only @ella.com.br and @ellaexecutivesearch.com email addresses are allowed. Your domain: @${userEmail?.split('@')[1] || 'unknown'}`
-        );
-      }
-
-      // Check if user is in allowed_users collection
+      // Authorization check: Ella employees auto-allowed, others must be in allowed_users
       if (userEmail) {
-        // const isAllowed = await isUserAllowed(userEmail);
-        // if (!isAllowed) {
-        //   await firebaseSignOut(auth);
-        //   throw new Error(
-        //     'Access denied: Your email address is not authorized. Please contact your administrator to request access.'
-        //   );
-        // }
+        const isEllaEmployee = isAllowedDomain(userEmail);
+        if (!isEllaEmployee) {
+          // Not an Ella employee - check if they're in allowed_users collection
+          const isAllowed = await isUserAllowed(userEmail);
+          if (!isAllowed) {
+            await firebaseSignOut(auth);
+            throw new Error(
+              'Access denied: Your email address is not authorized. Please contact your administrator to request access.'
+            );
+          }
+        }
       }
 
       // Complete onboarding for new or existing users without org access
@@ -213,23 +205,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string) => {
     try {
-      // Validate domain before attempting sign-up
-      if (!isAllowedDomain(email)) {
-        throw new Error(
-          `Access denied: Only @ella.com.br and @ellaexecutivesearch.com email addresses are allowed for registration. Your domain: @${email.split('@')[1] || 'unknown'}`
-        );
+      // Authorization check: Ella employees auto-allowed, others must be in allowed_users
+      const isEllaEmployee = isAllowedDomain(email);
+      if (!isEllaEmployee) {
+        // Not an Ella employee - check if they're pre-approved in allowed_users collection
+        const isAllowed = await isUserAllowed(email);
+        if (!isAllowed) {
+          throw new Error(
+            'Access denied: Your email address is not authorized. Please contact your administrator to request access before registering.'
+          );
+        }
       }
 
-      // Note: User must be added to allowed_users collection by an admin before they can actually sign in
-      // This creates the Firebase Auth account, but they won't pass the allowed_users check until added
+      // Create the account
       await createUserWithEmailAndPassword(auth, email, password);
-
-      // Sign out immediately after registration - they need admin approval
-      await firebaseSignOut(auth);
-
-      throw new Error(
-        'Registration successful! However, your account needs administrator approval before you can sign in. Please contact your administrator.'
-      );
+      console.log('Account created successfully for:', email);
     } catch (error) {
       console.error('Error signing up:', error);
       throw error;

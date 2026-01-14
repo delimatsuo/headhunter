@@ -1,4 +1,4 @@
-# Handover & Recovery Runbook (Updated 2026-01-03)
+# Handover & Recovery Runbook (Updated 2026-01-14)
 
 > Canonical repository path: `/Volumes/Extreme Pro/myprojects/headhunter`. Do **not** work from deprecated clones in `~/Documents/Coding/`.
 > Guardrail: all automation wrappers under `scripts/` source `scripts/utils/repo_guard.sh` and exit immediately when invoked from non-canonical clones.
@@ -9,9 +9,9 @@ This runbook is the single source of truth for resuming work or restoring local 
 
 ## 🎯 EXECUTIVE SUMMARY FOR NEW AI CODING AGENT
 
-**Last Updated**: 2026-01-03
-**Project Status**: Production-ready. Gemini embedding provider implemented for cost savings. CI pipeline fixed.
-**Next Session**: Deploy Gemini embeddings to production, monitor cost reduction.
+**Last Updated**: 2026-01-14
+**Project Status**: Production-ready. Critical security fix deployed - invitation-only access model implemented.
+**Next Session**: Monitor authentication, add clients to allowed_users as needed.
 
 ---
 
@@ -30,6 +30,7 @@ cat docs/SESSION_SUMMARY_2026-01-03.md
 **Available Session Summaries:**
 | File | Date | Key Topics |
 |------|------|------------|
+| `docs/SESSION_SUMMARY_2026-01-14.md` | Jan 14, 2026 | Critical security fix, invitation-only access |
 | `docs/SESSION_SUMMARY_2026-01-03.md` | Jan 03, 2026 | Cost optimization, Gemini embeddings, CI fixes |
 
 Session summaries provide:
@@ -43,7 +44,52 @@ Session summaries provide:
 
 ---
 
-### ✅ RECENT SESSION (Jan 03, 2026) - COST OPTIMIZATION & GEMINI EMBEDDINGS
+### ✅ RECENT SESSION (Jan 14, 2026) - CRITICAL SECURITY FIX
+
+**Security Vulnerability Fixed:**
+- **Issue**: Personal email (gmail.com) was able to sign in to app.ellasourcing.com
+- **Root Cause**: Multiple authentication bypasses - domain check happened after user creation, `allowed_users` check was commented out, backend had no authorization gate
+- **Impact**: Any Google account could access the application
+
+**Security Model Implemented: Invitation-Only Access**
+- **Ella employees** (`@ellaexecutivesearch.com`) are auto-allowed
+- **All other users** (clients) must be added to `allowed_users` collection by an admin BEFORE they can sign in
+- **Unauthorized users** are automatically deleted from Firebase Auth if they attempt sign-in
+
+**Changes Made:**
+
+1. **Frontend** (`headhunter-ui/src/contexts/AuthContext.tsx`):
+   - Enabled `isUserAllowed()` check for non-Ella users
+   - Checks `allowed_users` collection before allowing sign-in
+   - Removed `ella.com.br` from allowed domains (invalid)
+
+2. **Backend** (`functions/src/user-onboarding.ts`):
+   - `handleNewUser` trigger now checks `allowed_users` collection
+   - Unauthorized users are immediately deleted from Firebase Auth
+   - `completeOnboarding` function validates authorization
+
+3. **Firestore Rules** (`firestore.rules`):
+   - Already had proper `isAllowedUser()` function
+   - Removed `ella.com.br` domain check
+
+**Cleanup Performed:**
+- Deleted unauthorized test user from Firebase Auth
+- Deleted user document and 2 organizations created by unauthorized user
+
+**Files Modified:**
+- `headhunter-ui/src/contexts/AuthContext.tsx`
+- `functions/src/user-onboarding.ts`
+- `firestore.rules`
+
+**To Add New Clients:**
+1. Sign in as an Ella admin
+2. Go to Admin page
+3. Use "Allowed Users" panel to add client email
+4. Client can then sign in with Google
+
+---
+
+### ✅ PREVIOUS SESSION (Jan 03, 2026) - COST OPTIMIZATION & GEMINI EMBEDDINGS
 
 **Cost Analysis Completed:**
 - Analyzed GCP billing: ~$523/month (Dec 2025)
