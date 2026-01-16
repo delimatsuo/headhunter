@@ -23,7 +23,7 @@ const Login: React.FC = () => {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <h1>🎯 Headhunter AI</h1>
+          <h1>🎯 Ella Sourcing</h1>
           <p>AI-Powered Candidate Matching Platform</p>
         </div>
         

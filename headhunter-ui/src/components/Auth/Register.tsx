@@ -61,7 +61,7 @@ export const Register: React.FC<RegisterProps> = ({ onToggleMode }) => {
     <div className="auth-card">
       <div className="auth-header">
         <h2>Create Account</h2>
-        <p>Join Headhunter AI to start finding top candidates</p>
+        <p>Join Ella Sourcing to start finding top candidates</p>
       </div>
 
       {error && (

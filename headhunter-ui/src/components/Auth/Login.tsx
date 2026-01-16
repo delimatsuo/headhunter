@@ -50,7 +50,7 @@ export const Login: React.FC<LoginProps> = ({ onToggleMode }) => {
     <div className="auth-card">
       <div className="auth-header">
         <h2>Welcome Back</h2>
-        <p>Sign in to your Headhunter AI account</p>
+        <p>Sign in to your Ella Sourcing account</p>
       </div>
 
       {error && (

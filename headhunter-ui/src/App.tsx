@@ -6,7 +6,7 @@ import { AuthModal } from './components/Auth/AuthModal';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { SearchPage } from './components/Search/SearchPage';
 import { AdminPage } from './components/Admin/AdminPage';
-import { LandingPage } from './components/Landing/LandingPage';
+// LandingPage removed - now using external landing page (Lovable) at ellasourcing.com
 
 type PageType = 'dashboard' | 'search' | 'candidates' | 'analytics' | 'profile' | 'settings' | 'admin';
 
@@ -28,7 +28,7 @@ function AppContent() {
       <div className="app">
         <div className="loading-container">
           <div className="loading-spinner"></div>
-          <p>Loading Headhunter AI...</p>
+          <p>Loading Ella Sourcing...</p>
         </div>
       </div>
     );
@@ -51,9 +51,9 @@ function AppContent() {
   };
 
   const renderCurrentPage = () => {
-    // Show landing page for unauthenticated users
+    // Unauthenticated users will see the AuthModal directly (landing page is external)
     if (!user) {
-      return <LandingPage onGetStarted={() => setShowAuth(true)} />;
+      return null; // AuthModal handles login
     }
 
     // Decode role claim for admin gating
@@ -94,7 +94,7 @@ function AppContent() {
             <div className="empty-state">
               <div className="empty-icon">⚙️</div>
               <h2>Application Settings</h2>
-              <p>Configure your Headhunter AI experience</p>
+              <p>Configure your Ella Sourcing experience</p>
               <p className="text-muted">Settings panel coming soon...</p>
             </div>
           </div>
@@ -117,14 +117,13 @@ function AppContent() {
     }
   };
 
-  // For landing page, render without navbar wrapper
+  // For unauthenticated users, show login directly (landing page is on external domain)
   if (!user) {
     return (
-      <div className="app app-landing">
-        {renderCurrentPage()}
+      <div className="app app-login">
         <AuthModal
-          isOpen={showAuth}
-          onClose={() => setShowAuth(false)}
+          isOpen={true}
+          onClose={() => {}} // No close - must login
           initialMode="login"
         />
       </div>
