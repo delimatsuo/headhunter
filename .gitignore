@@ -63,6 +63,15 @@ data/enriched/
 data/enriched/**/*.json
 data/enriched/**/*.jsonl
 
+# Sourcing data - contains scraped LinkedIn profiles (PII)
+data/sourcing/*.json
+!data/sourcing/target_companies.json
+data/sourcing/company_*.json
+data/sourcing/tier_*.json
+data/sourcing/discovery_*.json
+data/sourcing/extracted_*.json
+data/sourcing/enrichment_*.json
+
 # Firebase
 .firebase/
 

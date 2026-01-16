@@ -1,0 +1,958 @@
+{
+  "metadata": {
+    "description": "Target companies for engineering talent acquisition",
+    "created": "2026-01-14",
+    "sources": [
+      "Tracxn Brazilian Unicorns",
+      "Crunchbase Brazil Tech",
+      "Manual curation"
+    ]
+  },
+  "tiers": {
+    "tier1_unicorns": {
+      "description": "Brazilian unicorns ($1B+ valuation)",
+      "priority": 100,
+      "companies": [
+        {
+          "name": "Nubank",
+          "linkedin_url": "https://www.linkedin.com/company/nubank/",
+          "valuation": "$45B",
+          "sector": "fintech",
+          "engineering_size_estimate": 2000
+        },
+        {
+          "name": "QuintoAndar",
+          "linkedin_url": "https://www.linkedin.com/company/quintoandar-com-br/",
+          "valuation": "$5.1B",
+          "sector": "proptech",
+          "engineering_size_estimate": 500
+        },
+        {
+          "name": "C6 Bank",
+          "linkedin_url": "https://www.linkedin.com/company/c6-bank/",
+          "valuation": "$5.05B",
+          "sector": "fintech",
+          "engineering_size_estimate": 800
+        },
+        {
+          "name": "iFood",
+          "linkedin_url": "https://www.linkedin.com/company/ifood-/",
+          "valuation": "$5B",
+          "sector": "foodtech",
+          "engineering_size_estimate": 1000
+        },
+        {
+          "name": "Creditas",
+          "linkedin_url": "https://www.linkedin.com/company/creditasbr/",
+          "valuation": "$4.8B",
+          "sector": "fintech",
+          "engineering_size_estimate": 600
+        },
+        {
+          "name": "Loft",
+          "linkedin_url": "https://www.linkedin.com/company/loftbr/",
+          "valuation": "$2.9B",
+          "sector": "proptech",
+          "engineering_size_estimate": 400
+        },
+        {
+          "name": "CloudWalk",
+          "linkedin_url": "https://www.linkedin.com/company/cloudwalk-inc/",
+          "valuation": "$2.15B",
+          "sector": "fintech",
+          "engineering_size_estimate": 300
+        },
+        {
+          "name": "Ebanx",
+          "linkedin_url": "https://www.linkedin.com/company/ebanx/",
+          "valuation": "$1B+",
+          "sector": "fintech",
+          "engineering_size_estimate": 400
+        },
+        {
+          "name": "Nuvemshop",
+          "linkedin_url": "https://www.linkedin.com/company/nuvemshop/",
+          "valuation": "$1B+",
+          "sector": "ecommerce",
+          "engineering_size_estimate": 300
+        },
+        {
+          "name": "Loggi",
+          "linkedin_url": "https://www.linkedin.com/company/loggi/",
+          "valuation": "$1B+",
+          "sector": "logistics",
+          "engineering_size_estimate": 400
+        },
+        {
+          "name": "MadeiraMadeira",
+          "linkedin_url": "https://www.linkedin.com/company/madeiramadeira/",
+          "valuation": "$1B+",
+          "sector": "ecommerce",
+          "engineering_size_estimate": 300
+        },
+        {
+          "name": "Dock",
+          "linkedin_url": "https://www.linkedin.com/company/dock-tech/",
+          "valuation": "$1.5B",
+          "sector": "fintech",
+          "engineering_size_estimate": 400
+        },
+        {
+          "name": "Unico",
+          "linkedin_url": "https://www.linkedin.com/company/unicoidtech/",
+          "valuation": "$1B+",
+          "sector": "identity",
+          "engineering_size_estimate": 300
+        },
+        {
+          "name": "Olist",
+          "linkedin_url": "https://www.linkedin.com/company/olist/",
+          "valuation": "$1B+",
+          "sector": "ecommerce",
+          "engineering_size_estimate": 250
+        },
+        {
+          "name": "QI Tech",
+          "linkedin_url": "https://www.linkedin.com/company/qi-tech/",
+          "valuation": "$1B",
+          "sector": "fintech",
+          "engineering_size_estimate": 200
+        }
+      ]
+    },
+    "tier2_big_tech_brazil": {
+      "description": "Global big tech with significant Brazil engineering presence",
+      "priority": 95,
+      "companies": [
+        {
+          "name": "Google Brazil",
+          "linkedin_url": "https://www.linkedin.com/company/google/",
+          "notes": "Filter for Brazil location",
+          "engineering_size_estimate": 500
+        },
+        {
+          "name": "Meta Brazil",
+          "linkedin_url": "https://www.linkedin.com/company/meta/",
+          "notes": "Filter for Brazil location",
+          "engineering_size_estimate": 300
+        },
+        {
+          "name": "Microsoft Brazil",
+          "linkedin_url": "https://www.linkedin.com/company/microsoft/",
+          "notes": "Filter for Brazil location",
+          "engineering_size_estimate": 400
+        },
+        {
+          "name": "Amazon Brazil",
+          "linkedin_url": "https://www.linkedin.com/company/amazon/",
+          "notes": "Filter for Brazil location",
+          "engineering_size_estimate": 600
+        },
+        {
+          "name": "Mercado Libre",
+          "linkedin_url": "https://www.linkedin.com/company/mercadolibre/",
+          "notes": "Huge Brazil presence",
+          "engineering_size_estimate": 2000
+        },
+        {
+          "name": "Salesforce Brazil",
+          "linkedin_url": "https://www.linkedin.com/company/salesforce/",
+          "notes": "Filter for Brazil location",
+          "engineering_size_estimate": 200
+        },
+        {
+          "name": "SAP Brazil",
+          "linkedin_url": "https://www.linkedin.com/company/sap/",
+          "notes": "Large Brazil office",
+          "engineering_size_estimate": 400
+        },
+        {
+          "name": "Oracle Brazil",
+          "linkedin_url": "https://www.linkedin.com/company/oracle/",
+          "notes": "Filter for Brazil location",
+          "engineering_size_estimate": 300
+        },
+        {
+          "name": "IBM Brazil",
+          "linkedin_url": "https://www.linkedin.com/company/ibm/",
+          "notes": "Major research center in Brazil",
+          "engineering_size_estimate": 500
+        },
+        {
+          "name": "Spotify Brazil",
+          "linkedin_url": "https://www.linkedin.com/company/spotify/",
+          "notes": "Growing Brazil presence",
+          "engineering_size_estimate": 100
+        },
+        {
+          "name": "Uber Brazil",
+          "linkedin_url": "https://www.linkedin.com/company/uber-com/",
+          "notes": "Major engineering hub in Brazil",
+          "engineering_size_estimate": 400
+        }
+      ]
+    },
+    "tier3_funded_scaleups": {
+      "description": "Series A-C funded Brazilian tech companies (2023-2025)",
+      "priority": 85,
+      "companies": [
+        {
+          "name": "PicPay",
+          "linkedin_url": "https://www.linkedin.com/company/picpay/",
+          "funding": "$500M+",
+          "sector": "fintech",
+          "engineering_size_estimate": 500
+        },
+        {
+          "name": "Stone Pagamentos",
+          "linkedin_url": "https://www.linkedin.com/company/stone-pagamentos/",
+          "funding": "Public (NYSE: STNE)",
+          "sector": "fintech",
+          "engineering_size_estimate": 800
+        },
+        {
+          "name": "PagSeguro",
+          "linkedin_url": "https://www.linkedin.com/company/pagseguro/",
+          "funding": "Public",
+          "sector": "fintech",
+          "engineering_size_estimate": 600
+        },
+        {
+          "name": "Celcoin",
+          "linkedin_url": "https://www.linkedin.com/company/celcoin/",
+          "funding": "$125M (2024)",
+          "sector": "fintech",
+          "engineering_size_estimate": 200
+        },
+        {
+          "name": "Omie",
+          "linkedin_url": "https://www.linkedin.com/company/omie/",
+          "funding": "$160M Series D (2025)",
+          "sector": "SaaS",
+          "engineering_size_estimate": 300
+        },
+        {
+          "name": "RD Station",
+          "linkedin_url": "https://www.linkedin.com/company/rdstation/",
+          "funding": "Acquired by TOTVS",
+          "sector": "martech",
+          "engineering_size_estimate": 300
+        },
+        {
+          "name": "VTEX",
+          "linkedin_url": "https://www.linkedin.com/company/vtex/",
+          "funding": "Public (NYSE: VTEX)",
+          "sector": "ecommerce",
+          "engineering_size_estimate": 500
+        },
+        {
+          "name": "Gympass (Wellhub)",
+          "linkedin_url": "https://www.linkedin.com/company/wellhub/",
+          "funding": "$300M+",
+          "sector": "fitness",
+          "engineering_size_estimate": 400
+        },
+        {
+          "name": "Hotmart",
+          "linkedin_url": "https://www.linkedin.com/company/hotmart/",
+          "funding": "Profitable, no external",
+          "sector": "edtech",
+          "engineering_size_estimate": 400
+        },
+        {
+          "name": "TOTVS",
+          "linkedin_url": "https://www.linkedin.com/company/totvs/",
+          "funding": "Public (B3: TOTS3)",
+          "sector": "enterprise software",
+          "engineering_size_estimate": 2000
+        },
+        {
+          "name": "Resultados Digitais",
+          "linkedin_url": "https://www.linkedin.com/company/resultados-digitais/",
+          "funding": "Part of TOTVS",
+          "sector": "martech",
+          "engineering_size_estimate": 200
+        },
+        {
+          "name": "Contabilizei",
+          "linkedin_url": "https://www.linkedin.com/company/contabilizei/",
+          "funding": "$100M+ Series C",
+          "sector": "fintech",
+          "engineering_size_estimate": 200
+        },
+        {
+          "name": "Clara",
+          "linkedin_url": "https://www.linkedin.com/company/clara-card/",
+          "funding": "$80M (2025)",
+          "sector": "fintech",
+          "engineering_size_estimate": 150
+        },
+        {
+          "name": "Hash",
+          "linkedin_url": "https://www.linkedin.com/company/hashlabs/",
+          "funding": "$15M+",
+          "sector": "fintech",
+          "engineering_size_estimate": 100
+        },
+        {
+          "name": "Caju",
+          "linkedin_url": "https://www.linkedin.com/company/caju/",
+          "funding": "$40M+",
+          "sector": "HR tech",
+          "engineering_size_estimate": 100
+        },
+        {
+          "name": "Gupy",
+          "linkedin_url": "https://www.linkedin.com/company/gupy/",
+          "funding": "$100M+",
+          "sector": "HR tech",
+          "engineering_size_estimate": 150
+        },
+        {
+          "name": "Warren",
+          "linkedin_url": "https://www.linkedin.com/company/warrenbrasil/",
+          "funding": "$100M+",
+          "sector": "fintech",
+          "engineering_size_estimate": 150
+        },
+        {
+          "name": "Kovi",
+          "linkedin_url": "https://www.linkedin.com/company/kovibr/",
+          "funding": "$100M+",
+          "sector": "mobility",
+          "engineering_size_estimate": 100
+        },
+        {
+          "name": "Buser",
+          "linkedin_url": "https://www.linkedin.com/company/buser/",
+          "funding": "$100M+",
+          "sector": "travel",
+          "engineering_size_estimate": 100
+        },
+        {
+          "name": "Méliuz",
+          "linkedin_url": "https://www.linkedin.com/company/meliuz/",
+          "funding": "Public (B3: CASH3)",
+          "sector": "fintech",
+          "engineering_size_estimate": 150
+        }
+      ]
+    },
+    "tier4_series_ab_funded": {
+      "description": "Series A-B funded Brazilian startups (2023-2025)",
+      "priority": 75,
+      "companies": [
+        {
+          "name": "Pipefy",
+          "linkedin_url": "https://www.linkedin.com/company/pipefy/",
+          "funding": "$75M Series C",
+          "sector": "workflow automation",
+          "engineering_size_estimate": 200
+        },
+        {
+          "name": "Involves",
+          "linkedin_url": "https://www.linkedin.com/company/involves/",
+          "funding": "Series B",
+          "sector": "trade marketing",
+          "engineering_size_estimate": 100
+        },
+        {
+          "name": "Runrun.it",
+          "linkedin_url": "https://www.linkedin.com/company/runrun-it/",
+          "funding": "Series A",
+          "sector": "project management",
+          "engineering_size_estimate": 80
+        },
+        {
+          "name": "Pipo Saúde",
+          "linkedin_url": "https://www.linkedin.com/company/piposaude/",
+          "funding": "Series A",
+          "sector": "healthtech",
+          "engineering_size_estimate": 80
+        },
+        {
+          "name": "Memed",
+          "linkedin_url": "https://www.linkedin.com/company/memed/",
+          "funding": "Series B",
+          "sector": "healthtech",
+          "engineering_size_estimate": 100
+        },
+        {
+          "name": "Freto",
+          "linkedin_url": "https://www.linkedin.com/company/freto/",
+          "funding": "Series A",
+          "sector": "logistics",
+          "engineering_size_estimate": 60
+        },
+        {
+          "name": "Logcomex",
+          "linkedin_url": "https://www.linkedin.com/company/logcomex/",
+          "funding": "Series B",
+          "sector": "logistics",
+          "engineering_size_estimate": 80
+        },
+        {
+          "name": "Sólides",
+          "linkedin_url": "https://www.linkedin.com/company/solides/",
+          "funding": "Series B",
+          "sector": "HR tech",
+          "engineering_size_estimate": 100
+        },
+        {
+          "name": "Feedz",
+          "linkedin_url": "https://www.linkedin.com/company/feedzoficial/",
+          "funding": "Series A",
+          "sector": "HR tech",
+          "engineering_size_estimate": 50
+        },
+        {
+          "name": "Neoway",
+          "linkedin_url": "https://www.linkedin.com/company/neoway/",
+          "funding": "Acquired by B3",
+          "sector": "big data",
+          "engineering_size_estimate": 150
+        },
+        {
+          "name": "BigDataCorp",
+          "linkedin_url": "https://www.linkedin.com/company/bigdatacorp/",
+          "funding": "Series B",
+          "sector": "data intelligence",
+          "engineering_size_estimate": 80
+        },
+        {
+          "name": "Cortex Intelligence",
+          "linkedin_url": "https://www.linkedin.com/company/cortex-intelligence/",
+          "funding": "Series A",
+          "sector": "AI analytics",
+          "engineering_size_estimate": 60
+        },
+        {
+          "name": "Parfin",
+          "linkedin_url": "https://www.linkedin.com/company/parfin/",
+          "funding": "$15M Series A",
+          "sector": "crypto/blockchain",
+          "engineering_size_estimate": 50
+        },
+        {
+          "name": "Aarin",
+          "linkedin_url": "https://www.linkedin.com/company/aarin-bank/",
+          "funding": "Series A (Itaú spinoff)",
+          "sector": "BaaS",
+          "engineering_size_estimate": 80
+        },
+        {
+          "name": "Z1",
+          "linkedin_url": "https://www.linkedin.com/company/z1app/",
+          "funding": "Series A",
+          "sector": "fintech (gen z)",
+          "engineering_size_estimate": 50
+        },
+        {
+          "name": "Cora",
+          "linkedin_url": "https://www.linkedin.com/company/corabr/",
+          "funding": "$116M Series B",
+          "sector": "fintech (SMB)",
+          "engineering_size_estimate": 150
+        },
+        {
+          "name": "Blu",
+          "linkedin_url": "https://www.linkedin.com/company/blu-pagamentos/",
+          "funding": "Series B",
+          "sector": "fintech",
+          "engineering_size_estimate": 80
+        },
+        {
+          "name": "Qulture.Rocks",
+          "linkedin_url": "https://www.linkedin.com/company/qulture-rocks/",
+          "funding": "Series B",
+          "sector": "HR tech",
+          "engineering_size_estimate": 60
+        },
+        {
+          "name": "Neon",
+          "linkedin_url": "https://www.linkedin.com/company/neon/",
+          "funding": "$300M+",
+          "sector": "digital bank",
+          "engineering_size_estimate": 300
+        },
+        {
+          "name": "Inter",
+          "linkedin_url": "https://www.linkedin.com/company/bancointer/",
+          "funding": "Public (NASDAQ: INTR)",
+          "sector": "digital bank",
+          "engineering_size_estimate": 500
+        },
+        {
+          "name": "Original (Banco)",
+          "linkedin_url": "https://www.linkedin.com/company/banco-original/",
+          "funding": "J&F Group",
+          "sector": "digital bank",
+          "engineering_size_estimate": 200
+        },
+        {
+          "name": "RecargaPay",
+          "linkedin_url": "https://www.linkedin.com/company/recargapay/",
+          "funding": "$70M+",
+          "sector": "fintech",
+          "engineering_size_estimate": 120
+        },
+        {
+          "name": "Asaas",
+          "linkedin_url": "https://www.linkedin.com/company/asaas/",
+          "funding": "Series B",
+          "sector": "fintech (payments)",
+          "engineering_size_estimate": 100
+        },
+        {
+          "name": "Transfeera",
+          "linkedin_url": "https://www.linkedin.com/company/transfeera/",
+          "funding": "Series A",
+          "sector": "fintech (payments)",
+          "engineering_size_estimate": 60
+        },
+        {
+          "name": "Magalu (Tech)",
+          "linkedin_url": "https://www.linkedin.com/company/magazineluiza/",
+          "funding": "Public (B3: MGLU3)",
+          "sector": "ecommerce",
+          "engineering_size_estimate": 800
+        },
+        {
+          "name": "Americanas (Tech)",
+          "linkedin_url": "https://www.linkedin.com/company/americanas-s-a/",
+          "funding": "Public",
+          "sector": "ecommerce",
+          "engineering_size_estimate": 400
+        },
+        {
+          "name": "Via (Casas Bahia)",
+          "linkedin_url": "https://www.linkedin.com/company/viavarejo/",
+          "funding": "Public",
+          "sector": "ecommerce",
+          "engineering_size_estimate": 300
+        },
+        {
+          "name": "Zenklub",
+          "linkedin_url": "https://www.linkedin.com/company/zenklub/",
+          "funding": "$45M+",
+          "sector": "mental health",
+          "engineering_size_estimate": 80
+        },
+        {
+          "name": "Psicologia Viva",
+          "linkedin_url": "https://www.linkedin.com/company/psicologiaviva/",
+          "funding": "Series A",
+          "sector": "mental health",
+          "engineering_size_estimate": 40
+        },
+        {
+          "name": "Dr. Consulta",
+          "linkedin_url": "https://www.linkedin.com/company/dr-consulta/",
+          "funding": "$100M+",
+          "sector": "healthtech",
+          "engineering_size_estimate": 100
+        }
+      ]
+    },
+    "tier5_emerging_startups": {
+      "description": "Early-stage startups with notable recent funding (2024-2025)",
+      "priority": 65,
+      "companies": [
+        {
+          "name": "Conta Simples",
+          "linkedin_url": "https://www.linkedin.com/company/contasimples/",
+          "funding": "$41.5M Series B (2024)",
+          "sector": "fintech (SMB)",
+          "engineering_size_estimate": 80
+        },
+        {
+          "name": "Vammo",
+          "linkedin_url": "https://www.linkedin.com/company/vammobr/",
+          "funding": "$45M Series B (2024)",
+          "sector": "clean mobility fintech",
+          "engineering_size_estimate": 50
+        },
+        {
+          "name": "NG.Cash",
+          "linkedin_url": "https://www.linkedin.com/company/ngcash/",
+          "funding": "$35M Series B (2024)",
+          "sector": "fintech (Gen Z)",
+          "engineering_size_estimate": 60
+        },
+        {
+          "name": "Huna",
+          "linkedin_url": "https://www.linkedin.com/company/hunahealth/",
+          "funding": "Series A (2024)",
+          "sector": "healthtech AI",
+          "engineering_size_estimate": 30
+        },
+        {
+          "name": "Genial Care",
+          "linkedin_url": "https://www.linkedin.com/company/genialcare/",
+          "funding": "Series A (2024)",
+          "sector": "autism healthtech",
+          "engineering_size_estimate": 40
+        },
+        {
+          "name": "Mombak",
+          "linkedin_url": "https://www.linkedin.com/company/mombak/",
+          "funding": "$30M (2024)",
+          "sector": "climate/carbon",
+          "engineering_size_estimate": 30
+        },
+        {
+          "name": "Iugu",
+          "linkedin_url": "https://www.linkedin.com/company/iugu/",
+          "funding": "$100M+ (Goldman)",
+          "sector": "fintech payments",
+          "engineering_size_estimate": 80
+        },
+        {
+          "name": "Vindi",
+          "linkedin_url": "https://www.linkedin.com/company/vindi/",
+          "funding": "Acquired by Locaweb",
+          "sector": "fintech payments",
+          "engineering_size_estimate": 60
+        },
+        {
+          "name": "Revelo",
+          "linkedin_url": "https://www.linkedin.com/company/revelo-io/",
+          "funding": "$50M+",
+          "sector": "HR tech marketplace",
+          "engineering_size_estimate": 80
+        },
+        {
+          "name": "Sympla",
+          "linkedin_url": "https://www.linkedin.com/company/sympla/",
+          "funding": "Movile portfolio",
+          "sector": "events/ticketing",
+          "engineering_size_estimate": 60
+        },
+        {
+          "name": "PlayKids",
+          "linkedin_url": "https://www.linkedin.com/company/playkids/",
+          "funding": "Movile portfolio",
+          "sector": "edtech kids",
+          "engineering_size_estimate": 50
+        },
+        {
+          "name": "Cielo",
+          "linkedin_url": "https://www.linkedin.com/company/cielo/",
+          "funding": "Public (B3: CIEL3)",
+          "sector": "payments",
+          "engineering_size_estimate": 500
+        },
+        {
+          "name": "Linx",
+          "linkedin_url": "https://www.linkedin.com/company/linx-oficial/",
+          "funding": "Acquired by TOTVS",
+          "sector": "retail software",
+          "engineering_size_estimate": 400
+        },
+        {
+          "name": "VAAS",
+          "linkedin_url": "https://www.linkedin.com/company/vaas-ai/",
+          "funding": "R$20M Series A (2024)",
+          "sector": "risk management",
+          "engineering_size_estimate": 40
+        },
+        {
+          "name": "Capim",
+          "linkedin_url": "https://www.linkedin.com/company/usecapim/",
+          "funding": "$26.7M Series A (2024)",
+          "sector": "healthtech",
+          "engineering_size_estimate": 50
+        },
+        {
+          "name": "Canopy",
+          "linkedin_url": "https://www.linkedin.com/company/canopy-tech-holding/",
+          "funding": "$100M (2025)",
+          "sector": "B2B software",
+          "engineering_size_estimate": 60
+        },
+        {
+          "name": "Agrolend",
+          "linkedin_url": "https://www.linkedin.com/company/agrolend/",
+          "funding": "$53M (2024)",
+          "sector": "agrifintech",
+          "engineering_size_estimate": 50
+        },
+        {
+          "name": "Trace Finance",
+          "linkedin_url": "https://www.linkedin.com/company/tracefinancebr/",
+          "funding": "$10M+ (2024)",
+          "sector": "fintech",
+          "engineering_size_estimate": 30
+        },
+        {
+          "name": "Dotz",
+          "linkedin_url": "https://www.linkedin.com/company/dotz/",
+          "funding": "Public (B3: DOTZ3)",
+          "sector": "loyalty",
+          "engineering_size_estimate": 80
+        },
+        {
+          "name": "Nomad",
+          "linkedin_url": "https://www.linkedin.com/company/nomadglobal/",
+          "funding": "$100M+",
+          "sector": "fintech",
+          "engineering_size_estimate": 100
+        },
+        {
+          "name": "Frete.com",
+          "linkedin_url": "https://www.linkedin.com/company/fretecom/",
+          "funding": "$90M+",
+          "sector": "logistics",
+          "engineering_size_estimate": 80
+        },
+        {
+          "name": "Tembici",
+          "linkedin_url": "https://www.linkedin.com/company/tembici/",
+          "funding": "$80M+",
+          "sector": "mobility",
+          "engineering_size_estimate": 60
+        },
+        {
+          "name": "Alice",
+          "linkedin_url": "https://www.linkedin.com/company/alice-saude/",
+          "funding": "$127M+",
+          "sector": "healthtech",
+          "engineering_size_estimate": 100
+        },
+        {
+          "name": "Facily",
+          "linkedin_url": "https://www.linkedin.com/company/facilyapp/",
+          "funding": "$100M+",
+          "sector": "social commerce",
+          "engineering_size_estimate": 80
+        },
+        {
+          "name": "Zé Delivery",
+          "linkedin_url": "https://www.linkedin.com/company/zedelivery/",
+          "funding": "AB InBev",
+          "sector": "delivery",
+          "engineering_size_estimate": 100
+        },
+        {
+          "name": "Daki",
+          "linkedin_url": "https://www.linkedin.com/company/daki/",
+          "funding": "$100M+",
+          "sector": "quick commerce",
+          "engineering_size_estimate": 80
+        },
+        {
+          "name": "Shopper",
+          "linkedin_url": "https://www.linkedin.com/company/shopperbr/",
+          "funding": "$80M+",
+          "sector": "grocery",
+          "engineering_size_estimate": 60
+        },
+        {
+          "name": "Liv Up",
+          "linkedin_url": "https://www.linkedin.com/company/livupbr/",
+          "funding": "$60M+",
+          "sector": "foodtech",
+          "engineering_size_estimate": 50
+        }
+      ]
+    },
+    "tier6_software_consultancies": {
+      "description": "Large Brazilian software consultancies with massive engineering teams",
+      "priority": 80,
+      "companies": [
+        {
+          "name": "CI&T",
+          "linkedin_url": "https://www.linkedin.com/company/ciloandt/",
+          "funding": "Public (NYSE: CINT)",
+          "sector": "software consultancy",
+          "engineering_size_estimate": 6000
+        },
+        {
+          "name": "BairesDev",
+          "linkedin_url": "https://www.linkedin.com/company/bairesdev/",
+          "funding": "Private, profitable",
+          "sector": "nearshore development",
+          "engineering_size_estimate": 4000
+        },
+        {
+          "name": "Luby Software",
+          "linkedin_url": "https://www.linkedin.com/company/luby-software/",
+          "funding": "Private",
+          "sector": "nearshore development",
+          "engineering_size_estimate": 500
+        },
+        {
+          "name": "Cheesecake Labs",
+          "linkedin_url": "https://www.linkedin.com/company/cheesecakelabs/",
+          "funding": "Private",
+          "sector": "product development",
+          "engineering_size_estimate": 200
+        },
+        {
+          "name": "DB1 Global Software",
+          "linkedin_url": "https://www.linkedin.com/company/db1-global-software/",
+          "funding": "Private",
+          "sector": "software consultancy",
+          "engineering_size_estimate": 800
+        },
+        {
+          "name": "BRQ Digital Solutions",
+          "linkedin_url": "https://www.linkedin.com/company/brq-digital-solutions/",
+          "funding": "Private",
+          "sector": "digital transformation",
+          "engineering_size_estimate": 3000
+        },
+        {
+          "name": "Zallpy Digital",
+          "linkedin_url": "https://www.linkedin.com/company/zallpy/",
+          "funding": "Private",
+          "sector": "nearshore development",
+          "engineering_size_estimate": 400
+        },
+        {
+          "name": "Avenue Code",
+          "linkedin_url": "https://www.linkedin.com/company/avenuecode/",
+          "funding": "Private",
+          "sector": "software consultancy",
+          "engineering_size_estimate": 500
+        },
+        {
+          "name": "Objective",
+          "linkedin_url": "https://www.linkedin.com/company/objective-solutions/",
+          "funding": "Acquired by Globant",
+          "sector": "software consultancy",
+          "engineering_size_estimate": 400
+        },
+        {
+          "name": "Stefanini",
+          "linkedin_url": "https://www.linkedin.com/company/stefanini/",
+          "funding": "Private multinational",
+          "sector": "IT services",
+          "engineering_size_estimate": 5000
+        },
+        {
+          "name": "Dextra Digital",
+          "linkedin_url": "https://www.linkedin.com/company/dextra-digital/",
+          "funding": "Acquired by CI&T",
+          "sector": "digital transformation",
+          "engineering_size_estimate": 600
+        },
+        {
+          "name": "Ateliware",
+          "linkedin_url": "https://www.linkedin.com/company/ateliware/",
+          "funding": "Private",
+          "sector": "software development",
+          "engineering_size_estimate": 150
+        },
+        {
+          "name": "Supero Technology",
+          "linkedin_url": "https://www.linkedin.com/company/supero-tecnologia/",
+          "funding": "Private",
+          "sector": "nearshore development",
+          "engineering_size_estimate": 400
+        },
+        {
+          "name": "Encora (Daitan)",
+          "linkedin_url": "https://www.linkedin.com/company/encora-inc/",
+          "funding": "PE backed",
+          "sector": "nearshore development",
+          "engineering_size_estimate": 800
+        },
+        {
+          "name": "Matera",
+          "linkedin_url": "https://www.linkedin.com/company/matera/",
+          "funding": "Private",
+          "sector": "fintech infrastructure",
+          "engineering_size_estimate": 300
+        }
+      ]
+    },
+    "tier7_missing_unicorns": {
+      "description": "Additional unicorns and late-stage companies not in tier1",
+      "priority": 90,
+      "companies": [
+        {
+          "name": "Wildlife Studios",
+          "linkedin_url": "https://www.linkedin.com/company/wildlife-studios/",
+          "valuation": "$3B",
+          "sector": "gaming",
+          "engineering_size_estimate": 500
+        },
+        {
+          "name": "Movile",
+          "linkedin_url": "https://www.linkedin.com/company/movile/",
+          "valuation": "$1B+",
+          "sector": "holding/tech",
+          "engineering_size_estimate": 300
+        },
+        {
+          "name": "CargoX",
+          "linkedin_url": "https://www.linkedin.com/company/cargox-logistica/",
+          "valuation": "$1B+",
+          "sector": "logistics",
+          "engineering_size_estimate": 200
+        },
+        {
+          "name": "Agibank",
+          "linkedin_url": "https://www.linkedin.com/company/agibank/",
+          "valuation": "$1B+",
+          "sector": "fintech",
+          "engineering_size_estimate": 400
+        },
+        {
+          "name": "2TM (Mercado Bitcoin)",
+          "linkedin_url": "https://www.linkedin.com/company/2tmgroup/",
+          "valuation": "$2.1B",
+          "sector": "crypto",
+          "engineering_size_estimate": 200
+        },
+        {
+          "name": "Mercado Bitcoin",
+          "linkedin_url": "https://www.linkedin.com/company/mercadobitcoin/",
+          "valuation": "Part of 2TM",
+          "sector": "crypto exchange",
+          "engineering_size_estimate": 150
+        },
+        {
+          "name": "Bitso",
+          "linkedin_url": "https://www.linkedin.com/company/bitso/",
+          "valuation": "$2.2B",
+          "sector": "crypto",
+          "engineering_size_estimate": 200
+        },
+        {
+          "name": "Hashdex",
+          "linkedin_url": "https://www.linkedin.com/company/hashdex/",
+          "valuation": "$1B+",
+          "sector": "crypto asset management",
+          "engineering_size_estimate": 80
+        },
+        {
+          "name": "Locaweb",
+          "linkedin_url": "https://www.linkedin.com/company/locaweb/",
+          "funding": "Public (B3: LWSA3)",
+          "sector": "cloud/hosting",
+          "engineering_size_estimate": 500
+        },
+        {
+          "name": "Rede",
+          "linkedin_url": "https://www.linkedin.com/company/redeoficial/",
+          "funding": "Itaú subsidiary",
+          "sector": "payments",
+          "engineering_size_estimate": 400
+        }
+      ]
+    }
+  },
+  "summary": {
+    "total_companies": 135,
+    "estimated_engineering_talent": 47000,
+    "tier1_companies": 15,
+    "tier2_companies": 11,
+    "tier3_companies": 20,
+    "tier4_companies": 30,
+    "tier5_companies": 28,
+    "tier6_companies": 15,
+    "tier7_companies": 10
+  }
+}

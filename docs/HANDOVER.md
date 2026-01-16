@@ -1,4 +1,4 @@
-# Handover & Recovery Runbook (Updated 2026-01-14)
+# Handover & Recovery Runbook (Updated 2026-01-16)
 
 > Canonical repository path: `/Volumes/Extreme Pro/myprojects/headhunter`. Do **not** work from deprecated clones in `~/Documents/Coding/`.
 > Guardrail: all automation wrappers under `scripts/` source `scripts/utils/repo_guard.sh` and exit immediately when invoked from non-canonical clones.
@@ -9,9 +9,9 @@ This runbook is the single source of truth for resuming work or restoring local 
 
 ## 🎯 EXECUTIVE SUMMARY FOR NEW AI CODING AGENT
 
-**Last Updated**: 2026-01-14
-**Project Status**: Production-ready. Critical security fix deployed - invitation-only access model implemented.
-**Next Session**: Monitor authentication, add clients to allowed_users as needed.
+**Last Updated**: 2026-01-16
+**Project Status**: Production-ready. Sourcing pipeline active - building Brazilian engineer database.
+**Next Session**: Resume enrichment pipeline, generate embeddings for 15K+ sourcing candidates.
 
 ---
 
@@ -30,6 +30,7 @@ cat docs/SESSION_SUMMARY_2026-01-03.md
 **Available Session Summaries:**
 | File | Date | Key Topics |
 |------|------|------------|
+| `docs/SESSION_SUMMARY_2026-01-16.md` | Jan 16, 2026 | Sourcing pipeline status check, 15K candidates |
 | `docs/SESSION_SUMMARY_2026-01-14.md` | Jan 14, 2026 | Critical security fix, invitation-only access |
 | `docs/SESSION_SUMMARY_2026-01-03.md` | Jan 03, 2026 | Cost optimization, Gemini embeddings, CI fixes |
 
@@ -44,7 +45,32 @@ Session summaries provide:
 
 ---
 
-### ✅ RECENT SESSION (Jan 14, 2026) - CRITICAL SECURITY FIX
+### ✅ RECENT SESSION (Jan 16, 2026) - SOURCING PIPELINE STATUS CHECK
+
+**Brazilian Engineer Database Building:**
+- **Total Candidates**: 15,117 sourced profiles
+- **Enriched**: 4,598 (30.4%) with AI analysis
+- **Pending Enrichment**: 10,519 awaiting processing
+- **Embeddings**: 25 (need generation after enrichment)
+
+**Scraping Completed (Jan 15):**
+- Tier5 (Emerging Startups): 962 profiles from 28 companies
+- Tier6 (Software Consultancies): 937 profiles from 15 companies (CI&T, BairesDev, Stefanini, etc.)
+- Tier7 (Missing Unicorns): 532 profiles from 10 companies (Wildlife Studios, Bitso, etc.)
+- **Total New**: 2,431 profiles at ~$22
+
+**Top Source Companies:**
+- Nubank (450), PagSeguro (433), Spotify Brazil (413), QuintoAndar (407), Stone (402)
+- C6 Bank (401), iFood (401), PicPay (391), Meta Brazil (355), Inter (336)
+
+**Next Actions:**
+1. Resume enrichment: `python scripts/sourcing_gemini_enrichment.py --max-cost 100`
+2. Generate embeddings: `python scripts/sourcing_embeddings.py`
+3. Integrate with main candidate pool for search
+
+---
+
+### ✅ PREVIOUS SESSION (Jan 14, 2026) - CRITICAL SECURITY FIX
 
 **Security Vulnerability Fixed:**
 - **Issue**: Personal email (gmail.com) was able to sign in to app.ellasourcing.com
