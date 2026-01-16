@@ -53,6 +53,11 @@ export interface MonitoringConfig {
   traceProjectId?: string;
 }
 
+export interface CorsConfig {
+  allowedOrigins: string[];
+  credentials: boolean;
+}
+
 export interface ServiceConfig {
   firestore: FirestoreConfig;
   redis: RedisConfig;
@@ -60,6 +65,7 @@ export interface ServiceConfig {
   runtime: RuntimeConfig;
   rateLimits: RateLimitConfig;
   monitoring: MonitoringConfig;
+  cors: CorsConfig;
 }
 
 let cachedConfig: ServiceConfig | null = null;
@@ -193,6 +199,33 @@ function parseGatewayAudiences(): string[] {
   return Array.from(new Set(values));
 }
 
+function parseCorsOrigins(projectId: string): string[] {
+  const raw = process.env.CORS_ALLOWED_ORIGINS;
+
+  // Default allowed origins based on Firebase project
+  const defaultOrigins = [
+    `https://${projectId}.web.app`,
+    `https://${projectId}.firebaseapp.com`
+  ];
+
+  // Add localhost for development
+  if (process.env.NODE_ENV !== 'production') {
+    defaultOrigins.push('http://localhost:3000', 'http://localhost:5173', 'http://localhost:4173');
+  }
+
+  if (!raw) {
+    return defaultOrigins;
+  }
+
+  const customOrigins = raw
+    .split(',')
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+
+  // Merge custom origins with defaults, removing duplicates
+  return Array.from(new Set([...defaultOrigins, ...customOrigins]));
+}
+
 function parseBoolean(value: string | undefined, defaultValue: boolean): boolean {
   if (value === undefined) {
     return defaultValue;
@@ -221,6 +254,20 @@ function parseNumber(value: string | undefined, defaultValue: number): number {
 
 function validateConfig(config: ServiceConfig): void {
   const { auth, monitoring } = config;
+
+  // Security warning for AUTH_MODE=none
+  if (auth.mode === 'none') {
+    console.warn(
+      '\n' +
+      '⚠️  SECURITY WARNING: AUTH_MODE=none is enabled.\n' +
+      '   This mode disables application-level authentication.\n' +
+      '   Ensure the following security controls are in place:\n' +
+      '   1. API Gateway with authentication enabled\n' +
+      '   2. Cloud Run IAM requiring authentication\n' +
+      '   3. VPC network isolation if applicable\n' +
+      '   DO NOT use AUTH_MODE=none without these controls.\n'
+    );
+  }
 
   if ((auth.mode === 'gateway' || auth.mode === 'hybrid') && !auth.enableGatewayTokens) {
     throw new Error('Gateway authentication mode requires ENABLE_GATEWAY_TOKENS to be true.');
@@ -265,6 +312,8 @@ export function loadConfig(): ServiceConfig {
   const propagateTrace = parseBoolean(process.env.PROPAGATE_TRACE_CONTEXT, true);
   const logClientMetadata = parseBoolean(process.env.LOG_GATEWAY_METADATA, true);
   const traceProjectId = process.env.TRACE_PROJECT_ID?.trim() || gatewayProjectId || projectId;
+  const corsOrigins = parseCorsOrigins(projectId);
+  const corsCredentials = parseBoolean(process.env.CORS_CREDENTIALS, true);
 
   if (!process.env.FIREBASE_PROJECT_ID) {
     process.env.FIREBASE_PROJECT_ID = projectId;
@@ -311,6 +360,10 @@ export function loadConfig(): ServiceConfig {
       requestIdHeader: DEFAULTS.requestIdHeader,
       logClientMetadata,
       traceProjectId
+    },
+    cors: {
+      allowedOrigins: corsOrigins,
+      credentials: corsCredentials
     }
   };
 

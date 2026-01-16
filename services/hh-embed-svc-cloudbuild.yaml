@@ -23,6 +23,15 @@ steps:
       - '--image=us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-embed-svc:latest'
       - '--region=us-central1'
       - '--platform=managed'
+      - '--no-allow-unauthenticated'
+      - '--service-account=embed-production@headhunter-ai-0088.iam.gserviceaccount.com'
+      - '--vpc-connector=projects/headhunter-ai-0088/locations/us-central1/connectors/svpc-us-central1'
+      - '--vpc-egress=private-ranges-only'
+      - '--memory=2Gi'
+      - '--cpu=2'
+      - '--min-instances=0'
+      - '--max-instances=10'
+      - '--set-secrets=PGVECTOR_PASSWORD=db-primary-password:latest'
 
 images:
   - 'us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-embed-svc:latest'

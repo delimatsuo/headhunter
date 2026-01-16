@@ -23,6 +23,14 @@ steps:
       - '--image=us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-eco-svc:latest'
       - '--region=us-central1'
       - '--platform=managed'
+      - '--no-allow-unauthenticated'
+      - '--service-account=eco-production@headhunter-ai-0088.iam.gserviceaccount.com'
+      - '--vpc-connector=projects/headhunter-ai-0088/locations/us-central1/connectors/svpc-us-central1'
+      - '--vpc-egress=private-ranges-only'
+      - '--memory=1Gi'
+      - '--cpu=1'
+      - '--min-instances=0'
+      - '--max-instances=10'
 
 images:
   - 'us-central1-docker.pkg.dev/headhunter-ai-0088/services/hh-eco-svc:latest'
