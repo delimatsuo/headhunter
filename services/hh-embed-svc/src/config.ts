@@ -2,6 +2,28 @@ import { getConfig as getBaseConfig, type ServiceConfig } from '@hh/common';
 
 import type { EmbeddingProviderName } from './types';
 
+// Security: Allowed schema and table names to prevent SQL injection via env misconfiguration
+const ALLOWED_SCHEMAS = ['search', 'public', 'test'] as const;
+const ALLOWED_TABLE_NAME_PATTERN = /^[a-z_][a-z0-9_]{0,62}$/;
+
+function validateSchemaName(schema: string): string {
+  if (!ALLOWED_SCHEMAS.includes(schema as (typeof ALLOWED_SCHEMAS)[number])) {
+    throw new Error(
+      `Invalid schema name: "${schema}". Allowed schemas: ${ALLOWED_SCHEMAS.join(', ')}`
+    );
+  }
+  return schema;
+}
+
+function validateTableName(tableName: string, context: string): string {
+  if (!ALLOWED_TABLE_NAME_PATTERN.test(tableName)) {
+    throw new Error(
+      `Invalid ${context} table name: "${tableName}". Must match pattern: ${ALLOWED_TABLE_NAME_PATTERN}`
+    );
+  }
+  return tableName;
+}
+
 export interface PgVectorSettings {
   host: string;
   port: number;
@@ -130,8 +152,8 @@ export function getEmbeddingsServiceConfig(): EmbeddingsServiceConfig {
     idleTimeoutMillis: parseNumber(process.env.PGVECTOR_IDLE_TIMEOUT_MS, 30_000),
     connectionTimeoutMillis: parseNumber(process.env.PGVECTOR_CONNECTION_TIMEOUT_MS, 5_000),
     statementTimeoutMillis: parseNumber(process.env.PGVECTOR_STATEMENT_TIMEOUT_MS, 30_000),
-    schema: process.env.PGVECTOR_SCHEMA ?? 'search',
-    table: process.env.PGVECTOR_TABLE ?? 'candidate_embeddings',
+    schema: validateSchemaName(process.env.PGVECTOR_SCHEMA ?? 'search'),
+    table: validateTableName(process.env.PGVECTOR_TABLE ?? 'candidate_embeddings', 'embeddings'),
     tenantCacheTtlMs: parseNumber(process.env.PGVECTOR_TENANT_CACHE_TTL_MS, 60_000),
     dimensions: runtime.dimensions,
     hnswEfSearch,
@@ -158,7 +180,37 @@ export function getEmbeddingsServiceConfig(): EmbeddingsServiceConfig {
     providers
   };
 
+  // Production security validation
+  validateProductionSecurity(cachedConfig);
+
   return cachedConfig;
+}
+
+function validateProductionSecurity(config: EmbeddingsServiceConfig): void {
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  if (isProduction) {
+    const warnings: string[] = [];
+
+    // PostgreSQL SSL check
+    if (!config.pgvector.ssl) {
+      warnings.push('PostgreSQL SSL is disabled. Set PGVECTOR_SSL=true for production.');
+    }
+
+    // Empty password check
+    if (!config.pgvector.password) {
+      warnings.push('PostgreSQL password is empty. Ensure PGVECTOR_PASSWORD is set.');
+    }
+
+    if (warnings.length > 0) {
+      console.warn(
+        '\n' +
+        '⚠️  PRODUCTION SECURITY WARNINGS (hh-embed-svc):\n' +
+        warnings.map(w => `   - ${w}`).join('\n') +
+        '\n'
+      );
+    }
+  }
 }
 
 export function resetEmbeddingsServiceConfig(): void {

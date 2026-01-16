@@ -1,5 +1,27 @@
 import { getConfig as getBaseConfig, type ServiceConfig } from '@hh/common';
 
+// Security: Allowed schema and table names to prevent SQL injection via env misconfiguration
+const ALLOWED_SCHEMAS = ['search', 'public', 'test'] as const;
+const ALLOWED_TABLE_NAME_PATTERN = /^[a-z_][a-z0-9_]{0,62}$/;
+
+function validateSchemaName(schema: string): string {
+  if (!ALLOWED_SCHEMAS.includes(schema as (typeof ALLOWED_SCHEMAS)[number])) {
+    throw new Error(
+      `Invalid schema name: "${schema}". Allowed schemas: ${ALLOWED_SCHEMAS.join(', ')}`
+    );
+  }
+  return schema;
+}
+
+function validateTableName(tableName: string, context: string): string {
+  if (!ALLOWED_TABLE_NAME_PATTERN.test(tableName)) {
+    throw new Error(
+      `Invalid ${context} table name: "${tableName}". Must match pattern: ${ALLOWED_TABLE_NAME_PATTERN}`
+    );
+  }
+  return tableName;
+}
+
 export interface EmbedServiceConfig {
   baseUrl: string;
   timeoutMs: number;
@@ -195,9 +217,9 @@ export function getSearchServiceConfig(): SearchServiceConfig {
     user: process.env.PGVECTOR_USER ?? 'postgres',
     password: (process.env.PGVECTOR_PASSWORD ?? '').trim(),
     ssl: parseBoolean(process.env.PGVECTOR_SSL, false),
-    schema: process.env.PGVECTOR_SCHEMA ?? 'search',
-    embeddingsTable: process.env.PGVECTOR_EMBEDDINGS_TABLE ?? 'candidate_embeddings',
-    profilesTable: process.env.PGVECTOR_PROFILES_TABLE ?? 'candidate_profiles',
+    schema: validateSchemaName(process.env.PGVECTOR_SCHEMA ?? 'search'),
+    embeddingsTable: validateTableName(process.env.PGVECTOR_EMBEDDINGS_TABLE ?? 'candidate_embeddings', 'embeddings'),
+    profilesTable: validateTableName(process.env.PGVECTOR_PROFILES_TABLE ?? 'candidate_profiles', 'profiles'),
     dimensions: Math.max(32, parseNumber(process.env.PGVECTOR_DIMENSIONS, 768)),
     poolMax: parseNumber(process.env.PGVECTOR_POOL_MAX, 10),
     poolMin: parseNumber(process.env.PGVECTOR_POOL_MIN, 0),
@@ -235,7 +257,42 @@ export function getSearchServiceConfig(): SearchServiceConfig {
     firestoreFallback
   };
 
+  // Production security validation
+  validateProductionSecurity(cachedConfig);
+
   return cachedConfig;
+}
+
+function validateProductionSecurity(config: SearchServiceConfig): void {
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  if (isProduction) {
+    const warnings: string[] = [];
+
+    // PostgreSQL SSL check
+    if (!config.pgvector.ssl) {
+      warnings.push('PostgreSQL SSL is disabled. Set PGVECTOR_SSL=true for production.');
+    }
+
+    // Redis TLS check
+    if (!config.redis.tls) {
+      warnings.push('Redis TLS is disabled. Set REDIS_TLS=true for production.');
+    }
+
+    // Empty password check
+    if (!config.pgvector.password) {
+      warnings.push('PostgreSQL password is empty. Ensure PGVECTOR_PASSWORD is set.');
+    }
+
+    if (warnings.length > 0) {
+      console.warn(
+        '\n' +
+        '⚠️  PRODUCTION SECURITY WARNINGS:\n' +
+        warnings.map(w => `   - ${w}`).join('\n') +
+        '\n'
+      );
+    }
+  }
 }
 
 export function resetSearchServiceConfig(): void {
