@@ -1,4 +1,4 @@
-# Handover & Recovery Runbook (Updated 2026-01-16)
+# Handover & Recovery Runbook (Updated 2026-01-20)
 
 > Canonical repository path: `/Volumes/Extreme Pro/myprojects/headhunter`. Do **not** work from deprecated clones in `~/Documents/Coding/`.
 > Guardrail: all automation wrappers under `scripts/` source `scripts/utils/repo_guard.sh` and exit immediately when invoked from non-canonical clones.
@@ -9,8 +9,8 @@ This runbook is the single source of truth for resuming work or restoring local 
 
 ## 🎯 EXECUTIVE SUMMARY FOR NEW AI CODING AGENT
 
-**Last Updated**: 2026-01-16
-**Project Status**: Production-ready. Sourcing pipeline active - building Brazilian engineer database.
+**Last Updated**: 2026-01-20
+**Project Status**: Production-ready. Search quality improved. Sourcing pipeline active.
 **Next Session**: Resume enrichment pipeline, generate embeddings for 15K+ sourcing candidates.
 
 ---
@@ -30,6 +30,7 @@ cat docs/SESSION_SUMMARY_2026-01-03.md
 **Available Session Summaries:**
 | File | Date | Key Topics |
 |------|------|------------|
+| `docs/SESSION_SUMMARY_2026-01-20.md` | Jan 20, 2026 | Search quality fix - specialty detection |
 | `docs/SESSION_SUMMARY_2026-01-16.md` | Jan 16, 2026 | Sourcing pipeline status check, 15K candidates |
 | `docs/SESSION_SUMMARY_2026-01-14.md` | Jan 14, 2026 | Critical security fix, invitation-only access |
 | `docs/SESSION_SUMMARY_2026-01-03.md` | Jan 03, 2026 | Cost optimization, Gemini embeddings, CI fixes |
@@ -45,7 +46,43 @@ Session summaries provide:
 
 ---
 
-### ✅ RECENT SESSION (Jan 16, 2026) - SOURCING PIPELINE STATUS CHECK
+### ✅ RECENT SESSION (Jan 20, 2026) - SEARCH QUALITY FIX
+
+**Problem Fixed: Specialty Detection in Search**
+- **Issue**: Search for "Senior Backend Engineer" returned frontend/QA candidates
+- **Root Cause**: `detectSpecialties()` in `legacy-engine.ts` required 2+ keyword matches, but "Senior Backend Engineer" only matched 1 keyword ("backend")
+- **Impact**: Specialty filtering wasn't applied, returning irrelevant candidates
+
+**Fix Applied: Two-Phase Specialty Detection**
+
+The `detectSpecialties()` method now uses a two-phase approach:
+
+1. **Phase 1 (NEW)**: Explicit title detection - if specialty is in the job title, that's a clear signal
+   - "Senior Backend Engineer" → `['backend']`
+   - "Frontend Developer" → `['frontend']`
+   - "DevOps Engineer" → `['devops']`
+
+2. **Phase 2 (existing)**: Falls back to keyword counting (2+ threshold) only if Phase 1 found nothing
+
+**Why This Works:**
+- Recruiters use job titles to indicate job family/specialty
+- Candidate data already has proper specialty tags (68.8% of engineering candidates have backend specialty)
+- The filter now correctly matches candidates to job specialty
+
+**File Modified:**
+- `functions/src/engines/legacy-engine.ts` (lines 732-806)
+
+**Deployed:** Firebase Functions updated (78 functions) to `headhunter-ai-0088`
+
+**Verification:**
+```
+Before: [LegacyEngine] Detected specialties: none
+After:  [LegacyEngine] Detected specialties: backend
+```
+
+---
+
+### ✅ PREVIOUS SESSION (Jan 16, 2026) - SOURCING PIPELINE STATUS CHECK
 
 **Brazilian Engineer Database Building:**
 - **Total Candidates**: 15,117 sourced profiles

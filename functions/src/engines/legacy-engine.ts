@@ -108,12 +108,12 @@ export class LegacyEngine implements IAIEngine {
         if (isExecutiveSearch) {
             // EXECUTIVE MODE: Function-based retrieval is PRIMARY
             // We want CTOs for CTO search, CPOs for CPO search - function matters
-            functionPool = await this.searchByFunction(targetClassification.function, levelRange, 300);
+            functionPool = await this.searchByFunction(targetClassification.function, levelRange, 300, []);
             console.log(`[LegacyEngine] Executive mode - Function pool: ${functionPool.length}`);
         } else {
-            // IC MODE: Vector similarity is PRIMARY
-            // We want skill-matched candidates - vectors handle domain expertise
-            functionPool = await this.searchByFunction(targetClassification.function, levelRange, 100);
+            // IC MODE: Vector similarity is PRIMARY + Specialty filtering
+            // We want backend engineers for backend roles, not all engineering
+            functionPool = await this.searchByFunction(targetClassification.function, levelRange, 100, targetSpecialties);
 
             // CRITICAL: Filter vector pool by EFFECTIVE level (adjusted for company tier)
             // This allows startup CTOs to appear in VP searches at big companies
@@ -123,6 +123,33 @@ export class LegacyEngine implements IAIEngine {
                 const effectiveLevel = this.getEffectiveLevel(c);
                 return levelRange.includes(effectiveLevel);
             });
+
+            // Also apply specialty filtering to vector pool
+            if (targetSpecialties.length > 0 && targetClassification.function === 'engineering') {
+                const vectorBeforeSpecialty = vectorPool.length;
+                vectorPool = vectorPool.filter((c: any) => {
+                    const functions = c.searchable?.functions || [];
+                    const engFunction = functions.find((f: any) => f.name === 'engineering');
+                    if (!engFunction) return true;
+
+                    const candidateSpecialties = engFunction.specialties || [];
+                    if (candidateSpecialties.length === 0) return true;
+
+                    // Check for specialty match
+                    for (const target of targetSpecialties) {
+                        if (candidateSpecialties.includes(target)) return true;
+                        if ((target === 'backend' || target === 'frontend') &&
+                            (candidateSpecialties.includes('fullstack') || candidateSpecialties.includes('full-stack') || candidateSpecialties.includes('full stack'))) return true;
+                    }
+
+                    // Strict exclusion for backend vs frontend
+                    if (targetSpecialties.includes('backend') && candidateSpecialties.includes('frontend') && !candidateSpecialties.includes('backend')) return false;
+                    if (targetSpecialties.includes('frontend') && candidateSpecialties.includes('backend') && !candidateSpecialties.includes('frontend')) return false;
+
+                    return true;
+                });
+                console.log(`[LegacyEngine] Vector specialty filter: ${vectorBeforeSpecialty} → ${vectorPool.length}`);
+            }
 
             console.log(`[LegacyEngine] IC mode - Function pool: ${functionPool.length}, Vector pool: ${vectorPool.length} (filtered from ${vectorPoolBeforeFilter})`);
         }
@@ -407,7 +434,8 @@ export class LegacyEngine implements IAIEngine {
     private async searchByFunction(
         targetFunction: string,
         levelRange: string[],
-        limit: number
+        limit: number,
+        targetSpecialties: string[] = []
     ): Promise<any[]> {
         try {
             const fetchLimit = Math.min(limit * 3, 500);
@@ -421,7 +449,7 @@ export class LegacyEngine implements IAIEngine {
 
             // Filter by EFFECTIVE level (adjusted for company tier)
             // This allows startup execs to appear in higher-tier role searches
-            const candidates = legacySnapshot.docs
+            let candidates = legacySnapshot.docs
                 .map(doc => ({ id: doc.id, ...doc.data() } as any))
                 .filter((c: any) => {
                     const effectiveLevel = this.getEffectiveLevel(c);
@@ -445,6 +473,54 @@ export class LegacyEngine implements IAIEngine {
                         function_confidence: functionConfidence
                     };
                 });
+
+            // ===================================================================
+            // SPECIALTY FILTERING (for IC roles)
+            // When searching for "Backend Engineer", filter OUT frontend-only candidates
+            // This prevents frontend engineers from appearing in backend searches
+            // ===================================================================
+            if (targetSpecialties.length > 0 && targetFunction === 'engineering') {
+                const beforeFilter = candidates.length;
+
+                candidates = candidates.filter((c: any) => {
+                    const functions = c.searchable?.functions || [];
+
+                    // Find the engineering function entry
+                    const engFunction = functions.find((f: any) => f.name === 'engineering');
+                    if (!engFunction) return true; // Keep if no function data
+
+                    const candidateSpecialties = engFunction.specialties || [];
+                    if (candidateSpecialties.length === 0) return true; // Keep if no specialty data
+
+                    // Check if candidate has ANY of the target specialties
+                    for (const target of targetSpecialties) {
+                        if (candidateSpecialties.includes(target)) return true;
+
+                        // Fullstack matches both frontend and backend
+                        if (target === 'backend' && (candidateSpecialties.includes('fullstack') || candidateSpecialties.includes('full-stack') || candidateSpecialties.includes('full stack'))) return true;
+                        if (target === 'frontend' && (candidateSpecialties.includes('fullstack') || candidateSpecialties.includes('full-stack') || candidateSpecialties.includes('full stack'))) return true;
+                    }
+
+                    // STRICT FILTERING: If we're looking for backend, exclude frontend-only
+                    // But be lenient if we're looking for something generic
+                    if (targetSpecialties.includes('backend')) {
+                        // Exclude candidates who are clearly frontend-only
+                        if (candidateSpecialties.includes('frontend') && !candidateSpecialties.includes('backend')) {
+                            return false;
+                        }
+                    }
+                    if (targetSpecialties.includes('frontend')) {
+                        // Exclude candidates who are clearly backend-only
+                        if (candidateSpecialties.includes('backend') && !candidateSpecialties.includes('frontend')) {
+                            return false;
+                        }
+                    }
+
+                    return true; // Keep by default
+                });
+
+                console.log(`[LegacyEngine] Specialty filter: ${beforeFilter} → ${candidates.length} (specialties: ${targetSpecialties.join(', ')})`);
+            }
 
             console.log(`[LegacyEngine] Function query: ${legacySnapshot.size} total, ${candidates.length} in level range [${levelRange.join(', ')}] for ${targetFunction}`);
             return candidates;
@@ -488,21 +564,24 @@ export class LegacyEngine implements IAIEngine {
             return ['senior', 'manager'];
         }
 
-        // For IC roles (senior, mid, junior)
+        // For IC roles (senior, mid, junior, staff, principal)
         // KEY INSIGHT: Show candidates who would STEP UP into the role
         // Senior engineers won't take mid-level roles - they'd be stepping DOWN
         // But mid-level engineers would gladly take senior roles - stepping UP
-        const levelOrder = ['intern', 'junior', 'mid', 'senior', 'manager'];
-        const targetIndex = levelOrder.indexOf(targetLevel);
+        //
+        // IMPORTANT: IC track is SEPARATE from management track
+        // Manager, Director, VP, C-level are NOT included in IC searches
+        const icLevelOrder = ['intern', 'junior', 'mid', 'senior', 'staff', 'principal'];
+        const targetIndex = icLevelOrder.indexOf(targetLevel);
 
-        if (targetIndex === -1) return levelOrder;
+        if (targetIndex === -1) return icLevelOrder;
 
         // Show target level + one level BELOW (candidates stepping UP)
         // Don't show levels ABOVE - they won't be interested
         const minIndex = Math.max(0, targetIndex - 1);  // One level below can step up
         const maxIndex = targetIndex;  // Exact match, not above
 
-        return levelOrder.slice(minIndex, maxIndex + 1);
+        return icLevelOrder.slice(minIndex, maxIndex + 1);
     }
 
     // Company tiers for level adjustment (similar to levels.fyi)
@@ -534,22 +613,36 @@ export class LegacyEngine implements IAIEngine {
 
     /**
      * Get effective level adjusted by company tier
-     * 
+     *
      * LOGIC:
      * - FAANG Director (tier 2) = VP elsewhere → effective level stays 'director' for filtering
      *   but gets a boost in scoring
      * - Startup CTO (tier 0) = might be interested in VP at big company
      *   → effective level is 'director' (one step down)
-     * 
+     *
      * For level filtering, we LOWER the effective level for low-tier companies
      * so that startup execs appear in searches for higher-tier roles
+     *
+     * IMPORTANT: Management track (manager, director, vp, c-level) is SEPARATE from IC track.
+     * We never adjust managers down to IC levels - they are different career paths.
      */
     private getEffectiveLevel(candidate: any): string {
         const nominalLevel = (candidate.searchable?.level || 'mid').toLowerCase();
         const companyTier = this.getCompanyTier(candidate);
 
-        // Level order for reference
-        const levelOrder = ['intern', 'junior', 'mid', 'senior', 'manager', 'director', 'vp', 'c-level'];
+        // IC levels vs Management levels - these are DIFFERENT TRACKS
+        const icLevels = ['intern', 'junior', 'mid', 'senior', 'staff', 'principal'];
+        const managementLevels = ['manager', 'director', 'vp', 'c-level'];
+
+        // If candidate is on management track, their level is fixed - no adjustment
+        // A Manager is always a Manager, regardless of company tier
+        // This prevents managers from appearing in IC (senior engineer) searches
+        if (managementLevels.includes(nominalLevel)) {
+            return nominalLevel;
+        }
+
+        // For IC levels, apply company tier adjustment for title inflation
+        const levelOrder = ['intern', 'junior', 'mid', 'senior', 'staff', 'principal'];
         const currentIndex = levelOrder.indexOf(nominalLevel);
 
         if (currentIndex === -1) return nominalLevel;
@@ -635,47 +728,78 @@ export class LegacyEngine implements IAIEngine {
     /**
      * Detect specialties needed from job description
      * Returns array of specialties like ['backend', 'microservices'] or ['frontend', 'react']
+     *
+     * Detection strategy:
+     * 1. EXPLICIT title detection - if specialty is in job title, that's a clear signal
+     *    (e.g., "Senior Backend Engineer" → backend)
+     * 2. If no explicit title match, fall back to description keyword analysis (2+ threshold)
      */
     private detectSpecialties(jobDescription: string, jobTitle: string): string[] {
         const text = `${jobTitle} ${jobDescription}`.toLowerCase();
+        const titleLower = jobTitle.toLowerCase();
         const specialties: string[] = [];
 
-        // Backend indicators
-        const backendKeywords = ['backend', 'back-end', 'server-side', 'api', 'microservices',
-            'ruby', 'python', 'java', 'golang', 'node.js', 'django', 'spring', 'rails',
-            'database', 'sql', 'postgresql', 'mysql', 'mongodb', 'redis', 'kafka',
-            'rest api', 'graphql', 'grpc', 'distributed systems', 'oop', 'object-oriented'];
-        const backendMatches = backendKeywords.filter(kw => text.includes(kw)).length;
-        if (backendMatches >= 2) specialties.push('backend');
-
-        // Frontend indicators
-        const frontendKeywords = ['frontend', 'front-end', 'front end', 'react', 'vue', 'angular',
-            'javascript', 'typescript', 'css', 'html', 'ui developer', 'web developer',
-            'responsive', 'spa', 'single page', 'browser', 'dom', 'webpack', 'next.js'];
-        const frontendMatches = frontendKeywords.filter(kw => text.includes(kw)).length;
-        if (frontendMatches >= 2) specialties.push('frontend');
-
-        // Fullstack indicators
-        if (text.includes('fullstack') || text.includes('full-stack') || text.includes('full stack')) {
+        // PHASE 1: Explicit title detection (recruiter standard: job title = job family)
+        // "Senior Backend Engineer" → backend
+        // "Frontend Developer" → frontend
+        if (titleLower.includes('backend') || titleLower.includes('back-end')) {
+            specialties.push('backend');
+        }
+        if (titleLower.includes('frontend') || titleLower.includes('front-end') || titleLower.includes('front end')) {
+            specialties.push('frontend');
+        }
+        if (titleLower.includes('fullstack') || titleLower.includes('full-stack') || titleLower.includes('full stack')) {
             specialties.push('fullstack');
         }
+        if (titleLower.includes('mobile') || titleLower.includes('ios developer') || titleLower.includes('android developer')) {
+            specialties.push('mobile');
+        }
+        if (titleLower.includes('devops') || titleLower.includes('sre') || titleLower.includes('platform engineer')) {
+            specialties.push('devops');
+        }
+        if (titleLower.includes('data engineer') || titleLower.includes('ml engineer') || titleLower.includes('machine learning')) {
+            specialties.push('data');
+        }
 
-        // Mobile indicators
-        const mobileKeywords = ['mobile', 'ios', 'android', 'react native', 'flutter', 'swift', 'kotlin'];
-        const mobileMatches = mobileKeywords.filter(kw => text.includes(kw)).length;
-        if (mobileMatches >= 2) specialties.push('mobile');
+        // PHASE 2: If no explicit title match, fall back to description keyword analysis (2+ threshold)
+        if (specialties.length === 0) {
+            // Backend indicators
+            const backendKeywords = ['backend', 'back-end', 'server-side', 'api', 'microservices',
+                'ruby', 'python', 'java', 'golang', 'node.js', 'django', 'spring', 'rails',
+                'database', 'sql', 'postgresql', 'mysql', 'mongodb', 'redis', 'kafka',
+                'rest api', 'graphql', 'grpc', 'distributed systems', 'oop', 'object-oriented'];
+            const backendMatches = backendKeywords.filter(kw => text.includes(kw)).length;
+            if (backendMatches >= 2) specialties.push('backend');
 
-        // DevOps/Infra indicators
-        const devopsKeywords = ['devops', 'infrastructure', 'kubernetes', 'docker', 'terraform',
-            'ci/cd', 'aws', 'gcp', 'azure', 'cloud', 'sre', 'platform engineer'];
-        const devopsMatches = devopsKeywords.filter(kw => text.includes(kw)).length;
-        if (devopsMatches >= 2) specialties.push('devops');
+            // Frontend indicators
+            const frontendKeywords = ['frontend', 'front-end', 'front end', 'react', 'vue', 'angular',
+                'javascript', 'typescript', 'css', 'html', 'ui developer', 'web developer',
+                'responsive', 'spa', 'single page', 'browser', 'dom', 'webpack', 'next.js'];
+            const frontendMatches = frontendKeywords.filter(kw => text.includes(kw)).length;
+            if (frontendMatches >= 2) specialties.push('frontend');
 
-        // Data/ML indicators
-        const dataKeywords = ['machine learning', 'ml engineer', 'data engineer', 'etl', 'spark',
-            'airflow', 'data pipeline', 'tensorflow', 'pytorch', 'ai engineer'];
-        const dataMatches = dataKeywords.filter(kw => text.includes(kw)).length;
-        if (dataMatches >= 2) specialties.push('data');
+            // Fullstack indicators
+            if (text.includes('fullstack') || text.includes('full-stack') || text.includes('full stack')) {
+                specialties.push('fullstack');
+            }
+
+            // Mobile indicators
+            const mobileKeywords = ['mobile', 'ios', 'android', 'react native', 'flutter', 'swift', 'kotlin'];
+            const mobileMatches = mobileKeywords.filter(kw => text.includes(kw)).length;
+            if (mobileMatches >= 2) specialties.push('mobile');
+
+            // DevOps/Infra indicators
+            const devopsKeywords = ['devops', 'infrastructure', 'kubernetes', 'docker', 'terraform',
+                'ci/cd', 'aws', 'gcp', 'azure', 'cloud', 'sre', 'platform engineer'];
+            const devopsMatches = devopsKeywords.filter(kw => text.includes(kw)).length;
+            if (devopsMatches >= 2) specialties.push('devops');
+
+            // Data/ML indicators
+            const dataKeywords = ['machine learning', 'ml engineer', 'data engineer', 'etl', 'spark',
+                'airflow', 'data pipeline', 'tensorflow', 'pytorch', 'ai engineer'];
+            const dataMatches = dataKeywords.filter(kw => text.includes(kw)).length;
+            if (dataMatches >= 2) specialties.push('data');
+        }
 
         console.log(`[LegacyEngine] Detected specialties: ${specialties.join(', ') || 'none'}`);
         return specialties;
