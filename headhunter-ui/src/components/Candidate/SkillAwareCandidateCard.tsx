@@ -8,7 +8,6 @@ import './SkillAwareCandidateCard.css';
 interface SkillAwareCandidateCardProps {
   candidate: CandidateProfile;
   matchScore?: number;
-  similarity?: number;
   skillMatches?: SkillMatchData[];
   searchSkills?: string[];
   rank?: number;
@@ -21,7 +20,6 @@ interface SkillAwareCandidateCardProps {
 export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = ({
   candidate,
   matchScore,
-  similarity,
   skillMatches = [],
   searchSkills = [],
   rank,
@@ -455,14 +453,6 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
               <div className={`score-badge ${getScoreColor(matchScore)}`}>
                 <span className="score-value">{formatScore(matchScore)}%</span>
                 <span className="score-label">Match</span>
-              </div>
-            </Tooltip>
-          )}
-          {similarity !== undefined && (
-            <Tooltip title="Semantic similarity between the candidate profile and job description." arrow placement="top">
-              <div className={`score-badge ${getScoreColor(similarity)}`}>
-                <span className="score-value">{formatScore(similarity)}%</span>
-                <span className="score-label">Similarity</span>
               </div>
             </Tooltip>
           )}

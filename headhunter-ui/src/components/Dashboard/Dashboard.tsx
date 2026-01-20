@@ -323,15 +323,42 @@ export const Dashboard: React.FC = () => {
             candidate.headline ||
             '';
 
+          // Extract role with multiple fallbacks
+          // Priority: current_role from DB → analysis → headline parsing
+          const extractRoleFromHeadline = (headline: string | null | undefined): string => {
+            if (!headline) return '';
+            // Try "Role at Company" pattern
+            const atMatch = headline.split(' at ')[0]?.trim();
+            if (atMatch && atMatch !== headline) return atMatch;
+            // Try "Role @ Company" pattern
+            const atSymbolMatch = headline.split(' @ ')[0]?.trim();
+            if (atSymbolMatch && atSymbolMatch !== headline) return atSymbolMatch;
+            // Try "Role | Company" pattern
+            const pipeMatch = headline.split(' | ')[0]?.trim();
+            if (pipeMatch && pipeMatch !== headline) return pipeMatch;
+            // Return full headline if no pattern matched
+            return headline;
+          };
+
+          const role = candidate.current_role ||
+            analysis.career_trajectory_analysis?.current_role ||
+            analysis.personal_details?.current_role ||
+            extractRoleFromHeadline(candidate.headline) ||
+            '';
+
+          const company = candidate.current_company ||
+            analysis.career_trajectory_analysis?.current_company ||
+            '';
+
           return {
             candidate: {
               id: candidate.candidate_id,
               candidate_id: candidate.candidate_id,
               name,
-              title: candidate.current_role || candidate.headline?.split(' at ')?.[0] || '',
-              company: candidate.current_company || '',
-              current_role: candidate.current_role || '',
-              current_company: candidate.current_company || '',
+              title: role,
+              company: company,
+              current_role: role,
+              current_company: company,
               location: candidate.location || analysis.personal_details?.location || '',
               skills: skills,
               experience,
@@ -354,7 +381,6 @@ export const Dashboard: React.FC = () => {
               documents: null
             },
             score: 100,
-            similarity: 1,
             match_reasons: [`Matched keyword: "${quickFindQuery}"`],
             rationale: {
               overall_assessment: `Found via Quick Find for "${quickFindQuery}"`,

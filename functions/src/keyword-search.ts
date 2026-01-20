@@ -156,6 +156,7 @@ export const keywordSearch = onCall(
       params.push(limit);
       const limitParam = `$${paramIndex}`;
 
+      // Query with fallback: try is_current=TRUE first, then most recent experience, then headline
       const sql = `
         SELECT DISTINCT ON (c.id)
           c.id::text as candidate_id,
@@ -165,14 +166,28 @@ export const keywordSearch = onCall(
           c.location,
           c.linkedin_url,
           c.intelligent_analysis,
-          e.company_name as current_company,
-          e.title as current_role
+          COALESCE(e_current.company_name, e_latest.company_name) as current_company,
+          COALESCE(
+            e_current.title,
+            e_latest.title,
+            c.intelligent_analysis->>'current_role',
+            SPLIT_PART(c.headline, ' at ', 1),
+            SPLIT_PART(c.headline, ' @ ', 1)
+          ) as current_role
         FROM sourcing.candidates c
-        LEFT JOIN sourcing.experience e ON e.candidate_id = c.id AND e.is_current = TRUE
+        LEFT JOIN sourcing.experience e_current
+          ON e_current.candidate_id = c.id AND e_current.is_current = TRUE
+        LEFT JOIN LATERAL (
+          SELECT company_name, title
+          FROM sourcing.experience
+          WHERE candidate_id = c.id
+          ORDER BY start_date DESC NULLS LAST
+          LIMIT 1
+        ) e_latest ON e_current.title IS NULL
         WHERE c.deleted_at IS NULL
           AND c.consent_status != 'opted_out'
           AND (${whereClause})
-        ORDER BY c.id, e.is_current DESC NULLS LAST
+        ORDER BY c.id
         LIMIT ${limitParam}
       `;
 
