@@ -75,6 +75,7 @@ curl -X POST https://api-akcoqbr7sa-uc.a.run.app/engineSearch \
 
 - `fix: improve specialty detection in search - detect from job title`
 - `feat: add keyword search for Quick Find against PostgreSQL sourcing database`
+- `fix: improve Quick Find role extraction and remove similarity badge`
 
 ## What Needs to Be Done Next
 
