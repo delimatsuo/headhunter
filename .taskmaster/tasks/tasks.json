@@ -291,7 +291,7 @@
         "id": 70,
         "title": "Build Hybrid Search with Together Rerank Integration",
         "description": "Implement hybrid search combining pgvector similarity search with PostgreSQL FTS and Together AI reranking for top-K results",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [
           "67",
           "69"
@@ -1168,7 +1168,7 @@
       ],
       "created": "2025-10-08T20:08:03.513Z",
       "description": "Tasks for master context",
-      "updated": "2025-11-21T18:50:10.198Z"
+      "updated": "2026-01-20T18:16:36.123Z"
     }
   }
 }
