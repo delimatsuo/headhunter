@@ -30,7 +30,7 @@ cat docs/SESSION_SUMMARY_2026-01-03.md
 **Available Session Summaries:**
 | File | Date | Key Topics |
 |------|------|------------|
-| `docs/SESSION_SUMMARY_2026-01-20.md` | Jan 20, 2026 | Search quality fix - specialty detection |
+| `docs/SESSION_SUMMARY_2026-01-20.md` | Jan 20, 2026 | Keyword search for Quick Find, search quality fix |
 | `docs/SESSION_SUMMARY_2026-01-16.md` | Jan 16, 2026 | Sourcing pipeline status check, 15K candidates |
 | `docs/SESSION_SUMMARY_2026-01-14.md` | Jan 14, 2026 | Critical security fix, invitation-only access |
 | `docs/SESSION_SUMMARY_2026-01-03.md` | Jan 03, 2026 | Cost optimization, Gemini embeddings, CI fixes |
@@ -46,7 +46,34 @@ Session summaries provide:
 
 ---
 
-### ✅ RECENT SESSION (Jan 20, 2026) - SEARCH QUALITY FIX
+### ✅ RECENT SESSION (Jan 20, 2026) - KEYWORD SEARCH FOR QUICK FIND
+
+**Problem Fixed: Quick Find Searched Wrong Database**
+- **Issue**: Quick Find searched Firestore (legacy) instead of PostgreSQL sourcing database with 35,535 candidates
+- **Impact**: Users couldn't search the full candidate pool, roles showed as "Role not specified"
+
+**Solution: New `keywordSearch` Cloud Function**
+- Created `functions/src/keyword-search.ts` that queries PostgreSQL `sourcing.candidates` + `sourcing.experience`
+- Supports fuzzy matching via `pg_trgm` extension for typo tolerance
+- Searches: first_name, last_name, headline, company_name, title, intelligent_analysis
+- Returns `current_role` from experience table where `is_current = TRUE`
+
+**Files Created/Modified:**
+- `functions/src/keyword-search.ts` (NEW - PostgreSQL keyword search)
+- `functions/src/index.ts` (export keywordSearch)
+- `headhunter-ui/src/config/firebase.ts` (add callable)
+- `headhunter-ui/src/components/Dashboard/Dashboard.tsx` (update handleQuickFind)
+
+**Deployed:** `keywordSearch` Cloud Function to `headhunter-ai-0088`
+
+**Verification:**
+- Search "Andre" → Returns candidates named Andre with current roles displayed
+- Search "CFO Nubank" → Returns CFO-level candidates from Nubank
+- Fuzzy: "trontini" matches "trentini"
+
+---
+
+### ✅ PREVIOUS SESSION (Jan 20, 2026) - SEARCH QUALITY FIX
 
 **Problem Fixed: Specialty Detection in Search**
 - **Issue**: Search for "Senior Backend Engineer" returned frontend/QA candidates
@@ -304,9 +331,12 @@ Rerank Service caching is now enabled and verified.
 - `functions/src/analysis-service.ts` (work_history in prompt)
 - `headhunter-ui/src/components/Upload/AddCandidateModal.tsx` (candidateId regeneration)
 
-**✅ Quick Find Feature** (Dec 10, 2025)
+**✅ Quick Find Feature** (Updated Jan 20, 2026)
 - Added Quick Find search mode to Dashboard with simple text input
-- Uses `searchCandidates` Cloud Function for semantic search
+- **Now uses `keywordSearch` Cloud Function** that queries PostgreSQL sourcing database (35k+ candidates)
+- Supports fuzzy matching via `pg_trgm` for typo tolerance (e.g., "trontini" matches "trentini")
+- Searches across: first_name, last_name, headline, company_name, title, intelligent_analysis
+- Returns current role from `sourcing.experience` table (fixes "Role not specified" issue)
 
 ---
 

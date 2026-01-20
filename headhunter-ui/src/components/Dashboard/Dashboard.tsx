@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { apiService } from '../../services/api';
 import { firestoreService } from '../../services/firestore-direct';
-import { searchCandidates } from '../../config/firebase';
+import { keywordSearch } from '../../config/firebase';
 import { DashboardStats, CandidateProfile, JobDescription, SearchResponse } from '../../types';
 import { SkillAwareCandidateCard } from '../Candidate/SkillAwareCandidateCard';
 import { useAuth } from '../../contexts/AuthContext';
 
 import { AddCandidateModal } from '../Upload/AddCandidateModal';
-import { JobDescriptionForm } from '../Search/JobDescriptionForm';
+import { JobDescriptionForm, SourcingStrategy, JobAnalysis } from '../Search/JobDescriptionForm';
 import { SearchResults } from '../Search/SearchResults';
 
 // MUI Components
@@ -102,25 +102,23 @@ export const Dashboard: React.FC = () => {
         }
       }
 
-      // Fetch data without timeout - the 29k candidate iteration takes time
-      console.log('Starting Firestore data fetch...');
+      // Fetch data - use API for stats (unified Cloud SQL count), Firestore for candidates
+      console.log('Starting data fetch (API stats + Firestore candidates)...');
       const [statsResult, candidatesResult] = await Promise.all([
-        firestoreService.getDashboardStats(orgId).catch((err) => { console.error('getDashboardStats error:', err); return null; }),
+        // Use API first for stats (returns unified Cloud SQL count of 35k+)
+        apiService.getDashboardStats().catch((apiErr) => {
+          console.warn('API getDashboardStats failed, falling back to Firestore:', apiErr);
+          return firestoreService.getDashboardStats(orgId).catch((err) => { console.error('Firestore getDashboardStats error:', err); return null; });
+        }),
         firestoreService.getCandidatesDirect(6, orgId).catch((err) => { console.error('getCandidatesDirect error:', err); return []; })
       ]);
-      console.log('Firestore data fetch complete. Stats:', statsResult?.totalCandidates, 'Candidates:', candidatesResult?.length);
+      console.log('Data fetch complete. Stats:', statsResult?.totalCandidates, 'Candidates:', candidatesResult?.length);
 
       if (statsResult) {
         setStats(statsResult);
         console.log('Stats set successfully:', statsResult.totalCandidates);
       } else {
-        console.log('No statsResult, trying API fallback...');
-        try {
-          const apiStats = await apiService.getDashboardStats();
-          setStats(apiStats);
-        } catch (e) {
-          console.error('Failed to load stats from API', e);
-        }
+        console.error('Failed to load stats from both API and Firestore');
       }
 
       if (candidatesResult && candidatesResult.length > 0) {
@@ -148,14 +146,20 @@ export const Dashboard: React.FC = () => {
   };
 
   const [searchStatus, setSearchStatus] = useState<string>(''); // For progress updates
+  const [loadingPhase, setLoadingPhase] = useState<'analyzing' | 'searching' | null>(null);
+  const [currentAnalysis, setCurrentAnalysis] = useState<JobAnalysis | null>(null);
   const [page, setPage] = useState(1);
   const [activeSearchParams, setActiveSearchParams] = useState<JobDescription | null>(null);
 
   // ... (existing state)
 
-  const handleSearch = async (jobDescription: JobDescription) => {
+  const handleSearch = async (jobDescription: JobDescription, sourcingStrategy?: SourcingStrategy, analysis?: JobAnalysis) => {
     setSearchLoading(true);
+    setLoadingPhase('searching');
     setSearchStatus('⚡ AI Search: Finding best matches...');
+    if (analysis) {
+      setCurrentAnalysis(analysis);
+    }
     setSearchError('');
     setSearchResults(null);
     setShowSearchResults(true);
@@ -224,6 +228,7 @@ export const Dashboard: React.FC = () => {
     } finally {
       setSearchLoading(false);
       setSearchStatus('');
+      setLoadingPhase(null);
     }
   };
   const handleLoadMoreBackend = async () => {
@@ -257,7 +262,7 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  // Quick Find: keyword search by name, company, title
+  // Quick Find: keyword search against PostgreSQL sourcing database (35k+ candidates)
   const handleQuickFind = async () => {
     if (!quickFindQuery.trim()) return;
 
@@ -269,93 +274,66 @@ export const Dashboard: React.FC = () => {
     setDisplayLimit(50);
 
     try {
-      console.log('Quick Find: calling searchCandidates Cloud Function with query:', quickFindQuery);
+      console.log('Quick Find: calling keywordSearch Cloud Function with query:', quickFindQuery);
 
-      // Call the server-side searchCandidates Cloud Function
-      const response = await searchCandidates({
+      // Call the new keywordSearch Cloud Function (PostgreSQL sourcing database)
+      const response = await keywordSearch({
         query: quickFindQuery,
-        pagination: { page: 1, limit: 50 }
+        limit: 50
       });
 
       const result = response.data as any;
-      console.log('Quick Find: server returned', result?.data?.candidates?.length, 'candidates');
-      console.log('Quick Find: first candidate structure:', JSON.stringify(result?.data?.candidates?.[0], null, 2));
+      console.log('Quick Find: server returned', result?.candidates?.length, 'candidates');
+      if (result?.candidates?.[0]) {
+        console.log('Quick Find: first candidate structure:', JSON.stringify(result.candidates[0], null, 2));
+      }
 
-      if (result?.success && result?.data?.candidates) {
-        // Filter out unprocessed/incomplete candidates and transform to SearchResponse format
-        const processedCandidates = result.data.candidates.filter((candidate: any) => {
-          const name = candidate.name || candidate.personal?.name;
-          // Filter out candidates with name "Processing..." or missing names
-          return name && name !== 'Processing...' && name !== 'Unknown' && name.trim() !== '';
-        });
+      if (result?.success && result?.candidates) {
+        // Transform PostgreSQL sourcing candidates to SearchResponse format
+        const matches = result.candidates.map((candidate: any) => {
+          // Construct name from first_name and last_name
+          const name = [candidate.first_name, candidate.last_name]
+            .filter(Boolean)
+            .join(' ')
+            .trim() || 'Unknown';
 
-        const matches = processedCandidates.map((candidate: any) => {
-          // Handle both schema versions: ai_analysis and intelligent_analysis
-          const analysis = candidate.ai_analysis || candidate.intelligent_analysis || {};
+          // Get analysis data if available
+          const analysis = candidate.intelligent_analysis || {};
 
-          // Extract name - prioritize root level (most common in existing data)
-          const name = candidate.name ||
-            candidate.personal?.name ||
-            analysis.personal_details?.name ||
-            'Unknown';
-
-          // Extract title/role - check career_trajectory_analysis for intelligent_analysis format
-          const title = candidate.current_role ||
-            analysis.career_trajectory_analysis?.current_level ||
-            analysis.experience_analysis?.current_role ||
-            candidate.personal?.current_role ||
-            '';
-
-          // Extract company - check multiple locations
-          const company = candidate.current_company ||
-            analysis.experience_analysis?.companies?.[0] ||
-            analysis.career_trajectory_analysis?.current_company ||
-            candidate.personal?.current_company ||
-            '';
-
-          // Extract skills - handle both explicit_skills object and array formats
+          // Extract skills from intelligent_analysis if present
           let skills: string[] = [];
-          if (candidate.primary_skills && Array.isArray(candidate.primary_skills)) {
-            skills = candidate.primary_skills;
-          } else if (analysis.explicit_skills) {
-            // explicit_skills might be an object with skill names as keys
+          if (analysis.explicit_skills) {
             if (typeof analysis.explicit_skills === 'object' && !Array.isArray(analysis.explicit_skills)) {
               skills = Object.keys(analysis.explicit_skills).slice(0, 10);
             } else if (Array.isArray(analysis.explicit_skills)) {
-              skills = analysis.explicit_skills.map((s: any) => s.skill || s);
+              skills = analysis.explicit_skills.map((s: any) => typeof s === 'string' ? s : s.skill || s).slice(0, 10);
             }
           } else if (analysis.inferred_skills?.highly_probable_skills) {
-            skills = analysis.inferred_skills.highly_probable_skills.map((s: any) => s.skill || s);
+            skills = analysis.inferred_skills.highly_probable_skills.map((s: any) => typeof s === 'string' ? s : s.skill || s).slice(0, 10);
           }
 
-          // Extract summary from recruiter_insights or career_progression
+          // Extract experience from analysis
+          const experience = analysis.career_trajectory_analysis?.years_experience ||
+            analysis.personal_details?.years_of_experience ||
+            '';
+
+          // Extract summary from analysis
           const summary = analysis.recruiter_insights?.one_liner ||
             analysis.recruiter_insights?.summary ||
-            analysis.career_trajectory_analysis?.career_progression?.substring(0, 200) ||
-            '';
-
-          // Extract experience from career_trajectory_analysis.years_experience
-          const experience = candidate.years_experience ||
-            analysis.career_trajectory_analysis?.years_experience ||
-            analysis.personal_details?.years_of_experience ||
-            candidate.searchable_data?.experience_level ||
-            '';
-
-          // Extract LinkedIn URL from multiple possible locations
-          const linkedinUrl = candidate.linkedin_url ||
-            analysis.personal_details?.linkedin ||
-            candidate.personal?.linkedin ||
+            candidate.headline ||
             '';
 
           return {
             candidate: {
-              id: candidate.id,
-              candidate_id: candidate.id || candidate.candidate_id,
+              id: candidate.candidate_id,
+              candidate_id: candidate.candidate_id,
               name,
-              title,
-              company,
-              location: analysis.personal_details?.location || candidate.personal?.location || '',
-              skills: Array.isArray(skills) ? skills.slice(0, 10) : [],
+              title: candidate.current_role || candidate.headline?.split(' at ')?.[0] || '',
+              company: candidate.current_company || '',
+              current_role: candidate.current_role || '',
+              current_company: candidate.current_company || '',
+              location: candidate.location || analysis.personal_details?.location || '',
+              skills: skills,
               experience,
               summary,
               matchScore: 1,
@@ -363,16 +341,17 @@ export const Dashboard: React.FC = () => {
               strengths: analysis.recruiter_insights?.strengths || [],
               fitReasons: [],
               availability: 'Unknown',
-              desiredSalary: analysis.recruiter_insights?.ideal_roles || '',
+              desiredSalary: '',
               profileUrl: '#',
-              lastUpdated: candidate.updated_at || candidate.processing_metadata?.timestamp || new Date().toISOString(),
+              lastUpdated: new Date().toISOString(),
               // Pass raw objects for CandidateCard to read directly
-              intelligent_analysis: candidate.intelligent_analysis,
-              resume_analysis: candidate.resume_analysis,
-              original_data: candidate.original_data,
-              linkedin_url: linkedinUrl,
-              personal: candidate.personal,
-              documents: candidate.documents
+              intelligent_analysis: analysis,
+              resume_analysis: null,
+              original_data: null,
+              linkedin_url: candidate.linkedin_url || '',
+              headline: candidate.headline,
+              personal: null,
+              documents: null
             },
             score: 100,
             similarity: 1,
@@ -391,11 +370,11 @@ export const Dashboard: React.FC = () => {
           matches,
           query_time_ms: 0,
           insights: {
-            total_candidates: result.data.pagination?.total_count || matches.length,
+            total_candidates: result.total || matches.length,
             avg_match_score: 100,
             top_skills_matched: [],
             common_gaps: [],
-            market_analysis: `Found ${result.data.pagination?.total_count || matches.length} candidates matching "${quickFindQuery}"`,
+            market_analysis: `Found ${result.total || matches.length} candidates matching "${quickFindQuery}" in sourcing database`,
             recommendations: []
           }
         });
@@ -648,7 +627,7 @@ export const Dashboard: React.FC = () => {
               <JobDescriptionForm
                 onSearch={handleSearch}
                 loading={searchLoading}
-                loadingStatus={searchStatus}
+                loadingPhase={loadingPhase}
               />
             </Box>
           )}
@@ -774,6 +753,7 @@ export const Dashboard: React.FC = () => {
                 }
               }}
               onShowAll={() => setDisplayLimit(searchResults?.matches?.length || 1000)}
+              analysis={currentAnalysis}
             />
           </Box>
         </Fade>

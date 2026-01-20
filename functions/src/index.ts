@@ -845,3 +845,6 @@ export { backfillClassifications, getClassificationStats } from './backfill-clas
 
 // Export LLM-Based Multi-Function Classification Backfill
 export { backfillLLMClassifications, getLLMClassificationStats } from './backfill-llm-classification';
+
+// Export Keyword Search (PostgreSQL sourcing database)
+export { keywordSearch } from './keyword-search';

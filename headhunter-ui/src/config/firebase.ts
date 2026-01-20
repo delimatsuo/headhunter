@@ -75,4 +75,7 @@ export const analyzeJob = httpsCallable(functions, 'analyzeJob');
 export const engineSearch = httpsCallable(functions, 'engineSearch', { timeout: 300000 }); // 5 min timeout
 export const getAvailableEngines = httpsCallable(functions, 'getAvailableEngines');
 
+// Keyword Search (PostgreSQL sourcing database - 35k+ candidates)
+export const keywordSearch = httpsCallable(functions, 'keywordSearch');
+
 export default app;
