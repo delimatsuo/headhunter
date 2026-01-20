@@ -117,28 +117,29 @@ export const keywordSearch = onCall(
 
         if (hasTrgm) {
           // Fuzzy name matching with trigrams (handles typos)
-          keywordConditions.push(`similarity(LOWER(c.first_name), $${paramIndex}) > 0.3`);
-          keywordConditions.push(`similarity(LOWER(c.last_name), $${paramIndex}) > 0.3`);
-          // Fuzzy company matching
-          keywordConditions.push(`similarity(LOWER(e.company_name), $${paramIndex}) > 0.3`);
+          keywordConditions.push(`similarity(LOWER(COALESCE(c.first_name, '')), $${paramIndex}) > 0.3`);
+          keywordConditions.push(`similarity(LOWER(COALESCE(c.last_name, '')), $${paramIndex}) > 0.3`);
+          // Fuzzy company matching (use COALESCE for NULL safety)
+          keywordConditions.push(`similarity(LOWER(COALESCE(e.company_name, '')), $${paramIndex}) > 0.3`);
           // Fuzzy title matching
-          keywordConditions.push(`similarity(LOWER(e.title), $${paramIndex}) > 0.3`);
+          keywordConditions.push(`similarity(LOWER(COALESCE(e.title, '')), $${paramIndex}) > 0.3`);
           params.push(keyword);
           paramIndex++;
         }
 
         // Also add ILIKE for exact substring matches (faster for short strings)
+        // Use COALESCE to handle NULL values from LEFT JOIN
         const likePattern = `%${keyword}%`;
-        keywordConditions.push(`LOWER(c.first_name) LIKE $${paramIndex}`);
-        keywordConditions.push(`LOWER(c.last_name) LIKE $${paramIndex}`);
-        keywordConditions.push(`LOWER(c.headline) LIKE $${paramIndex}`);
-        keywordConditions.push(`LOWER(e.company_name) LIKE $${paramIndex}`);
-        keywordConditions.push(`LOWER(e.title) LIKE $${paramIndex}`);
+        keywordConditions.push(`LOWER(COALESCE(c.first_name, '')) LIKE $${paramIndex}`);
+        keywordConditions.push(`LOWER(COALESCE(c.last_name, '')) LIKE $${paramIndex}`);
+        keywordConditions.push(`LOWER(COALESCE(c.headline, '')) LIKE $${paramIndex}`);
+        keywordConditions.push(`LOWER(COALESCE(e.company_name, '')) LIKE $${paramIndex}`);
+        keywordConditions.push(`LOWER(COALESCE(e.title, '')) LIKE $${paramIndex}`);
         params.push(likePattern);
         paramIndex++;
 
         // Also search in intelligent_analysis JSON if it exists
-        keywordConditions.push(`c.intelligent_analysis::text ILIKE $${paramIndex}`);
+        keywordConditions.push(`COALESCE(c.intelligent_analysis::text, '') ILIKE $${paramIndex}`);
         params.push(likePattern);
         paramIndex++;
 
