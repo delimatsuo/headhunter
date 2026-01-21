@@ -77,9 +77,68 @@ curl -X POST https://api-akcoqbr7sa-uc.a.run.app/engineSearch \
 - `feat: add keyword search for Quick Find against PostgreSQL sourcing database`
 - `fix: improve Quick Find role extraction and remove similarity badge`
 
+---
+
+### Data Investigation: Paulo Golgher Query
+
+**Question:** User searched "Paulo Golgher" and got 0 results, believed this candidate existed in database.
+
+**Investigation Results:**
+
+| Data Source | Finding |
+|-------------|---------|
+| CSV candidates files (1/2/3) | ❌ No Paulo Golgher found |
+| LinkedIn URL mapping | Only Daniel Golgher (#378990277) |
+| comprehensive_merged_candidates.json | Paulo Golgher mentioned only in **comments** |
+| Sourcing data (Apify) | ❌ No Golgher records |
+
+**Conclusion:** Paulo Golgher **was never a candidate record**. He appears only as a **reference person** in recruiter notes:
+- "Strong referral from Paulo Golgher" (about Carlos)
+- "VP of engineering at QuintoAndar...for references" (about Bruno)
+
+The only actual Golgher candidate is **Daniel Golgher**. No data was lost - the search is working correctly.
+
+---
+
+---
+
+### Vector Search Fix - Tech Stack in Embedding Query (2026-01-21)
+
+**Problem:** Search for "Senior Backend Engineer with Node.js, TypeScript, NestJS" was returning wrong tech stacks:
+- Frontend engineers (Rafael Batista - Senior Frontend Developer)
+- Java/Python developers (André Carrano - Java, Fernando Pillo - Java)
+
+**Root Cause:** The vector search embedding query did NOT include the tech stack. The `required_skills` array was:
+- ✅ Extracted by `analyzeJob`
+- ✅ Available in the frontend
+- ❌ NOT included in the embedding query
+- ❌ Only used later for filtering/reranking
+
+**Fix Applied:** Modified `JobDescriptionForm.tsx` to include skills in embedding query.
+
+**Before:**
+```
+JOB TITLE: Senior Backend Engineer
+PROFILE: Experienced backend engineer...
+```
+
+**After:**
+```
+JOB TITLE: Senior Backend Engineer
+REQUIRED SKILLS: Node.js, TypeScript, NestJS, AWS, Lambda, Fargate, PostgreSQL
+PROFILE: Experienced backend engineer...
+```
+
+**Files Modified:**
+- `headhunter-ui/src/components/Search/JobDescriptionForm.tsx` (lines 108-111)
+
+**Deployed:** Firebase Hosting to `headhunter-ai-0088`
+
+---
+
 ## What Needs to Be Done Next
 
 1. **Resume enrichment pipeline** - 10,519 candidates still pending enrichment
 2. **Generate embeddings** - After enrichment completes
 3. **Test Quick Find** - Verify keyword search works in production UI
-4. **Test search quality** - Verify specialty filtering works correctly in production
+4. **Test search quality** - Verify specialty filtering AND tech stack matching work correctly in production

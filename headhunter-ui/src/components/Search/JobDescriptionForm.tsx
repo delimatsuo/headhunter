@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { JobDescription } from '../../types';
 import { apiService } from '../../services/api';
 
@@ -10,16 +10,27 @@ export interface SourcingStrategy {
   title_variations?: string[];
 }
 
+// Analysis result type for passing to parent
+export interface JobAnalysis {
+  job_title: string;
+  experience_level: string;
+  summary: string;
+  required_skills?: string[];
+  preferred_skills?: string[];
+  sourcing_strategy?: SourcingStrategy;
+  synthetic_perfect_candidate_profile?: string;
+}
+
 interface JobDescriptionFormProps {
-  onSearch: (jobDescription: JobDescription, sourcingStrategy?: SourcingStrategy) => void;
+  onSearch: (jobDescription: JobDescription, sourcingStrategy?: SourcingStrategy, analysis?: JobAnalysis) => void;
   loading?: boolean;
-  loadingStatus?: string;
+  loadingPhase?: 'analyzing' | 'searching' | null;
 }
 
 export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
   onSearch,
   loading = false,
-  loadingStatus = 'Analyzing...'
+  loadingPhase = null
 }) => {
   const [formData, setFormData] = useState<JobDescription>({
     title: '',
@@ -43,33 +54,6 @@ export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
     setFormData(prev => ({ ...prev, description: text }));
   };
 
-  const handleAnalyze = async () => {
-    if (!formData.description || formData.description.length < 50) return;
-
-    setAnalyzing(true);
-    setAnalysis(null);
-
-    try {
-      const result = await apiService.analyzeJob(formData.description);
-      setAnalysis(result);
-
-      // Auto-populate form
-      setFormData(prev => ({
-        ...prev,
-        title: prev.title || result.job_title,
-        required_skills: result.required_skills || [],
-        nice_to_have: result.preferred_skills || [],
-        min_experience: result.experience_level === 'executive' ? 10 :
-          result.experience_level === 'senior' ? 5 :
-            result.experience_level === 'mid' ? 3 : 0
-      }));
-    } catch (error) {
-      console.error("Analysis failed", error);
-    } finally {
-      setAnalyzing(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.description.trim()) {
@@ -77,15 +61,15 @@ export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
       return;
     }
 
-    // Neural Search Strategy:
-    // If analysis is missing, run it first (One-Click Search).
-    // Then, inject the High-Quality AI Summary into the search query for better Embeddings.
+    // One-Click Search Flow:
+    // 1. Analyze (if not already done) -> shows "Analyzing requirements..."
+    // 2. Search with enriched data -> shows "Searching candidates..."
 
     let currentAnalysis = analysis;
     let enrichedData = { ...formData };
 
     if (!currentAnalysis && formData.description.length > 50) {
-      // Auto-Analyze Logic
+      // Auto-Analyze Logic - parent will show "analyzing" phase
       setAnalyzing(true);
       try {
         currentAnalysis = await apiService.analyzeJob(formData.description);
@@ -121,8 +105,10 @@ export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
       description: currentAnalysis?.synthetic_perfect_candidate_profile
         // HyDE STRATEGY: Use the AI-generated "Perfect Candidate Profile" as the anchor.
         // This automatically handles the balance of Strategy vs. Tech for each role type.
+        // TECH STACK FIX: Include required_skills in embedding query for better vector matching
         ? `JOB TITLE: ${enrichedData.title || currentAnalysis.job_title}\n` +
-        `PROFILE: ${currentAnalysis.synthetic_perfect_candidate_profile}`
+          `REQUIRED SKILLS: ${(currentAnalysis.required_skills || []).slice(0, 10).join(', ')}\n` +
+          `PROFILE: ${currentAnalysis.synthetic_perfect_candidate_profile}`
         : enrichedData.description
     };
 
@@ -132,8 +118,8 @@ export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
     console.log('[HyDE Debug] Final search description:', finalData.description?.substring(0, 500));
     console.log('[Wide Net] Passing sourcing_strategy:', currentAnalysis?.sourcing_strategy);
 
-    // Pass sourcing_strategy to parent for Wide Net search
-    onSearch(finalData, currentAnalysis?.sourcing_strategy);
+    // Pass sourcing_strategy AND analysis to parent for display in results
+    onSearch(finalData, currentAnalysis?.sourcing_strategy, currentAnalysis as JobAnalysis);
   };
 
   const addSkill = () => {
@@ -184,47 +170,13 @@ export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
                 <button type="button" onClick={() => removeSkill(index)}>×</button>
               </span>
             ))}
-            {(!formData.required_skills || formData.required_skills.length === 0) && !analyzing && (
-              <span className="no-skills">Analysis needed...</span>
+            {(!formData.required_skills || formData.required_skills.length === 0) && !analyzing && !loading && (
+              <span className="no-skills">Skills will be detected when you search</span>
             )}
-            {analyzing && <span className="analyzing-status">AI is analyzing requirements...</span>}
+            {(analyzing || loadingPhase === 'analyzing') && (
+              <span className="analyzing-status">AI is analyzing requirements...</span>
+            )}
           </div>
-
-          <div style={{ marginTop: '10px' }}>
-            <button
-              type="button"
-              onClick={handleAnalyze}
-              disabled={analyzing || !formData.description}
-              style={{
-                background: '#8B5CF6', color: 'white', border: 'none',
-                padding: '8px 16px', borderRadius: '6px', cursor: 'pointer'
-              }}
-            >
-              {analyzing ? 'Processing...' : '✨ Analyze Requirements with AI'}
-            </button>
-          </div>
-
-          {analysis && (
-            <div className="analysis-results" style={{ marginTop: '15px', padding: '15px', background: '#F3F4F6', borderRadius: '8px' }}>
-              <h4>AI Analysis Summary</h4>
-              <p><strong>Role:</strong> {analysis.job_title}</p>
-              <p><strong>Level:</strong> {analysis.experience_level}</p>
-              <p><strong>Summary:</strong> {analysis.summary}</p>
-              {analysis.sourcing_strategy?.target_companies && analysis.sourcing_strategy.target_companies.length > 0 && (
-                <div style={{ marginTop: '10px', padding: '10px', background: '#EEF2FF', borderRadius: '6px', border: '1px solid #818CF8' }}>
-                  <p style={{ margin: 0, color: '#4F46E5', fontWeight: 'bold' }}>🎯 AI Sourcing Strategy</p>
-                  <p style={{ margin: '5px 0', fontSize: '14px' }}>
-                    <strong>Target Companies:</strong> {analysis.sourcing_strategy.target_companies.slice(0, 5).join(', ')}
-                  </p>
-                  {analysis.sourcing_strategy.target_industries && (
-                    <p style={{ margin: '5px 0', fontSize: '14px' }}>
-                      <strong>Industries:</strong> {analysis.sourcing_strategy.target_industries.join(', ')}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         <button
@@ -258,10 +210,14 @@ export const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
         <button
           type="submit"
           className="btn btn-primary btn-large"
-          disabled={loading}
+          disabled={loading || analyzing}
           style={{ marginTop: '20px' }}
         >
-          {loading ? (loadingStatus || 'Analyzing...') : 'Search Candidates'}
+          {analyzing || loadingPhase === 'analyzing'
+            ? '🔍 Analyzing requirements...'
+            : loadingPhase === 'searching'
+              ? '⚡ Searching candidates...'
+              : '🔍 Search Candidates'}
         </button>
       </form >
     </div >
