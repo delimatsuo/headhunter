@@ -31,16 +31,19 @@ let pgPool: Pool | null = null;
 
 function getPgPool(): Pool {
     if (!pgPool) {
+        const sslMode = process.env.PGVECTOR_SSL_MODE === 'require';
         pgPool = new Pool({
             host: process.env.PGVECTOR_HOST || 'localhost',
             port: parseInt(process.env.PGVECTOR_PORT || '5432'),
             database: process.env.PGVECTOR_DATABASE || 'headhunter',
             user: process.env.PGVECTOR_USER || 'postgres',
             password: process.env.PGVECTOR_PASSWORD || '',
+            ssl: sslMode,  // Cloud SQL requires SSL
             max: 5,  // Small pool for specialty lookups
             idleTimeoutMillis: 30000,
             connectionTimeoutMillis: 5000,
         });
+        console.log(`[LegacyEngine] PostgreSQL pool created, SSL: ${sslMode}`);
     }
     return pgPool;
 }
@@ -563,6 +566,9 @@ export class LegacyEngine implements IAIEngine {
                 const client = await pool.connect();
 
                 try {
+                    // Debug: Log sample IDs being queried
+                    console.log(`[LegacyEngine] Querying specialties for ${uncachedIds.length} IDs, sample: ${uncachedIds.slice(0, 3).join(', ')}`);
+
                     // Batch query for specialties
                     // Note: candidate_id in sourcing schema is integer, so we need to handle both formats
                     const result = await client.query(`
@@ -571,6 +577,12 @@ export class LegacyEngine implements IAIEngine {
                         WHERE id::text = ANY($1)
                           AND deleted_at IS NULL
                     `, [uncachedIds]);
+
+                    // Debug: Log what we got back
+                    if (result.rows.length > 0) {
+                        const sampleRow = result.rows[0];
+                        console.log(`[LegacyEngine] Sample result: id=${sampleRow.candidate_id}, specialties=${JSON.stringify(sampleRow.specialties)}`);
+                    }
 
                     // Update cache
                     for (const row of result.rows) {
