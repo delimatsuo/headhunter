@@ -33,12 +33,20 @@ interface JobContext {
     level: string;         // c-level, vp, director, manager, senior, mid, junior
     title?: string;        // Full job title
     description?: string;  // Job description summary
+    // Tech stack context for intelligent matching
+    requiredSkills?: string[];      // Core tech from JD: ["Node.js", "TypeScript", "NestJS"]
+    avoidSkills?: string[];         // Anti-patterns: ["Oracle", "legacy"]
+    companyContext?: string;        // "early-stage fintech startup"
 }
 
 interface RerankResult {
     candidate_id: string;
     score: number;         // 0-100
     rationale: string;     // Why this candidate ranks here
+}
+
+interface RerankOptions {
+    skipFilter?: boolean;  // Skip Pass 1 filter (default: auto-detect based on function)
 }
 
 // Internal types for two-pass architecture
@@ -86,13 +94,18 @@ export class GeminiRerankingService {
     /**
      * Two-Pass Reranking: Filter → Rank
      *
-     * Pass 1: Quick filter with tiny prompt (~200 tokens)
-     * Pass 2: Deep rank on filtered candidates (~500 tokens)
+     * Pass 1: Quick filter with tiny prompt (~200 tokens) - SKIPPED for engineering searches
+     * Pass 2: Deep rank on filtered candidates (~500 tokens) - now batched for reliability
+     *
+     * Key insight: For common searches (e.g., "Senior Backend Engineer") where 60%+ of
+     * candidates match, filtering is counterproductive. We skip Pass 1 and send all
+     * candidates directly to Pass 2 for proper ranking.
      */
     async rerank(
         candidates: CandidateForReranking[],
         jobContext: JobContext,
-        topN: number = 50
+        topN: number = 50,
+        options: RerankOptions = {}
     ): Promise<RerankResult[]> {
         const startTime = Date.now();
 
@@ -103,41 +116,53 @@ export class GeminiRerankingService {
         // Limit total candidates to process
         const candidatesToProcess = candidates.slice(0, Math.min(topN * 2, 100));
 
+        // Determine if we should skip Pass 1 filter
+        // Default: skip for engineering searches (majority of candidates likely match)
+        const skipFilter = options.skipFilter ??
+            (jobContext.function === 'engineering');
+
         try {
             const model = this.genAI.getGenerativeModel({
                 model: this.modelName,
                 generationConfig: {
                     temperature: 0.1,  // Low temperature for consistent results
-                    maxOutputTokens: 2048,
+                    maxOutputTokens: 4096,  // Increased for batched responses
                 }
             });
 
-            // ===== PASS 1: Quick Filter =====
-            console.log(`[GeminiRerank] Pass 1: Filtering ${candidatesToProcess.length} candidates`);
-            const filteredIds = await this.quickFilter(model, candidatesToProcess, jobContext);
+            let filteredCandidates: CandidateForReranking[];
 
-            // Get filtered candidates (keep order)
-            const filteredCandidates = candidatesToProcess.filter(c =>
-                filteredIds.includes(c.candidate_id)
-            );
+            if (skipFilter) {
+                // ===== SKIP PASS 1: Direct to ranking =====
+                console.log(`[GeminiRerank] Skipping Pass 1 filter for ${jobContext.function} (${candidatesToProcess.length} candidates)`);
+                filteredCandidates = candidatesToProcess.slice(0, Math.min(50, topN));
+            } else {
+                // ===== PASS 1: Quick Filter =====
+                console.log(`[GeminiRerank] Pass 1: Filtering ${candidatesToProcess.length} candidates`);
+                const filteredIds = await this.quickFilter(model, candidatesToProcess, jobContext);
 
-            console.log(`[GeminiRerank] Pass 1 complete: ${filteredCandidates.length}/${candidatesToProcess.length} candidates kept`);
+                // Get filtered candidates (keep order)
+                filteredCandidates = candidatesToProcess.filter(c =>
+                    filteredIds.includes(c.candidate_id)
+                );
 
-            // If too few candidates passed filter, add some back
-            if (filteredCandidates.length < 10 && candidatesToProcess.length > 10) {
-                const additionalCandidates = candidatesToProcess
-                    .filter(c => !filteredIds.includes(c.candidate_id))
-                    .slice(0, 10 - filteredCandidates.length);
-                filteredCandidates.push(...additionalCandidates);
-                console.log(`[GeminiRerank] Added ${additionalCandidates.length} fallback candidates`);
+                console.log(`[GeminiRerank] Pass 1 complete: ${filteredCandidates.length}/${candidatesToProcess.length} candidates kept`);
+
+                // If too few candidates passed filter, add some back
+                if (filteredCandidates.length < 10 && candidatesToProcess.length > 10) {
+                    const additionalCandidates = candidatesToProcess
+                        .filter(c => !filteredIds.includes(c.candidate_id))
+                        .slice(0, 10 - filteredCandidates.length);
+                    filteredCandidates.push(...additionalCandidates);
+                    console.log(`[GeminiRerank] Added ${additionalCandidates.length} fallback candidates`);
+                }
             }
 
-            // ===== PASS 2: Deep Rank =====
-            // Only rank top candidates to keep prompt small
-            const toRank = filteredCandidates.slice(0, Math.min(30, topN));
-            console.log(`[GeminiRerank] Pass 2: Deep ranking ${toRank.length} candidates`);
+            // ===== PASS 2: Deep Rank (Batched) =====
+            const toRank = filteredCandidates.slice(0, Math.min(50, topN));
+            console.log(`[GeminiRerank] Pass 2: Deep ranking ${toRank.length} candidates (batched)`);
 
-            const rankings = await this.deepRank(model, toRank, jobContext);
+            const rankings = await this.deepRankBatched(model, toRank, jobContext);
 
             const latency = Date.now() - startTime;
             console.log(`[GeminiRerank] Completed in ${latency}ms, returned ${rankings.length} results`);
@@ -151,12 +176,8 @@ export class GeminiRerankingService {
 
         } catch (error: any) {
             console.error('[GeminiRerank] Error:', error.message);
-            // Fallback: return original order with default scores
-            return candidatesToProcess.slice(0, topN).map((c, idx) => ({
-                candidate_id: c.candidate_id,
-                score: 100 - idx,
-                rationale: 'Ranked by retrieval score (reranking unavailable)'
-            }));
+            // Fallback: use improved scoring based on candidate metadata
+            return this.fallbackRanking(candidatesToProcess.slice(0, topN), jobContext);
         }
     }
 
@@ -243,42 +264,151 @@ Use candidate NUMBERS (1, 2, 3...), not names or IDs.`;
         // Build scoring rubric based on job
         const rubric = this.buildScoringRubric(func, level, specialty);
 
-        const prompt = `You are ranking candidates for: ${roleTitle}
+        // Build tech stack and seniority guidance
+        const techStackGuidance = this.buildTechStackGuidance(jobContext);
+        const seniorityGuidance = this.buildSeniorityGuidance(jobContext);
+
+        const prompt = `You are a Principal Technical Recruiter ranking candidates for: ${roleTitle}
 
 ${rubric}
+${techStackGuidance}
+${seniorityGuidance}
 
-KEY PRINCIPLE: The best candidate is EXCITED about this opportunity.
-- Mid→Senior = step UP (motivated)
-- Principal/Staff→Senior = step DOWN (unlikely to accept)
+KEY RECRUITER PRINCIPLES:
+1. **Tech Stack Fit**: ${jobContext.requiredSkills?.length ? `This ${jobContext.requiredSkills.slice(0, 3).join('/')} role needs candidates with THAT stack, not alternatives` : 'Match technical skills to job requirements'}
+   - Java/C# developers are NOT good fits for Node.js/TypeScript roles (different ecosystems)
+   - "Backend" is not enough - the PRIMARY LANGUAGE matters
+
+2. **Career Excitement**: The best candidate is EXCITED about this opportunity
+   - Mid→Senior = step UP (motivated, will accept)
+   - Staff/Principal→Senior = step DOWN (unlikely to accept, will be bored)
+   - Manager→Senior IC = career pivot (very unlikely unless explicitly seeking)
+
+3. **Seniority Reality Check**: For a ${this.capitalizeLevel(jobContext.level)} role:
+   - Engineering Managers won't leave management for IC work
+   - Staff/Principal engineers expect Staff+ roles, not Senior
+   - Tech Leads might accept if role has growth path
 
 Candidates:
 ${candidateList}
 
 Return a JSON array ranked best to worst:
 \`\`\`json
-[{"id": "actual_id_here", "score": 88, "reason": "Senior Backend, 8yrs Python/AWS"},
- {"id": "actual_id_here", "score": 72, "reason": "Fullstack but strong backend"}]
+[{"id": "actual_id_here", "score": 88, "reason": "Senior Node.js dev, 8yrs, TypeScript + AWS - exact match"},
+ {"id": "actual_id_here", "score": 45, "reason": "Senior Java dev - wrong primary stack for Node.js role"},
+ {"id": "actual_id_here", "score": 25, "reason": "Engineering Manager - unlikely to step down to IC"}]
 \`\`\`
 
-CRITICAL: Use the EXACT ID from "ID: xxx" field. Include ALL candidates. Score 0-100.`;
+CRITICAL:
+- Use the EXACT ID from "ID: xxx" field
+- Include ALL candidates
+- Score 0-100 based on BOTH tech fit AND career fit
+- Candidates with wrong primary stack should score <60 even if senior
+- Managers/Staff stepping down should score <40`;
 
         try {
             const result = await model.generateContent(prompt);
             const responseText = result.response.text();
 
             // Parse ranking response with multiple strategies
-            const rankings = this.parseRankingResponseRobust(responseText, candidates);
+            const rankings = this.parseRankingResponseRobust(responseText, candidates, jobContext);
             return rankings;
 
         } catch (error: any) {
             console.error('[GeminiRerank] Rank pass failed:', error.message);
-            // On failure, return default scores
-            return candidates.map((c, idx) => ({
-                candidate_id: c.candidate_id,
-                score: 100 - (idx * 2),
-                rationale: 'Fallback scoring (rank pass failed)'
-            }));
+            // On failure, return default scores using improved fallback
+            return this.fallbackRanking(candidates, jobContext);
         }
+    }
+
+    /**
+     * PASS 2 (Batched): Process candidates in batches to avoid token overflow
+     * and improve parse reliability
+     */
+    private async deepRankBatched(
+        model: any,
+        candidates: CandidateForReranking[],
+        jobContext: JobContext
+    ): Promise<RerankResult[]> {
+        const BATCH_SIZE = 15;  // Process 15 candidates at a time for reliability
+        const allResults: RerankResult[] = [];
+        const processedIds = new Set<string>();
+
+        // Split candidates into batches
+        const batches = this.chunkArray(candidates, BATCH_SIZE);
+        console.log(`[GeminiRerank] Processing ${batches.length} batches of up to ${BATCH_SIZE} candidates each`);
+
+        for (let i = 0; i < batches.length; i++) {
+            const batch = batches[i];
+            console.log(`[GeminiRerank] Processing batch ${i + 1}/${batches.length} (${batch.length} candidates)`);
+
+            try {
+                const batchResults = await this.deepRank(model, batch, jobContext);
+
+                // Add results, avoiding duplicates
+                for (const result of batchResults) {
+                    if (!processedIds.has(result.candidate_id)) {
+                        // Normalize score to 0-100 range
+                        allResults.push({
+                            ...result,
+                            score: this.normalizeScore(result.score)
+                        });
+                        processedIds.add(result.candidate_id);
+                    }
+                }
+
+                console.log(`[GeminiRerank] Batch ${i + 1} returned ${batchResults.length} results`);
+
+            } catch (error: any) {
+                console.error(`[GeminiRerank] Batch ${i + 1} failed:`, error.message);
+                // Add fallback scores for failed batch
+                for (const candidate of batch) {
+                    if (!processedIds.has(candidate.candidate_id)) {
+                        const fallbackResults = this.fallbackRanking([candidate], jobContext);
+                        allResults.push(...fallbackResults);
+                        processedIds.add(candidate.candidate_id);
+                    }
+                }
+            }
+        }
+
+        // Sort all results by score descending
+        allResults.sort((a, b) => b.score - a.score);
+
+        // Ensure we have results for all candidates (fill gaps with fallback)
+        const resultIds = new Set(allResults.map(r => r.candidate_id));
+        for (const candidate of candidates) {
+            if (!resultIds.has(candidate.candidate_id)) {
+                const fallbackResults = this.fallbackRanking([candidate], jobContext);
+                allResults.push(...fallbackResults);
+            }
+        }
+
+        return allResults;
+    }
+
+    /**
+     * Helper to split array into chunks
+     */
+    private chunkArray<T>(array: T[], size: number): T[][] {
+        const chunks: T[][] = [];
+        for (let i = 0; i < array.length; i += size) {
+            chunks.push(array.slice(i, i + size));
+        }
+        return chunks;
+    }
+
+    /**
+     * Normalize score to 0-100 range
+     * Handles cases where LLM returns 0-1 scale or out-of-range values
+     */
+    private normalizeScore(score: number): number {
+        // If score looks like 0-1 scale, convert to 0-100
+        if (score <= 1 && score >= 0) {
+            return Math.round(score * 100);
+        }
+        // Clamp to valid range
+        return Math.max(0, Math.min(100, Math.round(score)));
     }
 
     /**
@@ -301,6 +431,85 @@ CRITICAL: Use the EXACT ID from "ID: xxx" field. Include ALL candidates. Score 0
 - 50-69: Adjacent function with transferable skills
 - 25-49: Overqualified (stepping DOWN)
 - 0-24: Wrong function or significantly mismatched`;
+    }
+
+    /**
+     * Build tech stack guidance for the prompt
+     * Helps Gemini understand that Node.js roles need Node.js developers, not Java developers
+     */
+    private buildTechStackGuidance(jobContext: JobContext): string {
+        if (!jobContext.requiredSkills?.length) return '';
+
+        const primarySkills = jobContext.requiredSkills.slice(0, 5);
+        const avoidSkills = jobContext.avoidSkills || [];
+
+        return `
+REQUIRED TECH STACK: ${primarySkills.join(', ')}
+- Candidates with 3+ required skills: Excellent tech fit (+20 to score)
+- Candidates with 1-2 required skills: Partial fit (no penalty)
+- Candidates with 0 required skills but related stack: Poor fit (-15)
+- Candidates with ALTERNATIVE stacks (e.g., Java when Node.js needed): Wrong fit (-25)
+
+${avoidSkills.length ? `AVOID: ${avoidSkills.join(', ')} - legacy or mismatched tech` : ''}
+
+IMPORTANT: "Backend" alone is insufficient. A Java Spring developer is NOT a good fit for a Node.js/NestJS role - different ecosystems, different patterns.`;
+    }
+
+    /**
+     * Build seniority guidance for the prompt
+     * Helps Gemini understand that managers won't step down to IC roles
+     */
+    private buildSeniorityGuidance(jobContext: JobContext): string {
+        const level = jobContext.level?.toLowerCase() || 'senior';
+
+        // Define who would realistically take this role
+        const guidance: Record<string, string> = {
+            'senior': `
+SENIORITY CONSTRAINTS FOR SENIOR IC ROLE:
+- IDEAL: Senior Engineers, Senior Developers (exact match)
+- GOOD: Mid-level engineers stepping UP (motivated, will grow)
+- MARGINAL: Leads if seeking IC focus (rare but possible)
+- POOR: Staff/Principal Engineers (overqualified, will be bored)
+- UNLIKELY: Engineering Managers (won't leave management track)
+- EXCLUDE: Directors, VPs, Heads of (completely wrong level)`,
+
+            'mid': `
+SENIORITY CONSTRAINTS FOR MID-LEVEL ROLE:
+- IDEAL: Mid-level Engineers (exact match)
+- GOOD: Junior engineers stepping UP (eager to grow)
+- POOR: Senior engineers (why step down?)
+- UNLIKELY: Any management or staff+ level`,
+
+            'staff': `
+SENIORITY CONSTRAINTS FOR STAFF ROLE:
+- IDEAL: Staff Engineers, Senior Engineers ready to step up
+- GOOD: Tech Leads seeking IC track
+- MARGINAL: Principal if role has scope
+- UNLIKELY: Managers (different track)`,
+
+            'principal': `
+SENIORITY CONSTRAINTS FOR PRINCIPAL ROLE:
+- IDEAL: Principal Engineers, Staff Engineers stepping up
+- GOOD: Distinguished Engineers at smaller companies
+- MARGINAL: Directors seeking IC track
+- UNLIKELY: VPs (different track)`,
+
+            'manager': `
+SENIORITY CONSTRAINTS FOR MANAGER ROLE:
+- IDEAL: Engineering Managers (exact match)
+- GOOD: Tech Leads stepping into management
+- GOOD: Senior engineers seeking management
+- UNLIKELY: Directors (stepping down)`,
+
+            'director': `
+SENIORITY CONSTRAINTS FOR DIRECTOR ROLE:
+- IDEAL: Directors (exact match)
+- GOOD: Senior Managers stepping up
+- GOOD: VPs at smaller companies
+- UNLIKELY: C-level (stepping down)`,
+        };
+
+        return guidance[level] || guidance['senior'];
     }
 
     /**
@@ -356,7 +565,8 @@ CRITICAL: Use the EXACT ID from "ID: xxx" field. Include ALL candidates. Score 0
      */
     private parseRankingResponseRobust(
         responseText: string,
-        candidates: CandidateForReranking[]
+        candidates: CandidateForReranking[],
+        jobContext?: JobContext
     ): RerankResult[] {
         const candidateIdSet = new Set(candidates.map(c => c.candidate_id));
         const candidateByIndex = new Map(candidates.map((c, idx) => [String(idx + 1), c.candidate_id]));
@@ -367,14 +577,14 @@ CRITICAL: Use the EXACT ID from "ID: xxx" field. Include ALL candidates. Score 0
             if (!jsonStr) {
                 console.error('[GeminiRerank] No JSON found in rank response');
                 console.error('[GeminiRerank] Full response:', responseText);
-                return this.fallbackRanking(candidates);
+                return this.fallbackRanking(candidates, jobContext);
             }
 
             const parsed = JSON.parse(jsonStr);
 
             if (!Array.isArray(parsed)) {
                 console.error('[GeminiRerank] Response is not an array');
-                return this.fallbackRanking(candidates);
+                return this.fallbackRanking(candidates, jobContext);
             }
 
             // Map results with ID recovery
@@ -433,12 +643,12 @@ CRITICAL: Use the EXACT ID from "ID: xxx" field. Include ALL candidates. Score 0
             }
 
             console.error('[GeminiRerank] No valid IDs matched');
-            return this.fallbackRanking(candidates);
+            return this.fallbackRanking(candidates, jobContext);
 
         } catch (error: any) {
             console.error('[GeminiRerank] Rank parse failed:', error.message);
             console.error('[GeminiRerank] Full response:', responseText);
-            return this.fallbackRanking(candidates);
+            return this.fallbackRanking(candidates, jobContext);
         }
     }
 
@@ -468,14 +678,113 @@ CRITICAL: Use the EXACT ID from "ID: xxx" field. Include ALL candidates. Score 0
     }
 
     /**
-     * Fallback ranking when parsing fails
+     * Improved fallback ranking when LLM fails
+     * Uses candidate metadata to compute meaningful scores instead of just position
      */
-    private fallbackRanking(candidates: CandidateForReranking[]): RerankResult[] {
-        return candidates.map((c, idx) => ({
-            candidate_id: c.candidate_id,
-            score: 100 - (idx * 2),
-            rationale: 'Fallback scoring (parse error)'
-        }));
+    private fallbackRanking(candidates: CandidateForReranking[], jobContext?: JobContext): RerankResult[] {
+        // Define skill sets for matching
+        const backendSkills = ['python', 'java', 'go', 'golang', 'node', 'nodejs', 'sql', 'postgresql', 'mysql', 'mongodb', 'aws', 'docker', 'kubernetes', 'redis', 'kafka', 'spring', 'django', 'fastapi', 'graphql', 'rest', 'api', 'microservices'];
+        const frontendSkills = ['react', 'vue', 'angular', 'javascript', 'typescript', 'css', 'html', 'webpack', 'nextjs', 'gatsby', 'redux', 'tailwind'];
+        const dataSkills = ['python', 'sql', 'spark', 'hadoop', 'tensorflow', 'pytorch', 'pandas', 'numpy', 'ml', 'machine learning', 'data pipeline', 'airflow', 'dbt'];
+        const platformSkills = ['kubernetes', 'docker', 'terraform', 'aws', 'gcp', 'azure', 'ci/cd', 'jenkins', 'github actions', 'ansible', 'helm', 'prometheus', 'grafana'];
+
+        // Choose skill set based on job context
+        let relevantSkills = backendSkills;  // Default to backend
+        const specialty = jobContext?.title ? this.extractSpecialtyFromTitle(jobContext.title) : null;
+
+        if (specialty === 'frontend') {
+            relevantSkills = frontendSkills;
+        } else if (specialty === 'data') {
+            relevantSkills = dataSkills;
+        } else if (specialty === 'platform' || specialty === 'devops') {
+            relevantSkills = platformSkills;
+        }
+
+        return candidates.map((c, idx) => {
+            // Base score decreases with position (retrieval order matters)
+            let score = 70 - (idx * 1.2);
+
+            // Bonus for matching skills
+            const candidateSkills = (c.skills || []).map(s => s.toLowerCase());
+            const matchedSkills = relevantSkills.filter(skill =>
+                candidateSkills.some(cs => cs.includes(skill))
+            );
+            score += matchedSkills.length * 2.5;
+
+            // Bonus for seniority match in title
+            const roleLevel = this.extractLevelFromRole(c.current_role);
+            const targetLevel = jobContext?.level || 'senior';
+            if (roleLevel === targetLevel) {
+                score += 5;
+            } else if (this.isOneStepUp(roleLevel, targetLevel)) {
+                // Stepping up is good (motivated candidate)
+                score += 3;
+            }
+
+            // Bonus for relevant experience years
+            const yearsExp = c.years_experience || 0;
+            if (targetLevel === 'senior' && yearsExp >= 5 && yearsExp <= 12) {
+                score += 3;
+            } else if (targetLevel === 'mid' && yearsExp >= 2 && yearsExp <= 6) {
+                score += 3;
+            }
+
+            // Clamp to reasonable range (not too high, not too low)
+            score = Math.max(20, Math.min(85, Math.round(score)));
+
+            // Build rationale
+            const rationaleItems: string[] = [];
+            if (matchedSkills.length > 0) {
+                rationaleItems.push(`${matchedSkills.length} relevant skills`);
+            }
+            if (roleLevel) {
+                rationaleItems.push(`${roleLevel} level`);
+            }
+            if (yearsExp > 0) {
+                rationaleItems.push(`${yearsExp} years exp`);
+            }
+
+            const rationale = rationaleItems.length > 0
+                ? `Fallback scoring: ${rationaleItems.join(', ')}`
+                : 'Fallback scoring based on retrieval position';
+
+            return {
+                candidate_id: c.candidate_id,
+                score,
+                rationale
+            };
+        }).sort((a, b) => b.score - a.score);  // Sort by score
+    }
+
+    /**
+     * Extract level from role title
+     */
+    private extractLevelFromRole(role: string | undefined): string | null {
+        if (!role) return null;
+        const roleLower = role.toLowerCase();
+
+        if (roleLower.includes('junior') || roleLower.includes('associate')) return 'junior';
+        if (roleLower.includes('senior') || roleLower.includes('sr.') || roleLower.includes('sr ')) return 'senior';
+        if (roleLower.includes('staff')) return 'staff';
+        if (roleLower.includes('principal')) return 'principal';
+        if (roleLower.includes('lead') || roleLower.includes('manager')) return 'manager';
+        if (roleLower.includes('director')) return 'director';
+        if (roleLower.includes('vp') || roleLower.includes('vice president')) return 'vp';
+        if (roleLower.includes('cto') || roleLower.includes('ceo') || roleLower.includes('chief')) return 'c-level';
+
+        // Default to mid if no clear indicator
+        return 'mid';
+    }
+
+    /**
+     * Check if candidate is one step up (stepping up to role - motivated)
+     */
+    private isOneStepUp(candidateLevel: string | null, targetLevel: string): boolean {
+        if (!candidateLevel) return false;
+        const progression = ['junior', 'mid', 'senior', 'staff', 'principal', 'manager', 'director', 'vp', 'c-level'];
+        const candidateIdx = progression.indexOf(candidateLevel);
+        const targetIdx = progression.indexOf(targetLevel);
+        return candidateIdx >= 0 && targetIdx >= 0 && targetIdx - candidateIdx === 1;
     }
 
     // ============================================================================

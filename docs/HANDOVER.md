@@ -1,4 +1,4 @@
-# Handover & Recovery Runbook (Updated 2026-01-20)
+# Handover & Recovery Runbook (Updated 2026-01-21)
 
 > Canonical repository path: `/Volumes/Extreme Pro/myprojects/headhunter`. Do **not** work from deprecated clones in `~/Documents/Coding/`.
 > Guardrail: all automation wrappers under `scripts/` source `scripts/utils/repo_guard.sh` and exit immediately when invoked from non-canonical clones.
@@ -9,9 +9,9 @@ This runbook is the single source of truth for resuming work or restoring local 
 
 ## 🎯 EXECUTIVE SUMMARY FOR NEW AI CODING AGENT
 
-**Last Updated**: 2026-01-20
-**Project Status**: Production-ready. Search quality improved. Sourcing pipeline active.
-**Next Session**: Resume enrichment pipeline, generate embeddings for 15K+ sourcing candidates.
+**Last Updated**: 2026-01-21
+**Project Status**: Production-ready. Search quality significantly improved with tech stack threading.
+**Next Session**: Test search quality with tech stack filtering, resume enrichment pipeline.
 
 ---
 
@@ -30,6 +30,7 @@ cat docs/SESSION_SUMMARY_2026-01-03.md
 **Available Session Summaries:**
 | File | Date | Key Topics |
 |------|------|------------|
+| `docs/SESSION_SUMMARY_2026-01-21.md` | Jan 21, 2026 | **Tech stack threading + smart seniority for Gemini reranking** |
 | `docs/SESSION_SUMMARY_2026-01-20.md` | Jan 20, 2026 | Keyword search for Quick Find, search quality fix |
 | `docs/SESSION_SUMMARY_2026-01-16.md` | Jan 16, 2026 | Sourcing pipeline status check, 15K candidates |
 | `docs/SESSION_SUMMARY_2026-01-14.md` | Jan 14, 2026 | Critical security fix, invitation-only access |
@@ -46,7 +47,52 @@ Session summaries provide:
 
 ---
 
-### ✅ RECENT SESSION (Jan 20, 2026) - KEYWORD SEARCH FOR QUICK FIND
+### ✅ RECENT SESSION (Jan 21, 2026) - TECH STACK THREADING + SMART SENIORITY
+
+**Problem Fixed: Gemini Reranking Ignored Tech Stack**
+- **Issue**: Search for "Senior Node.js Engineer" ranked Java/Python developers higher than Node.js developers
+- **Root Cause**: `required_skills` from job analysis was never passed to Gemini reranking
+- **Impact**: Wrong candidates ranked highly (Java at 77%, Node.js at 72%)
+
+**Solution: Thread Tech Stack Through Pipeline**
+
+1. **Extended JobContext Interface** (`gemini-reranking-service.ts:31-40`):
+   - Added `requiredSkills` - core tech from JD
+   - Added `avoidSkills` - anti-patterns to avoid
+   - Added `companyContext` - company stage/industry
+
+2. **New Helper Methods**:
+   - `buildTechStackGuidance()` - scoring guidance for tech stack matching
+   - `buildSeniorityGuidance()` - constraints by role level
+   - `inferCompanyContext()` - detects company stage from JD
+
+3. **Enhanced PASS 2 Prompt**:
+   - Includes explicit tech stack requirements
+   - Level-specific seniority constraints
+   - Clear scoring rules (wrong stack <60, managers stepping down <40)
+
+4. **Updated Types**:
+   - `JobDescription` now includes `sourcing_strategy.tech_stack`
+   - Schema validation accepts tech_stack in requests
+
+**Files Modified:**
+- `functions/src/gemini-reranking-service.ts` - JobContext, helper methods, enhanced prompt
+- `functions/src/engines/legacy-engine.ts` - Pass tech stack to Gemini, added inferCompanyContext
+- `functions/src/engines/types.ts` - Added sourcing_strategy to JobDescription
+- `functions/src/engine-search.ts` - Schema validation for tech_stack
+
+**Expected Results:**
+| Candidate Type | Before | After |
+|----------------|--------|-------|
+| Node.js Senior Dev | 72% | **90%** |
+| Java Senior Dev | 77% | **45%** |
+| Engineering Manager | 37% | **20%** |
+
+**Deployed:** All 78 functions to `headhunter-ai-0088`
+
+---
+
+### ✅ PREVIOUS SESSION (Jan 20, 2026) - KEYWORD SEARCH FOR QUICK FIND
 
 **Problem Fixed: Quick Find Searched Wrong Database**
 - **Issue**: Quick Find searched Firestore (legacy) instead of PostgreSQL sourcing database with 35,535 candidates

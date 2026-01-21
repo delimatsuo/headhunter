@@ -16,6 +16,15 @@ export interface JobDescription {
     nice_to_have?: string[];
     min_experience?: number;
     max_experience?: number;
+    // Sourcing strategy for tech stack context and targeting
+    sourcing_strategy?: {
+        tech_stack?: {
+            core?: string[];    // Core tech required: ["Node.js", "TypeScript"]
+            avoid?: string[];   // Tech to avoid: ["Oracle", "legacy"]
+        };
+        target_companies?: string[];
+        target_industries?: string[];
+    };
 }
 
 export interface SourcingStrategy {

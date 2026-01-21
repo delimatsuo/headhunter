@@ -30,6 +30,15 @@ const EngineSearchRequestSchema = z.object({
         nice_to_have: z.array(z.string()).optional().nullable(),
         min_experience: z.number().optional().nullable(),
         max_experience: z.number().optional().nullable(),
+        // Sourcing strategy for tech stack context
+        sourcing_strategy: z.object({
+            tech_stack: z.object({
+                core: z.array(z.string()).optional().nullable(),
+                avoid: z.array(z.string()).optional().nullable(),
+            }).optional().nullable(),
+            target_companies: z.array(z.string()).optional().nullable(),
+            target_industries: z.array(z.string()).optional().nullable(),
+        }).optional().nullable(),
     }),
 
     // Search options

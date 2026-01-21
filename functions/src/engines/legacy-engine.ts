@@ -19,11 +19,44 @@ import {
     CandidateMatch
 } from './types';
 import * as admin from 'firebase-admin';
+import { Pool } from 'pg';
 import { getVertexRankingService } from '../vertex-ranking-service';
 import { getGeminiRerankingService } from '../gemini-reranking-service';
 import { getJobClassificationService, JobClassification } from '../job-classification-service';
 
 const db = admin.firestore();
+
+// PostgreSQL connection for specialty lookups (sourcing schema)
+let pgPool: Pool | null = null;
+
+function getPgPool(): Pool {
+    if (!pgPool) {
+        pgPool = new Pool({
+            host: process.env.PGVECTOR_HOST || 'localhost',
+            port: parseInt(process.env.PGVECTOR_PORT || '5432'),
+            database: process.env.PGVECTOR_DATABASE || 'headhunter',
+            user: process.env.PGVECTOR_USER || 'postgres',
+            password: process.env.PGVECTOR_PASSWORD || '',
+            max: 5,  // Small pool for specialty lookups
+            idleTimeoutMillis: 30000,
+            connectionTimeoutMillis: 5000,
+        });
+    }
+    return pgPool;
+}
+
+// Cache for specialty data (TTL 5 minutes)
+interface SpecialtyCache {
+    data: Map<string, string[]>;
+    lastUpdated: number;
+}
+
+let specialtyCache: SpecialtyCache = {
+    data: new Map(),
+    lastUpdated: 0
+};
+
+const SPECIALTY_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // Top companies for pedigree boost
 const TOP_COMPANIES = [
@@ -118,37 +151,65 @@ export class LegacyEngine implements IAIEngine {
             // CRITICAL: Filter vector pool by EFFECTIVE level (adjusted for company tier)
             // This allows startup CTOs to appear in VP searches at big companies
             // while still filtering out actual FAANG VPs stepping down
+            //
+            // IMPORTANT: Candidates with 'unknown' level PASS the filter - let Gemini decide
+            // This prevents filtering out good candidates just because they lack metadata
             const vectorPoolBeforeFilter = vectorPool.length;
             vectorPool = vectorPool.filter((c: any) => {
                 const effectiveLevel = this.getEffectiveLevel(c);
+                // Unknown level passes - Gemini will evaluate them
+                if (effectiveLevel === 'unknown') return true;
                 return levelRange.includes(effectiveLevel);
             });
 
-            // Also apply specialty filtering to vector pool
+            // Specialty filtering for vector pool - Uses PostgreSQL specialties column
+            // STRICT MODE: Now that we have specialty data, exclude mismatches to improve precision
+            // Load specialty data from PostgreSQL for all vector pool candidates
             if (targetSpecialties.length > 0 && targetClassification.function === 'engineering') {
                 const vectorBeforeSpecialty = vectorPool.length;
-                vectorPool = vectorPool.filter((c: any) => {
-                    const functions = c.searchable?.functions || [];
-                    const engFunction = functions.find((f: any) => f.name === 'engineering');
-                    if (!engFunction) return true;
 
-                    const candidateSpecialties = engFunction.specialties || [];
+                // Load PostgreSQL specialty data for filtering
+                const candidateIds = vectorPool.map((c: any) => c.candidate_id || c.id || '').filter(Boolean);
+                const pgSpecialties = await this.loadSpecialtiesFromPg(candidateIds);
+
+                vectorPool = vectorPool.filter((c: any) => {
+                    const candidateId = c.candidate_id || c.id || '';
+                    const candidateSpecialties = this.getCandidateSpecialty(c, pgSpecialties);
+
+                    // No specialty data - let them through for Gemini evaluation
                     if (candidateSpecialties.length === 0) return true;
 
-                    // Check for specialty match
+                    // Check for specialty match (keep if ANY target specialty matches)
                     for (const target of targetSpecialties) {
                         if (candidateSpecialties.includes(target)) return true;
+                        // Fullstack matches both backend and frontend
                         if ((target === 'backend' || target === 'frontend') &&
                             (candidateSpecialties.includes('fullstack') || candidateSpecialties.includes('full-stack') || candidateSpecialties.includes('full stack'))) return true;
                     }
 
-                    // Strict exclusion for backend vs frontend
-                    if (targetSpecialties.includes('backend') && candidateSpecialties.includes('frontend') && !candidateSpecialties.includes('backend')) return false;
-                    if (targetSpecialties.includes('frontend') && candidateSpecialties.includes('backend') && !candidateSpecialties.includes('frontend')) return false;
+                    // STRICT EXCLUSIONS: Now with good specialty data, exclude clear mismatches
+                    if (targetSpecialties.includes('backend')) {
+                        // Exclude PURE frontend candidates from backend searches
+                        const isPureFrontend = candidateSpecialties.includes('frontend') &&
+                            !candidateSpecialties.includes('backend') &&
+                            !candidateSpecialties.includes('fullstack') &&
+                            !candidateSpecialties.includes('full-stack');
+                        if (isPureFrontend) return false;
+                    }
 
+                    if (targetSpecialties.includes('frontend')) {
+                        // Exclude PURE backend candidates from frontend searches
+                        const isPureBackend = candidateSpecialties.includes('backend') &&
+                            !candidateSpecialties.includes('frontend') &&
+                            !candidateSpecialties.includes('fullstack') &&
+                            !candidateSpecialties.includes('full-stack');
+                        if (isPureBackend) return false;
+                    }
+
+                    // Let others through for Gemini to score appropriately
                     return true;
                 });
-                console.log(`[LegacyEngine] Vector specialty filter: ${vectorBeforeSpecialty} → ${vectorPool.length}`);
+                console.log(`[LegacyEngine] Vector specialty filter (PostgreSQL): ${vectorBeforeSpecialty} → ${vectorPool.length}`);
             }
 
             console.log(`[LegacyEngine] IC mode - Function pool: ${functionPool.length}, Vector pool: ${vectorPool.length} (filtered from ${vectorPoolBeforeFilter})`);
@@ -174,6 +235,13 @@ export class LegacyEngine implements IAIEngine {
             specialtyScore: number;
             sources: string[];
         }>();
+
+        // Load PostgreSQL specialty data for all candidates (for accurate scoring)
+        const allCandidateIds = [
+            ...functionPool.map((c: any) => c.id || c.candidate_id || ''),
+            ...vectorPool.map((c: any) => c.candidate_id || c.id || '')
+        ].filter(Boolean);
+        const allPgSpecialties = await this.loadSpecialtiesFromPg(allCandidateIds);
 
         // Score function pool candidates
         for (const candidate of functionPool) {
@@ -207,8 +275,8 @@ export class LegacyEngine implements IAIEngine {
             );
             entry.levelScore = (rawLevelScore / 40) * weights.level;
 
-            // Specialty match (backend vs frontend, etc.)
-            const specialtyScore = this.calculateSpecialtyScore(candidate, targetSpecialties);
+            // Specialty match (backend vs frontend, etc.) - using PostgreSQL data
+            const specialtyScore = this.calculateSpecialtyScore(candidate, targetSpecialties, allPgSpecialties);
             entry.specialtyScore = specialtyScore * weights.specialty;
 
             candidateScores.set(id, entry);
@@ -246,9 +314,9 @@ export class LegacyEngine implements IAIEngine {
                 entry.levelScore = (rawLevelScore / 40) * weights.level;
             }
 
-            // Specialty score for vector candidates too
+            // Specialty score for vector candidates too - using PostgreSQL data
             if (entry.specialtyScore === 0) {
-                const specialtyScore = this.calculateSpecialtyScore(candidate, targetSpecialties);
+                const specialtyScore = this.calculateSpecialtyScore(candidate, targetSpecialties, allPgSpecialties);
                 entry.specialtyScore = specialtyScore * weights.specialty;
             }
 
@@ -274,6 +342,39 @@ export class LegacyEngine implements IAIEngine {
         candidates.sort((a: any, b: any) => b.retrieval_score - a.retrieval_score);
         console.log(`[LegacyEngine] ${searchMode.toUpperCase()} mode - Merged ${candidates.length} unique candidates`);
 
+        // ===== STEP 3.5: HARD Level Filter (Career Trajectory) =====
+        // CRITICAL: Remove candidates who would be STEPPING DOWN to take this role
+        // A Principal/Staff engineer will NOT accept a Senior role - that's a demotion
+        // This filter uses NOMINAL level (not effective) because we're filtering by candidate interest
+        //
+        // IMPORTANT: Only apply to candidates with EXPLICIT level data
+        // Candidates with unknown level pass through - Gemini will evaluate them
+        if (!isExecutiveSearch) {
+            const beforeLevelFilter = candidates.length;
+            const levelsAboveTarget = this.getLevelsAbove(targetClassification.level);
+
+            candidates = candidates.filter((c: any) => {
+                // Try multiple sources for level data
+                const nominalLevel = (
+                    c.searchable?.level ||
+                    c.profile?.current_level ||
+                    c.metadata?.current_level ||
+                    c.current_level ||
+                    ''
+                ).toLowerCase();
+
+                // Unknown level passes - Gemini will evaluate them
+                if (!nominalLevel || nominalLevel === 'unknown') return true;
+
+                // Keep if candidate's level is NOT above target (they wouldn't be stepping down)
+                return !levelsAboveTarget.includes(nominalLevel);
+            });
+
+            if (beforeLevelFilter !== candidates.length) {
+                console.log(`[LegacyEngine] Hard level filter (career trajectory): ${beforeLevelFilter} → ${candidates.length} (removed ${levelsAboveTarget.join(', ')})`);
+            }
+        }
+
         // ===== STEP 4: Cross-Encoder Reranking =====
         let searchStrategy = 'multi-signal retrieval';
         let useVertexRanking = false;
@@ -283,7 +384,10 @@ export class LegacyEngine implements IAIEngine {
                 options.onProgress('AI reasoning for best match...');
             }
 
-            const topCandidates = candidates.slice(0, 50);
+            // Send more candidates to Gemini for nuanced evaluation
+            // The limit here determines how many candidates Gemini can reason about
+            const maxForReranking = Math.min(candidates.length, 100);
+            const topCandidates = candidates.slice(0, maxForReranking);
             const candidatesForRanking = topCandidates.map((c: any) => {
                 const profile = c.profile || {};
                 return {
@@ -301,7 +405,11 @@ export class LegacyEngine implements IAIEngine {
             const jobContext = {
                 function: targetClassification.function,
                 level: targetClassification.level,
-                title: job.title || `${targetClassification.level} ${targetClassification.function}`
+                title: job.title || `${targetClassification.level} ${targetClassification.function}`,
+                // NEW: Pass tech stack for intelligent matching
+                requiredSkills: job.required_skills || [],
+                avoidSkills: job.sourcing_strategy?.tech_stack?.avoid || [],
+                companyContext: this.inferCompanyContext(job.description)
             };
 
             console.log(`[LegacyEngine] Gemini reranking with context: ${JSON.stringify(jobContext)}`);
@@ -431,6 +539,95 @@ export class LegacyEngine implements IAIEngine {
     // HELPER METHODS
     // ============================================================================
 
+    /**
+     * Load specialty data from PostgreSQL sourcing.candidates table
+     * Uses caching to avoid repeated queries
+     */
+    private async loadSpecialtiesFromPg(candidateIds: string[]): Promise<Map<string, string[]>> {
+        if (candidateIds.length === 0) return new Map();
+
+        // Check cache freshness
+        const now = Date.now();
+        if (now - specialtyCache.lastUpdated > SPECIALTY_CACHE_TTL) {
+            // Cache expired, clear it
+            specialtyCache.data.clear();
+            specialtyCache.lastUpdated = now;
+        }
+
+        // Find IDs not in cache
+        const uncachedIds = candidateIds.filter(id => !specialtyCache.data.has(id));
+
+        if (uncachedIds.length > 0) {
+            try {
+                const pool = getPgPool();
+                const client = await pool.connect();
+
+                try {
+                    // Batch query for specialties
+                    // Note: candidate_id in sourcing schema is integer, so we need to handle both formats
+                    const result = await client.query(`
+                        SELECT id::text as candidate_id, COALESCE(specialties, '{}') as specialties
+                        FROM sourcing.candidates
+                        WHERE id::text = ANY($1)
+                          AND deleted_at IS NULL
+                    `, [uncachedIds]);
+
+                    // Update cache
+                    for (const row of result.rows) {
+                        specialtyCache.data.set(row.candidate_id, row.specialties || []);
+                    }
+
+                    // Mark missing IDs as empty (not in PostgreSQL or no specialty)
+                    for (const id of uncachedIds) {
+                        if (!specialtyCache.data.has(id)) {
+                            specialtyCache.data.set(id, []);
+                        }
+                    }
+
+                    console.log(`[LegacyEngine] Loaded ${result.rows.length} specialty records from PostgreSQL`);
+                } finally {
+                    client.release();
+                }
+            } catch (error: any) {
+                console.error('[LegacyEngine] Failed to load specialties from PostgreSQL:', error.message);
+                // On error, set empty arrays for uncached IDs to prevent repeated failures
+                for (const id of uncachedIds) {
+                    specialtyCache.data.set(id, []);
+                }
+            }
+        }
+
+        // Return requested specialties from cache
+        const result = new Map<string, string[]>();
+        for (const id of candidateIds) {
+            result.set(id, specialtyCache.data.get(id) || []);
+        }
+        return result;
+    }
+
+    /**
+     * Get candidate specialty from PostgreSQL (with fallback to Firestore data)
+     */
+    private getCandidateSpecialty(candidate: any, pgSpecialties: Map<string, string[]>): string[] {
+        const candidateId = candidate.candidate_id || candidate.id || '';
+
+        // Priority 1: PostgreSQL specialties (most accurate, from backfill)
+        const pgSpecs = pgSpecialties.get(candidateId);
+        if (pgSpecs && pgSpecs.length > 0) {
+            return pgSpecs;
+        }
+
+        // Priority 2: Firestore searchable.functions.engineering.specialties (legacy)
+        const functions = candidate.searchable?.functions || [];
+        const engFunction = functions.find((f: any) => f.name === 'engineering');
+        if (engFunction?.specialties && engFunction.specialties.length > 0) {
+            return engFunction.specialties;
+        }
+
+        // No specialty data available
+        return [];
+    }
+
     private async searchByFunction(
         targetFunction: string,
         levelRange: string[],
@@ -475,51 +672,59 @@ export class LegacyEngine implements IAIEngine {
                 });
 
             // ===================================================================
-            // SPECIALTY FILTERING (for IC roles)
+            // SPECIALTY FILTERING (for IC roles) - Uses PostgreSQL as primary source
             // When searching for "Backend Engineer", filter OUT frontend-only candidates
             // This prevents frontend engineers from appearing in backend searches
             // ===================================================================
             if (targetSpecialties.length > 0 && targetFunction === 'engineering') {
                 const beforeFilter = candidates.length;
 
+                // Load PostgreSQL specialty data for function pool candidates
+                const candidateIds = candidates.map((c: any) => c.id || '').filter(Boolean);
+                const pgSpecialties = await this.loadSpecialtiesFromPg(candidateIds);
+
                 candidates = candidates.filter((c: any) => {
-                    const functions = c.searchable?.functions || [];
+                    const candidateId = c.id || '';
+                    const candidateSpecialties = this.getCandidateSpecialty(c, pgSpecialties);
 
-                    // Find the engineering function entry
-                    const engFunction = functions.find((f: any) => f.name === 'engineering');
-                    if (!engFunction) return true; // Keep if no function data
-
-                    const candidateSpecialties = engFunction.specialties || [];
-                    if (candidateSpecialties.length === 0) return true; // Keep if no specialty data
+                    // No specialty data - keep for Gemini evaluation
+                    if (candidateSpecialties.length === 0) return true;
 
                     // Check if candidate has ANY of the target specialties
                     for (const target of targetSpecialties) {
                         if (candidateSpecialties.includes(target)) return true;
 
                         // Fullstack matches both frontend and backend
-                        if (target === 'backend' && (candidateSpecialties.includes('fullstack') || candidateSpecialties.includes('full-stack') || candidateSpecialties.includes('full stack'))) return true;
-                        if (target === 'frontend' && (candidateSpecialties.includes('fullstack') || candidateSpecialties.includes('full-stack') || candidateSpecialties.includes('full stack'))) return true;
+                        if ((target === 'backend' || target === 'frontend') &&
+                            (candidateSpecialties.includes('fullstack') ||
+                             candidateSpecialties.includes('full-stack') ||
+                             candidateSpecialties.includes('full stack'))) {
+                            return true;
+                        }
                     }
 
-                    // STRICT FILTERING: If we're looking for backend, exclude frontend-only
-                    // But be lenient if we're looking for something generic
+                    // STRICT FILTERING: With PostgreSQL specialty data, exclude clear mismatches
                     if (targetSpecialties.includes('backend')) {
                         // Exclude candidates who are clearly frontend-only
-                        if (candidateSpecialties.includes('frontend') && !candidateSpecialties.includes('backend')) {
-                            return false;
-                        }
+                        const isPureFrontend = candidateSpecialties.includes('frontend') &&
+                            !candidateSpecialties.includes('backend') &&
+                            !candidateSpecialties.includes('fullstack') &&
+                            !candidateSpecialties.includes('full-stack');
+                        if (isPureFrontend) return false;
                     }
                     if (targetSpecialties.includes('frontend')) {
                         // Exclude candidates who are clearly backend-only
-                        if (candidateSpecialties.includes('backend') && !candidateSpecialties.includes('frontend')) {
-                            return false;
-                        }
+                        const isPureBackend = candidateSpecialties.includes('backend') &&
+                            !candidateSpecialties.includes('frontend') &&
+                            !candidateSpecialties.includes('fullstack') &&
+                            !candidateSpecialties.includes('full-stack');
+                        if (isPureBackend) return false;
                     }
 
                     return true; // Keep by default
                 });
 
-                console.log(`[LegacyEngine] Specialty filter: ${beforeFilter} → ${candidates.length} (specialties: ${targetSpecialties.join(', ')})`);
+                console.log(`[LegacyEngine] Specialty filter (PostgreSQL): ${beforeFilter} → ${candidates.length} (specialties: ${targetSpecialties.join(', ')})`);
             }
 
             console.log(`[LegacyEngine] Function query: ${legacySnapshot.size} total, ${candidates.length} in level range [${levelRange.join(', ')}] for ${targetFunction}`);
@@ -584,6 +789,36 @@ export class LegacyEngine implements IAIEngine {
         return icLevelOrder.slice(minIndex, maxIndex + 1);
     }
 
+    /**
+     * Get levels ABOVE the target level (candidates who would be stepping DOWN)
+     * Used for hard filtering to remove candidates who won't be interested
+     *
+     * Recruiter logic: A Principal engineer won't accept a Senior role - that's a demotion
+     * Even if they're "technically qualified", they won't take it
+     */
+    private getLevelsAbove(targetLevel: string): string[] {
+        // IC track: intern → junior → mid → senior → staff → principal
+        // Management track: manager → director → vp → c-level
+        // Cross-track: Management levels are always "above" IC levels for interest purposes
+
+        const icLevelOrder = ['intern', 'junior', 'mid', 'senior', 'staff', 'principal'];
+        const managementLevels = ['manager', 'director', 'vp', 'c-level'];
+
+        const targetIndex = icLevelOrder.indexOf(targetLevel);
+
+        if (targetIndex === -1) {
+            // Target is on management track - return higher management levels
+            const mgmtIndex = managementLevels.indexOf(targetLevel);
+            if (mgmtIndex === -1) return [];
+            return managementLevels.slice(mgmtIndex + 1);
+        }
+
+        // Target is on IC track
+        // Levels above = higher IC levels + all management levels (manager won't take senior IC role)
+        const higherIcLevels = icLevelOrder.slice(targetIndex + 1);
+        return [...higherIcLevels, ...managementLevels];
+    }
+
     // Company tiers for level adjustment (similar to levels.fyi)
     private static readonly COMPANY_TIERS: Record<string, number> = {
         // FAANG+ (Director here = VP elsewhere)
@@ -625,10 +860,25 @@ export class LegacyEngine implements IAIEngine {
      *
      * IMPORTANT: Management track (manager, director, vp, c-level) is SEPARATE from IC track.
      * We never adjust managers down to IC levels - they are different career paths.
+     *
+     * CRITICAL FIX: Only apply company tier adjustment when we have ACTUAL data.
+     * Don't penalize candidates with missing metadata by demoting them to 'intern'.
      */
     private getEffectiveLevel(candidate: any): string {
-        const nominalLevel = (candidate.searchable?.level || 'mid').toLowerCase();
-        const companyTier = this.getCompanyTier(candidate);
+        // Check multiple possible sources for level data
+        const nominalLevel = (
+            candidate.searchable?.level ||
+            candidate.profile?.current_level ||
+            candidate.metadata?.current_level ||
+            candidate.current_level ||
+            'unknown'
+        ).toLowerCase();
+
+        // If we don't know the level, return it as-is (will be filtered leniently)
+        // This prevents demoting unknown candidates to 'intern'
+        if (nominalLevel === 'unknown') {
+            return 'unknown';
+        }
 
         // IC levels vs Management levels - these are DIFFERENT TRACKS
         const icLevels = ['intern', 'junior', 'mid', 'senior', 'staff', 'principal'];
@@ -641,7 +891,25 @@ export class LegacyEngine implements IAIEngine {
             return nominalLevel;
         }
 
-        // For IC levels, apply company tier adjustment for title inflation
+        // For IC levels, only apply company tier adjustment if we have BOTH:
+        // 1. Explicit level data (not defaulted)
+        // 2. Company data to determine tier
+        const hasExplicitLevel = Boolean(
+            candidate.searchable?.level ||
+            candidate.profile?.current_level ||
+            candidate.metadata?.current_level
+        );
+        const hasCompanyData = Boolean(
+            (candidate.searchable?.companies && candidate.searchable.companies.length > 0) ||
+            (candidate.profile?.companies && candidate.profile.companies.length > 0)
+        );
+
+        // If we don't have reliable data, return the nominal level without adjustment
+        if (!hasExplicitLevel || !hasCompanyData) {
+            return nominalLevel;
+        }
+
+        const companyTier = this.getCompanyTier(candidate);
         const levelOrder = ['intern', 'junior', 'mid', 'senior', 'staff', 'principal'];
         const currentIndex = levelOrder.indexOf(nominalLevel);
 
@@ -808,34 +1076,100 @@ export class LegacyEngine implements IAIEngine {
     /**
      * Calculate specialty match score
      * Returns 0-1 based on how well candidate's specialties match job requirements
+     * Now uses PostgreSQL specialties as primary source (more accurate from backfill)
      */
-    private calculateSpecialtyScore(candidate: any, targetSpecialties: string[]): number {
+    private calculateSpecialtyScore(
+        candidate: any,
+        targetSpecialties: string[],
+        pgSpecialties?: Map<string, string[]>
+    ): number {
         if (!targetSpecialties.length) return 1.0; // No specific specialty needed
 
-        const functions = candidate.searchable?.functions;
-        if (!functions || !Array.isArray(functions)) return 0.5; // No specialty data
+        // Get candidate specialties (PostgreSQL first, then Firestore fallback)
+        const candidateId = candidate.id || candidate.candidate_id || '';
+        const candidateSpecialties = pgSpecialties
+            ? this.getCandidateSpecialty(candidate, pgSpecialties)
+            : this.getCandidateSpecialtyFromFirestore(candidate);
+
+        // No specialty data - neutral score
+        if (candidateSpecialties.length === 0) return 0.5;
 
         let maxScore = 0;
 
-        for (const func of functions) {
-            const candidateSpecialties = func.specialties || [];
-            const confidence = func.confidence || 0.5;
+        for (const targetSpec of targetSpecialties) {
+            // Direct match - full score
+            if (candidateSpecialties.includes(targetSpec)) {
+                maxScore = Math.max(maxScore, 1.0);
+            }
 
-            for (const targetSpec of targetSpecialties) {
-                // Direct match
-                if (candidateSpecialties.includes(targetSpec)) {
-                    maxScore = Math.max(maxScore, confidence);
-                }
-                // Fullstack matches both frontend and backend
-                if (targetSpec === 'backend' && candidateSpecialties.includes('fullstack')) {
-                    maxScore = Math.max(maxScore, confidence * 0.8);
-                }
-                if (targetSpec === 'frontend' && candidateSpecialties.includes('fullstack')) {
-                    maxScore = Math.max(maxScore, confidence * 0.8);
-                }
+            // Fullstack matches both frontend and backend (slightly lower score)
+            if ((targetSpec === 'backend' || targetSpec === 'frontend') &&
+                (candidateSpecialties.includes('fullstack') ||
+                 candidateSpecialties.includes('full-stack') ||
+                 candidateSpecialties.includes('full stack'))) {
+                maxScore = Math.max(maxScore, 0.8);
+            }
+
+            // Related specialties (e.g., devops is somewhat related to backend)
+            if (targetSpec === 'backend' && candidateSpecialties.includes('devops')) {
+                maxScore = Math.max(maxScore, 0.4);
             }
         }
 
         return maxScore;
+    }
+
+    /**
+     * Get specialty from Firestore data (legacy fallback)
+     */
+    private getCandidateSpecialtyFromFirestore(candidate: any): string[] {
+        const functions = candidate.searchable?.functions || [];
+        const engFunction = functions.find((f: any) => f.name === 'engineering');
+        if (engFunction?.specialties && engFunction.specialties.length > 0) {
+            return engFunction.specialties;
+        }
+        return [];
+    }
+
+    /**
+     * Infer company context from job description
+     * Helps Gemini understand what type of company this is (startup, enterprise, etc.)
+     */
+    private inferCompanyContext(description: string): string {
+        const text = description.toLowerCase();
+        const contexts: string[] = [];
+
+        // Company stage indicators
+        if (text.includes('early-stage') || text.includes('early stage') || text.includes('seed') ||
+            text.includes('series a') || text.includes('series b')) {
+            contexts.push('early-stage startup');
+        } else if (text.includes('growth stage') || text.includes('series c') || text.includes('series d') ||
+                   text.includes('scale') || text.includes('hypergrowth')) {
+            contexts.push('growth-stage company');
+        } else if (text.includes('enterprise') || text.includes('fortune 500') || text.includes('global')) {
+            contexts.push('enterprise company');
+        }
+
+        // Industry context
+        if (text.includes('fintech') || text.includes('financial') || text.includes('banking') ||
+            text.includes('payments') || text.includes('crypto')) {
+            contexts.push('fintech');
+        }
+        if (text.includes('healthtech') || text.includes('healthcare') || text.includes('medical')) {
+            contexts.push('healthtech');
+        }
+        if (text.includes('saas') || text.includes('b2b')) {
+            contexts.push('B2B SaaS');
+        }
+        if (text.includes('ecommerce') || text.includes('e-commerce') || text.includes('marketplace')) {
+            contexts.push('e-commerce');
+        }
+
+        // Team size context
+        if (text.includes('small team') || text.includes('founding') || text.includes('first hire')) {
+            contexts.push('small team');
+        }
+
+        return contexts.length > 0 ? contexts.join(', ') : '';
     }
 }
