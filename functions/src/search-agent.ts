@@ -119,20 +119,27 @@ Output: {
     }
 }
 
-import * as functions from 'firebase-functions';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 
 const agent = new SearchAgent();
 
-export const analyzeSearchQuery = functions.https.onCall(async (request) => {
-    if (!request.data.query) {
-        throw new functions.https.HttpsError('invalid-argument', 'The function must be called with a "query" argument.');
-    }
+export const analyzeSearchQuery = onCall(
+    {
+        memory: '512MiB',
+        timeoutSeconds: 60,
+        region: 'us-central1'
+    },
+    async (request) => {
+        if (!request.data.query) {
+            throw new HttpsError('invalid-argument', 'The function must be called with a "query" argument.');
+        }
 
-    try {
-        const strategy = await agent.analyzeQuery(request.data.query);
-        return strategy;
-    } catch (error) {
-        console.error('Error analyzing search query:', error);
-        throw new functions.https.HttpsError('internal', 'Failed to analyze search query.');
+        try {
+            const strategy = await agent.analyzeQuery(request.data.query);
+            return strategy;
+        } catch (error) {
+            console.error('Error analyzing search query:', error);
+            throw new HttpsError('internal', 'Failed to analyze search query.');
+        }
     }
-});
+);

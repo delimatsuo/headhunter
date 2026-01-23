@@ -1,12 +1,15 @@
 /**
  * Job Classification Service
- * 
+ *
  * Uses Gemini LLM to classify job titles and descriptions into standardized
  * functions, levels, and domains. This replaces brittle keyword matching
  * with semantic understanding.
+ *
+ * NOTE: Uses Google Generative AI SDK directly (not Vertex AI) to avoid
+ * rate limits that were causing search failures.
  */
 
-import { geminiModel } from './gemini-client';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Job function categories
 export type JobFunction =
@@ -75,6 +78,16 @@ const SIMILAR_FUNCTIONS: Record<JobFunction, JobFunction[]> = {
 
 class JobClassificationService {
     private cache: Map<string, JobClassification> = new Map();
+    private genAI: GoogleGenerativeAI;
+    private modelName: string = 'gemini-2.0-flash';
+
+    constructor() {
+        const apiKey = process.env.GOOGLE_API_KEY || '';
+        if (!apiKey) {
+            console.warn('[JobClassification] GOOGLE_API_KEY not set - classification will fail');
+        }
+        this.genAI = new GoogleGenerativeAI(apiKey);
+    }
 
     /**
      * Classify a target job from title and description
@@ -108,14 +121,23 @@ Important:
 - "Engenheiro de Software" = function: "engineering"`;
 
         try {
-            const result = await geminiModel.generateContent(prompt);
-            const text = result.response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            const model = this.genAI.getGenerativeModel({
+                model: this.modelName,
+                generationConfig: {
+                    temperature: 0.1,  // Low temperature for consistent classification
+                    maxOutputTokens: 512,
+                }
+            });
+
+            const result = await model.generateContent(prompt);
+            const text = result.response.text();
 
             // Extract JSON from response (handle potential markdown wrapping)
             const jsonMatch = text.match(/\{[\s\S]*\}/);
             if (!jsonMatch) {
                 console.error('[JobClassification] Failed to parse response:', text);
-                return this.getDefaultClassification();
+                // FAIL FAST: Don't return bad classification, throw error
+                throw new Error('Failed to parse job classification response');
             }
 
             const classification = JSON.parse(jsonMatch[0]) as JobClassification;
@@ -125,7 +147,9 @@ Important:
             return classification;
         } catch (error: any) {
             console.error('[JobClassification] Error:', error.message);
-            return this.getDefaultClassification();
+            // FAIL FAST: Don't return bad results, throw error
+            // This prevents returning 'general/mid' which causes terrible search results
+            throw new Error(`Job classification failed: ${error.message}. Search temporarily unavailable.`);
         }
     }
 
@@ -189,18 +213,23 @@ Important classification rules:
 - Portuguese: "Gerente de Produto" = product, "Engenheiro" = engineering`;
 
         try {
-            const result = await geminiModel.generateContent(prompt);
-            const text = result.response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            const model = this.genAI.getGenerativeModel({
+                model: this.modelName,
+                generationConfig: {
+                    temperature: 0.1,
+                    maxOutputTokens: 2048,
+                }
+            });
+
+            const result = await model.generateContent(prompt);
+            const text = result.response.text();
 
             // Extract JSON array from response
             const jsonMatch = text.match(/\[[\s\S]*\]/);
             if (!jsonMatch) {
                 console.error('[JobClassification] Failed to parse batch response:', text.slice(0, 200));
-                // Fall back to default for all uncached
-                for (const c of uncached) {
-                    results.set(c.candidate_id, this.getDefaultClassification());
-                }
-                return results;
+                // FAIL FAST for batch too
+                throw new Error('Failed to parse batch classification response');
             }
 
             const classifications = JSON.parse(jsonMatch[0]) as Array<CandidateClassification & { id: string }>;
@@ -220,9 +249,8 @@ Important classification rules:
             console.log(`[JobClassification] Batch classified ${classifications.length} candidates`);
         } catch (error: any) {
             console.error('[JobClassification] Batch error:', error.message);
-            for (const c of uncached) {
-                results.set(c.candidate_id, this.getDefaultClassification());
-            }
+            // FAIL FAST: Don't return bad classifications
+            throw new Error(`Batch classification failed: ${error.message}`);
         }
 
         return results;

@@ -27,19 +27,26 @@ ${job_description}
 """
 
 TASK:
-1. **Target Company Identification**:
+1. **Tech Stack Extraction** (CRITICAL - DO THIS FIRST):
+   - Extract ALL specific technologies, frameworks, tools, cloud services, and platforms mentioned in the job description.
+   - Be LITERAL - extract exact names as written (e.g., "NestJS" not "Node.js frameworks").
+   - Include: programming languages, frameworks, libraries, databases, cloud services (AWS, GCP, Azure), specific services (Lambda, Fargate, S3), tools, platforms.
+   - Examples of what to extract: "AWS", "Lambda", "Fargate", "NestJS", "PostgreSQL", "Docker", "Kubernetes", "React", "TypeScript", "Node.js", "Redis", "MongoDB", "GraphQL", "REST", "CI/CD", "Terraform".
+   - Do NOT use generic phrases like "Proficiency in..." - just the technology name.
+
+2. **Target Company Identification**:
    - Infer the *type* of company (e.g. "Early-stage Fintech").
    - List 5-10 REAL companies that hire similar talent.
    - *Logic*: If JD says "Stripe-like API", target Adyen, Block, Checkout.com.
 
-2. **Tech Stack Profiling**:
-   - Identify the "Core" vs "Nice-to-have" tech.
+3. **Tech Stack Profiling**:
+   - From the extracted technologies, identify "Core" (must-have) vs "Nice-to-have".
    - Define "Anti-patterns" (e.g. if Modern Stack, penalize Legacy Enterprise Java).
 
-3. **Title Expansion**:
+4. **Title Expansion**:
    - List all valid titles. (e.g. for "Staff Engineer", include "Principal", "Tech Lead", "Architect").
 
-4. **Experience Configuration**:
+5. **Experience Configuration**:
    - Determine the seniority level ("IC", "Manager", "Executive").
 
 OUTPUT SCHEMA (JSON ONLY):
@@ -50,14 +57,37 @@ OUTPUT SCHEMA (JSON ONLY):
     "target_companies": ["Stripe", "Adyen", ...],
     "target_industries": ["Fintech", "Payments", ...],
     "tech_stack": {
-      "core": ["Go", ...],
+      "core": ["Go", "Kubernetes", ...],
       "avoid": ["Oracle", ...]
     },
     "title_variations": ["Staff Engineer", ...]
   },
-  "required_skills": ["skill1", ...],
+  "required_skills": ["Node.js", "TypeScript", "NestJS", "AWS", "Lambda", "Fargate"],
   "experience_level": "senior"
 }
+
+IMPORTANT RULES FOR required_skills:
+Include TWO categories of skills:
+
+A) EXPLICIT TECHNOLOGIES (from the job description):
+   - Extract ONLY technologies explicitly mentioned in the text
+   - Use exact names: "NestJS", "Lambda", "Fargate", "AWS", "Node.js", "TypeScript"
+   - Do NOT add alternative languages (e.g., don't add Java/Python/C# if JD says Node.js)
+   - Do NOT add "JavaScript" unless explicitly mentioned (TypeScript implies it)
+   - Include cloud services as separate items: "AWS", "Lambda", "Fargate", "S3"
+
+B) INFERRED COMPETENCIES (based on role/seniority/context):
+   - A recruiter would infer these based on the role type and seniority
+   - Examples: "API Design", "Database Design", "System Design", "Testing", "CI/CD"
+   - These should be architectural/domain skills, NOT alternative technologies
+   - For a "Senior Backend Engineer" → infer "API Design", "Database Design", "Microservices"
+   - For a "Fintech" role → infer "Financial Systems", "Payment Processing"
+
+CRITICAL - NEVER include technologies that could substitute the mentioned stack:
+- If JD says "Node.js, TypeScript" → do NOT add "Java", "Python", "C#", "Go", "Ruby"
+- If JD says "AWS" → do NOT add "GCP", "Azure" unless explicitly mentioned
+- If JD says "PostgreSQL" → do NOT add "MySQL", "Oracle", "SQL Server" unless mentioned
+- Do NOT include soft skills here (put those in summary if relevant).
 `;
 
             console.log("Analyzing job description with Gemini...");

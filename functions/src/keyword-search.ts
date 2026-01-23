@@ -17,6 +17,15 @@ const KeywordSearchInputSchema = z.object({
   limit: z.number().min(1).max(100).optional().default(50),
 });
 
+// Experience record type
+export interface ExperienceRecord {
+  company_name: string | null;
+  title: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  is_current: boolean;
+}
+
 // Result type for candidates
 export interface KeywordSearchCandidate {
   candidate_id: string;
@@ -28,6 +37,7 @@ export interface KeywordSearchCandidate {
   intelligent_analysis: Record<string, any> | null;
   current_company: string | null;
   current_role: string | null;
+  experience: ExperienceRecord[];
 }
 
 /**
@@ -99,12 +109,15 @@ export const keywordSearch = onCall(
       // 2. Trigram similarity on first_name, last_name
       // 3. ILIKE on company_name and title from experience table
 
-      // First check if pg_trgm extension is available
-      const extCheck = await pool.query(
-        "SELECT 1 FROM pg_extension WHERE extname = 'pg_trgm'"
-      );
-      const hasTrgm = extCheck.rows.length > 0;
-      console.log(`[keywordSearch] pg_trgm available: ${hasTrgm}`);
+      // Ensure pg_trgm extension is available for fuzzy matching
+      let hasTrgm = false;
+      try {
+        await pool.query("CREATE EXTENSION IF NOT EXISTS pg_trgm");
+        hasTrgm = true;
+        console.log(`[keywordSearch] pg_trgm extension enabled`);
+      } catch (extError: any) {
+        console.log(`[keywordSearch] pg_trgm not available: ${extError.message}`);
+      }
 
       // Build the search query
       // For each keyword, we check multiple columns
@@ -116,13 +129,14 @@ export const keywordSearch = onCall(
         const keywordConditions: string[] = [];
 
         if (hasTrgm) {
-          // Fuzzy name matching with trigrams (handles typos)
-          keywordConditions.push(`similarity(LOWER(COALESCE(c.first_name, '')), $${paramIndex}) > 0.3`);
-          keywordConditions.push(`similarity(LOWER(COALESCE(c.last_name, '')), $${paramIndex}) > 0.3`);
-          // Fuzzy company matching (use COALESCE for NULL safety)
-          keywordConditions.push(`similarity(LOWER(COALESCE(e.company_name, '')), $${paramIndex}) > 0.3`);
+          // Fuzzy name matching with trigrams (handles typos like "almeita" → "almeida")
+          // Use lower threshold (0.25) for names to catch more typos
+          keywordConditions.push(`similarity(LOWER(COALESCE(c.first_name, '')), $${paramIndex}) > 0.25`);
+          keywordConditions.push(`similarity(LOWER(COALESCE(c.last_name, '')), $${paramIndex}) > 0.25`);
+          // Fuzzy company matching
+          keywordConditions.push(`similarity(LOWER(COALESCE(e.company_name, '')), $${paramIndex}) > 0.25`);
           // Fuzzy title matching
-          keywordConditions.push(`similarity(LOWER(COALESCE(e.title, '')), $${paramIndex}) > 0.3`);
+          keywordConditions.push(`similarity(LOWER(COALESCE(e.title, '')), $${paramIndex}) > 0.25`);
           params.push(keyword);
           paramIndex++;
         }
@@ -192,7 +206,43 @@ export const keywordSearch = onCall(
       const result = await pool.query(sql, params);
       console.log(`[keywordSearch] Found ${result.rows.length} candidates`);
 
-      // Transform results
+      // Get candidate IDs for experience lookup
+      const candidateIds = result.rows.map(r => parseInt(r.candidate_id));
+
+      // Fetch experience records for all candidates in one query
+      let experienceMap: Map<string, ExperienceRecord[]> = new Map();
+      if (candidateIds.length > 0) {
+        const expResult = await pool.query(`
+          SELECT
+            candidate_id::text,
+            company_name,
+            title,
+            TO_CHAR(start_date, 'YYYY-MM') as start_date,
+            TO_CHAR(end_date, 'YYYY-MM') as end_date,
+            is_current
+          FROM sourcing.experience
+          WHERE candidate_id = ANY($1)
+          ORDER BY candidate_id, is_current DESC, start_date DESC NULLS LAST
+        `, [candidateIds]);
+
+        // Group experience by candidate_id
+        for (const exp of expResult.rows) {
+          const candId = exp.candidate_id;
+          if (!experienceMap.has(candId)) {
+            experienceMap.set(candId, []);
+          }
+          experienceMap.get(candId)!.push({
+            company_name: exp.company_name,
+            title: exp.title,
+            start_date: exp.start_date,
+            end_date: exp.end_date,
+            is_current: exp.is_current,
+          });
+        }
+        console.log(`[keywordSearch] Loaded experience for ${experienceMap.size} candidates`);
+      }
+
+      // Transform results with experience
       const candidates: KeywordSearchCandidate[] = result.rows.map(row => ({
         candidate_id: row.candidate_id,
         first_name: row.first_name,
@@ -203,6 +253,7 @@ export const keywordSearch = onCall(
         intelligent_analysis: row.intelligent_analysis,
         current_company: row.current_company,
         current_role: row.current_role,
+        experience: experienceMap.get(row.candidate_id) || [],
       }));
 
       return {

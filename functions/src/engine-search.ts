@@ -12,6 +12,74 @@ import { z } from "zod";
 import { getEngine, EngineType, JobDescription, SearchOptions } from "./engines";
 import { VectorSearchService } from "./vector-search";
 
+// ============================================================================
+// SPECIALTY DETECTION
+// ============================================================================
+
+/**
+ * Detect target specialties from job title and description
+ * Returns primary specialties to filter vector search by
+ *
+ * Example: "Senior Backend Engineer" -> ['backend', 'fullstack']
+ *          "Frontend Developer" -> ['frontend', 'fullstack']
+ */
+function detectTargetSpecialties(jobTitle: string, jobDescription: string): string[] {
+    const titleLower = (jobTitle || '').toLowerCase();
+    const textLower = `${jobTitle} ${jobDescription}`.toLowerCase();
+    const specialties: string[] = [];
+
+    // EXPLICIT title detection (most reliable signal)
+    if (titleLower.includes('backend') || titleLower.includes('back-end') || titleLower.includes('back end')) {
+        specialties.push('backend');
+        specialties.push('fullstack'); // Fullstack can do backend
+    }
+    if (titleLower.includes('frontend') || titleLower.includes('front-end') || titleLower.includes('front end')) {
+        specialties.push('frontend');
+        specialties.push('fullstack'); // Fullstack can do frontend
+    }
+    if (titleLower.includes('fullstack') || titleLower.includes('full-stack') || titleLower.includes('full stack')) {
+        specialties.push('fullstack');
+        specialties.push('backend');
+        specialties.push('frontend');
+    }
+    if (titleLower.includes('mobile') || titleLower.includes('ios') || titleLower.includes('android')) {
+        specialties.push('mobile');
+    }
+    if (titleLower.includes('devops') || titleLower.includes('sre') || titleLower.includes('platform')) {
+        specialties.push('devops');
+    }
+    if (titleLower.includes('data engineer') || titleLower.includes('data scientist') ||
+        titleLower.includes('ml engineer') || titleLower.includes('machine learning')) {
+        specialties.push('data');
+    }
+
+    // If no explicit title match, use description keywords
+    if (specialties.length === 0) {
+        // Backend indicators
+        const backendKeywords = ['backend', 'back-end', 'server-side', 'api development', 'microservices',
+            'node.js', 'nodejs', 'express', 'nestjs', 'fastify', 'django', 'flask', 'spring boot',
+            'rest api', 'graphql server', 'database design'];
+        const backendCount = backendKeywords.filter(k => textLower.includes(k)).length;
+
+        // Frontend indicators
+        const frontendKeywords = ['frontend', 'front-end', 'ui development', 'user interface',
+            'react', 'angular', 'vue', 'svelte', 'css', 'html', 'typescript', 'responsive design'];
+        const frontendCount = frontendKeywords.filter(k => textLower.includes(k)).length;
+
+        if (backendCount >= 2) {
+            specialties.push('backend');
+            specialties.push('fullstack');
+        }
+        if (frontendCount >= 2) {
+            specialties.push('frontend');
+            specialties.push('fullstack');
+        }
+    }
+
+    // Return unique specialties
+    return [...new Set(specialties)];
+}
+
 const dbPostgresPassword = defineSecret("db-postgres-password");
 
 // ============================================================================
@@ -86,10 +154,14 @@ export const engineSearch = onCall(
             // ===== Set database password from secret =====
             process.env.PGVECTOR_PASSWORD = dbPostgresPassword.value();
 
-            // ===== STEP 1: Vector Search (shared by all engines) =====
+            // ===== STEP 1: Detect Target Specialties =====
+            const targetSpecialties = detectTargetSpecialties(job.title || '', job.description);
+            console.log(`[EngineSearch] Detected target specialties: ${targetSpecialties.join(', ') || 'none (general search)'}`);
+
+            // ===== STEP 2: Vector Search (shared by all engines) =====
             const vectorService = new VectorSearchService();
 
-            // Construct query for skill-aware search
+            // Construct query for skill-aware search WITH specialty filter
             const vectorResults = await vectorService.searchCandidatesSkillAware({
                 text_query: `
           Title: ${job.title || 'Executive role'}
@@ -98,11 +170,14 @@ export const engineSearch = onCall(
           Experience: ${job.min_experience || 0}-${job.max_experience || 20} years
         `.trim(),
                 limit: 300, // Fetch large pool for engine processing
+                filters: targetSpecialties.length > 0 ? {
+                    specialties: targetSpecialties  // Filter by primary specialty at retrieval time
+                } : undefined,
             });
 
-            console.log(`[EngineSearch] Vector search returned ${vectorResults?.length || 0} candidates`);
+            console.log(`[EngineSearch] Vector search returned ${vectorResults?.length || 0} candidates (specialty filter: ${targetSpecialties.join(', ') || 'none'})`);
 
-            // ===== STEP 2: Get Engine and Process =====
+            // ===== STEP 3: Get Engine and Process =====
             const engine = getEngine(engineType as EngineType);
 
             // Cast engine to access search method with vector results
@@ -119,7 +194,7 @@ export const engineSearch = onCall(
 
             console.log(`[EngineSearch] Engine ${engineType} returned ${searchResult.matches.length} matches`);
 
-            // ===== STEP 3: Return Results =====
+            // ===== STEP 4: Return Results =====
             return {
                 success: true,
                 results: searchResult.matches,

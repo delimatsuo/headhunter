@@ -5,9 +5,14 @@
  */
 
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { defineSecret } from "firebase-functions/params";
 import * as admin from "firebase-admin";
 import { z } from "zod";
 import { Storage } from "@google-cloud/storage";
+import { getPgVectorClient } from "./pgvector-client";
+
+// Database secret for Cloud SQL access
+const dbPostgresPassword = defineSecret("db-postgres-password");
 
 // Initialize services
 const firestore = admin.firestore();
@@ -963,6 +968,9 @@ export const getCandidateStats = onCall(
   {
     memory: "512MiB",
     timeoutSeconds: 60,
+    secrets: [dbPostgresPassword],
+    vpcConnector: "svpc-us-central1",
+    vpcConnectorEgressSettings: "PRIVATE_RANGES_ONLY",
   },
   async (request) => {
     const { userId, orgId } = validateAuth(request);
@@ -976,9 +984,27 @@ export const getCandidateStats = onCall(
     try {
       const candidatesRef = firestore.collection('candidates').where('org_id', '==', orgId);
 
-      // Get total count
-      const totalSnapshot = await candidatesRef.count().get();
-      const totalCandidates = totalSnapshot.data().count;
+      // Set database password from secret for Cloud SQL connection
+      process.env.PGVECTOR_PASSWORD = dbPostgresPassword.value();
+
+      // Get total count - try Cloud SQL first for unified count, fallback to Firestore
+      let totalCandidates = 0;
+      let countSource = 'unknown';
+      try {
+        console.log(`[getCandidateStats] Attempting Cloud SQL connection...`);
+        console.log(`[getCandidateStats] PGVECTOR_HOST=${process.env.PGVECTOR_HOST}, PGVECTOR_DATABASE=${process.env.PGVECTOR_DATABASE}, PGVECTOR_SCHEMA=${process.env.PGVECTOR_SCHEMA}`);
+        const pgClient = await getPgVectorClient();
+        totalCandidates = await pgClient.getTotalCandidateCount();
+        countSource = 'cloud_sql';
+        console.log(`[getCandidateStats] Cloud SQL count: ${totalCandidates}`);
+      } catch (pgError: any) {
+        console.warn(`[getCandidateStats] Cloud SQL unavailable (${pgError?.message || pgError}), using Firestore`);
+        const totalSnapshot = await candidatesRef.count().get();
+        totalCandidates = totalSnapshot.data().count;
+        countSource = 'firestore';
+        console.log(`[getCandidateStats] Firestore count: ${totalCandidates}`);
+      }
+      console.log(`[getCandidateStats] Final count: ${totalCandidates} (source: ${countSource})`)
 
       console.log(`[getCandidateStats] User: ${userId}, Org: ${orgId}, Total Candidates: ${totalCandidates}`);
 

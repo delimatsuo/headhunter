@@ -6,7 +6,7 @@
 // import { Storage } from "@google-cloud/storage";
 import * as admin from "firebase-admin";
 import { getEmbeddingProvider } from "./embedding-provider";
-import { getPgVectorClient, PgVectorClient } from "./pgvector-client";
+import { getPgVectorClient, PgVectorClient, CandidateRecord } from "./pgvector-client";
 
 // Types for vector search
 interface EmbeddingData {
@@ -40,6 +40,7 @@ interface SearchQuery {
     company_tier?: string;
     min_score?: number;
     countries?: string[];
+    specialties?: string[];  // Primary specialty filter (backend, frontend, etc.)
   };
   limit?: number;
   offset?: number;
@@ -69,6 +70,7 @@ interface SkillAwareSearchQuery {
     min_score?: number;
     location?: string;
     countries?: string[];
+    specialties?: string[];  // Primary specialty filter (backend, frontend, etc.)
   };
   limit?: number;
   offset?: number;
@@ -721,18 +723,47 @@ export class VectorSearchService {
       // Get detailed candidate data including skill assessments
       const enrichedResults: SkillAwareSearchResult[] = [];
 
-      for (const vectorResult of combinedResults) {
-        // Fetch full candidate profile with skill assessments
-        const candidateDoc = await this.firestore
-          .collection('candidates')
-          .doc(vectorResult.candidate_id)
-          .get();
+      // BATCH LOOKUP: Fetch all candidates from PostgreSQL instead of N+1 Firestore queries
+      // Parse candidate IDs as numbers (PostgreSQL uses integer IDs)
+      const candidateIds = combinedResults
+        .map(r => parseInt(r.candidate_id, 10))
+        .filter(id => !isNaN(id));
 
-        if (!candidateDoc.exists) {
-          continue;
+      let candidatesMap = new Map<number, CandidateRecord>();
+      if (this.pgVectorClient && candidateIds.length > 0) {
+        try {
+          candidatesMap = await this.pgVectorClient.getCandidatesByIds(candidateIds);
+          console.log(`[SkillAwareSearch] Batch fetched ${candidatesMap.size}/${candidateIds.length} candidates from PostgreSQL`);
+        } catch (error) {
+          console.error('[SkillAwareSearch] PostgreSQL batch lookup failed, falling back to Firestore:', error);
+        }
+      }
+
+      for (const vectorResult of combinedResults) {
+        const candidateIdNum = parseInt(vectorResult.candidate_id, 10);
+
+        // Try PostgreSQL first, fallback to Firestore
+        let candidateData: any = null;
+
+        if (!isNaN(candidateIdNum) && candidatesMap.has(candidateIdNum)) {
+          // Use PostgreSQL data - map to Firestore format for compatibility
+          candidateData = this.mapPgCandidateToFirestoreFormat(candidatesMap.get(candidateIdNum)!);
+        } else {
+          // Fallback to Firestore for candidates not in PostgreSQL
+          const candidateDoc = await this.firestore
+            .collection('candidates')
+            .doc(vectorResult.candidate_id)
+            .get();
+
+          if (!candidateDoc.exists) {
+            continue;
+          }
+          candidateData = candidateDoc.data();
         }
 
-        const candidateData = candidateDoc.data();
+        if (!candidateData) {
+          continue;
+        }
 
         // Calculate skill-aware scores
         const skillScores = this.calculateSkillAwareScores(candidateData, query);
@@ -837,6 +868,68 @@ export class VectorSearchService {
       console.error("Error in searchCandidatesSkillAware:", error);
       throw error;
     }
+  }
+
+  /**
+   * Map PostgreSQL CandidateRecord to Firestore-compatible format
+   * This allows the rest of the code to work unchanged
+   */
+  private mapPgCandidateToFirestoreFormat(pgCandidate: CandidateRecord): any {
+    const intelligentAnalysis = pgCandidate.intelligent_analysis || {};
+
+    return {
+      // Basic info
+      name: pgCandidate.name || `${pgCandidate.first_name || ''} ${pgCandidate.last_name || ''}`.trim() || 'Unknown',
+      first_name: pgCandidate.first_name,
+      last_name: pgCandidate.last_name,
+      headline: pgCandidate.headline,
+      location: pgCandidate.location,
+      country: pgCandidate.country,
+      linkedin_url: pgCandidate.linkedin_url,
+
+      // Map intelligent_analysis from PostgreSQL JSONB
+      intelligent_analysis: intelligentAnalysis,
+
+      // Extract key fields for compatibility with existing code paths
+      current_role: pgCandidate.current_title || intelligentAnalysis?.career_trajectory_analysis?.current_level || pgCandidate.headline,
+      current_company: pgCandidate.current_company || intelligentAnalysis?.personal_details?.current_company,
+
+      // Skill data
+      skill_assessments: intelligentAnalysis?.skill_assessment?.technical_skills?.skills_detail || [],
+
+      // Resume/summary data
+      summary: pgCandidate.resume_text,
+      resume_text: pgCandidate.resume_text,
+
+      // Specialty/tags
+      specialties: pgCandidate.specialties || [],
+
+      // Experience data (extract from intelligent_analysis if available)
+      experience: intelligentAnalysis?.experience || [],
+      education: intelligentAnalysis?.education || [],
+
+      // For compatibility with existing UI code
+      original_data: {
+        experience: intelligentAnalysis?.experience || [],
+        education: intelligentAnalysis?.education || [],
+        summary: pgCandidate.resume_text
+      },
+
+      // Executive summary for display
+      executive_summary: intelligentAnalysis?.executive_summary,
+
+      // Career trajectory
+      career_trajectory: intelligentAnalysis?.career_trajectory_analysis,
+      resume_analysis: {
+        years_experience: intelligentAnalysis?.career_trajectory_analysis?.years_experience,
+        current_role: pgCandidate.current_title,
+        current_company: pgCandidate.current_company,
+        career_trajectory: intelligentAnalysis?.career_trajectory_analysis
+      },
+
+      // Source marker for debugging
+      _source: 'postgresql'
+    };
   }
 
   /**
@@ -1584,6 +1677,10 @@ export class VectorSearchService {
   /**
    * Perform direct lookup for email or name matches
    */
+  /**
+   * Perform direct lookup for email or name matches using PostgreSQL
+   * Falls back to Firestore if PostgreSQL is not available
+   */
   private async searchDirectMatches(queryText: string, orgId?: string): Promise<VectorSearchResult[]> {
     const results: VectorSearchResult[] = [];
     const normalizedQuery = queryText.trim();
@@ -1591,6 +1688,25 @@ export class VectorSearchService {
     if (!normalizedQuery) return results;
 
     try {
+      // Try PostgreSQL first (faster, unified database)
+      if (this.pgVectorClient) {
+        try {
+          const pgResults = await this.pgVectorClient.searchCandidatesByName(normalizedQuery, 20);
+          console.log(`[searchDirectMatches] PostgreSQL found ${pgResults.length} matches for '${normalizedQuery}'`);
+
+          for (const pgCandidate of pgResults) {
+            results.push(this.createDirectMatchResultFromPg(pgCandidate));
+          }
+
+          if (results.length > 0) {
+            return results;
+          }
+        } catch (error) {
+          console.warn('[searchDirectMatches] PostgreSQL search failed, falling back to Firestore:', error);
+        }
+      }
+
+      // Fallback to Firestore
       // 1. Check if query looks like an email
       if (normalizedQuery.includes('@')) {
         const emailQuery = this.firestore.collection('candidates')
@@ -1614,9 +1730,7 @@ export class VectorSearchService {
         let candidatesQuery: any = this.firestore.collection('candidates');
 
         // Non-Ella orgs filter by org_ids array
-        // We first try the new org_ids field, then fallback to legacy org_id
         if (orgId && !isEllaOrg) {
-          // Try org_ids first (new multi-tenant model)
           candidatesQuery = candidatesQuery.where('org_ids', 'array-contains', orgId);
         }
 
@@ -1635,7 +1749,7 @@ export class VectorSearchService {
           const candidateName = (data.name || '').toLowerCase();
           const personalName = (data.personal?.name || '').toLowerCase();
 
-          // Check for partial match (query is contained in name OR name contains query)
+          // Check for partial match
           const isMatch = candidateName.includes(queryLower) ||
             queryLower.includes(candidateName) ||
             personalName.includes(queryLower) ||
@@ -1654,6 +1768,27 @@ export class VectorSearchService {
       console.error("Error in searchDirectMatches:", error);
       return [];
     }
+  }
+
+  /**
+   * Create VectorSearchResult from PostgreSQL CandidateRecord
+   */
+  private createDirectMatchResultFromPg(pgCandidate: CandidateRecord): VectorSearchResult {
+    const intelligentAnalysis = pgCandidate.intelligent_analysis || {};
+
+    return {
+      candidate_id: String(pgCandidate.id), // Convert to string for compatibility
+      similarity_score: 1.0, // Direct matches get perfect score
+      metadata: {
+        years_experience: intelligentAnalysis?.career_trajectory_analysis?.years_experience || 0,
+        current_level: intelligentAnalysis?.career_trajectory_analysis?.current_level || "Unknown",
+        company_tier: intelligentAnalysis?.company_pedigree?.company_tier || "Unknown",
+        overall_score: intelligentAnalysis?.executive_summary?.overall_rating || 0,
+        technical_skills: intelligentAnalysis?.skill_assessment?.technical_skills?.core_competencies || [],
+        updated_at: new Date().toISOString()
+      },
+      match_reasons: ["Direct Match: Name Match (PostgreSQL)"]
+    };
   }
 
   private createDirectMatchResult(id: string, data: any, reason: string): VectorSearchResult {

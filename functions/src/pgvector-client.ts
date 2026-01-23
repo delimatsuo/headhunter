@@ -20,6 +20,7 @@ export interface PgVectorConfig {
   maxConnections: number;
   idleTimeoutMillis: number;
   connectionTimeoutMillis: number;
+  schema: string;
 }
 
 export interface EmbeddingRecord {
@@ -39,6 +40,28 @@ export interface SearchResult {
   metadata: Record<string, any>;
   model_version: string;
   chunk_type: string;
+}
+
+/**
+ * Candidate record returned from PostgreSQL batch lookup
+ * Used to enrich search results without Firestore
+ */
+export interface CandidateRecord {
+  id: number;
+  first_name: string | null;
+  last_name: string | null;
+  name: string | null;
+  headline: string | null;
+  location: string | null;
+  country: string | null;
+  linkedin_url: string | null;
+  intelligent_analysis: Record<string, any> | null;
+  specialties: string[];
+  resume_text: string | null;
+  tenant_id: string | null;
+  view_count: number;
+  current_title: string | null;
+  current_company: string | null;
 }
 
 export interface EmbeddingStats {
@@ -99,6 +122,7 @@ export class PgVectorException extends Error {
 export class PgVectorClient {
   private pool: Pool;
   private isInitialized = false;
+  private schema: string;
 
   constructor(config?: Partial<PgVectorConfig>) {
     const fullConfig: PgVectorConfig = {
@@ -110,8 +134,12 @@ export class PgVectorClient {
       ssl: config?.ssl || (process.env.PGVECTOR_SSL_MODE === 'require'),
       maxConnections: config?.maxConnections || parseInt(process.env.PGVECTOR_MAX_CONNECTIONS || '20'),
       idleTimeoutMillis: config?.idleTimeoutMillis || parseInt(process.env.PGVECTOR_IDLE_TIMEOUT_MILLIS || '30000'),
-      connectionTimeoutMillis: config?.connectionTimeoutMillis || 5000
+      connectionTimeoutMillis: config?.connectionTimeoutMillis || 5000,
+      schema: config?.schema || process.env.PGVECTOR_SCHEMA || 'sourcing'
     };
+
+    this.schema = fullConfig.schema;
+    console.log(`[PgVectorClient] Using schema: ${this.schema}`);
 
     this.pool = new Pool({
       host: fullConfig.host,
@@ -162,19 +190,27 @@ export class PgVectorClient {
         );
       }
 
-      // Verify required tables exist
+      // Verify required tables exist in the configured schema
+      // For sourcing schema, we query the underlying 'embeddings' table directly
+      // For other schemas, we look for 'candidate_embeddings' table/view
+      const embeddingsTable = this.schema === 'sourcing' ? 'embeddings' : 'candidate_embeddings';
       const tablesResult = await client.query(`
-        SELECT table_name FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name IN ('candidate_embeddings', 'embedding_metadata')
-      `);
+        SELECT tablename as name FROM pg_tables
+        WHERE schemaname = $1
+        AND tablename = $2
+        UNION
+        SELECT viewname as name FROM pg_views
+        WHERE schemaname = $1
+        AND viewname = $2
+      `, [this.schema, embeddingsTable]);
 
-      if (tablesResult.rows.length < 2) {
+      if (tablesResult.rows.length === 0) {
         throw new PgVectorException(
           PgVectorError.VALIDATION_ERROR,
-          'Required tables not found. Please run pgvector_schema.sql'
+          `Required table/view '${embeddingsTable}' not found in schema '${this.schema}'. Please run migrations.`
         );
       }
+      console.log(`[PgVectorClient] Found ${embeddingsTable} in schema ${this.schema}`);
 
       client.release();
       this.isInitialized = true;
@@ -203,9 +239,9 @@ export class PgVectorClient {
     try {
       const client = await this.pool.connect();
       try {
-        // Use the database function for idempotent upsert
+        // Use the database function for idempotent upsert (schema-qualified)
         const result = await client.query(
-          'SELECT upsert_candidate_embedding($1, $2, $3, $4, $5) AS id',
+          `SELECT ${this.schema}.upsert_candidate_embedding($1, $2, $3, $4, $5) AS id`,
           [
             candidateId,
             JSON.stringify(embedding), // Serialize embedding as JSON
@@ -256,7 +292,7 @@ export class PgVectorClient {
 
           for (const record of batch) {
             const result = await client.query(
-              'SELECT upsert_candidate_embedding($1, $2, $3, $4, $5) AS id',
+              `SELECT ${this.schema}.upsert_candidate_embedding($1, $2, $3, $4, $5) AS id`,
               [
                 record.candidate_id,
                 JSON.stringify(record.embedding), // Serialize embedding as JSON
@@ -296,7 +332,7 @@ export class PgVectorClient {
     maxResults: number = 10,
     modelVersion?: string,
     chunkType: string = 'full_profile',
-    filters?: { current_level?: string | string[]; countries?: string[] }
+    filters?: { current_level?: string | string[]; countries?: string[]; specialties?: string[] }
   ): Promise<SearchResult[]> {
     this.validateEmbedding(queryEmbedding);
 
@@ -308,8 +344,9 @@ export class PgVectorClient {
 
         if (!filters || (Object.keys(filters).length === 0 && !hasCountryFilter)) {
           // Use the optimized stored procedure if no filters (Legacy path)
+          // Call schema-qualified similarity_search function
           const result = await client.query(
-            'SELECT * FROM similarity_search($1, $2, $3, $4, $5)',
+            `SELECT * FROM ${this.schema}.similarity_search($1, $2, $3, $4, $5)`,
             [
               JSON.stringify(queryEmbedding),
               similarityThreshold,
@@ -328,40 +365,93 @@ export class PgVectorClient {
         } else {
           // Dynamic SQL for filtering (Agentic Sourcing path)
           // standard cosine similarity: 1 - (embedding <=> query)
-          // Join with candidate_profiles for country filtering
-          let sql = `
-             SELECT ce.candidate_id, 1 - (ce.embedding <=> $1) as similarity,
-                    ce.metadata, ce.model_version, ce.chunk_type
-             FROM candidate_embeddings ce
+          // For sourcing schema, query underlying tables directly (embeddings + candidates)
+          // For other schemas, query candidate_embeddings view
+          const isSourcingSchema = this.schema === 'sourcing';
+
+          let sql: string;
+          if (isSourcingSchema) {
+            // Query sourcing.embeddings table directly (no view permission issues)
+            sql = `
+             SELECT e.candidate_id::text as candidate_id,
+                    1 - (e.embedding <=> $1) as similarity,
+                    jsonb_build_object('model_version', e.model_version, 'source', 'sourcing') as metadata,
+                    e.model_version, 'default' as chunk_type
+             FROM sourcing.embeddings e
+             JOIN sourcing.candidates c ON c.id = e.candidate_id
            `;
-
-          const params: any[] = [
-            JSON.stringify(queryEmbedding),
-            modelVersion || 'vertex-ai-textembedding-004',
-            chunkType,
-            similarityThreshold
-          ];
-
-          // Add JOIN for country filtering if needed
-          if (hasCountryFilter) {
-            sql += ` LEFT JOIN search.candidate_profiles cp ON ce.candidate_id = cp.candidate_id`;
+          } else {
+            sql = `
+             SELECT ce.candidate_id,
+                    1 - (ce.embedding <=> $1) as similarity,
+                    ce.metadata, ce.model_version, ce.chunk_type
+             FROM ${this.schema}.candidate_embeddings ce
+           `;
           }
 
-          sql += `
+          // Build params array based on schema (sourcing schema doesn't use chunkType)
+          let params: any[];
+          if (isSourcingSchema) {
+            params = [
+              JSON.stringify(queryEmbedding),
+              modelVersion || 'gemini-embedding-001',
+              similarityThreshold
+            ];
+          } else {
+            params = [
+              JSON.stringify(queryEmbedding),
+              modelVersion || 'vertex-ai-textembedding-004',
+              chunkType,
+              similarityThreshold
+            ];
+          }
+
+          // Add JOIN for country filtering if needed (only for non-sourcing schemas)
+          if (hasCountryFilter && !isSourcingSchema) {
+            sql += ` LEFT JOIN ${this.schema}.candidate_profiles cp ON ce.candidate_id = cp.candidate_id`;
+          }
+
+          // Build WHERE clause based on schema
+          if (isSourcingSchema) {
+            sql += `
+             WHERE e.model_version = $2
+               AND c.deleted_at IS NULL
+               AND c.consent_status != 'opted_out'
+               AND 1 - (e.embedding <=> $1) > $3
+           `;
+          } else {
+            sql += `
              WHERE ce.model_version = $2
                AND ce.chunk_type = $3
                AND 1 - (ce.embedding <=> $1) > $4
            `;
+          }
 
           // Apply Country Filtering (include specified countries OR NULL)
           // This ensures we show candidates in the target country plus those with unknown location
           if (hasCountryFilter) {
-            sql += ` AND (cp.country = ANY($${params.length + 1}::text[]) OR cp.country IS NULL)`;
+            if (isSourcingSchema) {
+              sql += ` AND (c.country = ANY($${params.length + 1}::text[]) OR c.country IS NULL)`;
+            } else {
+              sql += ` AND (cp.country = ANY($${params.length + 1}::text[]) OR cp.country IS NULL)`;
+            }
             params.push(filters!.countries);
           }
 
-          // Apply Strict Level Filtering
-          if (filters?.current_level) {
+          // Apply Specialty Filtering (for engineering role searches)
+          // Filter by PRIMARY specialty (first element of array) for precision
+          // This ensures backend searches return backend engineers, not former-backend-now-frontend
+          const hasSpecialtyFilter = filters?.specialties && filters.specialties.length > 0;
+          if (hasSpecialtyFilter && isSourcingSchema) {
+            // Match candidates whose PRIMARY specialty (first array element) is in target list
+            // PostgreSQL arrays are 1-indexed, so specialties[1] is the primary specialty
+            // Also include candidates without specialty data (let Gemini evaluate them)
+            sql += ` AND (c.specialties[1] = ANY($${params.length + 1}::text[]) OR c.specialties = '{}' OR c.specialties IS NULL)`;
+            params.push(filters!.specialties);
+          }
+
+          // Apply Strict Level Filtering (not applicable for sourcing schema currently)
+          if (filters?.current_level && !isSourcingSchema) {
             const levels = Array.isArray(filters.current_level)
               ? filters.current_level
               : [filters.current_level];
@@ -408,12 +498,28 @@ export class PgVectorClient {
     try {
       const client = await this.pool.connect();
       try {
-        let query = `
-          SELECT id, candidate_id, embedding, model_version, chunk_type, 
-                 metadata, created_at, updated_at
-          FROM candidate_embeddings 
-          WHERE candidate_id = $1
-        `;
+        // For sourcing schema, query underlying embeddings table directly
+        const isSourcingSchema = this.schema === 'sourcing';
+        let query: string;
+
+        if (isSourcingSchema) {
+          query = `
+            SELECT id::text, candidate_id::text as candidate_id,
+                   embedding, model_version, 'default' as chunk_type,
+                   jsonb_build_object('model_version', model_version) as metadata,
+                   created_at, created_at as updated_at
+            FROM sourcing.embeddings
+            WHERE candidate_id::text = $1
+          `;
+        } else {
+          query = `
+            SELECT id, candidate_id,
+                   embedding, model_version, chunk_type,
+                   metadata, created_at, updated_at
+            FROM ${this.schema}.candidate_embeddings
+            WHERE candidate_id = $1
+          `;
+        }
         const params: any[] = [candidateId];
 
         if (modelVersion) {
@@ -456,14 +562,14 @@ export class PgVectorClient {
       try {
         await client.query('BEGIN');
 
-        // Delete from both tables
+        // Delete from both tables in the configured schema
         const embeddingResult = await client.query(
-          'DELETE FROM candidate_embeddings WHERE candidate_id = $1',
+          `DELETE FROM ${this.schema}.candidate_embeddings WHERE candidate_id = $1`,
           [candidateId]
         );
 
         await client.query(
-          'DELETE FROM embedding_metadata WHERE candidate_id = $1',
+          `DELETE FROM ${this.schema}.embedding_metadata WHERE candidate_id = $1`,
           [candidateId]
         );
 
@@ -493,26 +599,36 @@ export class PgVectorClient {
       const client = await this.pool.connect();
       try {
         // Avoid using the expensive embedding_stats view which converts vectors to text
+        // For sourcing schema, query underlying embeddings table
+        const isSourcingSchema = this.schema === 'sourcing';
+        const embeddingsTable = isSourcingSchema ? 'embeddings' : 'candidate_embeddings';
+
         const totalStats = await client.query(`
-          SELECT 
+          SELECT
             COUNT(DISTINCT candidate_id) as total_candidates,
             COUNT(*) as total_embeddings,
-            MAX(updated_at) as last_updated
-          FROM candidate_embeddings
+            MAX(created_at) as last_updated
+          FROM ${this.schema}.${embeddingsTable}
         `);
 
-        const modelStats = await client.query(`
-          SELECT 
-            model_version,
-            chunk_type,
-            COUNT(*) as total_embeddings,
-            MIN(created_at) as first_created,
-            MAX(updated_at) as last_updated
-          FROM candidate_embeddings
-          GROUP BY model_version, chunk_type
-        `);
+        const modelStatsQuery = isSourcingSchema
+          ? `SELECT model_version, 'default' as chunk_type, COUNT(*) as total_embeddings,
+                    MIN(created_at) as first_created, MAX(created_at) as last_updated
+             FROM ${this.schema}.${embeddingsTable}
+             GROUP BY model_version`
+          : `SELECT model_version, chunk_type, COUNT(*) as total_embeddings,
+                    MIN(created_at) as first_created, MAX(updated_at) as last_updated
+             FROM ${this.schema}.${embeddingsTable}
+             GROUP BY model_version, chunk_type`;
+        const modelStats = await client.query(modelStatsQuery);
 
-        const processingStats = await client.query('SELECT * FROM processing_stats');
+        // processing_stats may not exist in sourcing schema
+        let processingStats: any = { rows: [] };
+        try {
+          processingStats = await client.query(`SELECT * FROM ${this.schema}.processing_stats`);
+        } catch (e) {
+          // Table doesn't exist in sourcing schema, use empty result
+        }
 
         return {
           total_candidates: parseInt(totalStats.rows[0]?.total_candidates || '0'),
@@ -526,7 +642,7 @@ export class PgVectorClient {
             first_created: row.first_created,
             last_updated: row.last_updated
           })),
-          processing_stats: processingStats.rows.map(row => ({
+          processing_stats: processingStats.rows.map((row: any) => ({
             processing_status: row.processing_status,
             candidate_count: parseInt(row.candidate_count),
             avg_embeddings_per_candidate: parseFloat(row.avg_embeddings_per_candidate),
@@ -543,6 +659,160 @@ export class PgVectorClient {
         `Failed to get embedding stats: ${(error as Error).message}`,
         error as Error
       );
+    }
+  }
+
+  /**
+   * Get total candidate count from the sourcing schema (unified database)
+   * Throws on error so caller can fallback to alternative count source
+   */
+  async getTotalCandidateCount(): Promise<number> {
+    const client = await this.pool.connect();
+    try {
+      // Query underlying table directly - views have permission issues
+      const result = await client.query(`
+        SELECT COUNT(*) as total
+        FROM sourcing.candidates
+        WHERE deleted_at IS NULL AND consent_status != 'opted_out'
+      `);
+      const count = parseInt(result.rows[0]?.total || '0');
+      console.log(`[PgVectorClient] sourcing.candidates count: ${count}`);
+      return count;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Batch lookup candidates by their IDs from PostgreSQL
+   * Used to enrich search results without N+1 Firestore queries
+   */
+  async getCandidatesByIds(ids: number[]): Promise<Map<number, CandidateRecord>> {
+    if (!ids || ids.length === 0) {
+      return new Map();
+    }
+
+    const client = await this.pool.connect();
+    try {
+      // Query sourcing.candidates table directly
+      const result = await client.query(`
+        SELECT
+          c.id,
+          c.first_name,
+          c.last_name,
+          COALESCE(NULLIF(TRIM(CONCAT(c.first_name, ' ', c.last_name)), ''), 'Unknown') as name,
+          c.headline,
+          c.location,
+          c.country,
+          c.linkedin_url,
+          c.intelligent_analysis,
+          c.specialties,
+          c.summary as resume_text
+        FROM sourcing.candidates c
+        WHERE c.id = ANY($1)
+          AND c.deleted_at IS NULL
+          AND COALESCE(c.consent_status, '') != 'opted_out'
+      `, [ids]);
+
+      const candidatesMap = new Map<number, CandidateRecord>();
+      for (const row of result.rows) {
+        candidatesMap.set(row.id, {
+          id: row.id,
+          first_name: row.first_name,
+          last_name: row.last_name,
+          name: row.name,
+          headline: row.headline,
+          location: row.location,
+          country: row.country,
+          linkedin_url: row.linkedin_url,
+          intelligent_analysis: row.intelligent_analysis,
+          specialties: row.specialties || [],
+          resume_text: row.resume_text,
+          tenant_id: null, // Not applicable for sourcing schema
+          view_count: 0,   // Would need separate query
+          current_title: row.intelligent_analysis?.career_trajectory_analysis?.current_level || row.headline,
+          current_company: row.intelligent_analysis?.personal_details?.current_company || null
+        });
+      }
+
+      console.log(`[PgVectorClient] getCandidatesByIds: requested ${ids.length}, found ${candidatesMap.size}`);
+      return candidatesMap;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Search candidates by name or email in PostgreSQL
+   * Returns matching candidates with high artificial similarity
+   */
+  async searchCandidatesByName(query: string, limit: number = 20): Promise<CandidateRecord[]> {
+    if (!query || query.trim().length === 0) {
+      return [];
+    }
+
+    const normalizedQuery = query.trim().toLowerCase();
+    const client = await this.pool.connect();
+
+    try {
+      const results: CandidateRecord[] = [];
+
+      // Check if query looks like an email
+      if (normalizedQuery.includes('@')) {
+        // Exact email match (not stored in current schema, skip)
+        // TODO: Add email column to sourcing.candidates if needed
+      }
+
+      // Name search - partial match on first_name + last_name
+      const nameResult = await client.query(`
+        SELECT
+          c.id,
+          c.first_name,
+          c.last_name,
+          COALESCE(NULLIF(TRIM(CONCAT(c.first_name, ' ', c.last_name)), ''), 'Unknown') as name,
+          c.headline,
+          c.location,
+          c.country,
+          c.linkedin_url,
+          c.intelligent_analysis,
+          c.specialties,
+          c.summary as resume_text
+        FROM sourcing.candidates c
+        WHERE (
+          LOWER(CONCAT(c.first_name, ' ', c.last_name)) LIKE $1
+          OR LOWER(c.first_name) LIKE $1
+          OR LOWER(c.last_name) LIKE $1
+        )
+        AND c.deleted_at IS NULL
+        AND COALESCE(c.consent_status, '') != 'opted_out'
+        AND COALESCE(NULLIF(TRIM(CONCAT(c.first_name, ' ', c.last_name)), ''), 'Unknown') NOT IN ('Unknown', 'Processing...')
+        LIMIT $2
+      `, [`%${normalizedQuery}%`, limit]);
+
+      for (const row of nameResult.rows) {
+        results.push({
+          id: row.id,
+          first_name: row.first_name,
+          last_name: row.last_name,
+          name: row.name,
+          headline: row.headline,
+          location: row.location,
+          country: row.country,
+          linkedin_url: row.linkedin_url,
+          intelligent_analysis: row.intelligent_analysis,
+          specialties: row.specialties || [],
+          resume_text: row.resume_text,
+          tenant_id: null,
+          view_count: 0,
+          current_title: row.intelligent_analysis?.career_trajectory_analysis?.current_level || row.headline,
+          current_company: row.intelligent_analysis?.personal_details?.current_company || null
+        });
+      }
+
+      console.log(`[PgVectorClient] searchCandidatesByName('${query}'): found ${results.length} matches`);
+      return results;
+    } finally {
+      client.release();
     }
   }
 
@@ -574,25 +844,34 @@ export class PgVectorClient {
         );
         health.pgvector_available = extension.rows.length > 0;
 
-        // Check required tables
+        // Check required tables/views in the configured schema
+        // For sourcing schema, check 'embeddings' table; for others check 'candidate_embeddings'
+        const embeddingsTable = this.schema === 'sourcing' ? 'embeddings' : 'candidate_embeddings';
         const tables = await client.query(`
-          SELECT COUNT(*) as count FROM information_schema.tables 
-          WHERE table_schema = 'public' 
-          AND table_name IN ('candidate_embeddings', 'embedding_metadata')
-        `);
-        health.tables_exist = tables.rows[0].count == 2;
+          SELECT COUNT(*) as count FROM (
+            SELECT tablename FROM pg_tables
+            WHERE schemaname = $1 AND tablename = $2
+            UNION
+            SELECT viewname FROM pg_views
+            WHERE schemaname = $1 AND viewname = $2
+          ) t
+        `, [this.schema, embeddingsTable]);
+        health.tables_exist = tables.rows[0].count >= 1;
 
-        // Check vector indexes
+        // Check vector indexes in the configured schema
+        // For sourcing schema, check the underlying 'embeddings' table if using views
         const indexes = await client.query(`
-          SELECT COUNT(*) as count FROM pg_indexes 
-          WHERE tablename = 'candidate_embeddings'
-          AND indexname LIKE '%vector%'
-        `);
+          SELECT COUNT(*) as count FROM pg_indexes
+          WHERE schemaname = $1
+          AND (tablename = 'candidate_embeddings' OR tablename = 'embeddings')
+          AND (indexname LIKE '%vector%' OR indexname LIKE '%hnsw%')
+        `, [this.schema]);
         health.indexes_exist = indexes.rows[0].count > 0;
 
-        // Get total embeddings count
+        // Get total embeddings count from the configured schema
+        const embeddingsTableName = this.schema === 'sourcing' ? 'embeddings' : 'candidate_embeddings';
         const embeddingsCount = await client.query(`
-          SELECT COUNT(*) as count FROM candidate_embeddings
+          SELECT COUNT(*) as count FROM ${this.schema}.${embeddingsTableName}
         `);
         health.total_embeddings = parseInt(embeddingsCount.rows[0].count);
 

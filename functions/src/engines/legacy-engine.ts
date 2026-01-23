@@ -31,9 +31,14 @@ let pgPool: Pool | null = null;
 
 function getPgPool(): Pool {
     if (!pgPool) {
-        const sslMode = process.env.PGVECTOR_SSL_MODE === 'require';
+        const host = process.env.PGVECTOR_HOST || 'localhost';
+        // Auto-detect SSL: default to true for non-localhost connections (Cloud SQL requires SSL)
+        // Can be overridden by PGVECTOR_SSL_MODE=disable for local development
+        const isLocalhost = host === 'localhost' || host === '127.0.0.1';
+        const sslMode = process.env.PGVECTOR_SSL_MODE === 'disable' ? false : !isLocalhost;
+
         pgPool = new Pool({
-            host: process.env.PGVECTOR_HOST || 'localhost',
+            host,
             port: parseInt(process.env.PGVECTOR_PORT || '5432'),
             database: process.env.PGVECTOR_DATABASE || 'headhunter',
             user: process.env.PGVECTOR_USER || 'postgres',
@@ -43,7 +48,7 @@ function getPgPool(): Pool {
             idleTimeoutMillis: 30000,
             connectionTimeoutMillis: 5000,
         });
-        console.log(`[LegacyEngine] PostgreSQL pool created, SSL: ${sslMode}`);
+        console.log(`[LegacyEngine] PostgreSQL pool created, host: ${host}, SSL: ${sslMode}`);
     }
     return pgPool;
 }
@@ -99,6 +104,8 @@ export class LegacyEngine implements IAIEngine {
         }
 
         // ===== STEP 1: Classify Target Job =====
+        // FAIL FAST: If classification fails, we CANNOT deliver quality results
+        // Returning bad results (general/mid) destroys user trust
         let targetClassification: JobClassification;
         try {
             targetClassification = await this.classificationService.classifyJob(
@@ -108,12 +115,9 @@ export class LegacyEngine implements IAIEngine {
             console.log('[LegacyEngine] Target classification:', targetClassification);
         } catch (error: any) {
             console.error('[LegacyEngine] Job classification failed:', error.message);
-            targetClassification = {
-                function: 'general',
-                level: 'senior',
-                domain: [],
-                confidence: 0.5
-            };
+            // FAIL FAST: Do NOT use fallback classification
+            // Throwing error here returns a clear message to the user
+            throw new Error('Search temporarily unavailable. Please try again in a moment.');
         }
 
         // ===== STEP 2: Determine Search Mode =====
@@ -171,9 +175,8 @@ export class LegacyEngine implements IAIEngine {
             if (targetSpecialties.length > 0 && targetClassification.function === 'engineering') {
                 const vectorBeforeSpecialty = vectorPool.length;
 
-                // Load PostgreSQL specialty data for filtering
-                const candidateIds = vectorPool.map((c: any) => c.candidate_id || c.id || '').filter(Boolean);
-                const pgSpecialties = await this.loadSpecialtiesFromPg(candidateIds);
+                // Load PostgreSQL specialty data for filtering (uses LinkedIn URL matching)
+                const pgSpecialties = await this.loadSpecialtiesFromPg(vectorPool);
 
                 vectorPool = vectorPool.filter((c: any) => {
                     const candidateId = c.candidate_id || c.id || '';
@@ -240,11 +243,9 @@ export class LegacyEngine implements IAIEngine {
         }>();
 
         // Load PostgreSQL specialty data for all candidates (for accurate scoring)
-        const allCandidateIds = [
-            ...functionPool.map((c: any) => c.id || c.candidate_id || ''),
-            ...vectorPool.map((c: any) => c.candidate_id || c.id || '')
-        ].filter(Boolean);
-        const allPgSpecialties = await this.loadSpecialtiesFromPg(allCandidateIds);
+        // Uses LinkedIn URL matching since Firestore IDs don't match PostgreSQL IDs
+        const allCandidates = [...functionPool, ...vectorPool];
+        const allPgSpecialties = await this.loadSpecialtiesFromPg(allCandidates);
 
         // Score function pool candidates
         for (const candidate of functionPool) {
@@ -543,11 +544,23 @@ export class LegacyEngine implements IAIEngine {
     // ============================================================================
 
     /**
+     * Normalize LinkedIn URL to a comparable format (lowercase slug)
+     */
+    private normalizeLinkedInUrl(url: string | undefined): string {
+        if (!url) return '';
+        const lower = url.toLowerCase().trim();
+        // Extract the /in/username part
+        const match = lower.match(/linkedin\.com\/in\/([^/?#]+)/);
+        return match ? match[1] : '';
+    }
+
+    /**
      * Load specialty data from PostgreSQL sourcing.candidates table
+     * Uses LinkedIn URL matching since Firestore IDs don't match PostgreSQL IDs
      * Uses caching to avoid repeated queries
      */
-    private async loadSpecialtiesFromPg(candidateIds: string[]): Promise<Map<string, string[]>> {
-        if (candidateIds.length === 0) return new Map();
+    private async loadSpecialtiesFromPg(candidates: any[]): Promise<Map<string, string[]>> {
+        if (candidates.length === 0) return new Map();
 
         // Check cache freshness
         const now = Date.now();
@@ -557,62 +570,83 @@ export class LegacyEngine implements IAIEngine {
             specialtyCache.lastUpdated = now;
         }
 
-        // Find IDs not in cache
-        const uncachedIds = candidateIds.filter(id => !specialtyCache.data.has(id));
+        // Build a map of normalized LinkedIn URL -> Firestore ID for matching
+        const linkedinToFirestoreId = new Map<string, string>();
+        const uncachedLinkedins: string[] = [];
 
-        if (uncachedIds.length > 0) {
+        for (const c of candidates) {
+            const firestoreId = c.candidate_id || c.id || '';
+            const linkedinUrl = c.linkedin_url || c.linkedinUrl || c.linkedin || '';
+            const normalizedLinkedin = this.normalizeLinkedInUrl(linkedinUrl);
+
+            if (normalizedLinkedin && !specialtyCache.data.has(firestoreId)) {
+                linkedinToFirestoreId.set(normalizedLinkedin, firestoreId);
+                uncachedLinkedins.push(normalizedLinkedin);
+            }
+        }
+
+        if (uncachedLinkedins.length > 0) {
             try {
                 const pool = getPgPool();
                 const client = await pool.connect();
 
                 try {
-                    // Debug: Log sample IDs being queried
-                    console.log(`[LegacyEngine] Querying specialties for ${uncachedIds.length} IDs, sample: ${uncachedIds.slice(0, 3).join(', ')}`);
+                    // Debug: Log sample LinkedIn URLs being queried
+                    console.log(`[LegacyEngine] Querying specialties for ${uncachedLinkedins.length} LinkedIn URLs, sample: ${uncachedLinkedins.slice(0, 3).join(', ')}`);
 
-                    // Batch query for specialties
-                    // Note: candidate_id in sourcing schema is integer, so we need to handle both formats
+                    // Query by normalized LinkedIn URL slug
+                    // This matches Firestore candidates to PostgreSQL sourcing.candidates
                     const result = await client.query(`
-                        SELECT id::text as candidate_id, COALESCE(specialties, '{}') as specialties
+                        SELECT
+                            LOWER(REGEXP_REPLACE(linkedin_url, '.*linkedin\\.com/in/([^/?#]+).*', '\\1')) as linkedin_slug,
+                            COALESCE(specialties, '{}') as specialties
                         FROM sourcing.candidates
-                        WHERE id::text = ANY($1)
+                        WHERE LOWER(REGEXP_REPLACE(linkedin_url, '.*linkedin\\.com/in/([^/?#]+).*', '\\1')) = ANY($1)
                           AND deleted_at IS NULL
-                    `, [uncachedIds]);
+                    `, [uncachedLinkedins]);
 
                     // Debug: Log what we got back
+                    console.log(`[LegacyEngine] Found ${result.rows.length} specialty records from PostgreSQL`);
                     if (result.rows.length > 0) {
                         const sampleRow = result.rows[0];
-                        console.log(`[LegacyEngine] Sample result: id=${sampleRow.candidate_id}, specialties=${JSON.stringify(sampleRow.specialties)}`);
+                        console.log(`[LegacyEngine] Sample result: linkedin=${sampleRow.linkedin_slug}, specialties=${JSON.stringify(sampleRow.specialties)}`);
                     }
 
-                    // Update cache
+                    // Update cache using Firestore ID as key
                     for (const row of result.rows) {
-                        specialtyCache.data.set(row.candidate_id, row.specialties || []);
-                    }
-
-                    // Mark missing IDs as empty (not in PostgreSQL or no specialty)
-                    for (const id of uncachedIds) {
-                        if (!specialtyCache.data.has(id)) {
-                            specialtyCache.data.set(id, []);
+                        const firestoreId = linkedinToFirestoreId.get(row.linkedin_slug);
+                        if (firestoreId) {
+                            specialtyCache.data.set(firestoreId, row.specialties || []);
                         }
                     }
 
-                    console.log(`[LegacyEngine] Loaded ${result.rows.length} specialty records from PostgreSQL`);
+                    // Mark missing entries as empty
+                    for (const c of candidates) {
+                        const firestoreId = c.candidate_id || c.id || '';
+                        if (!specialtyCache.data.has(firestoreId)) {
+                            specialtyCache.data.set(firestoreId, []);
+                        }
+                    }
                 } finally {
                     client.release();
                 }
             } catch (error: any) {
                 console.error('[LegacyEngine] Failed to load specialties from PostgreSQL:', error.message);
-                // On error, set empty arrays for uncached IDs to prevent repeated failures
-                for (const id of uncachedIds) {
-                    specialtyCache.data.set(id, []);
+                // On error, set empty arrays for uncached candidates
+                for (const c of candidates) {
+                    const firestoreId = c.candidate_id || c.id || '';
+                    if (!specialtyCache.data.has(firestoreId)) {
+                        specialtyCache.data.set(firestoreId, []);
+                    }
                 }
             }
         }
 
         // Return requested specialties from cache
         const result = new Map<string, string[]>();
-        for (const id of candidateIds) {
-            result.set(id, specialtyCache.data.get(id) || []);
+        for (const c of candidates) {
+            const firestoreId = c.candidate_id || c.id || '';
+            result.set(firestoreId, specialtyCache.data.get(firestoreId) || []);
         }
         return result;
     }
@@ -691,9 +725,8 @@ export class LegacyEngine implements IAIEngine {
             if (targetSpecialties.length > 0 && targetFunction === 'engineering') {
                 const beforeFilter = candidates.length;
 
-                // Load PostgreSQL specialty data for function pool candidates
-                const candidateIds = candidates.map((c: any) => c.id || '').filter(Boolean);
-                const pgSpecialties = await this.loadSpecialtiesFromPg(candidateIds);
+                // Load PostgreSQL specialty data for function pool candidates (uses LinkedIn URL matching)
+                const pgSpecialties = await this.loadSpecialtiesFromPg(candidates);
 
                 candidates = candidates.filter((c: any) => {
                     const candidateId = c.id || '';
