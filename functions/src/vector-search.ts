@@ -469,7 +469,7 @@ export class VectorSearchService {
             queryEmbedding,
             similarityThreshold,
             fetchLimit,
-            'vertex-ai-textembedding-004',
+            'gemini-embedding-001', // Must match model used to generate embeddings in sourcing.embeddings
             'full_profile',
             effectiveFilters // Pass filters including auto-detected country
           );
@@ -610,6 +610,21 @@ export class VectorSearchService {
       if (query.filters?.min_score &&
         embedding.metadata.overall_score < query.filters.min_score) {
         continue;
+      }
+
+      // Apply specialty filtering (for engineering role searches)
+      // This ensures backend searches return backend engineers, not frontend
+      if (query.filters?.specialties && query.filters.specialties.length > 0) {
+        // Access extended metadata fields that may exist from enrichment
+        const extendedMeta = embedding.metadata as Record<string, any>;
+        const candidateSpecialty = extendedMeta.specialty || extendedMeta.specialties?.[0];
+        if (candidateSpecialty) {
+          // If candidate has a specialty, it must match one of the target specialties
+          if (!query.filters.specialties.includes(candidateSpecialty)) {
+            continue;
+          }
+        }
+        // If no specialty data, let them through (Gemini reranking will evaluate)
       }
 
       // Calculate cosine similarity

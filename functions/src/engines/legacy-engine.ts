@@ -516,6 +516,7 @@ export class LegacyEngine implements IAIEngine {
                 sources: c.sources,
                 score_breakdown: c.score_breakdown,
                 vertex_score: c.vertex_score,
+                vector_score: c.vertex_score, // Original similarity score for frontend display
                 target_function: targetClassification.function,
                 target_level: targetClassification.level,
                 candidate_function: c.searchable?.function
