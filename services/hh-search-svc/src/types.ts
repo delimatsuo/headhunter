@@ -95,6 +95,8 @@ export interface PgHybridSearchRow {
   transfer_mechanism?: string | null;
   vector_score: number | null;
   text_score: number | null;
+  vector_rank?: number | null;  // Rank position in vector search results (for RRF)
+  text_rank?: number | null;    // Rank position in text search results (for RRF)
   hybrid_score: number | null;
   updated_at?: string | null;
 }
