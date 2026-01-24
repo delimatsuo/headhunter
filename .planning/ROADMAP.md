@@ -20,7 +20,7 @@ The approach is enhancement, not replacement. The existing stack (PostgreSQL + p
 | Phase | Name | Status | Requirements |
 |-------|------|--------|--------------|
 | 1 | Reranking Fix | Complete | 1 |
-| 2 | Search Recall Foundation | Pending | 4 |
+| 2 | Search Recall Foundation | Planned | 4 |
 | 3 | Hybrid Search | Pending | 4 |
 | 4 | Multi-Signal Scoring Framework | Pending | 3 |
 | 5 | Skills Infrastructure | Pending | 2 |
@@ -63,9 +63,18 @@ Plans:
 
 ## Phase 2: Search Recall Foundation
 
-**Goal:** Search returns 50+ candidates instead of ~10 by removing exclusionary filters.
+**Goal:** Search returns 50+ candidates instead of ~10 by converting exclusionary filters to soft scoring signals.
 
 **Dependencies:** Phase 1 (reranking must work before increasing recall)
+
+**Plans:** 5 plans in 3 waves
+
+Plans:
+- [ ] 02-01-PLAN.md — Lower similarity thresholds for broad retrieval (Wave 1)
+- [ ] 02-02-PLAN.md — Convert level filter to scoring signal (Wave 1)
+- [ ] 02-03-PLAN.md — Convert specialty filter to scoring signal (Wave 1)
+- [ ] 02-04-PLAN.md — Convert remaining filters to scoring (Wave 2)
+- [ ] 02-05-PLAN.md — Integrate scores and add stage logging (Wave 3, checkpoint)
 
 **Requirements:**
 - SRCL-01: Search returns 50+ candidates from 23,000+ database (not ~10)
@@ -313,4 +322,4 @@ All phases are sequential. Each builds on the previous. No parallel execution pa
 ---
 
 *Roadmap created: 2026-01-24*
-*Last updated: 2026-01-24 after Phase 1 completion*
+*Last updated: 2026-01-24 after Phase 2 planning*
