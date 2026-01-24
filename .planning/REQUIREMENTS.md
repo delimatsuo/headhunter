@@ -60,7 +60,7 @@ Requirements for leader-level search. Each maps to roadmap phases.
 - [ ] **PIPE-02**: Retrieval focuses on recall (don't miss candidates)
 - [ ] **PIPE-03**: Scoring focuses on precision (rank best higher)
 - [ ] **PIPE-04**: Reranking via LLM for nuance and context
-- [ ] **PIPE-05**: Fix reranking bypass (Match Score currently = Similarity Score)
+- [x] **PIPE-05**: Fix reranking bypass (Match Score currently = Similarity Score)
 
 ## v2 Requirements
 
@@ -113,7 +113,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PIPE-05 | Phase 1: Reranking Fix | Pending |
+| PIPE-05 | Phase 1: Reranking Fix | Complete |
 | SRCL-01 | Phase 2: Search Recall Foundation | Pending |
 | SRCL-02 | Phase 2: Search Recall Foundation | Pending |
 | SRCL-03 | Phase 2: Search Recall Foundation | Pending |
@@ -155,4 +155,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-24*
-*Last updated: 2026-01-24 after roadmap creation*
+*Last updated: 2026-01-24 after Phase 1 completion*

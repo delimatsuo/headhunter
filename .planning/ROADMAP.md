@@ -19,7 +19,7 @@ The approach is enhancement, not replacement. The existing stack (PostgreSQL + p
 
 | Phase | Name | Status | Requirements |
 |-------|------|--------|--------------|
-| 1 | Reranking Fix | Pending | 1 |
+| 1 | Reranking Fix | Complete | 1 |
 | 2 | Search Recall Foundation | Pending | 4 |
 | 3 | Hybrid Search | Pending | 4 |
 | 4 | Multi-Signal Scoring Framework | Pending | 3 |
@@ -43,10 +43,10 @@ The approach is enhancement, not replacement. The existing stack (PostgreSQL + p
 **Plans:** 4 plans in 3 waves
 
 Plans:
-- [ ] 01-01-PLAN.md — Preserve raw vector similarity in backend (Wave 1)
-- [ ] 01-02-PLAN.md — Fix frontend API score extraction (Wave 2)
-- [ ] 01-03-PLAN.md — Display both scores in UI (Wave 2)
-- [ ] 01-04-PLAN.md — CSS styling and verification checkpoint (Wave 3)
+- [x] 01-01-PLAN.md — Preserve raw vector similarity in backend (Wave 1)
+- [x] 01-02-PLAN.md — Fix frontend API score extraction (Wave 2)
+- [x] 01-03-PLAN.md — Display both scores in UI (Wave 2)
+- [x] 01-04-PLAN.md — CSS styling and verification checkpoint (Wave 3)
 
 **Requirements:**
 - PIPE-05: Fix reranking bypass (Match Score currently = Similarity Score)
@@ -313,4 +313,4 @@ All phases are sequential. Each builds on the previous. No parallel execution pa
 ---
 
 *Roadmap created: 2026-01-24*
-*Last updated: 2026-01-24*
+*Last updated: 2026-01-24 after Phase 1 completion*
