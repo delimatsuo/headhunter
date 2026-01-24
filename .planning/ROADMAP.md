@@ -21,7 +21,7 @@ The approach is enhancement, not replacement. The existing stack (PostgreSQL + p
 |-------|------|--------|--------------|
 | 1 | Reranking Fix | Complete | 1 |
 | 2 | Search Recall Foundation | Complete | 4 |
-| 3 | Hybrid Search | Pending | 4 |
+| 3 | Hybrid Search | Planned | 4 |
 | 4 | Multi-Signal Scoring Framework | Pending | 3 |
 | 5 | Skills Infrastructure | Pending | 2 |
 | 6 | Skills Intelligence | Pending | 3 |
@@ -70,11 +70,11 @@ Plans:
 **Plans:** 5 plans in 3 waves
 
 Plans:
-- [ ] 02-01-PLAN.md — Lower similarity thresholds for broad retrieval (Wave 1)
-- [ ] 02-02-PLAN.md — Convert level filter to scoring signal (Wave 1)
-- [ ] 02-03-PLAN.md — Convert specialty filter to scoring signal (Wave 1)
-- [ ] 02-04-PLAN.md — Convert remaining filters to scoring (Wave 2)
-- [ ] 02-05-PLAN.md — Integrate scores and add stage logging (Wave 3, checkpoint)
+- [x] 02-01-PLAN.md — Lower similarity thresholds for broad retrieval (Wave 1)
+- [x] 02-02-PLAN.md — Convert level filter to scoring signal (Wave 1)
+- [x] 02-03-PLAN.md — Convert specialty filter to scoring signal (Wave 1)
+- [x] 02-04-PLAN.md — Convert remaining filters to scoring (Wave 2)
+- [x] 02-05-PLAN.md — Integrate scores and add stage logging (Wave 3, checkpoint)
 
 **Requirements:**
 - SRCL-01: Search returns 50+ candidates from 23,000+ database (not ~10)
@@ -98,6 +98,14 @@ Plans:
 **Goal:** Search uses both semantic understanding AND exact keyword matching for better recall.
 
 **Dependencies:** Phase 2 (need broad retrieval working first)
+
+**Plans:** 4 plans in 2 waves
+
+Plans:
+- [ ] 03-01-PLAN.md — Fix textScore=0 and add FTS diagnostic logging (Wave 1)
+- [ ] 03-02-PLAN.md — Add RRF configuration parameters (Wave 1)
+- [ ] 03-03-PLAN.md — Implement RRF fusion SQL and update types (Wave 2)
+- [ ] 03-04-PLAN.md — Add summary logging and verification checkpoint (Wave 2)
 
 **Requirements:**
 - HYBD-01: Vector similarity search via pgvector for semantic matching
@@ -322,4 +330,4 @@ All phases are sequential. Each builds on the previous. No parallel execution pa
 ---
 
 *Roadmap created: 2026-01-24*
-*Last updated: 2026-01-24 after Phase 2 planning*
+*Last updated: 2026-01-24 after Phase 3 planning*
