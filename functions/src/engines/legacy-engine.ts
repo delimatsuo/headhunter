@@ -258,14 +258,16 @@ export class LegacyEngine implements IAIEngine {
                 console.log(`[LegacyEngine] Specialty scoring applied to ${vectorPool.length} candidates (not filtered)`);
             }
 
-            // ===== TECH STACK FILTER =====
-            // Filter out candidates with wrong tech stack (e.g., Java developers for Node.js roles)
-            // Only if the job specifies required skills
+            // ===== TECH STACK SCORING =====
+            // PHASE 2 FIX: Convert tech stack filter to scoring signal
+            // Instead of excluding candidates, score them:
+            // - Right stack: 1.0 (best)
+            // - Both stacks (polyglot): 0.7 (good - can adapt)
+            // - No data: 0.5 (neutral - let Gemini decide)
+            // - Wrong stack only: 0.2 (very low but Gemini can evaluate)
             const requiredSkills = job.required_skills || [];
             if (requiredSkills.length > 0 && targetClassification.function === 'engineering') {
-                const beforeTechStack = vectorPool.length;
-
-                // Load skills from PostgreSQL for tech stack filtering
+                // Load skills from PostgreSQL for tech stack scoring
                 const pgSkills = await this.loadSkillsFromPg(vectorPool);
 
                 // Define wrong stack indicators - these are backend languages that don't transfer well
@@ -279,12 +281,14 @@ export class LegacyEngine implements IAIEngine {
                 );
 
                 if (isNodeSearch) {
-                    vectorPool = vectorPool.filter((c: any) => {
+                    vectorPool = vectorPool.map((c: any) => {
                         const candidateId = c.candidate_id || c.id || '';
                         const candidateSkills = pgSkills.get(candidateId) || [];
 
-                        // No skill data - let Gemini decide
-                        if (candidateSkills.length === 0) return true;
+                        // No skill data - neutral score
+                        if (candidateSkills.length === 0) {
+                            return { ...c, _tech_stack_score: 0.5 };
+                        }
 
                         const candidateSkillsLower = candidateSkills.map((s: string) => s.toLowerCase());
 
@@ -298,20 +302,36 @@ export class LegacyEngine implements IAIEngine {
                             candidateSkillsLower.some((cs: string) => cs.includes(rs))
                         );
 
-                        // Exclude if has wrong stack AND doesn't have right stack
-                        // This allows developers who know both Java AND Node.js to pass
-                        return !(hasWrongStack && !hasRightStack);
+                        // Score based on stack match:
+                        // Right stack: 1.0
+                        // Both stacks (polyglot): 0.7
+                        // Neither: 0.5
+                        // Wrong stack only: 0.2
+                        let techScore: number;
+                        if (hasRightStack && !hasWrongStack) {
+                            techScore = 1.0;
+                        } else if (hasRightStack && hasWrongStack) {
+                            techScore = 0.7; // Polyglot developer
+                        } else if (!hasWrongStack) {
+                            techScore = 0.5; // Unknown
+                        } else {
+                            techScore = 0.2; // Wrong stack but Gemini can evaluate
+                        }
+
+                        return { ...c, _tech_stack_score: techScore };
                     });
-                    console.log(`[LegacyEngine] Tech stack filter: ${beforeTechStack} → ${vectorPool.length} (required: ${requiredSkills.slice(0, 3).join(', ')})`);
+
+                    console.log(`[LegacyEngine] Tech stack scoring applied (not filtered)`);
                 }
             }
 
-            // ===== FUNCTION MISMATCH EXCLUSION =====
-            // Filter out candidates whose current role clearly doesn't match engineering
-            // PMs, QAs, Data Scientists should not appear in backend engineer searches
+            // ===== FUNCTION TITLE SCORING =====
+            // PHASE 2 FIX: Convert function mismatch filter to scoring signal
+            // Instead of excluding candidates, score them:
+            // - Engineering title: 1.0 (good match)
+            // - No title: 0.5 (neutral - let Gemini decide)
+            // - Non-engineering title: 0.2 (very low but Gemini can evaluate)
             if (targetClassification.function === 'engineering') {
-                const beforeFunctionFilter = vectorPool.length;
-
                 const excludedTitleKeywords = [
                     'product manager', 'product owner', 'pm ',
                     'qa engineer', 'quality assurance', 'test engineer', 'sdet',
@@ -322,7 +342,7 @@ export class LegacyEngine implements IAIEngine {
                     'recruiter', 'talent acquisition', 'hr '
                 ];
 
-                vectorPool = vectorPool.filter((c: any) => {
+                vectorPool = vectorPool.map((c: any) => {
                     const title = (
                         c.profile?.current_role ||
                         c.searchable?.title_keywords?.[0] ||
@@ -330,16 +350,21 @@ export class LegacyEngine implements IAIEngine {
                         ''
                     ).toLowerCase();
 
-                    // If no title, let Gemini decide
-                    if (!title) return true;
+                    // No title - neutral
+                    if (!title) {
+                        return { ...c, _function_title_score: 0.5 };
+                    }
 
-                    // Exclude if title contains any of the excluded keywords
-                    return !excludedTitleKeywords.some(keyword => title.includes(keyword));
+                    // Check for excluded functions (PM, QA, etc.)
+                    const hasExcludedTitle = excludedTitleKeywords.some(keyword => title.includes(keyword));
+
+                    // Score: 1.0 for engineering titles, 0.2 for clearly non-engineering
+                    const functionScore = hasExcludedTitle ? 0.2 : 1.0;
+
+                    return { ...c, _function_title_score: functionScore };
                 });
 
-                if (beforeFunctionFilter !== vectorPool.length) {
-                    console.log(`[LegacyEngine] Function exclusion filter: ${beforeFunctionFilter} → ${vectorPool.length}`);
-                }
+                console.log(`[LegacyEngine] Function title scoring applied (not filtered)`);
             }
 
             console.log(`[LegacyEngine] IC mode - Function pool: ${functionPool.length}, Vector pool: ${vectorPool.length} (level scored, not filtered)`);
@@ -491,18 +516,19 @@ export class LegacyEngine implements IAIEngine {
         candidates.sort((a: any, b: any) => b.retrieval_score - a.retrieval_score);
         console.log(`[LegacyEngine] ${searchMode.toUpperCase()} mode - Merged ${candidates.length} unique candidates`);
 
-        // ===== STEP 3.5: HARD Level Filter (Career Trajectory) =====
-        // CRITICAL: Remove candidates who would be STEPPING DOWN to take this role
-        // A Principal/Staff engineer will NOT accept a Senior role - that's a demotion
-        // This filter uses NOMINAL level (not effective) because we're filtering by candidate interest
+        // ===== STEP 3.5: Career Trajectory SCORING =====
+        // PHASE 2 FIX: Convert career trajectory filter to scoring signal
+        // Instead of excluding candidates who would be stepping down, score them:
+        // - Not stepping down: 1.0 (interested in role)
+        // - Unknown level: 0.5 (neutral - let Gemini decide)
+        // - Stepping down (overqualified): 0.4 (still possible, just less likely)
         //
-        // IMPORTANT: Only apply to candidates with EXPLICIT level data
-        // Candidates with unknown level pass through - Gemini will evaluate them
+        // This allows overqualified candidates to still appear in results,
+        // but ranked lower. Gemini can evaluate case-by-case.
         if (!isExecutiveSearch) {
-            const beforeLevelFilter = candidates.length;
             const levelsAboveTarget = this.getLevelsAbove(targetClassification.level);
 
-            candidates = candidates.filter((c: any) => {
+            candidates = candidates.map((c: any) => {
                 // Try multiple sources for level data
                 const nominalLevel = (
                     c.searchable?.level ||
@@ -512,16 +538,21 @@ export class LegacyEngine implements IAIEngine {
                     ''
                 ).toLowerCase();
 
-                // Unknown level passes - Gemini will evaluate them
-                if (!nominalLevel || nominalLevel === 'unknown') return true;
+                // Unknown level - neutral
+                if (!nominalLevel || nominalLevel === 'unknown') {
+                    return { ...c, _trajectory_score: 0.5 };
+                }
 
-                // Keep if candidate's level is NOT above target (they wouldn't be stepping down)
-                return !levelsAboveTarget.includes(nominalLevel);
+                // Score based on stepping down potential:
+                // Not stepping down: 1.0
+                // Stepping down (overqualified): 0.4 (still possible, just less likely)
+                const isSteppingDown = levelsAboveTarget.includes(nominalLevel);
+                const trajectoryScore = isSteppingDown ? 0.4 : 1.0;
+
+                return { ...c, _trajectory_score: trajectoryScore };
             });
 
-            if (beforeLevelFilter !== candidates.length) {
-                console.log(`[LegacyEngine] Hard level filter (career trajectory): ${beforeLevelFilter} → ${candidates.length} (removed ${levelsAboveTarget.join(', ')})`);
-            }
+            console.log(`[LegacyEngine] Trajectory scoring applied (not filtered)`);
         }
 
         // ===== STEP 4: Cross-Encoder Reranking =====
@@ -650,17 +681,17 @@ export class LegacyEngine implements IAIEngine {
         });
 
         // ===== STEP 6: Minimum Score Threshold =====
-        // Lowered from 50 to 30 to let more candidates through to final ranking
-        // This allows Gemini reranking to evaluate more candidates before cutting off
-        const MIN_SCORE_THRESHOLD = 30;
-        const beforeScoreFilter = candidates.length;
-        candidates = candidates.filter((c: any) => {
-            const score = c.overall_score || 0;
-            return score >= MIN_SCORE_THRESHOLD;
-        });
-        if (beforeScoreFilter !== candidates.length) {
-            console.log(`[LegacyEngine] Score threshold filter: ${beforeScoreFilter} → ${candidates.length} (min score: ${MIN_SCORE_THRESHOLD})`);
-        }
+        // PHASE 2 FIX: Score threshold REMOVED - let all candidates through to reach Gemini
+        // The threshold was 30, now we allow all candidates to be evaluated by Gemini reranking
+        // This maximizes recall - scoring signals determine rank, not exclusion
+        //
+        // Previous code (commented out for reference):
+        // const MIN_SCORE_THRESHOLD = 30;
+        // candidates = candidates.filter((c: any) => {
+        //     const score = c.overall_score || 0;
+        //     return score >= MIN_SCORE_THRESHOLD;
+        // });
+        console.log(`[LegacyEngine] Score threshold REMOVED - all ${candidates.length} candidates pass through`);
 
         // ===== STEP 6.5: Sparse Results Fallback =====
         // If we have too few candidates after filtering, the search was too restrictive
