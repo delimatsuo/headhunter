@@ -40,6 +40,14 @@ The approach is enhancement, not replacement. The existing stack (PostgreSQL + p
 
 **Dependencies:** None (critical bugfix, must be first)
 
+**Plans:** 4 plans in 3 waves
+
+Plans:
+- [ ] 01-01-PLAN.md — Preserve raw vector similarity in backend (Wave 1)
+- [ ] 01-02-PLAN.md — Fix frontend API score extraction (Wave 2)
+- [ ] 01-03-PLAN.md — Display both scores in UI (Wave 2)
+- [ ] 01-04-PLAN.md — CSS styling and verification checkpoint (Wave 3)
+
 **Requirements:**
 - PIPE-05: Fix reranking bypass (Match Score currently = Similarity Score)
 
