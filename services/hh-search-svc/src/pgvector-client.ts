@@ -217,100 +217,10 @@ export class PgVectorClient {
         await client.query(`SET LOCAL hnsw.ef_search = ${Math.floor(efSearch)}`);
       }
 
-      const sql = `
-        WITH vector_candidates AS (
-          SELECT
-            ce.entity_id AS candidate_id,
-            1 - (ce.embedding <=> $2) AS vector_score,
-            ROW_NUMBER() OVER (ORDER BY ce.embedding <=> $2 ASC) AS vector_rank,
-            ce.metadata,
-            ce.updated_at
-          FROM ${this.config.schema}.${this.config.embeddingsTable} AS ce
-          WHERE ce.tenant_id = $1
-          ORDER BY ce.embedding <=> $2 ASC
-          LIMIT $3
-        ),
-        text_candidates AS (
-          SELECT
-            cp.candidate_id,
-            ts_rank_cd(cp.search_document, plainto_tsquery('${PG_FTS_DICTIONARY}', $4)) AS text_score,
-            ROW_NUMBER() OVER (ORDER BY ts_rank_cd(cp.search_document, plainto_tsquery('${PG_FTS_DICTIONARY}', $4)) DESC) AS text_rank
-          FROM ${this.config.schema}.${this.config.profilesTable} AS cp
-          WHERE cp.tenant_id = $1
-            AND $4 IS NOT NULL
-            AND $4 != ''
-            AND cp.search_document @@ plainto_tsquery('${PG_FTS_DICTIONARY}', $4)
-          ORDER BY text_score DESC
-          LIMIT $3
-        ),
-        combined AS (
-          SELECT
-            COALESCE(vc.candidate_id, tc.candidate_id) AS candidate_id,
-            vc.vector_score,
-            vc.vector_rank,
-            vc.metadata,
-            vc.updated_at,
-            tc.text_score,
-            tc.text_rank
-          FROM vector_candidates vc
-          FULL OUTER JOIN text_candidates tc ON vc.candidate_id = tc.candidate_id
-        ),
-        scored AS (
-          SELECT
-            cp.candidate_id,
-            cp.full_name,
-            cp.current_title,
-            cp.headline,
-            cp.location,
-            cp.country,
-            cp.industries,
-            cp.skills,
-            cp.years_experience,
-            cp.analysis_confidence,
-            cp.profile,
-            cp.legal_basis,
-            cp.consent_record,
-            cp.transfer_mechanism,
-            c.vector_score,
-            c.vector_rank,
-            COALESCE(c.text_score, 0) AS text_score,
-            c.text_rank,
-            c.updated_at,
-            c.metadata
-          FROM combined c
-          JOIN ${this.config.schema}.${this.config.profilesTable} AS cp
-            ON cp.candidate_id = c.candidate_id AND cp.tenant_id = $1
-          WHERE true
-            ${filterClause ? `\n            ${filterClause}` : ''}
-        )
-        SELECT
-          candidate_id,
-          full_name,
-          current_title,
-          headline,
-          location,
-          country,
-          industries,
-          skills,
-          years_experience,
-          analysis_confidence,
-          profile,
-          legal_basis,
-          consent_record,
-          transfer_mechanism,
-          metadata,
-          COALESCE(vector_score, 0) AS vector_score,
-          COALESCE(text_score, 0) AS text_score,
-          vector_rank,
-          text_rank,
-          (($5 * COALESCE(vector_score, 0)) + ($6 * COALESCE(text_score, 0))) AS hybrid_score,
-          to_char(COALESCE(updated_at, timezone('utc', now())), 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS updated_at
-        FROM scored
-        WHERE COALESCE(vector_score, 0) >= $7 OR COALESCE(text_score, 0) > 0
-        ORDER BY hybrid_score DESC, candidate_id ASC
-        LIMIT $8
-        OFFSET $9;
-      `;
+      // Choose SQL based on enableRrf flag (RRF vs weighted sum for A/B testing)
+      const sql = query.enableRrf
+        ? this.buildRrfSql(filterClause)
+        : this.buildWeightedSumSql(filterClause);
 
       const result: QueryResult<PgHybridSearchRow> = await client.query({ text: sql, values });
 
@@ -670,5 +580,188 @@ export class PgVectorClient {
     } finally {
       client.release();
     }
+  }
+
+  /**
+   * Build RRF (Reciprocal Rank Fusion) scoring SQL.
+   * RRF score = 1/(k + vector_rank) + 1/(k + text_rank)
+   * This eliminates the need for score normalization between different scales.
+   */
+  private buildRrfSql(filterClause: string): string {
+    return `
+      WITH vector_candidates AS (
+        SELECT
+          ce.entity_id AS candidate_id,
+          1 - (ce.embedding <=> $2) AS vector_score,
+          ROW_NUMBER() OVER (ORDER BY ce.embedding <=> $2 ASC) AS vector_rank,
+          ce.metadata,
+          ce.updated_at
+        FROM ${this.config.schema}.${this.config.embeddingsTable} AS ce
+        WHERE ce.tenant_id = $1
+        ORDER BY ce.embedding <=> $2 ASC
+        LIMIT $3
+      ),
+      text_candidates AS (
+        SELECT
+          cp.candidate_id,
+          ts_rank_cd(cp.search_document, plainto_tsquery('${PG_FTS_DICTIONARY}', $4)) AS text_score,
+          ROW_NUMBER() OVER (ORDER BY ts_rank_cd(cp.search_document, plainto_tsquery('${PG_FTS_DICTIONARY}', $4)) DESC) AS text_rank
+        FROM ${this.config.schema}.${this.config.profilesTable} AS cp
+        WHERE cp.tenant_id = $1
+          AND $4 IS NOT NULL
+          AND $4 != ''
+          AND cp.search_document @@ plainto_tsquery('${PG_FTS_DICTIONARY}', $4)
+        ORDER BY text_score DESC
+        LIMIT $3
+      ),
+      rrf_scored AS (
+        SELECT
+          COALESCE(vc.candidate_id, tc.candidate_id) AS candidate_id,
+          vc.vector_score,
+          vc.vector_rank,
+          tc.text_score,
+          tc.text_rank,
+          COALESCE(1.0 / ($10 + vc.vector_rank), 0) AS rrf_vector,
+          COALESCE(1.0 / ($10 + tc.text_rank), 0) AS rrf_text,
+          COALESCE(1.0 / ($10 + vc.vector_rank), 0) + COALESCE(1.0 / ($10 + tc.text_rank), 0) AS rrf_score,
+          vc.metadata,
+          vc.updated_at
+        FROM vector_candidates vc
+        FULL OUTER JOIN text_candidates tc ON vc.candidate_id = tc.candidate_id
+      )
+      SELECT
+        rs.candidate_id,
+        cp.full_name,
+        cp.current_title,
+        cp.headline,
+        cp.location,
+        cp.country,
+        cp.industries,
+        cp.skills,
+        cp.years_experience,
+        cp.analysis_confidence,
+        cp.profile,
+        cp.legal_basis,
+        cp.consent_record,
+        cp.transfer_mechanism,
+        rs.metadata,
+        COALESCE(rs.vector_score, 0) AS vector_score,
+        COALESCE(rs.text_score, 0) AS text_score,
+        rs.rrf_score,
+        rs.vector_rank,
+        rs.text_rank,
+        -- Keep hybrid_score for backward compatibility (will be same as rrf_score)
+        rs.rrf_score AS hybrid_score,
+        to_char(COALESCE(rs.updated_at, timezone('utc', now())), 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS updated_at
+      FROM rrf_scored rs
+      JOIN ${this.config.schema}.${this.config.profilesTable} AS cp
+        ON cp.candidate_id = rs.candidate_id AND cp.tenant_id = $1
+      WHERE COALESCE(rs.vector_score, 0) >= $7 OR COALESCE(rs.text_score, 0) > 0
+      ${filterClause}
+      ORDER BY rs.rrf_score DESC, rs.candidate_id ASC
+      LIMIT $8
+      OFFSET $9;
+    `;
+  }
+
+  /**
+   * Build weighted sum scoring SQL (legacy approach for A/B testing).
+   * hybrid_score = (vectorWeight * vector_score) + (textWeight * text_score)
+   */
+  private buildWeightedSumSql(filterClause: string): string {
+    return `
+      WITH vector_candidates AS (
+        SELECT
+          ce.entity_id AS candidate_id,
+          1 - (ce.embedding <=> $2) AS vector_score,
+          ROW_NUMBER() OVER (ORDER BY ce.embedding <=> $2 ASC) AS vector_rank,
+          ce.metadata,
+          ce.updated_at
+        FROM ${this.config.schema}.${this.config.embeddingsTable} AS ce
+        WHERE ce.tenant_id = $1
+        ORDER BY ce.embedding <=> $2 ASC
+        LIMIT $3
+      ),
+      text_candidates AS (
+        SELECT
+          cp.candidate_id,
+          ts_rank_cd(cp.search_document, plainto_tsquery('${PG_FTS_DICTIONARY}', $4)) AS text_score,
+          ROW_NUMBER() OVER (ORDER BY ts_rank_cd(cp.search_document, plainto_tsquery('${PG_FTS_DICTIONARY}', $4)) DESC) AS text_rank
+        FROM ${this.config.schema}.${this.config.profilesTable} AS cp
+        WHERE cp.tenant_id = $1
+          AND $4 IS NOT NULL
+          AND $4 != ''
+          AND cp.search_document @@ plainto_tsquery('${PG_FTS_DICTIONARY}', $4)
+        ORDER BY text_score DESC
+        LIMIT $3
+      ),
+      combined AS (
+        SELECT
+          COALESCE(vc.candidate_id, tc.candidate_id) AS candidate_id,
+          vc.vector_score,
+          vc.vector_rank,
+          vc.metadata,
+          vc.updated_at,
+          tc.text_score,
+          tc.text_rank
+        FROM vector_candidates vc
+        FULL OUTER JOIN text_candidates tc ON vc.candidate_id = tc.candidate_id
+      ),
+      scored AS (
+        SELECT
+          cp.candidate_id,
+          cp.full_name,
+          cp.current_title,
+          cp.headline,
+          cp.location,
+          cp.country,
+          cp.industries,
+          cp.skills,
+          cp.years_experience,
+          cp.analysis_confidence,
+          cp.profile,
+          cp.legal_basis,
+          cp.consent_record,
+          cp.transfer_mechanism,
+          c.vector_score,
+          c.vector_rank,
+          COALESCE(c.text_score, 0) AS text_score,
+          c.text_rank,
+          c.updated_at,
+          c.metadata
+        FROM combined c
+        JOIN ${this.config.schema}.${this.config.profilesTable} AS cp
+          ON cp.candidate_id = c.candidate_id AND cp.tenant_id = $1
+        WHERE true
+          ${filterClause ? `\n          ${filterClause}` : ''}
+      )
+      SELECT
+        candidate_id,
+        full_name,
+        current_title,
+        headline,
+        location,
+        country,
+        industries,
+        skills,
+        years_experience,
+        analysis_confidence,
+        profile,
+        legal_basis,
+        consent_record,
+        transfer_mechanism,
+        metadata,
+        COALESCE(vector_score, 0) AS vector_score,
+        COALESCE(text_score, 0) AS text_score,
+        vector_rank,
+        text_rank,
+        (($5 * COALESCE(vector_score, 0)) + ($6 * COALESCE(text_score, 0))) AS hybrid_score,
+        to_char(COALESCE(updated_at, timezone('utc', now())), 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS updated_at
+      FROM scored
+      WHERE COALESCE(vector_score, 0) >= $7 OR COALESCE(text_score, 0) > 0
+      ORDER BY hybrid_score DESC, candidate_id ASC
+      LIMIT $8
+      OFFSET $9;
+    `;
   }
 }
