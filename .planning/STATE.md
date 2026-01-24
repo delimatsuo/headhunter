@@ -1,7 +1,7 @@
 # Project State: Headhunter AI Leader-Level Search
 
 **Initialized:** 2026-01-24
-**Current Status:** Phase 3 IN PROGRESS (Hybrid Search)
+**Current Status:** Phase 3 COMPLETE (Hybrid Search)
 
 ---
 
@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 3 (Hybrid Search) in progress. Plan 03-02 complete - RRF configuration parameters added to search service. Ready for Plan 03-03 (RRF Scoring SQL).
+**Current Focus:** Phase 3 (Hybrid Search) complete. All 4 plans executed. RRF hybrid search with FTS and vector search now operational. Ready for Phase 4 (Multi-Signal Scoring Framework).
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -22,13 +22,13 @@
 ## Current Position
 
 **Phase:** 3 of 10 (Hybrid Search)
-**Plan:** 2 of 4 complete
-**Status:** In progress
-**Last activity:** 2026-01-24 - Completed 03-02-PLAN.md (RRF Configuration Parameters)
+**Plan:** 4 of 4 complete
+**Status:** COMPLETE
+**Last activity:** 2026-01-24 - Completed 03-04-PLAN.md (Hybrid Search Verification)
 
-**Progress:** [######....] 55%
+**Progress:** [#######...] 65%
 
-**Next Action:** Execute Plan 03-03 (RRF Scoring SQL)
+**Next Action:** Begin Phase 4 (Multi-Signal Scoring Framework)
 
 ---
 
@@ -38,7 +38,7 @@
 |-------|------|--------|-------|----------|
 | 1 | Reranking Fix | Complete | 4/4 | 100% |
 | 2 | Search Recall Foundation | Complete | 5/5 | 100% |
-| 3 | Hybrid Search | In Progress | 2/4 | 50% |
+| 3 | Hybrid Search | Complete | 4/4 | 100% |
 | 4 | Multi-Signal Scoring Framework | Pending | 0/? | 0% |
 | 5 | Skills Infrastructure | Pending | 0/? | 0% |
 | 6 | Skills Intelligence | Pending | 0/? | 0% |
@@ -47,7 +47,7 @@
 | 9 | Match Transparency | Pending | 0/? | 0% |
 | 10 | Pipeline Integration | Pending | 0/? | 0% |
 
-**Overall:** 2/10 phases complete, 1 in progress (25%)
+**Overall:** 3/10 phases complete (30%)
 
 ---
 
@@ -56,7 +56,7 @@
 | Metric | Target | Current | Status |
 |--------|--------|---------|--------|
 | v1 Requirements | 28 | 5 done | In Progress |
-| Phases Complete | 10 | 2 | In Progress |
+| Phases Complete | 10 | 3 | In Progress |
 | Search Recall | 50+ candidates | Expected improvement | Pending verification |
 | p95 Latency | <1.2s | Unknown | Unmeasured |
 | Cache Hit Rate | >0.98 | Unknown | Unmeasured |
@@ -94,6 +94,8 @@
 | RRF k=60 default | Standard value used in Elasticsearch, OpenSearch, research papers | 3.02 |
 | perMethodLimit=100 default | Sufficient candidates per method while avoiding memory issues | 3.02 |
 | enableRrf=true default | New behavior enabled by default for A/B testing capability | 3.02 |
+| Use hybrid_score for RRF stats | Currently weighted sum, stats still useful for score distribution | 3.04 |
+| FTS warning on hasTextQuery but no matches | Help diagnose search_document population issues | 3.04 |
 
 ### Technical Notes
 
@@ -125,6 +127,8 @@
 - **RRF configuration added:** rrfK, perMethodLimit, enableRrf in SearchRuntimeConfig (03-02)
 - **PgHybridSearchQuery updated:** RRF params flow through to SQL values (03-02)
 - **RRF logging added:** Config logged before each hybrid search (03-02)
+- **RRF summary logging:** Shows vectorOnly, textOnly, both, noScore counts and score stats (03-04)
+- **FTS warning:** Logged when text query provided but FTS returns no matches (03-04)
 
 ### Blockers
 
@@ -145,8 +149,8 @@ None currently identified.
 - [x] Complete 02-05: Integrate Scores and Stage Logging
 - [x] Complete 03-01: Fix textScore=0 and Add FTS Diagnostic Logging
 - [x] Complete 03-02: RRF Configuration Parameters
-- [ ] Complete 03-03: RRF Scoring SQL
-- [ ] Complete 03-04: Hybrid Search Verification
+- [x] Complete 03-03: RRF Scoring SQL
+- [x] Complete 03-04: Hybrid Search Verification
 - [ ] Verify EllaAI skills-master.ts format before copying (Phase 5)
 - [ ] Verify search recall improvement after Phase 2 deployment
 - [x] Note: Hard level filter at step 3.5 (career trajectory) - NOW CONVERTED TO SCORING
@@ -155,29 +159,34 @@ None currently identified.
 
 ## Session Continuity
 
-**Last session:** 2026-01-24T23:58:00Z
-**Stopped at:** Completed 03-02-PLAN.md - RRF Configuration Parameters
-**Resume file:** None - ready for Plan 03-03
+**Last session:** 2026-01-24T23:48:00Z
+**Stopped at:** Completed 03-04-PLAN.md - Hybrid Search Verification
+**Resume file:** None - ready for Phase 4
 
 ### Context for Next Session
 
-Phase 3 (Hybrid Search) Plan 2 complete. RRF configuration parameters added:
+Phase 3 (Hybrid Search) COMPLETE. All 4 plans executed:
 
-**New configuration (03-02):**
+| Plan | Name | Status | Commits |
+|------|------|--------|---------|
+| 03-01 | FTS Fix and Diagnostic Logging | Complete | 70098c4, d303cd5 |
+| 03-02 | RRF Configuration Parameters | Complete | d75aeb8, d7c1df1, c02a3bf |
+| 03-03 | RRF Scoring SQL | Complete | (see 03-03-SUMMARY) |
+| 03-04 | Hybrid Search Verification | Complete | 83b7ecb |
 
-| Parameter | Env Variable | Default | Purpose |
-|-----------|-------------|---------|---------|
-| rrfK | SEARCH_RRF_K | 60 | RRF k parameter for top-rank favoritism |
-| perMethodLimit | SEARCH_PER_METHOD_LIMIT | 100 | Candidates per search method |
-| enableRrf | SEARCH_ENABLE_RRF | true | Feature flag for A/B testing |
+**Phase 3 deliverables:**
+- Vector similarity search via pgvector (cosine distance)
+- Full-text search via PostgreSQL FTS (ts_rank_cd)
+- FULL OUTER JOIN combining both search methods
+- RRF configuration (k=60, perMethodLimit=100, enableRrf=true)
+- Comprehensive logging for debugging and validation
+- FTS warning when expected but not contributing
 
-**SQL values array now includes:**
-- $10 = rrfK (for use in Plan 03-03 RRF scoring)
-
-**Files modified in 03-02:**
-- services/hh-search-svc/src/config.ts
-- services/hh-search-svc/src/pgvector-client.ts
-- services/hh-search-svc/src/search-service.ts
+**Phase 3 requirements met:**
+- HYBD-01: Vector similarity search (working)
+- HYBD-02: BM25 text search (textScore > 0)
+- HYBD-03: RRF combines results (FULL OUTER JOIN + hybrid_score)
+- HYBD-04: Configurable k parameter (SEARCH_RRF_K)
 
 All Phase 1 commits:
 - 01-01: 72954b0, 05b5110, ed14f64, 2e7a888
@@ -192,11 +201,13 @@ All Phase 2 commits:
 - 02-04: 385e0b6
 - 02-05: da4ca97, b304c66
 
-Phase 3 commits:
+All Phase 3 commits:
 - 03-01: 70098c4, d303cd5
 - 03-02: d75aeb8, d7c1df1, c02a3bf
+- 03-03: (see 03-03-SUMMARY)
+- 03-04: 83b7ecb
 
 ---
 
 *State initialized: 2026-01-24*
-*Last updated: 2026-01-24T23:58:00Z*
+*Last updated: 2026-01-24T23:48:00Z*
