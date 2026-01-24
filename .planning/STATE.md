@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 2 - Search Recall Foundation. Completed 02-01 (Lower Similarity Thresholds).
+**Current Focus:** Phase 2 - Search Recall Foundation. Completed 02-01 (Lower Similarity Thresholds) and 02-02 (Level Filter to Scoring).
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -22,9 +22,9 @@
 ## Current Position
 
 **Phase:** 2 of 10 (Search Recall Foundation) - IN PROGRESS
-**Plan:** 1 of ? complete
+**Plan:** 2 of ? complete
 **Status:** In progress
-**Last activity:** 2026-01-24 - Completed 02-01-PLAN.md (Lower Similarity Thresholds)
+**Last activity:** 2026-01-24 - Completed 02-02-PLAN.md (Level Filter to Scoring)
 
 **Progress:** [####......] 40%
 
@@ -37,7 +37,7 @@
 | Phase | Name | Status | Plans | Progress |
 |-------|------|--------|-------|----------|
 | 1 | Reranking Fix | Complete | 4/4 | 100% |
-| 2 | Search Recall Foundation | In Progress | 1/? | ~25% |
+| 2 | Search Recall Foundation | In Progress | 2/? | ~50% |
 | 3 | Hybrid Search | Pending | 0/? | 0% |
 | 4 | Multi-Signal Scoring Framework | Pending | 0/? | 0% |
 | 5 | Skills Infrastructure | Pending | 0/? | 0% |
@@ -57,7 +57,7 @@
 |--------|--------|---------|--------|
 | v1 Requirements | 28 | 1 done | In Progress |
 | Phases Complete | 10 | 1 | In Progress |
-| Search Recall | 50+ candidates | ~10 (pre-02-01) | Pending verification |
+| Search Recall | 50+ candidates | ~10 (pre-Phase 2) | Pending verification |
 | p95 Latency | <1.2s | Unknown | Unmeasured |
 | Cache Hit Rate | >0.98 | Unknown | Unmeasured |
 
@@ -80,6 +80,8 @@
 | Green for Match, Blue for Similarity badges | Primary vs secondary visual hierarchy | 1.04 |
 | Lower threshold to 0.25 | Broad recall - let scoring/reranking filter quality | 2.01 |
 | Increase default limit to 500 | Enable retrieval of 500-800 candidates per query | 2.01 |
+| Level scoring: 1.0/0.5/0.3 | In-range=1.0, unknown=0.5, out-of-range=0.3 - soft scoring not hard filter | 2.02 |
+| Precomputed _level_score pattern | Use _level_score when available, fallback to calculateLevelScore | 2.02 |
 
 ### Technical Notes
 
@@ -93,6 +95,8 @@
 - **CSS styling complete:** Green Match badge, blue Similarity badge with quality variants (01-04)
 - **Similarity thresholds lowered:** 0.25 across all search paths (02-01)
 - **Default limit increased:** 500 candidates per search (02-01)
+- **Level filter converted to scoring:** _level_score attached to all candidates (02-02)
+- **Both vector pool and function pool use level scoring** (02-02)
 
 ### Blockers
 
@@ -107,31 +111,38 @@ None currently identified.
 - [x] Complete 01-03: UI Dual Score Display
 - [x] Complete 01-04: Verification (CSS styling)
 - [x] Complete 02-01: Lower Similarity Thresholds
+- [x] Complete 02-02: Level Filter to Scoring
 - [ ] Verify EllaAI skills-master.ts format before copying (Phase 5)
-- [ ] Verify search recall improvement after 02-01 deployment
+- [ ] Verify search recall improvement after Phase 2 deployment
+- [ ] Note: Hard level filter at step 3.5 (career trajectory) still exists
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-01-24T23:17:00Z
-**Stopped at:** Completed 02-01-PLAN.md
+**Last session:** 2026-01-24T23:17:55Z
+**Stopped at:** Completed 02-02-PLAN.md
 **Resume file:** None - ready for next Phase 2 plan
 
 ### Context for Next Session
 
-Phase 2 Plan 1 (Lower Similarity Thresholds) complete. Changes made:
+Phase 2 Plan 2 (Level Filter to Scoring) complete. Changes made:
 
-1. **functions/src/vector-search.ts:** threshold 0.5 -> 0.25, limit 100 -> 500
-2. **functions/src/pgvector-client.ts:** default threshold 0.7 -> 0.25, added debug logging
-3. **services/hh-search-svc/src/config.ts:** minSimilarity default 0.45 -> 0.25
+1. **Vector pool level filter (line ~166):** Converted .filter() to .map() with _level_score
+2. **Function pool level filter (line ~942):** Converted .filter() to .map() with _level_score
+3. **Retrieval scoring:** Uses precomputed _level_score when available
 
-All TypeScript compilation passes. SEARCH_MIN_SIMILARITY env var can override at runtime.
+Scoring values:
+- In-range: 1.0 (best)
+- Unknown: 0.5 (neutral - let Gemini decide)
+- Out-of-range: 0.3 (low but not excluded)
 
-Commits from 02-01:
-- baa8c24: feat(02-01): lower VectorSearchService threshold
-- 62b5eb8: feat(02-01): lower PgVectorClient default threshold
-- 3a7f5ab: feat(02-01): lower hh-search-svc config threshold
+All TypeScript compilation passes. All 5 verification criteria met.
+
+Commits from 02-02:
+- cefedfa: feat(02-02): convert IC mode level filter to scoring
+- f848029: feat(02-02): convert function pool level filter to scoring
+- bb3fdb4: feat(02-02): integrate _level_score into retrieval scoring
 
 All Phase 1 commits:
 - 01-01: 72954b0, 05b5110, ed14f64, 2e7a888
@@ -139,7 +150,11 @@ All Phase 1 commits:
 - 01-03: d6fb69a, 9b00515, b4c0178
 - 01-04: cdc9107
 
+All Phase 2 commits:
+- 02-01: baa8c24, 62b5eb8, 3a7f5ab
+- 02-02: cefedfa, f848029, bb3fdb4
+
 ---
 
 *State initialized: 2026-01-24*
-*Last updated: 2026-01-24T23:17:00Z*
+*Last updated: 2026-01-24T23:17:55Z*
