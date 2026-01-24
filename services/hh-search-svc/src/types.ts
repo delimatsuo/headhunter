@@ -31,9 +31,12 @@ export interface CandidateSkillMatch {
 
 export interface HybridSearchResultItem {
   candidateId: string;
-  score: number;
+  score: number;           // Primary score (RRF score when enabled, hybrid score otherwise)
   vectorScore: number;
   textScore: number;
+  rrfScore?: number;       // Explicit RRF score when RRF is enabled
+  vectorRank?: number;     // Rank position in vector search results (1-based)
+  textRank?: number;       // Rank position in text search results (1-based)
   confidence: number;
   fullName?: string;
   title?: string;
@@ -97,7 +100,8 @@ export interface PgHybridSearchRow {
   text_score: number | null;
   vector_rank?: number | null;  // Rank position in vector search results (for RRF)
   text_rank?: number | null;    // Rank position in text search results (for RRF)
-  hybrid_score: number | null;
+  rrf_score?: number | null;    // RRF fusion score: 1/(k+vector_rank) + 1/(k+text_rank)
+  hybrid_score: number | null;  // When RRF enabled, this equals rrf_score for backward compatibility
   updated_at?: string | null;
 }
 
