@@ -143,7 +143,10 @@ export class LegacyEngine implements IAIEngine {
             .map((c: string) => c.toLowerCase());
 
         let functionPool: any[] = [];
-        let vectorPool: any[] = vectorSearchResults || [];
+        let vectorPool: any[] = (vectorSearchResults || []).map((c: any) => ({
+            ...c,
+            _raw_vector_similarity: c.vector_similarity_score || c.similarity_score || 0
+        }));
 
         if (isExecutiveSearch) {
             // EXECUTIVE MODE: Function-based retrieval is PRIMARY
@@ -182,7 +185,8 @@ export class LegacyEngine implements IAIEngine {
                     const candidateId = c.candidate_id || c.id || '';
                     const candidateSpecialties = this.getCandidateSpecialty(c, pgSpecialties);
 
-                    // No specialty data - let them through for Gemini evaluation
+                    // No specialty data - let them through, vector similarity will decide
+                    // This prevents excluding good candidates just because specialty data is missing
                     if (candidateSpecialties.length === 0) return true;
 
                     // Check for specialty match (keep if ANY target specialty matches)
@@ -201,6 +205,17 @@ export class LegacyEngine implements IAIEngine {
                             !candidateSpecialties.includes('fullstack') &&
                             !candidateSpecialties.includes('full-stack');
                         if (isPureFrontend) return false;
+
+                        // Exclude candidates with wrong specialties for backend searches
+                        // These are clearly different job families that won't fit backend roles
+                        const wrongSpecialtiesForBackend = ['mobile', 'qa', 'data', 'devops', 'sre'];
+                        const hasWrongSpecialty = wrongSpecialtiesForBackend.some(wrong =>
+                            candidateSpecialties.includes(wrong) &&
+                            !candidateSpecialties.includes('backend') &&
+                            !candidateSpecialties.includes('fullstack') &&
+                            !candidateSpecialties.includes('full-stack')
+                        );
+                        if (hasWrongSpecialty) return false;
                     }
 
                     if (targetSpecialties.includes('frontend')) {
@@ -210,12 +225,106 @@ export class LegacyEngine implements IAIEngine {
                             !candidateSpecialties.includes('fullstack') &&
                             !candidateSpecialties.includes('full-stack');
                         if (isPureBackend) return false;
+
+                        // Exclude candidates with wrong specialties for frontend searches
+                        const wrongSpecialtiesForFrontend = ['mobile', 'qa', 'data', 'devops', 'sre'];
+                        const hasWrongSpecialtyFE = wrongSpecialtiesForFrontend.some(wrong =>
+                            candidateSpecialties.includes(wrong) &&
+                            !candidateSpecialties.includes('frontend') &&
+                            !candidateSpecialties.includes('fullstack') &&
+                            !candidateSpecialties.includes('full-stack')
+                        );
+                        if (hasWrongSpecialtyFE) return false;
                     }
 
                     // Let others through for Gemini to score appropriately
                     return true;
                 });
                 console.log(`[LegacyEngine] Vector specialty filter (PostgreSQL): ${vectorBeforeSpecialty} → ${vectorPool.length}`);
+            }
+
+            // ===== TECH STACK FILTER =====
+            // Filter out candidates with wrong tech stack (e.g., Java developers for Node.js roles)
+            // Only if the job specifies required skills
+            const requiredSkills = job.required_skills || [];
+            if (requiredSkills.length > 0 && targetClassification.function === 'engineering') {
+                const beforeTechStack = vectorPool.length;
+
+                // Load skills from PostgreSQL for tech stack filtering
+                const pgSkills = await this.loadSkillsFromPg(vectorPool);
+
+                // Define wrong stack indicators - these are backend languages that don't transfer well
+                const wrongStackIndicators = ['java', 'c#', 'csharp', '.net', 'scala', 'kotlin', 'spring boot', 'spring framework'];
+                // Node.js/TypeScript indicators - the right stack for this search
+                const rightStackIndicators = ['node', 'nodejs', 'node.js', 'typescript', 'express', 'nestjs', 'fastify', 'javascript'];
+
+                // Detect if this is a Node.js/TypeScript focused search
+                const isNodeSearch = requiredSkills.some(skill =>
+                    rightStackIndicators.some(ind => skill.toLowerCase().includes(ind))
+                );
+
+                if (isNodeSearch) {
+                    vectorPool = vectorPool.filter((c: any) => {
+                        const candidateId = c.candidate_id || c.id || '';
+                        const candidateSkills = pgSkills.get(candidateId) || [];
+
+                        // No skill data - let Gemini decide
+                        if (candidateSkills.length === 0) return true;
+
+                        const candidateSkillsLower = candidateSkills.map((s: string) => s.toLowerCase());
+
+                        // Check if candidate has wrong stack (Java, C#, etc.)
+                        const hasWrongStack = wrongStackIndicators.some(ws =>
+                            candidateSkillsLower.some((cs: string) => cs.includes(ws))
+                        );
+
+                        // Check if candidate has right stack (Node.js, TypeScript, etc.)
+                        const hasRightStack = rightStackIndicators.some(rs =>
+                            candidateSkillsLower.some((cs: string) => cs.includes(rs))
+                        );
+
+                        // Exclude if has wrong stack AND doesn't have right stack
+                        // This allows developers who know both Java AND Node.js to pass
+                        return !(hasWrongStack && !hasRightStack);
+                    });
+                    console.log(`[LegacyEngine] Tech stack filter: ${beforeTechStack} → ${vectorPool.length} (required: ${requiredSkills.slice(0, 3).join(', ')})`);
+                }
+            }
+
+            // ===== FUNCTION MISMATCH EXCLUSION =====
+            // Filter out candidates whose current role clearly doesn't match engineering
+            // PMs, QAs, Data Scientists should not appear in backend engineer searches
+            if (targetClassification.function === 'engineering') {
+                const beforeFunctionFilter = vectorPool.length;
+
+                const excludedTitleKeywords = [
+                    'product manager', 'product owner', 'pm ',
+                    'qa engineer', 'quality assurance', 'test engineer', 'sdet',
+                    'data scientist', 'data analyst', 'analytics engineer', 'bi analyst',
+                    'ux designer', 'ui designer', 'product designer', 'graphic designer',
+                    'project manager', 'delivery manager', 'scrum master', 'agile coach',
+                    'technical writer', 'content strategist',
+                    'recruiter', 'talent acquisition', 'hr '
+                ];
+
+                vectorPool = vectorPool.filter((c: any) => {
+                    const title = (
+                        c.profile?.current_role ||
+                        c.searchable?.title_keywords?.[0] ||
+                        c.current_role ||
+                        ''
+                    ).toLowerCase();
+
+                    // If no title, let Gemini decide
+                    if (!title) return true;
+
+                    // Exclude if title contains any of the excluded keywords
+                    return !excludedTitleKeywords.some(keyword => title.includes(keyword));
+                });
+
+                if (beforeFunctionFilter !== vectorPool.length) {
+                    console.log(`[LegacyEngine] Function exclusion filter: ${beforeFunctionFilter} → ${vectorPool.length}`);
+                }
             }
 
             console.log(`[LegacyEngine] IC mode - Function pool: ${functionPool.length}, Vector pool: ${vectorPool.length} (filtered from ${vectorPoolBeforeFilter})`);
@@ -501,6 +610,49 @@ export class LegacyEngine implements IAIEngine {
             return true;
         });
 
+        // ===== STEP 6: Minimum Score Threshold =====
+        // Lowered from 50 to 30 to let more candidates through to final ranking
+        // This allows Gemini reranking to evaluate more candidates before cutting off
+        const MIN_SCORE_THRESHOLD = 30;
+        const beforeScoreFilter = candidates.length;
+        candidates = candidates.filter((c: any) => {
+            const score = c.overall_score || 0;
+            return score >= MIN_SCORE_THRESHOLD;
+        });
+        if (beforeScoreFilter !== candidates.length) {
+            console.log(`[LegacyEngine] Score threshold filter: ${beforeScoreFilter} → ${candidates.length} (min score: ${MIN_SCORE_THRESHOLD})`);
+        }
+
+        // ===== STEP 6.5: Sparse Results Fallback =====
+        // If we have too few candidates after filtering, the search was too restrictive
+        // Relax constraints and rely more on vector similarity
+        const SPARSE_THRESHOLD = 20;
+        if (candidates.length < SPARSE_THRESHOLD && vectorSearchResults && vectorSearchResults.length > candidates.length) {
+            console.log(`[LegacyEngine] Sparse results detected (${candidates.length}/${SPARSE_THRESHOLD}), adding vector fallback candidates...`);
+
+            // Get candidate IDs we already have
+            const existingIds = new Set(candidates.map((c: any) => c.candidate_id || c.id || ''));
+
+            // Add more candidates from vector search results that weren't included
+            // These are sorted by vector similarity, so they're semantically relevant
+            const fallbackCandidates = vectorSearchResults
+                .filter((c: any) => {
+                    const id = c.candidate_id || c.id || '';
+                    return id && !existingIds.has(id);
+                })
+                .slice(0, SPARSE_THRESHOLD - candidates.length)
+                .map((c: any) => ({
+                    ...c,
+                    overall_score: 25, // Below threshold but still included as fallback
+                    rationale: ['Vector similarity match (fallback)'],
+                    sources: ['vector_fallback'],
+                    search_mode: searchMode
+                }));
+
+            candidates = [...candidates, ...fallbackCandidates];
+            console.log(`[LegacyEngine] Added ${fallbackCandidates.length} fallback candidates, total now: ${candidates.length}`);
+        }
+
         // ===== Convert to standard format =====
         const matches: CandidateMatch[] = candidates.slice(0, limit).map((c: any) => ({
             candidate_id: c.candidate_id || c.id || '',
@@ -571,61 +723,56 @@ export class LegacyEngine implements IAIEngine {
             specialtyCache.lastUpdated = now;
         }
 
-        // Build a map of normalized LinkedIn URL -> Firestore ID for matching
-        const linkedinToFirestoreId = new Map<string, string>();
-        const uncachedLinkedins: string[] = [];
+        // Collect uncached candidate IDs
+        // The candidate_id/id from vector search matches sourcing.candidates.id directly
+        const uncachedIds: number[] = [];
 
         for (const c of candidates) {
-            const firestoreId = c.candidate_id || c.id || '';
-            const linkedinUrl = c.linkedin_url || c.linkedinUrl || c.linkedin || '';
-            const normalizedLinkedin = this.normalizeLinkedInUrl(linkedinUrl);
-
-            if (normalizedLinkedin && !specialtyCache.data.has(firestoreId)) {
-                linkedinToFirestoreId.set(normalizedLinkedin, firestoreId);
-                uncachedLinkedins.push(normalizedLinkedin);
+            const candidateId = c.candidate_id || c.id || '';
+            if (candidateId && !specialtyCache.data.has(candidateId)) {
+                const numId = parseInt(candidateId, 10);
+                if (!isNaN(numId)) {
+                    uncachedIds.push(numId);
+                }
             }
         }
 
-        if (uncachedLinkedins.length > 0) {
+        if (uncachedIds.length > 0) {
             try {
                 const pool = getPgPool();
                 const client = await pool.connect();
 
                 try {
-                    // Debug: Log sample LinkedIn URLs being queried
-                    console.log(`[LegacyEngine] Querying specialties for ${uncachedLinkedins.length} LinkedIn URLs, sample: ${uncachedLinkedins.slice(0, 3).join(', ')}`);
+                    // Debug: Log sample IDs being queried
+                    console.log(`[LegacyEngine] Querying specialties for ${uncachedIds.length} candidate IDs, sample: ${uncachedIds.slice(0, 5).join(', ')}`);
 
-                    // Query by normalized LinkedIn URL slug
-                    // This matches Firestore candidates to PostgreSQL sourcing.candidates
+                    // Query by candidate ID directly (entity_id in embeddings = id in candidates)
                     const result = await client.query(`
                         SELECT
-                            LOWER(REGEXP_REPLACE(linkedin_url, '.*linkedin\\.com/in/([^/?#]+).*', '\\1')) as linkedin_slug,
+                            id,
                             COALESCE(specialties, '{}') as specialties
                         FROM sourcing.candidates
-                        WHERE LOWER(REGEXP_REPLACE(linkedin_url, '.*linkedin\\.com/in/([^/?#]+).*', '\\1')) = ANY($1)
+                        WHERE id = ANY($1)
                           AND deleted_at IS NULL
-                    `, [uncachedLinkedins]);
+                    `, [uncachedIds]);
 
                     // Debug: Log what we got back
                     console.log(`[LegacyEngine] Found ${result.rows.length} specialty records from PostgreSQL`);
                     if (result.rows.length > 0) {
                         const sampleRow = result.rows[0];
-                        console.log(`[LegacyEngine] Sample result: linkedin=${sampleRow.linkedin_slug}, specialties=${JSON.stringify(sampleRow.specialties)}`);
+                        console.log(`[LegacyEngine] Sample result: id=${sampleRow.id}, specialties=${JSON.stringify(sampleRow.specialties)}`);
                     }
 
-                    // Update cache using Firestore ID as key
+                    // Update cache using candidate ID as key
                     for (const row of result.rows) {
-                        const firestoreId = linkedinToFirestoreId.get(row.linkedin_slug);
-                        if (firestoreId) {
-                            specialtyCache.data.set(firestoreId, row.specialties || []);
-                        }
+                        specialtyCache.data.set(String(row.id), row.specialties || []);
                     }
 
                     // Mark missing entries as empty
                     for (const c of candidates) {
-                        const firestoreId = c.candidate_id || c.id || '';
-                        if (!specialtyCache.data.has(firestoreId)) {
-                            specialtyCache.data.set(firestoreId, []);
+                        const candidateId = c.candidate_id || c.id || '';
+                        if (candidateId && !specialtyCache.data.has(candidateId)) {
+                            specialtyCache.data.set(candidateId, []);
                         }
                     }
                 } finally {
@@ -635,9 +782,9 @@ export class LegacyEngine implements IAIEngine {
                 console.error('[LegacyEngine] Failed to load specialties from PostgreSQL:', error.message);
                 // On error, set empty arrays for uncached candidates
                 for (const c of candidates) {
-                    const firestoreId = c.candidate_id || c.id || '';
-                    if (!specialtyCache.data.has(firestoreId)) {
-                        specialtyCache.data.set(firestoreId, []);
+                    const candidateId = c.candidate_id || c.id || '';
+                    if (candidateId && !specialtyCache.data.has(candidateId)) {
+                        specialtyCache.data.set(candidateId, []);
                     }
                 }
             }
@@ -646,9 +793,90 @@ export class LegacyEngine implements IAIEngine {
         // Return requested specialties from cache
         const result = new Map<string, string[]>();
         for (const c of candidates) {
-            const firestoreId = c.candidate_id || c.id || '';
-            result.set(firestoreId, specialtyCache.data.get(firestoreId) || []);
+            const candidateId = c.candidate_id || c.id || '';
+            result.set(candidateId, specialtyCache.data.get(candidateId) || []);
         }
+        return result;
+    }
+
+    /**
+     * Load skills data from PostgreSQL sourcing.candidates table
+     * Uses intelligent_analysis->'skill_assessment'->'technical_skills'->>'core_competencies'
+     * Uses LinkedIn URL matching since Firestore IDs don't match PostgreSQL IDs
+     */
+    private async loadSkillsFromPg(candidates: any[]): Promise<Map<string, string[]>> {
+        if (candidates.length === 0) return new Map();
+
+        // Collect candidate IDs (entity_id from embeddings = id in candidates table)
+        const candidateIds: number[] = [];
+
+        for (const c of candidates) {
+            const candidateId = c.candidate_id || c.id || '';
+            if (candidateId) {
+                const numId = parseInt(candidateId, 10);
+                if (!isNaN(numId)) {
+                    candidateIds.push(numId);
+                }
+            }
+        }
+
+        if (candidateIds.length === 0) return new Map();
+
+        const result = new Map<string, string[]>();
+
+        try {
+            const pool = getPgPool();
+            const client = await pool.connect();
+
+            try {
+                // Query skills from intelligent_analysis JSON field by candidate ID
+                const queryResult = await client.query(`
+                    SELECT
+                        id,
+                        COALESCE(
+                            intelligent_analysis->'skill_assessment'->'technical_skills'->>'core_competencies',
+                            '[]'
+                        ) as skills_json
+                    FROM sourcing.candidates
+                    WHERE id = ANY($1)
+                      AND deleted_at IS NULL
+                      AND intelligent_analysis IS NOT NULL
+                `, [candidateIds]);
+
+                // Parse skills and map to candidate IDs
+                for (const row of queryResult.rows) {
+                    try {
+                        // Parse the JSON array of skills
+                        const skills = JSON.parse(row.skills_json || '[]');
+                        result.set(String(row.id), Array.isArray(skills) ? skills : []);
+                    } catch {
+                        result.set(String(row.id), []);
+                    }
+                }
+
+                // Mark candidates without skill data as empty
+                for (const c of candidates) {
+                    const candidateId = c.candidate_id || c.id || '';
+                    if (candidateId && !result.has(candidateId)) {
+                        result.set(candidateId, []);
+                    }
+                }
+
+                console.log(`[LegacyEngine] Loaded skills for ${queryResult.rows.length}/${candidateIds.length} candidates from PostgreSQL`);
+            } finally {
+                client.release();
+            }
+        } catch (error: any) {
+            console.error('[LegacyEngine] Failed to load skills from PostgreSQL:', error.message);
+            // On error, return empty map
+            for (const c of candidates) {
+                const candidateId = c.candidate_id || c.id || '';
+                if (candidateId && !result.has(candidateId)) {
+                    result.set(candidateId, []);
+                }
+            }
+        }
+
         return result;
     }
 
@@ -757,6 +985,16 @@ export class LegacyEngine implements IAIEngine {
                             !candidateSpecialties.includes('fullstack') &&
                             !candidateSpecialties.includes('full-stack');
                         if (isPureFrontend) return false;
+
+                        // Exclude candidates with wrong specialties for backend searches
+                        const wrongSpecialtiesForBackend = ['mobile', 'qa', 'data', 'devops', 'sre'];
+                        const hasWrongSpecialty = wrongSpecialtiesForBackend.some(wrong =>
+                            candidateSpecialties.includes(wrong) &&
+                            !candidateSpecialties.includes('backend') &&
+                            !candidateSpecialties.includes('fullstack') &&
+                            !candidateSpecialties.includes('full-stack')
+                        );
+                        if (hasWrongSpecialty) return false;
                     }
                     if (targetSpecialties.includes('frontend')) {
                         // Exclude candidates who are clearly backend-only
@@ -765,6 +1003,16 @@ export class LegacyEngine implements IAIEngine {
                             !candidateSpecialties.includes('fullstack') &&
                             !candidateSpecialties.includes('full-stack');
                         if (isPureBackend) return false;
+
+                        // Exclude candidates with wrong specialties for frontend searches
+                        const wrongSpecialtiesForFrontend = ['mobile', 'qa', 'data', 'devops', 'sre'];
+                        const hasWrongSpecialtyFE = wrongSpecialtiesForFrontend.some(wrong =>
+                            candidateSpecialties.includes(wrong) &&
+                            !candidateSpecialties.includes('frontend') &&
+                            !candidateSpecialties.includes('fullstack') &&
+                            !candidateSpecialties.includes('full-stack')
+                        );
+                        if (hasWrongSpecialtyFE) return false;
                     }
 
                     return true; // Keep by default
