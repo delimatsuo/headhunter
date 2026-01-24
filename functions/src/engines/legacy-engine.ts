@@ -387,13 +387,18 @@ export class LegacyEngine implements IAIEngine {
             const rawCompanyScore = this.calculateCompanyScore(candidate, targetCompanies);
             entry.companyScore = (rawCompanyScore / 30) * weights.company;
 
-            // Level match (with company tier boost)
-            const rawLevelScore = this.calculateLevelScore(
-                candidate.searchable?.level || 'mid',
-                targetClassification.level,
-                candidate
-            );
-            entry.levelScore = (rawLevelScore / 40) * weights.level;
+            // Level match - use pre-computed _level_score from Phase 2 fix if available
+            const precomputedLevelScore = candidate._level_score;
+            if (precomputedLevelScore !== undefined) {
+                entry.levelScore = precomputedLevelScore * weights.level;
+            } else {
+                const rawLevelScore = this.calculateLevelScore(
+                    candidate.searchable?.level || 'mid',
+                    targetClassification.level,
+                    candidate
+                );
+                entry.levelScore = (rawLevelScore / 40) * weights.level;
+            }
 
             // Specialty match (backend vs frontend, etc.) - using PostgreSQL data
             const specialtyScore = this.calculateSpecialtyScore(candidate, targetSpecialties, allPgSpecialties);
@@ -426,12 +431,18 @@ export class LegacyEngine implements IAIEngine {
                 entry.companyScore = (rawCompanyScore / 30) * weights.company;
             }
             if (entry.levelScore === 0) {
-                const rawLevelScore = this.calculateLevelScore(
-                    candidate.searchable?.level || candidate.profile?.current_level || 'mid',
-                    targetClassification.level,
-                    candidate
-                );
-                entry.levelScore = (rawLevelScore / 40) * weights.level;
+                // Use pre-computed _level_score from Phase 2 fix if available
+                const precomputedLevelScore = candidate._level_score;
+                if (precomputedLevelScore !== undefined) {
+                    entry.levelScore = precomputedLevelScore * weights.level;
+                } else {
+                    const rawLevelScore = this.calculateLevelScore(
+                        candidate.searchable?.level || candidate.profile?.current_level || 'mid',
+                        targetClassification.level,
+                        candidate
+                    );
+                    entry.levelScore = (rawLevelScore / 40) * weights.level;
+                }
             }
 
             // Specialty score for vector candidates too - using PostgreSQL data
