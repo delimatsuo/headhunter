@@ -22,13 +22,13 @@
 ## Current Position
 
 **Phase:** 1 of 10 (Reranking Fix)
-**Plan:** 1 of 4 complete
+**Plan:** 3 of 4 complete
 **Status:** In progress
-**Last activity:** 2026-01-24 - Completed 01-01-PLAN.md (Backend Score Propagation Fix)
+**Last activity:** 2026-01-24 - Completed 01-03-PLAN.md (UI Dual Score Display)
 
-**Progress:** [#.........] 10%
+**Progress:** [###.......] 30%
 
-**Next Action:** Execute 01-02-PLAN.md (Frontend Score Display)
+**Next Action:** Execute 01-04-PLAN.md (Verification)
 
 ---
 
@@ -36,7 +36,7 @@
 
 | Phase | Name | Status | Plans | Progress |
 |-------|------|--------|-------|----------|
-| 1 | Reranking Fix | In Progress | 1/4 | 25% |
+| 1 | Reranking Fix | In Progress | 3/4 | 75% |
 | 2 | Search Recall Foundation | Pending | 0/? | 0% |
 | 3 | Hybrid Search | Pending | 0/? | 0% |
 | 4 | Multi-Signal Scoring Framework | Pending | 0/? | 0% |
@@ -75,6 +75,8 @@
 | Rule-based trajectory | Explainable, sufficient per research; ML deferred to v2 | 8 |
 | Use _raw_vector_similarity prefix | Distinguish internal tracking from public API fields | 1.01 |
 | Add type definitions for new match_metadata fields | Required for TypeScript compilation | 1.01 |
+| Show similarity only when scores differ >1% | Avoids confusion when reranking bypassed; cleaner UI | 1.03 |
+| Use "Sim" label for similarity badge | Compact for badge design; tooltip provides full context | 1.03 |
 
 ### Technical Notes
 
@@ -83,6 +85,8 @@
 - **Target location:** `functions/src/shared/skills-master.ts`
 - **Key files to modify:** `functions/src/engines/legacy-engine.ts`, `functions/src/vector-search.ts`
 - **Score propagation fixed:** raw_vector_similarity now preserved through transformation chain (01-01)
+- **API similarity mapping fixed:** match.similarity now populated from match_metadata (01-02)
+- **UI dual score display:** Both Match and Similarity badges shown when scores differ (01-03)
 
 ### Blockers
 
@@ -93,8 +97,8 @@ None currently identified.
 - [x] Create Phase 1 execution plan (4 plans in 3 waves)
 - [x] Identify specific files implementing reranking bypass (legacy-engine.ts, api.ts)
 - [x] Complete 01-01: Backend Score Propagation Fix
-- [ ] Complete 01-02: Frontend Score Display
-- [ ] Complete 01-03: Reranking Integration
+- [x] Complete 01-02: API Service Score Mapping
+- [x] Complete 01-03: UI Dual Score Display
 - [ ] Complete 01-04: Verification
 - [ ] Verify EllaAI skills-master.ts format before copying (Phase 5)
 
@@ -102,23 +106,25 @@ None currently identified.
 
 ## Session Continuity
 
-**Last session:** 2026-01-24T22:56:52Z
-**Stopped at:** Completed 01-01-PLAN.md
-**Resume file:** .planning/phases/01-reranking-fix/01-02-PLAN.md
+**Last session:** 2026-01-24T22:58:32Z
+**Stopped at:** Completed 01-03-PLAN.md
+**Resume file:** .planning/phases/01-reranking-fix/01-04-PLAN.md
 
 ### Context for Next Session
 
-Plan 01-01 (Backend Score Propagation Fix) is complete. The backend now preserves raw_vector_similarity through the entire transformation chain and exposes it in match_metadata alongside gemini_score.
+Plan 01-03 (UI Dual Score Display) is complete. The full score propagation chain is now in place:
+- Backend (01-01): raw_vector_similarity preserved in legacy-engine.ts
+- API (01-02): similarity mapped to response in SearchResults
+- UI (01-03): Both scores displayed with visual differentiation
 
-Next: Execute 01-02-PLAN.md to update the frontend to display both Similarity Score and Match Score as separate values.
+Ready for Plan 01-04 (Verification) to validate end-to-end behavior.
 
-Commits from 01-01:
-- 72954b0: Preserve raw vector similarity in vectorPool initialization
-- 05b5110: Propagate raw similarity through candidate transformations
-- ed14f64: Expose raw similarity in match_metadata and response
-- 2e7a888: Add type definitions for new match_metadata fields
+Commits from 01-03:
+- d6fb69a: Add similarityScore prop to SkillAwareCandidateCard
+- 9b00515: Display both Match and Similarity scores as distinct badges
+- b4c0178: Pass similarityScore from SearchResults to SkillAwareCandidateCard
 
 ---
 
 *State initialized: 2026-01-24*
-*Last updated: 2026-01-24T22:56:52Z*
+*Last updated: 2026-01-24T23:00:18Z*
