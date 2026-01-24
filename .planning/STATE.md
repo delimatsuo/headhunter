@@ -204,7 +204,7 @@ All Phase 2 commits:
 All Phase 3 commits:
 - 03-01: 70098c4, d303cd5
 - 03-02: d75aeb8, d7c1df1, c02a3bf
-- 03-03: (see 03-03-SUMMARY)
+- 03-03: 16a6aa5, ce4c4cf, 4b0c79e
 - 03-04: 83b7ecb
 
 ---
