@@ -1,7 +1,7 @@
 import { getConfig as getBaseConfig, type ServiceConfig } from '@hh/common';
 
 // Security: Allowed schema and table names to prevent SQL injection via env misconfiguration
-const ALLOWED_SCHEMAS = ['search', 'public', 'test'] as const;
+const ALLOWED_SCHEMAS = ['search', 'public', 'test', 'sourcing'] as const;
 const ALLOWED_TABLE_NAME_PATTERN = /^[a-z_][a-z0-9_]{0,62}$/;
 
 function validateSchemaName(schema: string): string {
@@ -233,7 +233,7 @@ export function getSearchServiceConfig(): SearchServiceConfig {
   const search: SearchRuntimeConfig = {
     vectorWeight: parseNumber(process.env.SEARCH_HYBRID_VECTOR_WEIGHT, 0.65),
     textWeight: parseNumber(process.env.SEARCH_HYBRID_TEXT_WEIGHT, 0.35),
-    minSimilarity: parseNumber(process.env.SEARCH_MIN_SIMILARITY, 0.45),
+    minSimilarity: parseNumber(process.env.SEARCH_MIN_SIMILARITY, 0.25),
     maxResults: Math.max(1, parseNumber(process.env.SEARCH_MAX_RESULTS, 50)),
     ecoBoostFactor: parseNumber(process.env.SEARCH_ECO_BOOST_FACTOR, 1.2),
     confidenceFloor: parseNumber(process.env.SEARCH_CONFIDENCE_FLOOR, 0.2),
