@@ -91,6 +91,31 @@ export class PgVectorClient {
     await this.initialize();
 
     return this.withClient(async (client) => {
+      // FTS diagnostic logging - log query parameters
+      this.logger.info({
+        textQuery: query.textQuery,
+        textQueryEmpty: !query.textQuery || query.textQuery.trim() === '',
+        limit: query.limit
+      }, 'FTS debug: query parameters');
+
+      // FTS diagnostic query - check FTS match potential
+      if (query.textQuery && query.textQuery.trim()) {
+        const ftsCheckSql = `
+          SELECT
+            COUNT(*) as total_candidates,
+            COUNT(CASE WHEN search_document IS NOT NULL THEN 1 END) as has_fts,
+            COUNT(CASE WHEN search_document @@ plainto_tsquery('${PG_FTS_DICTIONARY}', $2) THEN 1 END) as matches_query,
+            plainto_tsquery('${PG_FTS_DICTIONARY}', $2)::text as parsed_query
+          FROM ${this.config.schema}.${this.config.profilesTable}
+          WHERE tenant_id = $1
+        `;
+        const ftsCheck = await client.query(ftsCheckSql, [query.tenantId, query.textQuery]);
+        this.logger.info({
+          ftsCheck: ftsCheck.rows[0],
+          dictionary: PG_FTS_DICTIONARY
+        }, 'FTS debug: search_document analysis');
+      }
+
       const warmupMultiplier = Number.isFinite(query.warmupMultiplier)
         ? Math.max(1, query.warmupMultiplier)
         : 1;
