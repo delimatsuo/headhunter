@@ -1,7 +1,7 @@
 # Project State: Headhunter AI Leader-Level Search
 
 **Initialized:** 2026-01-24
-**Current Status:** Phase 2 COMPLETE (with scoring integration)
+**Current Status:** Phase 3 IN PROGRESS (Hybrid Search)
 
 ---
 
@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 2 (Search Recall Foundation) is COMPLETE. All scoring signals integrated into retrieval_score via phase2Multiplier. Stage logging added for validation. Ready for Phase 3.
+**Current Focus:** Phase 3 (Hybrid Search) in progress. Plan 03-02 complete - RRF configuration parameters added to search service. Ready for Plan 03-03 (RRF Scoring SQL).
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -21,14 +21,14 @@
 
 ## Current Position
 
-**Phase:** 2 of 10 (Search Recall Foundation) - COMPLETE
-**Plan:** 5 of 5 complete
-**Status:** Phase complete
-**Last activity:** 2026-01-24 - Completed 02-05-PLAN.md (Integrate Scores and Stage Logging)
+**Phase:** 3 of 10 (Hybrid Search)
+**Plan:** 2 of 4 complete
+**Status:** In progress
+**Last activity:** 2026-01-24 - Completed 03-02-PLAN.md (RRF Configuration Parameters)
 
-**Progress:** [#####.....] 50%
+**Progress:** [######....] 55%
 
-**Next Action:** Begin Phase 3 (Hybrid Search) planning
+**Next Action:** Execute Plan 03-03 (RRF Scoring SQL)
 
 ---
 
@@ -38,7 +38,7 @@
 |-------|------|--------|-------|----------|
 | 1 | Reranking Fix | Complete | 4/4 | 100% |
 | 2 | Search Recall Foundation | Complete | 5/5 | 100% |
-| 3 | Hybrid Search | Pending | 0/? | 0% |
+| 3 | Hybrid Search | In Progress | 2/4 | 50% |
 | 4 | Multi-Signal Scoring Framework | Pending | 0/? | 0% |
 | 5 | Skills Infrastructure | Pending | 0/? | 0% |
 | 6 | Skills Intelligence | Pending | 0/? | 0% |
@@ -47,7 +47,7 @@
 | 9 | Match Transparency | Pending | 0/? | 0% |
 | 10 | Pipeline Integration | Pending | 0/? | 0% |
 
-**Overall:** 2/10 phases complete (20%)
+**Overall:** 2/10 phases complete, 1 in progress (25%)
 
 ---
 
@@ -91,6 +91,9 @@
 | Phase 2 multiplier (average of 5 scores) | Aggregate all Phase 2 scores into single multiplier for retrieval_score | 2.05 |
 | Multiplier floor at 0.3 | Never fully exclude candidates - allow Gemini evaluation | 2.05 |
 | Stage logging (STAGE 1-5) | Enable pipeline validation and debugging | 2.05 |
+| RRF k=60 default | Standard value used in Elasticsearch, OpenSearch, research papers | 3.02 |
+| perMethodLimit=100 default | Sufficient candidates per method while avoiding memory issues | 3.02 |
+| enableRrf=true default | New behavior enabled by default for A/B testing capability | 3.02 |
 
 ### Technical Notes
 
@@ -115,6 +118,9 @@
 - **Phase 2 scoring integrated:** All 5 scores aggregated via phase2Multiplier (02-05)
 - **Stage logging added:** STAGE 1-5 for pipeline validation (02-05)
 - **Score breakdown expanded:** phase2_* fields included for transparency (02-05)
+- **RRF configuration added:** rrfK, perMethodLimit, enableRrf in SearchRuntimeConfig (03-02)
+- **PgHybridSearchQuery updated:** RRF params flow through to SQL values (03-02)
+- **RRF logging added:** Config logged before each hybrid search (03-02)
 
 ### Blockers
 
@@ -133,6 +139,9 @@ None currently identified.
 - [x] Complete 02-03: Specialty Filter to Scoring
 - [x] Complete 02-04: Remaining Filters to Scoring
 - [x] Complete 02-05: Integrate Scores and Stage Logging
+- [x] Complete 03-02: RRF Configuration Parameters
+- [ ] Complete 03-03: RRF Scoring SQL
+- [ ] Complete 03-04: Hybrid Search Verification
 - [ ] Verify EllaAI skills-master.ts format before copying (Phase 5)
 - [ ] Verify search recall improvement after Phase 2 deployment
 - [x] Note: Hard level filter at step 3.5 (career trajectory) - NOW CONVERTED TO SCORING
@@ -141,42 +150,29 @@ None currently identified.
 
 ## Session Continuity
 
-**Last session:** 2026-01-24T23:35:00Z
-**Stopped at:** Completed 02-05-PLAN.md - Phase 2 COMPLETE (with scoring integration)
-**Resume file:** None - ready for Phase 3 planning
+**Last session:** 2026-01-24T23:58:00Z
+**Stopped at:** Completed 03-02-PLAN.md - RRF Configuration Parameters
+**Resume file:** None - ready for Plan 03-03
 
 ### Context for Next Session
 
-Phase 2 (Search Recall Foundation) is now COMPLETE. All 5 plans executed:
+Phase 3 (Hybrid Search) Plan 2 complete. RRF configuration parameters added:
 
-1. **02-01:** Lower Similarity Thresholds (0.25), increase limit (500)
-2. **02-02:** Level Filter to Scoring (_level_score)
-3. **02-03:** Specialty Filter to Scoring (_specialty_score)
-4. **02-04:** Remaining Filters to Scoring (_tech_stack_score, _function_title_score, _trajectory_score, MIN_SCORE_THRESHOLD removed)
-5. **02-05:** Integrate Scores and Stage Logging (phase2Multiplier, STAGE 1-5 logging)
+**New configuration (03-02):**
 
-**All scoring signals now contribute to retrieval_score:**
+| Parameter | Env Variable | Default | Purpose |
+|-----------|-------------|---------|---------|
+| rrfK | SEARCH_RRF_K | 60 | RRF k parameter for top-rank favoritism |
+| perMethodLimit | SEARCH_PER_METHOD_LIMIT | 100 | Candidates per search method |
+| enableRrf | SEARCH_ENABLE_RRF | true | Feature flag for A/B testing |
 
-| Score Field | Default | Values | Weight |
-|-------------|---------|--------|--------|
-| _level_score | 1.0 | 1.0/0.5/0.3 | 1/5 |
-| _specialty_score | 1.0 | 1.0/0.8/0.5/0.4/0.2 | 1/5 |
-| _tech_stack_score | 0.5 | 1.0/0.7/0.5/0.2 | 1/5 |
-| _function_title_score | 1.0 | 1.0/0.5/0.2 | 1/5 |
-| _trajectory_score | 1.0 | 1.0/0.5/0.4 | 1/5 |
+**SQL values array now includes:**
+- $10 = rrfK (for use in Plan 03-03 RRF scoring)
 
-**Phase 2 multiplier formula:**
-```
-phase2Multiplier = (L + S + T + F + Tr) / 5
-retrievalScore = baseScore * max(0.3, phase2Multiplier)
-```
-
-**Stage logging for validation:**
-- STAGE 1: Vector and function retrieval counts
-- STAGE 2: Scoring complete with distribution (high/medium/low)
-- STAGE 3: Candidates sent to Gemini
-- STAGE 4: Gemini reranking results
-- STAGE 5: Final results count
+**Files modified in 03-02:**
+- services/hh-search-svc/src/config.ts
+- services/hh-search-svc/src/pgvector-client.ts
+- services/hh-search-svc/src/search-service.ts
 
 All Phase 1 commits:
 - 01-01: 72954b0, 05b5110, ed14f64, 2e7a888
@@ -191,7 +187,10 @@ All Phase 2 commits:
 - 02-04: 385e0b6
 - 02-05: da4ca97, b304c66
 
+Phase 3 commits:
+- 03-02: d75aeb8, d7c1df1, c02a3bf
+
 ---
 
 *State initialized: 2026-01-24*
-*Last updated: 2026-01-24T23:35:00Z*
+*Last updated: 2026-01-24T23:58:00Z*
