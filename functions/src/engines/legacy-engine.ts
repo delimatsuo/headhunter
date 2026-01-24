@@ -158,19 +158,26 @@ export class LegacyEngine implements IAIEngine {
             // We want backend engineers for backend roles, not all engineering
             functionPool = await this.searchByFunction(targetClassification.function, levelRange, 100, targetSpecialties);
 
-            // CRITICAL: Filter vector pool by EFFECTIVE level (adjusted for company tier)
-            // This allows startup CTOs to appear in VP searches at big companies
-            // while still filtering out actual FAANG VPs stepping down
-            //
-            // IMPORTANT: Candidates with 'unknown' level PASS the filter - let Gemini decide
-            // This prevents filtering out good candidates just because they lack metadata
-            const vectorPoolBeforeFilter = vectorPool.length;
-            vectorPool = vectorPool.filter((c: any) => {
+            // PHASE 2 FIX: Convert level filter to scoring signal
+            // Instead of excluding candidates, score them:
+            // - In range: 1.0 (best)
+            // - Unknown: 0.5 (neutral - let Gemini decide)
+            // - Out of range: 0.3 (still included, lower priority)
+            vectorPool = vectorPool.map((c: any) => {
                 const effectiveLevel = this.getEffectiveLevel(c);
-                // Unknown level passes - Gemini will evaluate them
-                if (effectiveLevel === 'unknown') return true;
-                return levelRange.includes(effectiveLevel);
+                let levelScore: number;
+
+                if (effectiveLevel === 'unknown') {
+                    levelScore = 0.5; // Neutral for unknown
+                } else if (levelRange.includes(effectiveLevel)) {
+                    levelScore = 1.0; // Full score for in-range
+                } else {
+                    levelScore = 0.3; // Low score but not excluded
+                }
+
+                return { ...c, _level_score: levelScore };
             });
+            console.log(`[LegacyEngine] Level scoring applied to ${vectorPool.length} candidates (not filtered)`);
 
             // Specialty filtering for vector pool - Uses PostgreSQL specialties column
             // STRICT MODE: Now that we have specialty data, exclude mismatches to improve precision
@@ -327,7 +334,7 @@ export class LegacyEngine implements IAIEngine {
                 }
             }
 
-            console.log(`[LegacyEngine] IC mode - Function pool: ${functionPool.length}, Vector pool: ${vectorPool.length} (filtered from ${vectorPoolBeforeFilter})`);
+            console.log(`[LegacyEngine] IC mode - Function pool: ${functionPool.length}, Vector pool: ${vectorPool.length} (level scored, not filtered)`);
         }
 
         // ===== STEP 4: Mode-Specific Scoring =====
