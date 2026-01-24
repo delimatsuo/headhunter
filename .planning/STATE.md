@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 2 - Search Recall Foundation. Completed 02-01 (Lower Similarity Thresholds) and 02-02 (Level Filter to Scoring).
+**Current Focus:** Phase 2 - Search Recall Foundation. Completed 02-01 (Lower Similarity Thresholds), 02-02 (Level Filter to Scoring), and 02-03 (Specialty Filter to Scoring).
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -22,9 +22,9 @@
 ## Current Position
 
 **Phase:** 2 of 10 (Search Recall Foundation) - IN PROGRESS
-**Plan:** 2 of ? complete
+**Plan:** 3 of ? complete
 **Status:** In progress
-**Last activity:** 2026-01-24 - Completed 02-02-PLAN.md (Level Filter to Scoring)
+**Last activity:** 2026-01-24 - Completed 02-03-PLAN.md (Specialty Filter to Scoring)
 
 **Progress:** [####......] 40%
 
@@ -37,7 +37,7 @@
 | Phase | Name | Status | Plans | Progress |
 |-------|------|--------|-------|----------|
 | 1 | Reranking Fix | Complete | 4/4 | 100% |
-| 2 | Search Recall Foundation | In Progress | 2/? | ~50% |
+| 2 | Search Recall Foundation | In Progress | 3/? | ~75% |
 | 3 | Hybrid Search | Pending | 0/? | 0% |
 | 4 | Multi-Signal Scoring Framework | Pending | 0/? | 0% |
 | 5 | Skills Infrastructure | Pending | 0/? | 0% |
@@ -82,6 +82,8 @@
 | Increase default limit to 500 | Enable retrieval of 500-800 candidates per query | 2.01 |
 | Level scoring: 1.0/0.5/0.3 | In-range=1.0, unknown=0.5, out-of-range=0.3 - soft scoring not hard filter | 2.02 |
 | Precomputed _level_score pattern | Use _level_score when available, fallback to calculateLevelScore | 2.02 |
+| Specialty scoring: 1.0/0.8/0.5/0.4/0.2 | Match=1.0, fullstack=0.8, no data=0.5, unclear=0.4, mismatch=0.2 | 2.03 |
+| Precomputed _specialty_score pattern | Use _specialty_score when available, fallback to calculateSpecialtyScore | 2.03 |
 
 ### Technical Notes
 
@@ -97,6 +99,8 @@
 - **Default limit increased:** 500 candidates per search (02-01)
 - **Level filter converted to scoring:** _level_score attached to all candidates (02-02)
 - **Both vector pool and function pool use level scoring** (02-02)
+- **Specialty filter converted to scoring:** _specialty_score attached to all candidates (02-03)
+- **Both vector pool and function pool use specialty scoring** (02-03)
 
 ### Blockers
 
@@ -112,6 +116,7 @@ None currently identified.
 - [x] Complete 01-04: Verification (CSS styling)
 - [x] Complete 02-01: Lower Similarity Thresholds
 - [x] Complete 02-02: Level Filter to Scoring
+- [x] Complete 02-03: Specialty Filter to Scoring
 - [ ] Verify EllaAI skills-master.ts format before copying (Phase 5)
 - [ ] Verify search recall improvement after Phase 2 deployment
 - [ ] Note: Hard level filter at step 3.5 (career trajectory) still exists
@@ -120,29 +125,31 @@ None currently identified.
 
 ## Session Continuity
 
-**Last session:** 2026-01-24T23:17:55Z
-**Stopped at:** Completed 02-02-PLAN.md
+**Last session:** 2026-01-24T23:20:11Z
+**Stopped at:** Completed 02-03-PLAN.md
 **Resume file:** None - ready for next Phase 2 plan
 
 ### Context for Next Session
 
-Phase 2 Plan 2 (Level Filter to Scoring) complete. Changes made:
+Phase 2 Plan 3 (Specialty Filter to Scoring) complete. Changes made:
 
-1. **Vector pool level filter (line ~166):** Converted .filter() to .map() with _level_score
-2. **Function pool level filter (line ~942):** Converted .filter() to .map() with _level_score
-3. **Retrieval scoring:** Uses precomputed _level_score when available
+1. **Vector pool specialty filter (line ~195):** Converted .filter() to .map() with _specialty_score
+2. **Function pool specialty filter (line ~1022):** Converted .filter() to .map() with _specialty_score
+3. **Retrieval scoring:** Uses precomputed _specialty_score when available
 
 Scoring values:
-- In-range: 1.0 (best)
-- Unknown: 0.5 (neutral - let Gemini decide)
-- Out-of-range: 0.3 (low but not excluded)
+- Direct match: 1.0 (best)
+- Fullstack for backend/frontend: 0.8 (good match)
+- No data: 0.5 (neutral - let Gemini decide)
+- Unclear case: 0.4 (default mismatch)
+- Pure mismatch: 0.2 (very low but not excluded)
 
 All TypeScript compilation passes. All 5 verification criteria met.
 
-Commits from 02-02:
-- cefedfa: feat(02-02): convert IC mode level filter to scoring
-- f848029: feat(02-02): convert function pool level filter to scoring
-- bb3fdb4: feat(02-02): integrate _level_score into retrieval scoring
+Commits from 02-03:
+- c57f864: feat(02-03): convert vector pool specialty filter to scoring
+- 122fea6: feat(02-03): convert searchByFunction specialty filter to scoring
+- 8bfd510: feat(02-03): incorporate _specialty_score into retrieval scoring
 
 All Phase 1 commits:
 - 01-01: 72954b0, 05b5110, ed14f64, 2e7a888
@@ -153,8 +160,9 @@ All Phase 1 commits:
 All Phase 2 commits:
 - 02-01: baa8c24, 62b5eb8, 3a7f5ab
 - 02-02: cefedfa, f848029, bb3fdb4
+- 02-03: c57f864, 122fea6, 8bfd510
 
 ---
 
 *State initialized: 2026-01-24*
-*Last updated: 2026-01-24T23:17:55Z*
+*Last updated: 2026-01-24T23:20:11Z*
