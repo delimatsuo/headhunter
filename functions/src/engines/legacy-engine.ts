@@ -672,12 +672,19 @@ export class LegacyEngine implements IAIEngine {
                 sources: c.sources,
                 score_breakdown: c.score_breakdown,
                 vertex_score: c.vertex_score,
-                vector_score: c.vertex_score, // Original similarity score for frontend display
+                vector_score: c._raw_vector_similarity || 0,  // FIXED: Use preserved raw similarity
+                raw_vector_similarity: c._raw_vector_similarity || 0,  // Explicit field for frontend
+                gemini_score: c.gemini_score || 0,  // Include Gemini score for debugging
                 target_function: targetClassification.function,
                 target_level: targetClassification.level,
                 candidate_function: c.searchable?.function
             }
         }));
+
+        // Log score sample to verify scores differ
+        if (matches.length > 0) {
+            console.log(`[LegacyEngine] Score sample: overall=${matches[0]?.score || 0}, raw_vector=${matches[0]?.match_metadata?.raw_vector_similarity || 0}, gemini=${matches[0]?.match_metadata?.gemini_score || 0}`);
+        }
 
         const queryTime = Date.now() - startTime;
         console.log(`[LegacyEngine] Search completed in ${queryTime}ms, returned ${matches.length} matches`);
