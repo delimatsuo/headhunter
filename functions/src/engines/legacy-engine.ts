@@ -179,42 +179,52 @@ export class LegacyEngine implements IAIEngine {
             });
             console.log(`[LegacyEngine] Level scoring applied to ${vectorPool.length} candidates (not filtered)`);
 
-            // Specialty filtering for vector pool - Uses PostgreSQL specialties column
-            // STRICT MODE: Now that we have specialty data, exclude mismatches to improve precision
-            // Load specialty data from PostgreSQL for all vector pool candidates
+            // Specialty scoring for vector pool - Uses PostgreSQL specialties column
+            // PHASE 2 FIX: Convert specialty filter to scoring
+            // Instead of excluding, assign scores:
+            // - Match: 1.0
+            // - Fullstack for backend/frontend: 0.8
+            // - No data: 0.5 (neutral)
+            // - Clear mismatch: 0.2 (very low but Gemini can evaluate)
             if (targetSpecialties.length > 0 && targetClassification.function === 'engineering') {
                 const vectorBeforeSpecialty = vectorPool.length;
 
-                // Load PostgreSQL specialty data for filtering (uses LinkedIn URL matching)
+                // Load PostgreSQL specialty data for scoring (uses LinkedIn URL matching)
                 const pgSpecialties = await this.loadSpecialtiesFromPg(vectorPool);
 
-                vectorPool = vectorPool.filter((c: any) => {
+                vectorPool = vectorPool.map((c: any) => {
                     const candidateId = c.candidate_id || c.id || '';
                     const candidateSpecialties = this.getCandidateSpecialty(c, pgSpecialties);
 
-                    // No specialty data - let them through, vector similarity will decide
-                    // This prevents excluding good candidates just because specialty data is missing
-                    if (candidateSpecialties.length === 0) return true;
-
-                    // Check for specialty match (keep if ANY target specialty matches)
-                    for (const target of targetSpecialties) {
-                        if (candidateSpecialties.includes(target)) return true;
-                        // Fullstack matches both backend and frontend
-                        if ((target === 'backend' || target === 'frontend') &&
-                            (candidateSpecialties.includes('fullstack') || candidateSpecialties.includes('full-stack') || candidateSpecialties.includes('full stack'))) return true;
+                    // No specialty data - neutral score
+                    if (candidateSpecialties.length === 0) {
+                        return { ...c, _specialty_score: 0.5 };
                     }
 
-                    // STRICT EXCLUSIONS: Now with good specialty data, exclude clear mismatches
+                    // Check for specialty match
+                    for (const target of targetSpecialties) {
+                        if (candidateSpecialties.includes(target)) {
+                            return { ...c, _specialty_score: 1.0 }; // Direct match
+                        }
+                        // Fullstack matches both backend and frontend
+                        if ((target === 'backend' || target === 'frontend') &&
+                            (candidateSpecialties.includes('fullstack') ||
+                             candidateSpecialties.includes('full-stack') ||
+                             candidateSpecialties.includes('full stack'))) {
+                            return { ...c, _specialty_score: 0.8 }; // Good match
+                        }
+                    }
+
+                    // Mismatch detection (score low but don't exclude)
+                    let mismatchScore = 0.4; // Default for unclear cases
+
                     if (targetSpecialties.includes('backend')) {
-                        // Exclude PURE frontend candidates from backend searches
                         const isPureFrontend = candidateSpecialties.includes('frontend') &&
                             !candidateSpecialties.includes('backend') &&
                             !candidateSpecialties.includes('fullstack') &&
                             !candidateSpecialties.includes('full-stack');
-                        if (isPureFrontend) return false;
+                        if (isPureFrontend) mismatchScore = 0.2;
 
-                        // Exclude candidates with wrong specialties for backend searches
-                        // These are clearly different job families that won't fit backend roles
                         const wrongSpecialtiesForBackend = ['mobile', 'qa', 'data', 'devops', 'sre'];
                         const hasWrongSpecialty = wrongSpecialtiesForBackend.some(wrong =>
                             candidateSpecialties.includes(wrong) &&
@@ -222,18 +232,16 @@ export class LegacyEngine implements IAIEngine {
                             !candidateSpecialties.includes('fullstack') &&
                             !candidateSpecialties.includes('full-stack')
                         );
-                        if (hasWrongSpecialty) return false;
+                        if (hasWrongSpecialty) mismatchScore = 0.2;
                     }
 
                     if (targetSpecialties.includes('frontend')) {
-                        // Exclude PURE backend candidates from frontend searches
                         const isPureBackend = candidateSpecialties.includes('backend') &&
                             !candidateSpecialties.includes('frontend') &&
                             !candidateSpecialties.includes('fullstack') &&
                             !candidateSpecialties.includes('full-stack');
-                        if (isPureBackend) return false;
+                        if (isPureBackend) mismatchScore = 0.2;
 
-                        // Exclude candidates with wrong specialties for frontend searches
                         const wrongSpecialtiesForFrontend = ['mobile', 'qa', 'data', 'devops', 'sre'];
                         const hasWrongSpecialtyFE = wrongSpecialtiesForFrontend.some(wrong =>
                             candidateSpecialties.includes(wrong) &&
@@ -241,13 +249,13 @@ export class LegacyEngine implements IAIEngine {
                             !candidateSpecialties.includes('fullstack') &&
                             !candidateSpecialties.includes('full-stack')
                         );
-                        if (hasWrongSpecialtyFE) return false;
+                        if (hasWrongSpecialtyFE) mismatchScore = 0.2;
                     }
 
-                    // Let others through for Gemini to score appropriately
-                    return true;
+                    return { ...c, _specialty_score: mismatchScore };
                 });
-                console.log(`[LegacyEngine] Vector specialty filter (PostgreSQL): ${vectorBeforeSpecialty} → ${vectorPool.length}`);
+
+                console.log(`[LegacyEngine] Specialty scoring applied to ${vectorPool.length} candidates (not filtered)`);
             }
 
             // ===== TECH STACK FILTER =====
