@@ -148,15 +148,20 @@ export class LegacyEngine implements IAIEngine {
             _raw_vector_similarity: c.vector_similarity_score || c.similarity_score || 0
         }));
 
+        // STAGE 1: Log vector pool size from vector search
+        console.log(`[LegacyEngine] STAGE 1 - Vector retrieval: ${vectorPool.length} candidates`);
+
         if (isExecutiveSearch) {
             // EXECUTIVE MODE: Function-based retrieval is PRIMARY
             // We want CTOs for CTO search, CPOs for CPO search - function matters
             functionPool = await this.searchByFunction(targetClassification.function, levelRange, 300, []);
+            console.log(`[LegacyEngine] STAGE 1 - Function retrieval: ${functionPool.length} candidates`);
             console.log(`[LegacyEngine] Executive mode - Function pool: ${functionPool.length}`);
         } else {
             // IC MODE: Vector similarity is PRIMARY + Specialty filtering
             // We want backend engineers for backend roles, not all engineering
             functionPool = await this.searchByFunction(targetClassification.function, levelRange, 100, targetSpecialties);
+            console.log(`[LegacyEngine] STAGE 1 - Function retrieval: ${functionPool.length} candidates`);
 
             // PHASE 2 FIX: Convert level filter to scoring signal
             // Instead of excluding candidates, score them:
@@ -552,6 +557,15 @@ export class LegacyEngine implements IAIEngine {
         candidates.sort((a: any, b: any) => b.retrieval_score - a.retrieval_score);
         console.log(`[LegacyEngine] ${searchMode.toUpperCase()} mode - Merged ${candidates.length} unique candidates`);
 
+        // STAGE 2: Log scoring completion with distribution
+        console.log(`[LegacyEngine] STAGE 2 - Scoring complete: ${candidates.length} candidates scored`);
+        const scoreDistribution = {
+            high: candidates.filter((c: any) => c.retrieval_score > 70).length,
+            medium: candidates.filter((c: any) => c.retrieval_score > 40 && c.retrieval_score <= 70).length,
+            low: candidates.filter((c: any) => c.retrieval_score <= 40).length
+        };
+        console.log(`[LegacyEngine] Score distribution: high=${scoreDistribution.high}, medium=${scoreDistribution.medium}, low=${scoreDistribution.low}`);
+
         // ===== STEP 3.5: Career Trajectory SCORING =====
         // PHASE 2 FIX: Convert career trajectory filter to scoring signal
         // Instead of excluding candidates who would be stepping down, score them:
@@ -630,6 +644,9 @@ export class LegacyEngine implements IAIEngine {
 
             console.log(`[LegacyEngine] Gemini reranking with context: ${JSON.stringify(jobContext)}`);
 
+            // STAGE 3: Log candidates being sent to Gemini
+            console.log(`[LegacyEngine] STAGE 3 - Sending to Gemini: ${topCandidates.length} candidates for reranking`);
+
             const rankings = await geminiService.rerank(
                 candidatesForRanking,
                 jobContext,
@@ -637,6 +654,8 @@ export class LegacyEngine implements IAIEngine {
             );
 
             if (rankings && rankings.length > 0) {
+                // STAGE 4: Log Gemini reranking results
+                console.log(`[LegacyEngine] STAGE 4 - Gemini reranked: ${rankings.length} candidates`);
                 console.log(`[LegacyEngine] Gemini Reranking returned ${rankings.length} results`);
 
                 // Debug: Log sample IDs to diagnose matching issues
@@ -783,6 +802,9 @@ export class LegacyEngine implements IAIEngine {
                 candidate_function: c.searchable?.function
             }
         }));
+
+        // STAGE 5: Log final results
+        console.log(`[LegacyEngine] STAGE 5 - Final results: ${matches.length} candidates returned`);
 
         // Log score sample to verify scores differ
         if (matches.length > 0) {
