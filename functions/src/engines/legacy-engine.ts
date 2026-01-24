@@ -498,19 +498,55 @@ export class LegacyEngine implements IAIEngine {
         }
 
         // Convert to array and calculate total scores
-        let candidates = Array.from(candidateScores.values()).map(entry => ({
-            ...entry.candidate,
-            retrieval_score: entry.functionScore + entry.vectorScore + entry.companyScore + entry.levelScore + entry.specialtyScore,
-            score_breakdown: {
-                function: entry.functionScore,
-                vector: entry.vectorScore,
-                company: entry.companyScore,
-                level: entry.levelScore,
-                specialty: entry.specialtyScore
-            },
-            sources: entry.sources,
-            search_mode: searchMode
-        }));
+        let candidates = Array.from(candidateScores.values()).map(entry => {
+            const candidate = entry.candidate;
+
+            // PHASE 2: Aggregate all scoring signals
+            // Pre-computed Phase 2 scores (0-1 range) - multiply by appropriate weights
+            const phase2LevelScore = candidate._level_score ?? 1.0;
+            const phase2SpecialtyScore = candidate._specialty_score ?? 1.0;
+            const phase2TechStackScore = candidate._tech_stack_score ?? 0.5; // Neutral if not computed
+            const phase2FunctionTitleScore = candidate._function_title_score ?? 1.0;
+            const phase2TrajectoryScore = candidate._trajectory_score ?? 1.0;
+
+            // Combine Phase 2 scores as a multiplier (average of all signals)
+            // This allows low scores to demote without fully excluding
+            const phase2Multiplier = (
+                phase2LevelScore +
+                phase2SpecialtyScore +
+                phase2TechStackScore +
+                phase2FunctionTitleScore +
+                phase2TrajectoryScore
+            ) / 5;
+
+            // Base score from existing calculation
+            const baseScore = entry.functionScore + entry.vectorScore + entry.companyScore + entry.levelScore + entry.specialtyScore;
+
+            // Final retrieval score: base score scaled by Phase 2 multiplier
+            const retrievalScore = baseScore * Math.max(0.3, phase2Multiplier); // Floor at 0.3 to never fully exclude
+
+            return {
+                ...candidate,
+                retrieval_score: retrievalScore,
+                score_breakdown: {
+                    ...candidate.score_breakdown,
+                    function: entry.functionScore,
+                    vector: entry.vectorScore,
+                    company: entry.companyScore,
+                    level: entry.levelScore,
+                    specialty: entry.specialtyScore,
+                    // Phase 2 signals
+                    phase2_level: phase2LevelScore,
+                    phase2_specialty: phase2SpecialtyScore,
+                    phase2_tech_stack: phase2TechStackScore,
+                    phase2_function_title: phase2FunctionTitleScore,
+                    phase2_trajectory: phase2TrajectoryScore,
+                    phase2_multiplier: phase2Multiplier
+                },
+                sources: entry.sources,
+                search_mode: searchMode
+            };
+        });
 
         // Sort by retrieval score
         candidates.sort((a: any, b: any) => b.retrieval_score - a.retrieval_score);
