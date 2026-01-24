@@ -107,6 +107,82 @@
   opacity: 0.8;
 }
 
+/* Score badges container - horizontal layout for dual score display */
+.score-badges {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Match score badge (primary - LLM influenced) - extend existing .score-badge */
+.score-badge.match {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+.score-badge.match.excellent {
+  background-color: #c8e6c9;
+  border-color: #66bb6a;
+}
+
+.score-badge.match.good {
+  background-color: #dcedc8;
+  border-color: #9ccc65;
+}
+
+.score-badge.match.fair {
+  background-color: #fff3e0;
+  border-color: #ffb74d;
+  color: #e65100;
+}
+
+.score-badge.match.poor {
+  background-color: #ffebee;
+  border-color: #ef9a9a;
+  color: #c62828;
+}
+
+/* Similarity score badge (secondary - raw vector) */
+.score-badge.similarity {
+  background-color: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+  font-size: 11px;
+  padding: 6px 10px;
+}
+
+.score-badge.similarity .score-value {
+  font-size: 14px;
+}
+
+.score-badge.similarity .score-label {
+  font-size: 10px;
+}
+
+.score-badge.similarity.excellent {
+  background-color: #bbdefb;
+  border-color: #42a5f5;
+}
+
+.score-badge.similarity.good {
+  background-color: #e1f5fe;
+  border-color: #4fc3f7;
+}
+
+.score-badge.similarity.fair {
+  background-color: #fff8e1;
+  border-color: #ffd54f;
+  color: #f57f17;
+}
+
+.score-badge.similarity.poor {
+  background-color: #fce4ec;
+  border-color: #f48fb1;
+  color: #ad1457;
+}
+
 .card-content {
   padding: 0 20px 20px 20px;
   border-top: 1px solid #F3F4F6;
