@@ -1,7 +1,7 @@
 # Project State: Headhunter AI Leader-Level Search
 
 **Initialized:** 2026-01-24
-**Current Status:** Phase 1 complete
+**Current Status:** Phase 2 in progress
 
 ---
 
@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 1 complete. Ready for Phase 2 (Search Recall Foundation).
+**Current Focus:** Phase 2 - Search Recall Foundation. Completed 02-01 (Lower Similarity Thresholds).
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -21,14 +21,14 @@
 
 ## Current Position
 
-**Phase:** 1 of 10 (Reranking Fix) - COMPLETE
-**Plan:** 4 of 4 complete
-**Status:** Phase complete
-**Last activity:** 2026-01-24 - Completed 01-04-PLAN.md (CSS Styling and Verification)
+**Phase:** 2 of 10 (Search Recall Foundation) - IN PROGRESS
+**Plan:** 1 of ? complete
+**Status:** In progress
+**Last activity:** 2026-01-24 - Completed 02-01-PLAN.md (Lower Similarity Thresholds)
 
 **Progress:** [####......] 40%
 
-**Next Action:** Begin Phase 2 planning (Search Recall Foundation)
+**Next Action:** Execute next Phase 2 plan
 
 ---
 
@@ -37,7 +37,7 @@
 | Phase | Name | Status | Plans | Progress |
 |-------|------|--------|-------|----------|
 | 1 | Reranking Fix | Complete | 4/4 | 100% |
-| 2 | Search Recall Foundation | Pending | 0/? | 0% |
+| 2 | Search Recall Foundation | In Progress | 1/? | ~25% |
 | 3 | Hybrid Search | Pending | 0/? | 0% |
 | 4 | Multi-Signal Scoring Framework | Pending | 0/? | 0% |
 | 5 | Skills Infrastructure | Pending | 0/? | 0% |
@@ -57,7 +57,7 @@
 |--------|--------|---------|--------|
 | v1 Requirements | 28 | 1 done | In Progress |
 | Phases Complete | 10 | 1 | In Progress |
-| Search Recall | 50+ candidates | ~10 | Failing |
+| Search Recall | 50+ candidates | ~10 (pre-02-01) | Pending verification |
 | p95 Latency | <1.2s | Unknown | Unmeasured |
 | Cache Hit Rate | >0.98 | Unknown | Unmeasured |
 
@@ -78,6 +78,8 @@
 | Show similarity only when scores differ >1% | Avoids confusion when reranking bypassed; cleaner UI | 1.03 |
 | Use "Sim" label for similarity badge | Compact for badge design; tooltip provides full context | 1.03 |
 | Green for Match, Blue for Similarity badges | Primary vs secondary visual hierarchy | 1.04 |
+| Lower threshold to 0.25 | Broad recall - let scoring/reranking filter quality | 2.01 |
+| Increase default limit to 500 | Enable retrieval of 500-800 candidates per query | 2.01 |
 
 ### Technical Notes
 
@@ -89,6 +91,8 @@
 - **API similarity mapping fixed:** match.similarity now populated from match_metadata (01-02)
 - **UI dual score display:** Both Match and Similarity badges shown when scores differ (01-03)
 - **CSS styling complete:** Green Match badge, blue Similarity badge with quality variants (01-04)
+- **Similarity thresholds lowered:** 0.25 across all search paths (02-01)
+- **Default limit increased:** 500 candidates per search (02-01)
 
 ### Blockers
 
@@ -102,30 +106,32 @@ None currently identified.
 - [x] Complete 01-02: API Service Score Mapping
 - [x] Complete 01-03: UI Dual Score Display
 - [x] Complete 01-04: Verification (CSS styling)
+- [x] Complete 02-01: Lower Similarity Thresholds
 - [ ] Verify EllaAI skills-master.ts format before copying (Phase 5)
-- [ ] Begin Phase 2 planning
+- [ ] Verify search recall improvement after 02-01 deployment
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-01-24T23:04:00Z
-**Stopped at:** Completed 01-04-PLAN.md - Phase 1 Complete
-**Resume file:** None - ready for Phase 2
+**Last session:** 2026-01-24T23:17:00Z
+**Stopped at:** Completed 02-01-PLAN.md
+**Resume file:** None - ready for next Phase 2 plan
 
 ### Context for Next Session
 
-Phase 1 (Reranking Fix) is now complete. All four plans executed successfully:
+Phase 2 Plan 1 (Lower Similarity Thresholds) complete. Changes made:
 
-1. **01-01 Backend Score Propagation:** raw_vector_similarity preserved through legacy-engine.ts
-2. **01-02 API Service Score Mapping:** similarity field populated in API response
-3. **01-03 UI Dual Score Display:** Both scores shown as separate badges
-4. **01-04 CSS Styling:** Visual differentiation (green Match, blue Similarity)
+1. **functions/src/vector-search.ts:** threshold 0.5 -> 0.25, limit 100 -> 500
+2. **functions/src/pgvector-client.ts:** default threshold 0.7 -> 0.25, added debug logging
+3. **services/hh-search-svc/src/config.ts:** minSimilarity default 0.45 -> 0.25
 
-The full score propagation chain is in place. Runtime verification pending - user to deploy and confirm scores differ in live application.
+All TypeScript compilation passes. SEARCH_MIN_SIMILARITY env var can override at runtime.
 
-Commits from 01-04:
-- cdc9107: Add CSS for dual score badges
+Commits from 02-01:
+- baa8c24: feat(02-01): lower VectorSearchService threshold
+- 62b5eb8: feat(02-01): lower PgVectorClient default threshold
+- 3a7f5ab: feat(02-01): lower hh-search-svc config threshold
 
 All Phase 1 commits:
 - 01-01: 72954b0, 05b5110, ed14f64, 2e7a888
@@ -136,4 +142,4 @@ All Phase 1 commits:
 ---
 
 *State initialized: 2026-01-24*
-*Last updated: 2026-01-24T23:04:00Z*
+*Last updated: 2026-01-24T23:17:00Z*
