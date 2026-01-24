@@ -1,7 +1,7 @@
 # Project State: Headhunter AI Leader-Level Search
 
 **Initialized:** 2026-01-24
-**Current Status:** Roadmap complete, ready for phase planning
+**Current Status:** Phase 1 in progress
 
 ---
 
@@ -21,12 +21,14 @@
 
 ## Current Position
 
-**Phase:** 1 - Reranking Fix
-**Plan:** 4 plans created in 3 waves
-**Status:** Ready for execution
-**Progress:** [..........] 0%
+**Phase:** 1 of 10 (Reranking Fix)
+**Plan:** 1 of 4 complete
+**Status:** In progress
+**Last activity:** 2026-01-24 - Completed 01-01-PLAN.md (Backend Score Propagation Fix)
 
-**Next Action:** Run `/gsd:execute-phase 1` to execute Phase 1 plans
+**Progress:** [#.........] 10%
+
+**Next Action:** Execute 01-02-PLAN.md (Frontend Score Display)
 
 ---
 
@@ -34,7 +36,7 @@
 
 | Phase | Name | Status | Plans | Progress |
 |-------|------|--------|-------|----------|
-| 1 | Reranking Fix | Planning Complete | 0/4 | 0% |
+| 1 | Reranking Fix | In Progress | 1/4 | 25% |
 | 2 | Search Recall Foundation | Pending | 0/? | 0% |
 | 3 | Hybrid Search | Pending | 0/? | 0% |
 | 4 | Multi-Signal Scoring Framework | Pending | 0/? | 0% |
@@ -71,6 +73,8 @@
 | Sequential phases | Each phase builds on previous; no parallel paths | All |
 | Copy skills taxonomy | Local copy for customization, independence from EllaAI | 5 |
 | Rule-based trajectory | Explainable, sufficient per research; ML deferred to v2 | 8 |
+| Use _raw_vector_similarity prefix | Distinguish internal tracking from public API fields | 1.01 |
+| Add type definitions for new match_metadata fields | Required for TypeScript compilation | 1.01 |
 
 ### Technical Notes
 
@@ -78,6 +82,7 @@
 - **EllaAI skills file:** `/Volumes/Extreme Pro/myprojects/EllaAI/react-spa/src/data/skills-master.ts`
 - **Target location:** `functions/src/shared/skills-master.ts`
 - **Key files to modify:** `functions/src/engines/legacy-engine.ts`, `functions/src/vector-search.ts`
+- **Score propagation fixed:** raw_vector_similarity now preserved through transformation chain (01-01)
 
 ### Blockers
 
@@ -87,25 +92,33 @@ None currently identified.
 
 - [x] Create Phase 1 execution plan (4 plans in 3 waves)
 - [x] Identify specific files implementing reranking bypass (legacy-engine.ts, api.ts)
+- [x] Complete 01-01: Backend Score Propagation Fix
+- [ ] Complete 01-02: Frontend Score Display
+- [ ] Complete 01-03: Reranking Integration
+- [ ] Complete 01-04: Verification
 - [ ] Verify EllaAI skills-master.ts format before copying (Phase 5)
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-01-24
-**Last action:** Phase 1 planning complete
-**Next session focus:** Phase 1 execution (reranking fix)
+**Last session:** 2026-01-24T22:56:52Z
+**Stopped at:** Completed 01-01-PLAN.md
+**Resume file:** .planning/phases/01-reranking-fix/01-02-PLAN.md
 
 ### Context for Next Session
 
-The project is a brownfield enhancement to existing Headhunter search. The core infrastructure (8 Fastify microservices, pgvector, Redis, Together AI) is correct. The path is enhancement, not replacement.
+Plan 01-01 (Backend Score Propagation Fix) is complete. The backend now preserves raw_vector_similarity through the entire transformation chain and exposes it in match_metadata alongside gemini_score.
 
-Critical finding: Reranking is bypassed. The LLM reranking code exists but Match Score equals Similarity Score, meaning all sophisticated analysis is discarded.
+Next: Execute 01-02-PLAN.md to update the frontend to display both Similarity Score and Match Score as separate values.
 
-Phase 1 fixes this bug. All subsequent phases depend on reranking working correctly.
+Commits from 01-01:
+- 72954b0: Preserve raw vector similarity in vectorPool initialization
+- 05b5110: Propagate raw similarity through candidate transformations
+- ed14f64: Expose raw similarity in match_metadata and response
+- 2e7a888: Add type definitions for new match_metadata fields
 
 ---
 
 *State initialized: 2026-01-24*
-*Last updated: 2026-01-24*
+*Last updated: 2026-01-24T22:56:52Z*
