@@ -576,6 +576,7 @@ export class LegacyEngine implements IAIEngine {
                         ...c,
                         overall_score: overallScore,
                         gemini_score: geminiScore,
+                        _raw_vector_similarity: c._raw_vector_similarity || 0,
                         rationale
                     };
                 }).sort((a: any, b: any) => b.overall_score - a.overall_score);
@@ -583,6 +584,7 @@ export class LegacyEngine implements IAIEngine {
                 const remainingCandidates = candidates.slice(50).map((c: any) => ({
                     ...c,
                     overall_score: c.retrieval_score || 0,
+                    _raw_vector_similarity: c._raw_vector_similarity || 0,
                     rationale: ['Additional match']
                 }));
 
@@ -595,6 +597,7 @@ export class LegacyEngine implements IAIEngine {
             candidates = candidates.map((c: any) => ({
                 ...c,
                 overall_score: c.retrieval_score || 0,
+                _raw_vector_similarity: c._raw_vector_similarity || 0,
                 rationale: c.sources?.includes('function')
                     ? [`Matching ${targetClassification.function} function`]
                     : ['Relevant background']
@@ -644,6 +647,7 @@ export class LegacyEngine implements IAIEngine {
                 .map((c: any) => ({
                     ...c,
                     overall_score: 25, // Below threshold but still included as fallback
+                    _raw_vector_similarity: c._raw_vector_similarity || c.vector_similarity_score || 0,
                     rationale: ['Vector similarity match (fallback)'],
                     sources: ['vector_fallback'],
                     search_mode: searchMode
