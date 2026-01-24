@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { SearchResponse, CandidateMatch, CandidateProfile } from '../../types';
+import { SearchResponse, CandidateProfile } from '../../types';
 import { SkillAwareCandidateCard } from '../Candidate/SkillAwareCandidateCard';
 import { EditCandidateModal } from '../Candidate/EditCandidateModal';
+import { JobAnalysis } from './JobDescriptionForm';
 
 interface SearchResultsProps {
   results: SearchResponse | null;
@@ -11,6 +12,7 @@ interface SearchResultsProps {
   displayLimit?: number;
   onLoadMore?: () => void;
   onShowAll?: () => void;
+  analysis?: JobAnalysis | null;
 }
 
 export const SearchResults: React.FC<SearchResultsProps> = ({
@@ -20,10 +22,12 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
   onFindSimilar,
   displayLimit = 20,
   onLoadMore,
-  onShowAll
+  onShowAll,
+  analysis
 }) => {
   const [editingCandidate, setEditingCandidate] = useState<CandidateProfile | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [analysisExpanded, setAnalysisExpanded] = useState(false);
 
   const handleEditClick = (candidate: CandidateProfile) => {
     setEditingCandidate(candidate);
@@ -110,6 +114,114 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         </div>
       </div>
 
+      {/* Collapsible AI Analysis Summary */}
+      {analysis && (
+        <div style={{
+          marginBottom: '16px',
+          background: '#F8FAFC',
+          border: '1px solid #E2E8F0',
+          borderRadius: '8px',
+          overflow: 'hidden'
+        }}>
+          <button
+            onClick={() => setAnalysisExpanded(!analysisExpanded)}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#475569'
+            }}
+          >
+            <span>
+              AI Analysis: {analysis.job_title || 'Untitled Role'}
+              {analysis.experience_level && ` (${analysis.experience_level})`}
+              {analysis.required_skills && analysis.required_skills.length > 0 &&
+                ` - ${analysis.required_skills.length} skills detected`}
+            </span>
+            <span style={{ fontSize: '12px', color: '#94A3B8' }}>
+              {analysisExpanded ? '▲ Hide' : '▼ Show details'}
+            </span>
+          </button>
+
+          {analysisExpanded && (
+            <div style={{ padding: '0 16px 16px 16px', borderTop: '1px solid #E2E8F0' }}>
+              <div style={{ display: 'grid', gap: '12px', marginTop: '12px' }}>
+                {analysis.summary && (
+                  <div>
+                    <strong style={{ color: '#64748B', fontSize: '12px', textTransform: 'uppercase' }}>Summary</strong>
+                    <p style={{ margin: '4px 0 0 0', color: '#334155', fontSize: '14px' }}>{analysis.summary}</p>
+                  </div>
+                )}
+
+                {analysis.required_skills && analysis.required_skills.length > 0 && (
+                  <div>
+                    <strong style={{ color: '#64748B', fontSize: '12px', textTransform: 'uppercase' }}>Required Skills</strong>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                      {analysis.required_skills.map((skill, idx) => (
+                        <span key={idx} style={{
+                          padding: '4px 8px',
+                          background: '#DBEAFE',
+                          color: '#1E40AF',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          fontWeight: '500'
+                        }}>{skill}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {analysis.preferred_skills && analysis.preferred_skills.length > 0 && (
+                  <div>
+                    <strong style={{ color: '#64748B', fontSize: '12px', textTransform: 'uppercase' }}>Nice to Have</strong>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                      {analysis.preferred_skills.map((skill, idx) => (
+                        <span key={idx} style={{
+                          padding: '4px 8px',
+                          background: '#F1F5F9',
+                          color: '#475569',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          fontWeight: '500'
+                        }}>{skill}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {analysis.sourcing_strategy?.target_companies && analysis.sourcing_strategy.target_companies.length > 0 && (
+                  <div style={{
+                    padding: '10px',
+                    background: '#EEF2FF',
+                    borderRadius: '6px',
+                    border: '1px solid #C7D2FE'
+                  }}>
+                    <strong style={{ color: '#4338CA', fontSize: '12px' }}>Target Companies</strong>
+                    <p style={{ margin: '4px 0 0 0', color: '#4F46E5', fontSize: '13px' }}>
+                      {analysis.sourcing_strategy.target_companies.slice(0, 8).join(', ')}
+                      {analysis.sourcing_strategy.target_companies.length > 8 &&
+                        ` +${analysis.sourcing_strategy.target_companies.length - 8} more`}
+                    </p>
+                    {analysis.sourcing_strategy.target_industries && analysis.sourcing_strategy.target_industries.length > 0 && (
+                      <p style={{ margin: '6px 0 0 0', color: '#6366F1', fontSize: '12px' }}>
+                        Industries: {analysis.sourcing_strategy.target_industries.join(', ')}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Fallback Warning Banner */}
       {matches?.some((m: any) => m.candidate?.usedFallback || m.usedFallback) && (
         <div className="fallback-warning" style={{
@@ -148,7 +260,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                   key={match.candidate?.candidate_id || index}
                   candidate={match.candidate}
                   matchScore={match.score}
-                  similarity={match.similarity}
+                  similarityScore={match.similarity}
                   rank={index + 1}
                   searchSkills={[]}
                   onFindSimilar={onFindSimilar ? () => onFindSimilar(match.candidate?.candidate_id || '') : undefined}
