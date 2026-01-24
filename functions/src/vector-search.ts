@@ -460,8 +460,8 @@ export class VectorSearchService {
         // Use pgvector for optimized similarity search
         await this.initializePgVectorClient();
         if (this.pgVectorClient) {
-          const similarityThreshold = 0.5; // Lowered from 0.7 to capture more candidates for re-ranking
-          const limit = query.limit || 100; // Increased default to 100 to capture tail candidates
+          const similarityThreshold = 0.25; // Broad recall - let scoring/reranking filter
+          const limit = query.limit || 500; // Increased for broad recall
           const offset = query.offset || 0;
           const fetchLimit = limit + offset;
 
@@ -644,7 +644,7 @@ export class VectorSearchService {
     // Sort by similarity score and apply limit
     results.sort((a, b) => b.similarity_score - a.similarity_score);
 
-    const limit = query.limit || 100; // Increased default to 100 to capture tail candidates
+    const limit = query.limit || 500; // Increased for broad recall
     return results.slice(0, limit);
   }
 
@@ -973,7 +973,7 @@ export class VectorSearchService {
    */
   private extractCurrentJobTitle(candidateData: any): string | undefined {
     const exp = candidateData?.original_data?.experience;
-    if (!exp) return undefined;
+    if (!exp || typeof exp !== 'string') return undefined;
 
     const lines = exp.split('\n').filter((l: string) => l.trim());
     let foundDate = false;
@@ -1007,7 +1007,7 @@ export class VectorSearchService {
    */
   private extractCurrentCompany(candidateData: any): string | undefined {
     const exp = candidateData?.original_data?.experience;
-    if (!exp) return undefined;
+    if (!exp || typeof exp !== 'string') return undefined;
 
     const lines = exp.split('\n').filter((l: string) => l.trim());
     let foundDate = false;
