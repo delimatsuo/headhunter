@@ -82,6 +82,14 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
     return Math.round(normalizedScore);
   };
 
+  // Check if Match Score and Similarity Score are meaningfully different
+  const scoresAreDifferent = () => {
+    if (matchScore === undefined || similarityScore === undefined) return false;
+    const normalizedMatch = matchScore <= 1 ? matchScore * 100 : matchScore;
+    const normalizedSim = similarityScore <= 1 ? similarityScore * 100 : similarityScore;
+    return Math.abs(normalizedMatch - normalizedSim) > 1; // More than 1% difference
+  };
+
   const getOverallConfidence = () => {
     if (skillAssessment) {
       return skillAssessment.average_confidence;
@@ -484,10 +492,18 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
 
         <div className="scores">
           {matchScore !== undefined && (
-            <Tooltip title="Overall alignment with job requirements." arrow placement="top">
-              <div className={`score-badge ${getScoreColor(matchScore)}`}>
+            <Tooltip title="LLM-influenced match score (considers qualitative fit)" arrow placement="top">
+              <div className={`score-badge match ${getScoreColor(matchScore)}`}>
                 <span className="score-value">{formatScore(matchScore)}%</span>
                 <span className="score-label">Match</span>
+              </div>
+            </Tooltip>
+          )}
+          {similarityScore !== undefined && scoresAreDifferent() && (
+            <Tooltip title="Raw vector similarity (semantic profile match)" arrow placement="top">
+              <div className={`score-badge similarity ${getScoreColor(similarityScore)}`}>
+                <span className="score-value">{formatScore(similarityScore)}%</span>
+                <span className="score-label">Sim</span>
               </div>
             </Tooltip>
           )}
