@@ -328,13 +328,14 @@ export class PgVectorClient {
    */
   async searchSimilar(
     queryEmbedding: number[],
-    similarityThreshold: number = 0.7,
+    similarityThreshold: number = 0.25,
     maxResults: number = 10,
     modelVersion?: string,
     chunkType: string = 'full_profile',
     filters?: { current_level?: string | string[]; countries?: string[]; specialties?: string[] }
   ): Promise<SearchResult[]> {
     this.validateEmbedding(queryEmbedding);
+    console.log(`[PgVectorClient] searchSimilar: threshold=${similarityThreshold}, maxResults=${maxResults}`);
 
     try {
       const client = await this.pool.connect();
