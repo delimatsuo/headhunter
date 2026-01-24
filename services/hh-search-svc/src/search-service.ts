@@ -316,7 +316,22 @@ export class SearchService {
       response.debug = {
         candidateCount: ranked.length,
         filtersApplied: request.filters ?? {},
-        minSimilarity: this.config.search.minSimilarity
+        minSimilarity: this.config.search.minSimilarity,
+        // RRF configuration and score breakdown for debugging
+        rrfConfig: {
+          enabled: this.config.search.enableRrf,
+          k: this.config.search.rrfK,
+          perMethodLimit: this.config.search.perMethodLimit
+        },
+        scoreBreakdown: ranked.slice(0, 5).map(r => ({
+          candidateId: r.candidateId,
+          score: r.score,
+          vectorScore: r.vectorScore,
+          textScore: r.textScore,
+          rrfScore: r.rrfScore,
+          vectorRank: r.vectorRank,
+          textRank: r.textRank
+        }))
       };
     }
 
@@ -398,6 +413,10 @@ export class SearchService {
       score: hybridScore,
       vectorScore: baseVector,
       textScore: baseText,
+      // RRF fields - only present when RRF is enabled
+      rrfScore: row.rrf_score != null ? Number(row.rrf_score) : undefined,
+      vectorRank: row.vector_rank != null ? Number(row.vector_rank) : undefined,
+      textRank: row.text_rank != null ? Number(row.text_rank) : undefined,
       confidence,
       fullName: row.full_name ?? undefined,
       title: row.current_title ?? undefined,
