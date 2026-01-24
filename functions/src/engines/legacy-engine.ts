@@ -937,13 +937,25 @@ export class LegacyEngine implements IAIEngine {
 
             const legacySnapshot = await legacyQuery.get();
 
-            // Filter by EFFECTIVE level (adjusted for company tier)
+            // PHASE 2 FIX: Score by EFFECTIVE level instead of filtering
             // This allows startup execs to appear in higher-tier role searches
+            // All candidates pass through with _level_score attached
             let candidates = legacySnapshot.docs
                 .map(doc => ({ id: doc.id, ...doc.data() } as any))
-                .filter((c: any) => {
+                .map((c: any) => {
+                    // PHASE 2 FIX: Score instead of filter
                     const effectiveLevel = this.getEffectiveLevel(c);
-                    return levelRange.includes(effectiveLevel);
+                    let levelScore: number;
+
+                    if (effectiveLevel === 'unknown') {
+                        levelScore = 0.5;
+                    } else if (levelRange.includes(effectiveLevel)) {
+                        levelScore = 1.0;
+                    } else {
+                        levelScore = 0.3;
+                    }
+
+                    return { ...c, _level_score: levelScore };
                 })
                 .map((c: any) => {
                     // Calculate function confidence from multi-function array if available
@@ -1039,7 +1051,7 @@ export class LegacyEngine implements IAIEngine {
                 console.log(`[LegacyEngine] Specialty filter (PostgreSQL): ${beforeFilter} → ${candidates.length} (specialties: ${targetSpecialties.join(', ')})`);
             }
 
-            console.log(`[LegacyEngine] Function query: ${legacySnapshot.size} total, ${candidates.length} in level range [${levelRange.join(', ')}] for ${targetFunction}`);
+            console.log(`[LegacyEngine] Function query: ${legacySnapshot.size} total, ${candidates.length} scored (level range: ${levelRange.join(', ')}) for ${targetFunction}`);
             return candidates;
         } catch (error: any) {
             console.error('[LegacyEngine] Function search failed:', error.message);
