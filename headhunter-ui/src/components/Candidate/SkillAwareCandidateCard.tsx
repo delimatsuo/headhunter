@@ -8,6 +8,7 @@ import './SkillAwareCandidateCard.css';
 interface SkillAwareCandidateCardProps {
   candidate: CandidateProfile;
   matchScore?: number;
+  similarityScore?: number;  // Raw vector similarity score
   skillMatches?: SkillMatchData[];
   searchSkills?: string[];
   rank?: number;
@@ -20,6 +21,7 @@ interface SkillAwareCandidateCardProps {
 export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = ({
   candidate,
   matchScore,
+  similarityScore,
   skillMatches = [],
   searchSkills = [],
   rank,
@@ -117,6 +119,7 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
   const getExperience = () =>
     c.years_experience ||
     c.profile?.years_experience ||
+    c.intelligent_analysis?.career_trajectory?.years_experience ||
     c.intelligent_analysis?.career_trajectory_analysis?.years_experience ||
     c.resume_analysis?.years_experience ||
     0;
@@ -124,6 +127,7 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
   const getLevel = () =>
     c.current_level ||
     c.profile?.current_level ||
+    c.intelligent_analysis?.career_trajectory?.current_level ||
     c.intelligent_analysis?.career_trajectory_analysis?.current_level ||
     c.resume_analysis?.career_trajectory?.current_level ||
     'Not specified';
@@ -221,9 +225,11 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
   };
 
   const getTrajectory = () => ({
-    progression: candidate.intelligent_analysis?.career_trajectory_analysis?.promotion_velocity ||
+    progression: (candidate.intelligent_analysis as any)?.career_trajectory?.progression_speed ||
+      (candidate.intelligent_analysis as any)?.career_trajectory_analysis?.promotion_velocity ||
       candidate.resume_analysis?.career_trajectory?.progression_speed || 'Not specified',
-    type: candidate.resume_analysis?.career_trajectory?.trajectory_type || 'Not specified'
+    type: (candidate.intelligent_analysis as any)?.career_trajectory?.trajectory_type ||
+      candidate.resume_analysis?.career_trajectory?.trajectory_type || 'Not specified'
   });
 
   const getDomainExpertise = () => {
@@ -274,7 +280,36 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
     return timeline.slice(0, 5); // Limit to top 5
   };
 
-  const timelineData = parseExperience(candidate.original_data?.experience);
+  // Get timeline data - prefer experience_history from PostgreSQL, fallback to parsing original_data
+  const getTimelineData = () => {
+    // Check for experience_history from keywordSearch (PostgreSQL sourcing.experience)
+    const expHistory = (candidate as any).experience_history;
+    if (expHistory && Array.isArray(expHistory) && expHistory.length > 0) {
+      // Deduplicate by company + title + start_date
+      const seen = new Set<string>();
+      const deduped = expHistory.filter((exp: any) => {
+        const key = `${exp.company_name}|${exp.title}|${exp.start_date}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      return deduped.slice(0, 5).map((exp: any) => {
+        const startDate = exp.start_date || '';
+        const endDate = exp.is_current ? 'Present' : (exp.end_date || '');
+        const dateRange = startDate ? `${startDate} - ${endDate}` : '';
+        return {
+          date: dateRange,
+          role: exp.title || 'Role not specified',
+          company: exp.company_name || 'Company not specified'
+        };
+      });
+    }
+    // Fallback to parsing original_data.experience string
+    return parseExperience(candidate.original_data?.experience);
+  };
+
+  const timelineData = getTimelineData();
 
   const handleResumeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -545,6 +580,21 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
                     {educationData.institutions.map((inst, index) => (
                       <span key={index} className="institution-tag">{inst}</span>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Career Trajectory */}
+              {(trajectory.progression !== 'Not specified' || trajectory.type !== 'Not specified') && (
+                <div className="detail-section">
+                  <h4>Career Trajectory</h4>
+                  <div className="trajectory-info">
+                    {trajectory.type !== 'Not specified' && (
+                      <p><strong>Path:</strong> {trajectory.type.charAt(0).toUpperCase() + trajectory.type.slice(1)}</p>
+                    )}
+                    {trajectory.progression !== 'Not specified' && (
+                      <p><strong>Progression:</strong> {trajectory.progression.charAt(0).toUpperCase() + trajectory.progression.slice(1)}</p>
+                    )}
                   </div>
                 </div>
               )}
