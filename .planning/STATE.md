@@ -114,10 +114,14 @@ None currently identified.
 
 Plan 01-03 (UI Dual Score Display) is complete. The full score propagation chain is now in place:
 - Backend (01-01): raw_vector_similarity preserved in legacy-engine.ts
-- API (01-02): similarity mapped to response in SearchResults
+- API (01-02): similarity mapped from match_metadata.raw_vector_similarity in api.ts
 - UI (01-03): Both scores displayed with visual differentiation
 
 Ready for Plan 01-04 (Verification) to validate end-to-end behavior.
+
+Commits from 01-02:
+- 1016c18: Fix similarity extraction in searchWithEngine response mapping
+- 7a7c6be: Fix similarity extraction in searchCandidates response mapping
 
 Commits from 01-03:
 - d6fb69a: Add similarityScore prop to SkillAwareCandidateCard
@@ -127,4 +131,4 @@ Commits from 01-03:
 ---
 
 *State initialized: 2026-01-24*
-*Last updated: 2026-01-24T23:00:18Z*
+*Last updated: 2026-01-24T23:01:30Z*
