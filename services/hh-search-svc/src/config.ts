@@ -76,6 +76,10 @@ export interface SearchRuntimeConfig {
   warmupMultiplier: number;
   rerankCandidateLimit: number;
   rerankIncludeReasons: boolean;
+  // RRF configuration
+  rrfK: number;              // RRF k parameter, controls top-rank favoritism (default 60)
+  perMethodLimit: number;    // Candidates retrieved per search method before fusion (default 100)
+  enableRrf: boolean;        // Feature flag to toggle RRF vs weighted sum (default true)
 }
 
 export interface RerankServiceConfig {
@@ -239,7 +243,11 @@ export function getSearchServiceConfig(): SearchServiceConfig {
     confidenceFloor: parseNumber(process.env.SEARCH_CONFIDENCE_FLOOR, 0.2),
     warmupMultiplier: Math.max(1, parseNumber(process.env.SEARCH_WARMUP_MULTIPLIER, 3)),
     rerankCandidateLimit: Math.max(1, parseNumber(process.env.SEARCH_RERANK_CANDIDATE_LIMIT, 200)),
-    rerankIncludeReasons: parseBoolean(process.env.SEARCH_RERANK_INCLUDE_REASONS, true)
+    rerankIncludeReasons: parseBoolean(process.env.SEARCH_RERANK_INCLUDE_REASONS, true),
+    // RRF configuration
+    rrfK: Math.max(1, parseNumber(process.env.SEARCH_RRF_K, 60)),
+    perMethodLimit: Math.max(10, parseNumber(process.env.SEARCH_PER_METHOD_LIMIT, 100)),
+    enableRrf: parseBoolean(process.env.SEARCH_ENABLE_RRF, true)
   };
 
   const firestoreFallback: FirestoreFallbackConfig = {
