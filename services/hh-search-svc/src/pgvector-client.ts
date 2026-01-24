@@ -125,6 +125,14 @@ export class PgVectorClient {
         ? Math.max(10, query.perMethodLimit)
         : 100;
 
+      // Log RRF configuration for debugging
+      this.logger.info({
+        rrfK: query.rrfK,
+        perMethodLimit,
+        enableRrf: query.enableRrf,
+        limit: query.limit
+      }, 'RRF config: hybrid search parameters');
+
       const filters: string[] = [];
       const values: unknown[] = [
         query.tenantId,
@@ -135,7 +143,8 @@ export class PgVectorClient {
         query.textWeight,
         query.minSimilarity,
         query.limit,
-        query.offset
+        query.offset,
+        query.rrfK            // $10 - RRF k parameter for scoring calculation
       ];
 
       let parameterIndex = values.length;
@@ -206,6 +215,7 @@ export class PgVectorClient {
           SELECT
             ce.entity_id AS candidate_id,
             1 - (ce.embedding <=> $2) AS vector_score,
+            ROW_NUMBER() OVER (ORDER BY ce.embedding <=> $2 ASC) AS vector_rank,
             ce.metadata,
             ce.updated_at
           FROM ${this.config.schema}.${this.config.embeddingsTable} AS ce
@@ -216,7 +226,8 @@ export class PgVectorClient {
         text_candidates AS (
           SELECT
             cp.candidate_id,
-            ts_rank_cd(cp.search_document, plainto_tsquery('${PG_FTS_DICTIONARY}', $4)) AS text_score
+            ts_rank_cd(cp.search_document, plainto_tsquery('${PG_FTS_DICTIONARY}', $4)) AS text_score,
+            ROW_NUMBER() OVER (ORDER BY ts_rank_cd(cp.search_document, plainto_tsquery('${PG_FTS_DICTIONARY}', $4)) DESC) AS text_rank
           FROM ${this.config.schema}.${this.config.profilesTable} AS cp
           WHERE cp.tenant_id = $1
             AND $4 IS NOT NULL
@@ -226,9 +237,16 @@ export class PgVectorClient {
           LIMIT $3
         ),
         combined AS (
-          SELECT candidate_id, vector_score, metadata FROM vector_candidates
-          UNION ALL
-          SELECT candidate_id, NULL::double precision AS vector_score, NULL::jsonb AS metadata FROM text_candidates
+          SELECT
+            COALESCE(vc.candidate_id, tc.candidate_id) AS candidate_id,
+            vc.vector_score,
+            vc.vector_rank,
+            vc.metadata,
+            vc.updated_at,
+            tc.text_score,
+            tc.text_rank
+          FROM vector_candidates vc
+          FULL OUTER JOIN text_candidates tc ON vc.candidate_id = tc.candidate_id
         ),
         scored AS (
           SELECT
@@ -246,39 +264,17 @@ export class PgVectorClient {
             cp.legal_basis,
             cp.consent_record,
             cp.transfer_mechanism,
-            MAX(combined.vector_score) AS vector_score,
-            MAX(COALESCE(
-              tc.text_score,
-              CASE
-                WHEN $4 IS NOT NULL AND $4 != '' AND cp.search_document @@ plainto_tsquery('${PG_FTS_DICTIONARY}', $4)
-                THEN ts_rank_cd(cp.search_document, plainto_tsquery('${PG_FTS_DICTIONARY}', $4))
-                ELSE 0
-              END
-            )) AS text_score,
-            MAX(vc.updated_at) AS updated_at,
-            MAX(combined.metadata) AS metadata
-          FROM combined
+            c.vector_score,
+            c.vector_rank,
+            COALESCE(c.text_score, 0) AS text_score,
+            c.text_rank,
+            c.updated_at,
+            c.metadata
+          FROM combined c
           JOIN ${this.config.schema}.${this.config.profilesTable} AS cp
-            ON cp.candidate_id = combined.candidate_id AND cp.tenant_id = $1
-          LEFT JOIN vector_candidates vc ON vc.candidate_id = cp.candidate_id
-          LEFT JOIN text_candidates tc ON tc.candidate_id = cp.candidate_id
+            ON cp.candidate_id = c.candidate_id AND cp.tenant_id = $1
           WHERE true
             ${filterClause ? `\n            ${filterClause}` : ''}
-          GROUP BY
-            cp.candidate_id,
-            cp.full_name,
-            cp.current_title,
-            cp.headline,
-            cp.location,
-            cp.country,
-            cp.industries,
-            cp.skills,
-            cp.years_experience,
-            cp.analysis_confidence,
-            cp.profile,
-            cp.legal_basis,
-            cp.consent_record,
-            cp.transfer_mechanism
         )
         SELECT
           candidate_id,
@@ -298,6 +294,8 @@ export class PgVectorClient {
           metadata,
           COALESCE(vector_score, 0) AS vector_score,
           COALESCE(text_score, 0) AS text_score,
+          vector_rank,
+          text_rank,
           (($5 * COALESCE(vector_score, 0)) + ($6 * COALESCE(text_score, 0))) AS hybrid_score,
           to_char(COALESCE(updated_at, timezone('utc', now())), 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS updated_at
         FROM scored
