@@ -113,13 +113,46 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (populated by roadmapper) | | |
+| PIPE-05 | Phase 1: Reranking Fix | Pending |
+| SRCL-01 | Phase 2: Search Recall Foundation | Pending |
+| SRCL-02 | Phase 2: Search Recall Foundation | Pending |
+| SRCL-03 | Phase 2: Search Recall Foundation | Pending |
+| SRCL-04 | Phase 2: Search Recall Foundation | Pending |
+| HYBD-01 | Phase 3: Hybrid Search | Pending |
+| HYBD-02 | Phase 3: Hybrid Search | Pending |
+| HYBD-03 | Phase 3: Hybrid Search | Pending |
+| HYBD-04 | Phase 3: Hybrid Search | Pending |
+| SCOR-01 | Phase 4: Multi-Signal Scoring Framework | Pending |
+| SCOR-07 | Phase 4: Multi-Signal Scoring Framework | Pending |
+| SCOR-08 | Phase 4: Multi-Signal Scoring Framework | Pending |
+| SKIL-01 | Phase 5: Skills Infrastructure | Pending |
+| SKIL-03 | Phase 5: Skills Infrastructure | Pending |
+| SKIL-02 | Phase 6: Skills Intelligence | Pending |
+| SKIL-04 | Phase 6: Skills Intelligence | Pending |
+| SKIL-05 | Phase 6: Skills Intelligence | Pending |
+| SCOR-02 | Phase 7: Signal Scoring Implementation | Pending |
+| SCOR-03 | Phase 7: Signal Scoring Implementation | Pending |
+| SCOR-04 | Phase 7: Signal Scoring Implementation | Pending |
+| SCOR-05 | Phase 7: Signal Scoring Implementation | Pending |
+| SCOR-06 | Phase 7: Signal Scoring Implementation | Pending |
+| TRAJ-01 | Phase 8: Career Trajectory | Pending |
+| TRAJ-02 | Phase 8: Career Trajectory | Pending |
+| TRAJ-03 | Phase 8: Career Trajectory | Pending |
+| TRAJ-04 | Phase 8: Career Trajectory | Pending |
+| TRNS-01 | Phase 9: Match Transparency | Pending |
+| TRNS-02 | Phase 9: Match Transparency | Pending |
+| TRNS-03 | Phase 9: Match Transparency | Pending |
+| TRNS-04 | Phase 9: Match Transparency | Pending |
+| PIPE-01 | Phase 10: Pipeline Integration | Pending |
+| PIPE-02 | Phase 10: Pipeline Integration | Pending |
+| PIPE-03 | Phase 10: Pipeline Integration | Pending |
+| PIPE-04 | Phase 10: Pipeline Integration | Pending |
 
 **Coverage:**
 - v1 requirements: 28 total
-- Mapped to phases: 0
-- Unmapped: 28 (pending roadmap creation)
+- Mapped to phases: 28
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-24*
-*Last updated: 2026-01-24 after research synthesis*
+*Last updated: 2026-01-24 after roadmap creation*
