@@ -408,9 +408,14 @@ export class LegacyEngine implements IAIEngine {
                 entry.levelScore = (rawLevelScore / 40) * weights.level;
             }
 
-            // Specialty match (backend vs frontend, etc.) - using PostgreSQL data
-            const specialtyScore = this.calculateSpecialtyScore(candidate, targetSpecialties, allPgSpecialties);
-            entry.specialtyScore = specialtyScore * weights.specialty;
+            // Specialty match - use pre-computed _specialty_score from Phase 2 fix if available
+            const precomputedSpecialtyScore = candidate._specialty_score;
+            if (precomputedSpecialtyScore !== undefined) {
+                entry.specialtyScore = precomputedSpecialtyScore * weights.specialty;
+            } else {
+                const specialtyScore = this.calculateSpecialtyScore(candidate, targetSpecialties, allPgSpecialties);
+                entry.specialtyScore = specialtyScore * weights.specialty;
+            }
 
             candidateScores.set(id, entry);
         }
@@ -453,10 +458,15 @@ export class LegacyEngine implements IAIEngine {
                 }
             }
 
-            // Specialty score for vector candidates too - using PostgreSQL data
+            // Specialty score for vector candidates too - use pre-computed _specialty_score if available
             if (entry.specialtyScore === 0) {
-                const specialtyScore = this.calculateSpecialtyScore(candidate, targetSpecialties, allPgSpecialties);
-                entry.specialtyScore = specialtyScore * weights.specialty;
+                const precomputedSpecialtyScore = candidate._specialty_score;
+                if (precomputedSpecialtyScore !== undefined) {
+                    entry.specialtyScore = precomputedSpecialtyScore * weights.specialty;
+                } else {
+                    const specialtyScore = this.calculateSpecialtyScore(candidate, targetSpecialties, allPgSpecialties);
+                    entry.specialtyScore = specialtyScore * weights.specialty;
+                }
             }
 
             candidateScores.set(id, entry);
