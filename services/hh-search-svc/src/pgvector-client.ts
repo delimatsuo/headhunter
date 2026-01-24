@@ -133,6 +133,13 @@ export class PgVectorClient {
         limit: query.limit
       }, 'RRF config: hybrid search parameters');
 
+      // Track whether we have a text query for later warning
+      const hasTextQuery = query.textQuery && query.textQuery.trim().length > 0;
+      this.logger.debug({
+        hasTextQuery,
+        textQueryLength: query.textQuery?.length ?? 0
+      }, 'RRF query type');
+
       const filters: string[] = [];
       const values: unknown[] = [
         query.tenantId,
@@ -306,6 +313,43 @@ export class PgVectorClient {
       `;
 
       const result: QueryResult<PgHybridSearchRow> = await client.query({ text: sql, values });
+
+      // RRF result summary logging
+      const vectorOnlyCount = result.rows.filter(r => (r.vector_score ?? 0) > 0 && (r.text_score ?? 0) === 0).length;
+      const textOnlyCount = result.rows.filter(r => (r.vector_score ?? 0) === 0 && (r.text_score ?? 0) > 0).length;
+      const bothCount = result.rows.filter(r => (r.vector_score ?? 0) > 0 && (r.text_score ?? 0) > 0).length;
+      const noScoreCount = result.rows.filter(r => (r.vector_score ?? 0) === 0 && (r.text_score ?? 0) === 0).length;
+
+      const rrfScores = result.rows.map(r => r.hybrid_score ?? 0).filter(s => s > 0);
+      const avgRrfScore = rrfScores.length > 0 ? rrfScores.reduce((a, b) => a + b, 0) / rrfScores.length : 0;
+      const maxRrfScore = rrfScores.length > 0 ? Math.max(...rrfScores) : 0;
+      const minRrfScore = rrfScores.length > 0 ? Math.min(...rrfScores) : 0;
+
+      this.logger.info({
+        totalResults: result.rows.length,
+        vectorOnly: vectorOnlyCount,
+        textOnly: textOnlyCount,
+        both: bothCount,
+        noScore: noScoreCount,
+        rrfStats: {
+          avg: avgRrfScore.toFixed(6),
+          max: maxRrfScore.toFixed(6),
+          min: minRrfScore.toFixed(6)
+        },
+        textQuery: query.textQuery?.slice(0, 50),
+        rrfK: query.rrfK,
+        enableRrf: query.enableRrf
+      }, 'RRF hybrid search summary');
+
+      // Warn if FTS expected but not contributing
+      if (hasTextQuery && textOnlyCount === 0 && bothCount === 0) {
+        this.logger.warn({
+          textQuery: query.textQuery?.slice(0, 100),
+          totalResults: result.rows.length,
+          vectorOnly: vectorOnlyCount
+        }, 'RRF warning: FTS returned no matches despite having a text query. Check search_document population.');
+      }
+
       return result.rows;
     });
   }
