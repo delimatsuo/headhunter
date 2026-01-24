@@ -996,9 +996,12 @@ export class LegacyEngine implements IAIEngine {
                 });
 
             // ===================================================================
-            // SPECIALTY FILTERING (for IC roles) - Uses PostgreSQL as primary source
-            // When searching for "Backend Engineer", filter OUT frontend-only candidates
-            // This prevents frontend engineers from appearing in backend searches
+            // SPECIALTY SCORING (for IC roles) - Uses PostgreSQL as primary source
+            // PHASE 2 FIX: Score instead of filter (same logic as vector pool)
+            // - Match: 1.0
+            // - Fullstack for backend/frontend: 0.8
+            // - No data: 0.5 (neutral)
+            // - Clear mismatch: 0.2 (very low but Gemini can evaluate)
             // ===================================================================
             if (targetSpecialties.length > 0 && targetFunction === 'engineering') {
                 const beforeFilter = candidates.length;
@@ -1006,68 +1009,65 @@ export class LegacyEngine implements IAIEngine {
                 // Load PostgreSQL specialty data for function pool candidates (uses LinkedIn URL matching)
                 const pgSpecialties = await this.loadSpecialtiesFromPg(candidates);
 
-                candidates = candidates.filter((c: any) => {
+                candidates = candidates.map((c: any) => {
                     const candidateId = c.id || '';
                     const candidateSpecialties = this.getCandidateSpecialty(c, pgSpecialties);
 
-                    // No specialty data - keep for Gemini evaluation
-                    if (candidateSpecialties.length === 0) return true;
+                    // No specialty data - neutral score
+                    if (candidateSpecialties.length === 0) {
+                        return { ...c, _specialty_score: 0.5 };
+                    }
 
-                    // Check if candidate has ANY of the target specialties
+                    // Check for specialty match
                     for (const target of targetSpecialties) {
-                        if (candidateSpecialties.includes(target)) return true;
+                        if (candidateSpecialties.includes(target)) {
+                            return { ...c, _specialty_score: 1.0 };
+                        }
 
                         // Fullstack matches both frontend and backend
                         if ((target === 'backend' || target === 'frontend') &&
                             (candidateSpecialties.includes('fullstack') ||
                              candidateSpecialties.includes('full-stack') ||
                              candidateSpecialties.includes('full stack'))) {
-                            return true;
+                            return { ...c, _specialty_score: 0.8 };
                         }
                     }
 
-                    // STRICT FILTERING: With PostgreSQL specialty data, exclude clear mismatches
+                    // Mismatch scoring
+                    let mismatchScore = 0.4;
                     if (targetSpecialties.includes('backend')) {
-                        // Exclude candidates who are clearly frontend-only
                         const isPureFrontend = candidateSpecialties.includes('frontend') &&
                             !candidateSpecialties.includes('backend') &&
                             !candidateSpecialties.includes('fullstack') &&
                             !candidateSpecialties.includes('full-stack');
-                        if (isPureFrontend) return false;
+                        if (isPureFrontend) mismatchScore = 0.2;
 
-                        // Exclude candidates with wrong specialties for backend searches
-                        const wrongSpecialtiesForBackend = ['mobile', 'qa', 'data', 'devops', 'sre'];
-                        const hasWrongSpecialty = wrongSpecialtiesForBackend.some(wrong =>
-                            candidateSpecialties.includes(wrong) &&
+                        const wrongForBackend = ['mobile', 'qa', 'data', 'devops', 'sre'];
+                        if (wrongForBackend.some(w => candidateSpecialties.includes(w) &&
                             !candidateSpecialties.includes('backend') &&
-                            !candidateSpecialties.includes('fullstack') &&
-                            !candidateSpecialties.includes('full-stack')
-                        );
-                        if (hasWrongSpecialty) return false;
+                            !candidateSpecialties.includes('fullstack'))) {
+                            mismatchScore = 0.2;
+                        }
                     }
                     if (targetSpecialties.includes('frontend')) {
-                        // Exclude candidates who are clearly backend-only
                         const isPureBackend = candidateSpecialties.includes('backend') &&
                             !candidateSpecialties.includes('frontend') &&
                             !candidateSpecialties.includes('fullstack') &&
                             !candidateSpecialties.includes('full-stack');
-                        if (isPureBackend) return false;
+                        if (isPureBackend) mismatchScore = 0.2;
 
-                        // Exclude candidates with wrong specialties for frontend searches
-                        const wrongSpecialtiesForFrontend = ['mobile', 'qa', 'data', 'devops', 'sre'];
-                        const hasWrongSpecialtyFE = wrongSpecialtiesForFrontend.some(wrong =>
-                            candidateSpecialties.includes(wrong) &&
+                        const wrongForFrontend = ['mobile', 'qa', 'data', 'devops', 'sre'];
+                        if (wrongForFrontend.some(w => candidateSpecialties.includes(w) &&
                             !candidateSpecialties.includes('frontend') &&
-                            !candidateSpecialties.includes('fullstack') &&
-                            !candidateSpecialties.includes('full-stack')
-                        );
-                        if (hasWrongSpecialtyFE) return false;
+                            !candidateSpecialties.includes('fullstack'))) {
+                            mismatchScore = 0.2;
+                        }
                     }
 
-                    return true; // Keep by default
+                    return { ...c, _specialty_score: mismatchScore };
                 });
 
-                console.log(`[LegacyEngine] Specialty filter (PostgreSQL): ${beforeFilter} → ${candidates.length} (specialties: ${targetSpecialties.join(', ')})`);
+                console.log(`[LegacyEngine] Function pool specialty scoring: ${beforeFilter} candidates scored (specialties: ${targetSpecialties.join(', ')})`);
             }
 
             console.log(`[LegacyEngine] Function query: ${legacySnapshot.size} total, ${candidates.length} scored (level range: ${levelRange.join(', ')}) for ${targetFunction}`);
