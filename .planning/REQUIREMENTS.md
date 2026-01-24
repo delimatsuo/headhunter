@@ -16,10 +16,10 @@ Requirements for leader-level search. Each maps to roadmap phases.
 
 ### Hybrid Search
 
-- [ ] **HYBD-01**: Vector similarity search via pgvector for semantic matching
-- [ ] **HYBD-02**: BM25 text search for exact keyword matches (rare skills, certifications)
-- [ ] **HYBD-03**: Reciprocal Rank Fusion (RRF) combines vector and text results
-- [ ] **HYBD-04**: Configurable RRF parameter k (default 60) for tuning
+- [x] **HYBD-01**: Vector similarity search via pgvector for semantic matching
+- [x] **HYBD-02**: BM25 text search for exact keyword matches (rare skills, certifications)
+- [x] **HYBD-03**: Reciprocal Rank Fusion (RRF) combines vector and text results
+- [x] **HYBD-04**: Configurable RRF parameter k (default 60) for tuning
 
 ### Multi-Signal Scoring
 
@@ -118,10 +118,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SRCL-02 | Phase 2: Search Recall Foundation | Complete |
 | SRCL-03 | Phase 2: Search Recall Foundation | Complete |
 | SRCL-04 | Phase 2: Search Recall Foundation | Complete |
-| HYBD-01 | Phase 3: Hybrid Search | Pending |
-| HYBD-02 | Phase 3: Hybrid Search | Pending |
-| HYBD-03 | Phase 3: Hybrid Search | Pending |
-| HYBD-04 | Phase 3: Hybrid Search | Pending |
+| HYBD-01 | Phase 3: Hybrid Search | Complete |
+| HYBD-02 | Phase 3: Hybrid Search | Complete |
+| HYBD-03 | Phase 3: Hybrid Search | Complete |
+| HYBD-04 | Phase 3: Hybrid Search | Complete |
 | SCOR-01 | Phase 4: Multi-Signal Scoring Framework | Pending |
 | SCOR-07 | Phase 4: Multi-Signal Scoring Framework | Pending |
 | SCOR-08 | Phase 4: Multi-Signal Scoring Framework | Pending |
@@ -155,4 +155,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-24*
-*Last updated: 2026-01-24 after Phase 2 completion*
+*Last updated: 2026-01-24 after Phase 3 completion*

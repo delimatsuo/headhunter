@@ -21,7 +21,7 @@ The approach is enhancement, not replacement. The existing stack (PostgreSQL + p
 |-------|------|--------|--------------|
 | 1 | Reranking Fix | Complete | 1 |
 | 2 | Search Recall Foundation | Complete | 4 |
-| 3 | Hybrid Search | Planned | 4 |
+| 3 | Hybrid Search | Complete | 4 |
 | 4 | Multi-Signal Scoring Framework | Pending | 3 |
 | 5 | Skills Infrastructure | Pending | 2 |
 | 6 | Skills Intelligence | Pending | 3 |
