@@ -118,6 +118,10 @@
 - **Phase 2 scoring integrated:** All 5 scores aggregated via phase2Multiplier (02-05)
 - **Stage logging added:** STAGE 1-5 for pipeline validation (02-05)
 - **Score breakdown expanded:** phase2_* fields included for transparency (02-05)
+- **FTS diagnostic logging:** Query params and search_document analysis logged (03-01)
+- **FULL OUTER JOIN pattern:** Replaces UNION ALL to preserve text_score association (03-01)
+- **Rank columns added:** vector_rank and text_rank for RRF preparation (03-01)
+- **PgHybridSearchRow updated:** Added vector_rank and text_rank fields to type (03-01)
 - **RRF configuration added:** rrfK, perMethodLimit, enableRrf in SearchRuntimeConfig (03-02)
 - **PgHybridSearchQuery updated:** RRF params flow through to SQL values (03-02)
 - **RRF logging added:** Config logged before each hybrid search (03-02)
@@ -139,6 +143,7 @@ None currently identified.
 - [x] Complete 02-03: Specialty Filter to Scoring
 - [x] Complete 02-04: Remaining Filters to Scoring
 - [x] Complete 02-05: Integrate Scores and Stage Logging
+- [x] Complete 03-01: Fix textScore=0 and Add FTS Diagnostic Logging
 - [x] Complete 03-02: RRF Configuration Parameters
 - [ ] Complete 03-03: RRF Scoring SQL
 - [ ] Complete 03-04: Hybrid Search Verification
@@ -188,6 +193,7 @@ All Phase 2 commits:
 - 02-05: da4ca97, b304c66
 
 Phase 3 commits:
+- 03-01: 70098c4, d303cd5
 - 03-02: d75aeb8, d7c1df1, c02a3bf
 
 ---
