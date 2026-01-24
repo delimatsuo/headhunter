@@ -422,8 +422,8 @@ export const apiService = {
 
           return {
             candidate,
-            score: c.overall_score / 100, // Scale 0-100 to 0-1
-            similarity: c.vector_similarity_score,
+            score: c.overall_score / 100, // LLM-influenced match score (0-1 scale)
+            similarity: (c.match_metadata?.raw_vector_similarity || c.vector_similarity_score || 0) / 100, // Raw vector similarity (0-1 scale)
             rationale: {
               overall_assessment: c.rationale && c.rationale.length > 0
                 ? c.rationale.join('. ') + '.'
@@ -434,6 +434,13 @@ export const apiService = {
             }
           };
         });
+
+        // TODO: Remove after Phase 1 verification
+        // Debug: Log score differentiation
+        if (matches.length > 0) {
+          const sampleMatch = matches[0];
+          console.log(`[API Debug] searchCandidates first result - Match: ${sampleMatch.score?.toFixed(2)}, Similarity: ${sampleMatch.similarity?.toFixed(2)}, Different: ${Math.abs((sampleMatch.score || 0) - (sampleMatch.similarity || 0)) > 0.01}`);
+        }
 
         // Generate insights on the client side
         const totalCandidates = matches.length;
