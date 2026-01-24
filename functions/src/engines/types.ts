@@ -53,6 +53,8 @@ export interface CandidateMatch {
     // Metadata about how this match was computed
     match_metadata?: {
         vector_score?: number;
+        raw_vector_similarity?: number;  // Preserved raw similarity from vector search
+        gemini_score?: number;           // Gemini reranking score
         title_affinity_boost?: number;
         company_boost?: number;
         rerank_score?: number;
