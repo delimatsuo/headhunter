@@ -243,7 +243,11 @@ export class SearchService {
       vectorWeight: this.config.search.vectorWeight,
       textWeight: this.config.search.textWeight,
       filters: request.filters,
-      warmupMultiplier: this.config.search.warmupMultiplier
+      warmupMultiplier: this.config.search.warmupMultiplier,
+      // RRF configuration
+      rrfK: this.config.search.rrfK,
+      perMethodLimit: this.config.search.perMethodLimit,
+      enableRrf: this.config.search.enableRrf
     });
     timings.retrievalMs = Date.now() - retrievalStart;
 

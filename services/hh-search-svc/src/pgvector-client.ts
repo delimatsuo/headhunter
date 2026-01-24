@@ -19,6 +19,10 @@ export interface PgHybridSearchQuery {
   textWeight: number;
   warmupMultiplier: number;
   filters?: HybridSearchFilters;
+  // RRF configuration
+  rrfK: number;           // RRF k parameter (default 60)
+  perMethodLimit: number; // Candidates per method before fusion (default 100)
+  enableRrf: boolean;     // Use RRF vs weighted sum
 }
 
 export interface PgVectorHealth {
@@ -116,16 +120,16 @@ export class PgVectorClient {
         }, 'FTS debug: search_document analysis');
       }
 
-      const warmupMultiplier = Number.isFinite(query.warmupMultiplier)
-        ? Math.max(1, query.warmupMultiplier)
-        : 1;
-      const vectorPrefetch = Math.ceil(query.limit * warmupMultiplier);
-      const vectorLimit = Math.max(query.limit, Math.min(vectorPrefetch, query.limit + 50));
+      // RRF configuration - use perMethodLimit for both vector and text CTEs
+      const perMethodLimit = Number.isFinite(query.perMethodLimit)
+        ? Math.max(10, query.perMethodLimit)
+        : 100;
+
       const filters: string[] = [];
       const values: unknown[] = [
         query.tenantId,
         toSql(query.embedding),
-        vectorLimit,
+        perMethodLimit,       // $3 - used for both vector_candidates and text_candidates LIMIT
         query.textQuery,
         query.vectorWeight,
         query.textWeight,
