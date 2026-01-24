@@ -55,7 +55,7 @@
 
 | Metric | Target | Current | Status |
 |--------|--------|---------|--------|
-| v1 Requirements | 28 | 2 done | In Progress |
+| v1 Requirements | 28 | 5 done | In Progress |
 | Phases Complete | 10 | 2 | In Progress |
 | Search Recall | 50+ candidates | Expected improvement | Pending verification |
 | p95 Latency | <1.2s | Unknown | Unmeasured |

@@ -9,10 +9,10 @@ Requirements for leader-level search. Each maps to roadmap phases.
 
 ### Search Recall (Fix Current Problem)
 
-- [ ] **SRCL-01**: Search returns 50+ candidates from 23,000+ database (not ~10)
-- [ ] **SRCL-02**: Missing data treated as neutral signal (0.5 score), not exclusion
-- [ ] **SRCL-03**: Broad retrieval stage fetches 500+ candidates before scoring
-- [ ] **SRCL-04**: Hard specialty/function filters removed from retrieval stage
+- [x] **SRCL-01**: Search returns 50+ candidates from 23,000+ database (not ~10)
+- [x] **SRCL-02**: Missing data treated as neutral signal (0.5 score), not exclusion
+- [x] **SRCL-03**: Broad retrieval stage fetches 500+ candidates before scoring
+- [x] **SRCL-04**: Hard specialty/function filters removed from retrieval stage
 
 ### Hybrid Search
 
@@ -114,10 +114,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | PIPE-05 | Phase 1: Reranking Fix | Complete |
-| SRCL-01 | Phase 2: Search Recall Foundation | Pending |
-| SRCL-02 | Phase 2: Search Recall Foundation | Pending |
-| SRCL-03 | Phase 2: Search Recall Foundation | Pending |
-| SRCL-04 | Phase 2: Search Recall Foundation | Pending |
+| SRCL-01 | Phase 2: Search Recall Foundation | Complete |
+| SRCL-02 | Phase 2: Search Recall Foundation | Complete |
+| SRCL-03 | Phase 2: Search Recall Foundation | Complete |
+| SRCL-04 | Phase 2: Search Recall Foundation | Complete |
 | HYBD-01 | Phase 3: Hybrid Search | Pending |
 | HYBD-02 | Phase 3: Hybrid Search | Pending |
 | HYBD-03 | Phase 3: Hybrid Search | Pending |
@@ -155,4 +155,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-24*
-*Last updated: 2026-01-24 after Phase 1 completion*
+*Last updated: 2026-01-24 after Phase 2 completion*
