@@ -877,6 +877,8 @@ export const apiService = {
           confidence_score: match.match_metadata?.confidence_score || 85,
           vector_similarity_score: match.match_metadata?.vector_score || match.score,
           experience_match_score: match.match_metadata?.experience_match || 80,
+          // Pass through match_metadata for raw_vector_similarity access
+          match_metadata: match.match_metadata || {},
           skill_breakdown: rawCandidate.skill_breakdown || {},
           ranking_factors: rawCandidate.ranking_factors || {},
           // Pass through the FULL profile, not a stripped version
@@ -923,8 +925,8 @@ export const apiService = {
           } : undefined,
           matchReasons: c.matchReasons || c.rationale,
         },
-        score: c.overall_score,
-        similarity: c.vector_similarity_score || c.overall_score,
+        score: c.overall_score / 100, // LLM-influenced match score (0-1 scale)
+        similarity: (c.match_metadata?.raw_vector_similarity || c.vector_similarity_score || 0) / 100, // Raw vector similarity (0-1 scale)
         rationale: {
           overall_assessment: c.summary || 'Matched based on profile similarity',
           strengths: c.rationale || [],
@@ -932,6 +934,13 @@ export const apiService = {
           risk_factors: []
         }
       }));
+
+      // TODO: Remove after Phase 1 verification
+      // Debug: Log score differentiation
+      if (matches.length > 0) {
+        const sampleMatch = matches[0];
+        console.log(`[API Debug] searchWithEngine first result - Match: ${sampleMatch.score?.toFixed(2)}, Similarity: ${sampleMatch.similarity?.toFixed(2)}, Different: ${Math.abs((sampleMatch.score || 0) - (sampleMatch.similarity || 0)) > 0.01}`);
+      }
 
       const avgScore = matches.length > 0
         ? matches.reduce((sum: number, m: any) => sum + m.score, 0) / matches.length
