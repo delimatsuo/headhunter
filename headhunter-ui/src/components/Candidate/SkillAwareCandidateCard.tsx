@@ -1,9 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Tooltip } from '@mui/material';
-import { CandidateProfile, SkillAssessment, SkillMatchData } from '../../types';
+import { CandidateProfile, SkillAssessment, SkillMatchData, SignalScores, SignalWeightConfig } from '../../types';
 import { SkillConfidenceDisplay } from '../Skills/SkillConfidenceDisplay';
+import { SignalScoreBreakdown } from '../Match/SignalScoreBreakdown';
+import { SkillChip } from '../Match/SkillChip';
 import { api } from '../../services/api';
 import './SkillAwareCandidateCard.css';
+
+// Interface for skill display data used by SkillChip
+interface SkillDisplayData {
+  skill: string;
+  type: 'explicit' | 'inferred';
+  confidence: number;
+  evidence?: string;
+}
 
 interface SkillAwareCandidateCardProps {
   candidate: CandidateProfile;
@@ -16,6 +26,10 @@ interface SkillAwareCandidateCardProps {
   showDetailedSkills?: boolean;
   onFindSimilar?: () => void;
   onEdit?: () => void;
+  // Signal score transparency props (Phase 9)
+  signalScores?: SignalScores;
+  weightsApplied?: SignalWeightConfig;
+  roleTypeUsed?: string;
 }
 
 export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = ({
@@ -29,11 +43,15 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
   showDetailedSkills = false,
   onFindSimilar,
   onEdit,
+  signalScores,
+  weightsApplied,
+  roleTypeUsed,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [skillAssessment, setSkillAssessment] = useState<SkillAssessment | null>(null);
   const [loadingSkills, setLoadingSkills] = useState(false);
   const [skillsLoaded, setSkillsLoaded] = useState(false);
+  const [signalBreakdownExpanded, setSignalBreakdownExpanded] = useState(false);
 
   const candidateId = candidate.candidate_id || candidate.id || '';
 
@@ -364,15 +382,46 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
 
   const dynamicRationale = generateDynamicRationale();
 
-  // Smart Skill Grouping
-  const topSkills = technicalSkills.filter(skill =>
-    searchSkills.some(s => skill.toLowerCase().includes(s.toLowerCase()))
-  );
-  const otherSkills = technicalSkills.filter(skill =>
-    !searchSkills.some(s => skill.toLowerCase().includes(s.toLowerCase()))
-  );
-  const displaySkills = [...topSkills, ...otherSkills].slice(0, 8);
-  const remainingSkills = technicalSkills.length - 8;
+  // Helper to collect and format skills for SkillChip display
+  const getSkillsForDisplay = (): SkillDisplayData[] => {
+    const explicit = candidate.intelligent_analysis?.explicit_skills?.technical_skills || [];
+    const inferredHigh = candidate.intelligent_analysis?.inferred_skills?.highly_probable_skills || [];
+    const inferredMedium = candidate.intelligent_analysis?.inferred_skills?.probable_skills || [];
+    const inferredLow = candidate.intelligent_analysis?.inferred_skills?.likely_skills || [];
+
+    // Map explicit skills to display format
+    const explicitChips: SkillDisplayData[] = explicit.map(s => ({
+      skill: typeof s === 'string' ? s : s.skill,
+      type: 'explicit' as const,
+      confidence: 1,
+    }));
+
+    // Map inferred skills with their confidence levels
+    // Cast to any to handle potential reasoning field from backend
+    const inferredChips: SkillDisplayData[] = [
+      ...inferredHigh.map((s: any) => ({
+        skill: s.skill,
+        type: 'inferred' as const,
+        confidence: s.confidence,
+        evidence: s.reasoning || undefined
+      })),
+      ...inferredMedium.map((s: any) => ({
+        skill: s.skill,
+        type: 'inferred' as const,
+        confidence: s.confidence,
+        evidence: s.reasoning || undefined
+      })),
+      ...inferredLow.map((s: any) => ({
+        skill: s.skill,
+        type: 'inferred' as const,
+        confidence: s.confidence,
+        evidence: s.reasoning || undefined
+      })),
+    ];
+
+    // Combine and limit to 15 total skills
+    return [...explicitChips, ...inferredChips].slice(0, 15);
+  };
 
   const getRole = () => {
     // First, try to get actual job title from experience timeline (most accurate)
@@ -542,20 +591,46 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
           </div>
         </div>
 
-        {/* 2. Smart Skill Cloud */}
+        {/* Signal Score Breakdown - expandable section after AI hero */}
+        {signalScores && (
+          <div className="signal-breakdown-section">
+            <button
+              className="breakdown-toggle"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSignalBreakdownExpanded(!signalBreakdownExpanded);
+              }}
+            >
+              <span>Score Breakdown</span>
+              <span className={`chevron ${signalBreakdownExpanded ? 'expanded' : ''}`}>&#9660;</span>
+            </button>
+            {signalBreakdownExpanded && (
+              <SignalScoreBreakdown
+                signalScores={signalScores}
+                weightsApplied={weightsApplied}
+              />
+            )}
+          </div>
+        )}
+
+        {/* 2. Smart Skill Cloud - using SkillChip with confidence badges */}
         <div className="highlights-section" style={{ border: 'none', padding: '0 0 16px 0' }}>
           <div className="smart-skill-cloud">
-            {displaySkills.map((skill, i) => {
-              const isMatched = topSkills.includes(skill);
-              return (
-                <span key={i} className={`skill-chip ${isMatched ? 'matched' : 'other'}`}>
-                  {skill}
-                </span>
-              );
-            })}
-            {remainingSkills > 0 && (
+            {getSkillsForDisplay().map((skillData, idx) => (
+              <SkillChip
+                key={`${skillData.skill}-${idx}`}
+                skill={skillData.skill}
+                type={skillData.type}
+                confidence={skillData.confidence}
+                evidence={skillData.evidence}
+                isMatched={searchSkills?.some(s =>
+                  s.toLowerCase() === skillData.skill.toLowerCase()
+                )}
+              />
+            ))}
+            {technicalSkills.length > 15 && (
               <span className="more-skills-badge" onClick={(e) => { e.stopPropagation(); setExpanded(true); }}>
-                +{remainingSkills} more
+                +{technicalSkills.length - 15} more
               </span>
             )}
           </div>
