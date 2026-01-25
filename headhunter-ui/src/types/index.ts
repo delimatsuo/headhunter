@@ -175,11 +175,73 @@ export interface MatchRationale {
   overall_assessment: string;
 }
 
+/**
+ * Signal scores from multi-signal scoring framework.
+ * All values are 0-1 normalized.
+ * Mirrors backend SignalScores in services/hh-search-svc/src/types.ts
+ */
+export interface SignalScores {
+  /** Vector similarity from hybrid search (0-1 normalized) */
+  vectorSimilarity: number;
+  /** Level/seniority match alignment (0-1) */
+  levelMatch: number;
+  /** Specialty match score (0-1) - backend, frontend, fullstack, etc */
+  specialtyMatch: number;
+  /** Tech stack compatibility score (0-1) */
+  techStackMatch: number;
+  /** Function alignment score (0-1) - engineering, product, design, etc */
+  functionMatch: number;
+  /** Career trajectory fit score (0-1) */
+  trajectoryFit: number;
+  /** Company pedigree score (0-1) */
+  companyPedigree: number;
+  /** Skills match score (0-1) - for skill-aware searches, optional */
+  skillsMatch?: number;
+  // Phase 7 signals (all 0-1 normalized, optional)
+  /** SCOR-02: Skills exact match score (0-1) */
+  skillsExactMatch?: number;
+  /** SCOR-03: Skills inferred score (0-1) */
+  skillsInferred?: number;
+  /** SCOR-04: Seniority alignment score (0-1) */
+  seniorityAlignment?: number;
+  /** SCOR-05: Recency boost score (0-1) */
+  recencyBoost?: number;
+  /** SCOR-06: Company relevance score (0-1) */
+  companyRelevance?: number;
+}
+
+/**
+ * Signal weight configuration for scoring.
+ * Weights should sum to 1.0.
+ * Mirrors backend SignalWeightConfig in services/hh-search-svc/src/signal-weights.ts
+ */
+export interface SignalWeightConfig {
+  vectorSimilarity: number;
+  levelMatch: number;
+  specialtyMatch: number;
+  techStackMatch: number;
+  functionMatch: number;
+  trajectoryFit: number;
+  companyPedigree: number;
+  skillsMatch?: number;
+  skillsExactMatch?: number;
+  skillsInferred?: number;
+  seniorityAlignment?: number;
+  recencyBoost?: number;
+  companyRelevance?: number;
+}
+
 export interface CandidateMatch {
   candidate: CandidateProfile;
   score: number;
   similarity: number;
   rationale: MatchRationale;
+  /** Individual signal scores contributing to final score (Phase 9) */
+  signalScores?: SignalScores;
+  /** Signal weights applied for this search (Phase 9) */
+  weightsApplied?: SignalWeightConfig;
+  /** Role type preset used for scoring (Phase 9) */
+  roleTypeUsed?: string;
 }
 
 export interface SearchInsights {
