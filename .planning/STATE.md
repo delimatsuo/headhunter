@@ -1,7 +1,7 @@
 # Project State: Headhunter AI v2.0 Advanced Intelligence
 
 **Initialized:** 2026-01-24
-**Current Status:** Phase 11 PLANNED - Ready for execution
+**Current Status:** Phase 12 In Progress - Plan 01 complete
 
 ---
 
@@ -23,22 +23,14 @@
 ## Current Position
 
 **Milestone:** v2.0 Advanced Intelligence
-**Phase:** 11 - Performance Foundation (CODE COMPLETE)
-**Plan:** 5 of 5 executed
-**Status:** Phase 11 code complete - Verification found operational gaps (deployment tasks)
-**Last activity:** 2026-01-25 - Verification complete, proceeding to Phase 12
+**Phase:** 12 - Natural Language Search (IN PROGRESS)
+**Plan:** 1 of 5 executed
+**Status:** Plan 12-01 complete (Semantic Router Lite)
+**Last activity:** 2026-01-25 - Completed 12-01-PLAN.md (Intent classification)
 
-**Progress:** [##########] v1.0 100% | [##########] v2.0 Phase 11: 100%
+**Progress:** [##########] v1.0 100% | [##--------] v2.0 Phase 12: 20%
 
-**Next Action:** Execute Phase 12 (Natural Language Search)
-
-**Phase 11 Verification Note:** Code complete (15/23 truths verified). 5 operational gaps remain:
-- pgvectorscale extension not installed (migration 011 not run)
-- StreamingDiskANN index not created (migration 012 not run)
-- Embeddings not pre-computed (backfill worker not executed)
-- p95 latency unmeasured (no production data)
-- Cache hit latency unmeasured (no runtime validation)
-These are deployment/ops tasks, not code gaps. Proceeding to Phase 12.
+**Next Action:** Execute 12-02-PLAN.md (Entity Extraction)
 
 ---
 
@@ -47,12 +39,12 @@ These are deployment/ops tasks, not code gaps. Proceeding to Phase 12.
 | Phase | Name | Status | Requirements | Progress |
 |-------|------|--------|--------------|----------|
 | 11 | Performance Foundation | Complete | 5 | 100% |
-| 12 | Natural Language Search | Pending | 5 | 0% |
+| 12 | Natural Language Search | In Progress | 5 | 20% |
 | 13 | ML Trajectory Prediction | Pending | 5 | 0% |
 | 14 | Bias Reduction | Pending | 5 | 0% |
 | 15 | Compliance Tooling | Pending | 6 | 0% |
 
-**Overall v2.0:** 1/5 phases complete (20%)
+**Overall v2.0:** 1/5 phases complete, 1 in progress (20%)
 
 ---
 
@@ -103,6 +95,8 @@ These are deployment/ops tasks, not code gaps. Proceeding to Phase 12.
 | Multi-layer cache with TTL jitter | 4 layers (search/rerank/specialty/embedding) with ±20% jitter to prevent cache stampede | 11 |
 | Cache layer TTLs by staleness tolerance | Search 10min, Rerank 6hr, Specialty 24hr based on data volatility | 11 |
 | Semantic Router for NLP | 5-100ms vector-based routing, not LLM-based parsing | 12 |
+| Confidence threshold 0.6 default | Balances precision vs recall for intent classification | 12 |
+| Portuguese utterances in routes | Brazilian recruiter market support | 12 |
 | ONNX Runtime for inference | Sub-50ms CPU inference, no GPU dependency, portable | 13 |
 | Shadow mode for ML transition | 4-6 weeks side-by-side to validate ML matches rule-based baseline | 13 |
 | Fairlearn for bias metrics | Actively maintained, simpler API than AIF360 | 14 |
@@ -125,6 +119,12 @@ These are deployment/ops tasks, not code gaps. Proceeding to Phase 12.
 - pgvectorscale extension (replaces HNSW with StreamingDiskANN)
 - BigQuery export for long-term audit storage
 
+**Phase 12 Deliverables (In Progress):**
+- IntentRouter class with semantic routing (NLNG-01)
+- NLP types: IntentType, IntentRoute, ParsedQuery, ExtractedEntities
+- Vector utilities: cosineSimilarity, averageEmbeddings
+- 19 passing unit tests
+
 **v1.0 Deliverables:**
 - 3-stage pipeline with 500/100/50 funnel
 - Hybrid search (vector + BM25 via RRF)
@@ -146,7 +146,12 @@ None currently identified.
 - [x] Execute 11-03-PLAN.md (Parallel query execution)
 - [x] Execute 11-04-PLAN.md (Multi-layer Redis caching)
 - [x] Execute 11-05-PLAN.md (Performance tracking + backfill)
-- [ ] Plan Phase 12 (Natural Language Search)
+- [x] Plan Phase 12 (Natural Language Search) - 5 plans created
+- [x] Execute 12-01-PLAN.md (Semantic Router Lite)
+- [ ] Execute 12-02-PLAN.md (Entity Extraction)
+- [ ] Execute 12-03-PLAN.md (Query Expansion)
+- [ ] Execute 12-04-PLAN.md (Search Integration)
+- [ ] Execute 12-05-PLAN.md (Verification & Tuning)
 - [ ] Verify pgvectorscale Cloud SQL compatibility
 - [ ] Run embedding backfill in production after Cloud SQL migration
 - [ ] Prepare training data for trajectory LSTM (Phase 13 blocker)
@@ -161,34 +166,28 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 11-05-PLAN.md (Performance tracking & observability)
-**Resume file:** None - Phase 11 complete, ready for Phase 12 planning
+**Stopped at:** Completed 12-01-PLAN.md (Semantic Router Lite)
+**Resume file:** None
 
 ### Context for Next Session
 
-**Phase 11 (Performance Foundation) COMPLETE:**
+**Phase 12 Plan 01 (Semantic Router Lite) COMPLETE:**
 
-All 5 plans executed successfully:
+All 3 tasks executed successfully:
 
-- ✅ 11-01: pgvectorscale extension and StreamingDiskANN index (PERF-02)
-- ✅ 11-02: Connection pool tuning (poolMax=20, poolMin=5) (PERF-03 partial)
-- ✅ 11-03: Parallel query execution with Promise.all (PERF-03 complete)
-- ✅ 11-04: Multi-layer Redis caching (4 layers with TTL jitter) (PERF-05)
-- ✅ 11-05: Performance tracking, Server-Timing headers, embedding backfill (PERF-01, PERF-04)
+- Task 1: NLP types and vector utilities - `1bf0a33`
+- Task 2: IntentRouter implementation - `ee702df`
+- Task 3: Unit tests (19 passing) - `3edaafc`
 
 **Deliverables:**
+- `services/hh-search-svc/src/nlp/types.ts` - NLP type definitions
+- `services/hh-search-svc/src/nlp/vector-utils.ts` - Cosine similarity and averaging
+- `services/hh-search-svc/src/nlp/intent-router.ts` - IntentRouter class
+- `services/hh-search-svc/src/nlp/__tests__/intent-router.spec.ts` - Unit tests
 
-- p95 latency measurement via Server-Timing headers and performance tracker
-- pgvectorscale with HNSW + DiskANN side-by-side indices (feature flag controlled)
-- Parallel execution reduces query time by ~40-60%
-- Multi-layer cache (search/rerank/specialty/embedding) with stampede prevention
-- Embedding backfill worker ready for production (23K+ candidates in ~6-7 hours)
-
-**Outstanding:**
-
-- Run embedding backfill in production after Cloud SQL migration
-- Verify pgvectorscale Cloud SQL compatibility (11-01 blocker)
-- Configure Cloud Logging alerts for >500ms latency warnings
+**Ready for:**
+- 12-02: Entity Extraction (uses ParsedQuery, ExtractedEntities types)
+- 12-03: Query Expansion (uses skill ontology)
 
 ---
 
@@ -202,21 +201,14 @@ v2.0 Roadmap complete. 5 phases defined with 26 requirements mapped:
 | 14 | Bias Reduction | BIAS-01 to BIAS-05 | Medium |
 | 15 | Compliance Tooling | COMP-01 to COMP-06 | Medium |
 
-**Phase 11 Success Criteria:**
-1. p95 latency under 500ms (measured via response headers)
-2. pgvectorscale with StreamingDiskANN indices
-3. Parallel execution of vector/FTS/trajectory scoring
-4. Pre-computed embeddings for all 23,000+ candidates
-5. Redis cache hits return in under 50ms
-
-**Phase 11 Latency Budget:**
-- Embedding query: 50ms
-- Vector search: 100ms
-- Text search: 50ms
-- Scoring/filtering: 100ms
-- Reranking: 200ms
+**Phase 12 Success Criteria:**
+1. Natural language queries parsed into structured search parameters
+2. Intent classification in <20ms (semantic router)
+3. Entity extraction with >90% accuracy on test set
+4. Skill expansion using ontology graph
+5. Fallback to keyword search when confidence low
 
 ---
 
 *State initialized: 2026-01-24*
-*Last updated: 2026-01-25 - Completed Phase 11 (Performance Foundation) - All 5 plans executed*
+*Last updated: 2026-01-25 - Completed Phase 12 Plan 01 (Semantic Router Lite)*
