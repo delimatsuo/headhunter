@@ -12,3 +12,10 @@ export type {
   TrajectoryType,
   ExperienceEntry
 } from './rule-based-bridge.js';
+
+export { default as ComparisonLogger } from './comparison-logger.js';
+export type {
+  ShadowComparison,
+  ComparisonLoggerConfig,
+  ShadowStats
+} from './comparison-logger.js';
