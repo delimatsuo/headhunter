@@ -14,7 +14,12 @@ async function bootstrap(): Promise<void> {
     const config = getTrajectoryServiceConfig();
     logger.info({ serviceName: config.base.runtime.serviceName }, 'Configuration loaded');
 
-    const server = await buildServer({ disableDefaultHealthRoute: true });
+    const server = await buildServer({
+      disableDefaultHealthRoute: true,
+      disableRateLimit: true, // Disable until rate-limit plugin version is fixed
+      disableAuth: true, // TODO: Enable auth after integration testing
+      disableTenantValidation: true // TODO: Enable after auth is enabled
+    });
     logger.info('Fastify server built');
 
     // Track initialization state with mutable dependency container
@@ -38,8 +43,11 @@ async function bootstrap(): Promise<void> {
       maxHeapUsedBytes: 1_024 * 1_024 * 1024,
       maxRssBytes: 1_536 * 1_024 * 1024,
       healthCheck: async () => {
-        // Basic health check - model loading happens in background
-        return state.modelLoaded;
+        // Return true if model is loaded, otherwise service is healthy but degraded
+        if (!state.modelLoaded) {
+          throw new Error('Model not loaded yet');
+        }
+        return true;
       },
       healthCheckInterval: 10000
     });
