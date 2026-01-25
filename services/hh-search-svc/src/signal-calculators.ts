@@ -162,3 +162,118 @@ export function calculateSkillsExactMatch(
 
   return matchCount / context.requiredSkills.length;
 }
+
+// ============================================================================
+// Transferable Skill Rules
+// ============================================================================
+
+interface TransferRule {
+  fromSkill: string;
+  transferabilityScore: number;
+}
+
+/**
+ * Returns transferable skill rules for a target skill.
+ * These rules define which candidate skills can transfer to the target skill
+ * and what the transferability score is (0-1).
+ */
+function getTransferableSkillRules(toSkill: string): TransferRule[] {
+  const TRANSFER_RULES: Record<string, TransferRule[]> = {
+    'react': [
+      { fromSkill: 'vue.js', transferabilityScore: 0.75 },
+      { fromSkill: 'angular', transferabilityScore: 0.65 },
+    ],
+    'vue.js': [
+      { fromSkill: 'react', transferabilityScore: 0.75 },
+      { fromSkill: 'angular', transferabilityScore: 0.65 },
+    ],
+    'kotlin': [{ fromSkill: 'java', transferabilityScore: 0.90 }],
+    'java': [
+      { fromSkill: 'kotlin', transferabilityScore: 0.85 },
+      { fromSkill: 'c#', transferabilityScore: 0.70 },
+    ],
+    'typescript': [{ fromSkill: 'javascript', transferabilityScore: 0.95 }],
+    'go': [
+      { fromSkill: 'python', transferabilityScore: 0.60 },
+      { fromSkill: 'java', transferabilityScore: 0.65 },
+    ],
+    'aws': [
+      { fromSkill: 'google cloud', transferabilityScore: 0.70 },
+      { fromSkill: 'azure', transferabilityScore: 0.70 },
+    ],
+    'postgresql': [
+      { fromSkill: 'mysql', transferabilityScore: 0.85 },
+      { fromSkill: 'sql server', transferabilityScore: 0.80 },
+    ],
+    'django': [
+      { fromSkill: 'flask', transferabilityScore: 0.85 },
+      { fromSkill: 'fastapi', transferabilityScore: 0.80 },
+    ],
+  };
+
+  return TRANSFER_RULES[toSkill] || [];
+}
+
+/**
+ * SCOR-03: Calculate inferred skill match score.
+ *
+ * Returns 0-1 score based on transferable/related skills the candidate has.
+ * For example, if a role requires React and the candidate has Vue.js,
+ * they get partial credit based on transferability.
+ *
+ * Score formula: (avg transferability) * (coverage ratio)
+ * - avg transferability: mean of matched transfer scores
+ * - coverage ratio: inferred matches / total required skills
+ *
+ * @param candidateSkills - Skills extracted from candidate profile
+ * @param context - Required and preferred skills from search query
+ * @returns 0.0 (no match) to 1.0 (perfect match), 0.5 if no required skills
+ */
+export function calculateSkillsInferred(
+  candidateSkills: string[],
+  context: SkillMatchContext
+): number {
+  if (!context.requiredSkills || context.requiredSkills.length === 0) {
+    return 0.5; // Neutral score when no required skills specified
+  }
+  if (!candidateSkills || candidateSkills.length === 0) {
+    return 0.0; // No skills means no match
+  }
+
+  const normalizedCandidateSkills = new Set(
+    candidateSkills.map(s => s.toLowerCase().trim())
+  );
+
+  let totalTransferScore = 0;
+  let inferredMatches = 0;
+
+  for (const required of context.requiredSkills) {
+    const normalizedRequired = required.toLowerCase().trim();
+    const aliases = [normalizedRequired, ...getCommonAliases(normalizedRequired)];
+
+    // Skip if this is an exact match (handled by calculateSkillsExactMatch)
+    if (aliases.some(a => normalizedCandidateSkills.has(a))) {
+      continue;
+    }
+
+    // Check for transferable skill matches
+    const transferRules = getTransferableSkillRules(normalizedRequired);
+    for (const rule of transferRules) {
+      const fromAliases = [rule.fromSkill, ...getCommonAliases(rule.fromSkill)];
+      if (fromAliases.some(a => normalizedCandidateSkills.has(a))) {
+        totalTransferScore += rule.transferabilityScore;
+        inferredMatches++;
+        break; // Only count first matching transferable skill per required skill
+      }
+    }
+  }
+
+  if (inferredMatches === 0) {
+    return 0.0; // No transferable skills found
+  }
+
+  // Formula: (avg transferability) * (coverage ratio)
+  const avgTransferability = totalTransferScore / inferredMatches;
+  const coverage = inferredMatches / context.requiredSkills.length;
+  return avgTransferability * coverage;
+}
