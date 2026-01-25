@@ -19,3 +19,9 @@ export type {
   ComparisonLoggerConfig,
   ShadowStats
 } from './comparison-logger.js';
+
+export { default as ShadowMode } from './shadow-mode.js';
+export type {
+  ShadowModeConfig,
+  TrajectoryPrediction
+} from './shadow-mode.js';
