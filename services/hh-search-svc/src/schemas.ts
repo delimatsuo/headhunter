@@ -21,6 +21,41 @@ const locationArraySchema = {
   items: { type: 'string', minLength: 1 }
 } as const;
 
+const signalWeightsSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    vectorSimilarity: { type: 'number', minimum: 0, maximum: 1 },
+    levelMatch: { type: 'number', minimum: 0, maximum: 1 },
+    specialtyMatch: { type: 'number', minimum: 0, maximum: 1 },
+    techStackMatch: { type: 'number', minimum: 0, maximum: 1 },
+    functionMatch: { type: 'number', minimum: 0, maximum: 1 },
+    trajectoryFit: { type: 'number', minimum: 0, maximum: 1 },
+    companyPedigree: { type: 'number', minimum: 0, maximum: 1 },
+    skillsMatch: { type: 'number', minimum: 0, maximum: 1 }
+  }
+} as const;
+
+const signalScoresSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    vectorSimilarity: { type: 'number' },
+    levelMatch: { type: 'number' },
+    specialtyMatch: { type: 'number' },
+    techStackMatch: { type: 'number' },
+    functionMatch: { type: 'number' },
+    trajectoryFit: { type: 'number' },
+    companyPedigree: { type: 'number' },
+    skillsMatch: { type: 'number' }
+  }
+} as const;
+
+const roleTypeSchema = {
+  type: 'string',
+  enum: ['executive', 'manager', 'ic', 'default']
+} as const;
+
 export const hybridSearchSchema: FastifySchema = {
   body: {
     type: 'object',
@@ -60,7 +95,9 @@ export const hybridSearchSchema: FastifySchema = {
           maxExperienceYears: { type: 'number', minimum: 0, maximum: 60 },
           metadata: { type: 'object', additionalProperties: true }
         }
-      }
+      },
+      signalWeights: signalWeightsSchema,
+      roleType: roleTypeSchema
     }
   },
   response: {
@@ -103,7 +140,10 @@ export const hybridSearchSchema: FastifySchema = {
                 type: 'array',
                 items: { type: 'string' }
               },
-              metadata: { type: 'object', additionalProperties: true }
+              metadata: { type: 'object', additionalProperties: true },
+              signalScores: signalScoresSchema,
+              weightsApplied: signalWeightsSchema,
+              roleTypeUsed: roleTypeSchema
             }
           }
         },
