@@ -39,7 +39,7 @@ The approach remains enhancement, not replacement. All features integrate with e
 | Phase | Name | Status | Requirements |
 |-------|------|--------|--------------|
 | 11 | Performance Foundation | Complete | 5 |
-| 12 | Natural Language Search | Pending | 5 |
+| 12 | Natural Language Search | Planned | 5 |
 | 13 | ML Trajectory Prediction | Pending | 5 |
 | 14 | Bias Reduction | Pending | 5 |
 | 15 | Compliance Tooling | Pending | 6 |
@@ -101,6 +101,21 @@ Plans:
 
 **Dependencies:** Phase 11 (latency budget must be established before adding NLP)
 
+**Plans:** 6 plans
+
+Plans:
+- [ ] 12-01-PLAN.md - Intent router with embedding-based classification
+- [ ] 12-02-PLAN.md - Entity extraction via Together AI JSON mode
+- [ ] 12-03-PLAN.md - Query expansion using skills ontology
+- [ ] 12-04-PLAN.md - Query parser orchestrator and NLP configuration
+- [ ] 12-05-PLAN.md - Search service NLP integration
+- [ ] 12-06-PLAN.md - Semantic synonyms and service initialization
+
+**Wave Structure:**
+- Wave 1: 12-01 (intent router), 12-02 (entity extractor), 12-03 (query expander) - Independent foundation modules
+- Wave 2: 12-04 (query parser orchestrator) - Depends on Wave 1
+- Wave 3: 12-05 (search service integration), 12-06 (semantic synonyms + startup) - Depends on Wave 2
+
 **Requirements:**
 - NLNG-01: Intent parsing extracts role, skills, location, preferences from natural language
 - NLNG-02: Semantic query understanding ("Senior" matches "Lead", "Principal")
@@ -116,11 +131,18 @@ Plans:
 5. Malformed query "asdfasdf" gracefully falls back to keyword search without error
 
 **Technology Stack:**
-- Semantic Router (5-100ms intent classification via vector similarity)
-- Together AI JSON mode for entity extraction
-- Existing skills ontology for query expansion
+- Custom semantic router lite using Gemini embeddings for intent classification (5-20ms)
+- Together AI JSON mode for entity extraction (Llama 3.3-70B)
+- Existing skills ontology (skills-graph.ts) for query expansion
+- winkNLP for tokenization if needed
 
-**Research Needed:** Medium - validate Semantic Router performance on Portuguese-English mixed queries
+**Latency Budget Impact:**
+- Intent classification: +5ms (cosine similarity)
+- Entity extraction: +80-150ms (LLM call, cacheable)
+- Skill expansion: +2ms (in-memory graph lookup)
+- Total: +87-157ms (mitigated by caching)
+
+**Research Needed:** Medium - validate performance on Portuguese-English mixed queries
 
 ---
 
@@ -281,4 +303,4 @@ All v2.0 phases are sequential. Performance must be established before adding la
 ---
 
 *Roadmap created: 2026-01-25*
-*Last updated: 2026-01-25*
+*Last updated: 2026-01-25 - Phase 12 planned (6 plans in 3 waves)*
