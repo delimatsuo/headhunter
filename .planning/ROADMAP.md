@@ -1,21 +1,23 @@
-# Roadmap: Headhunter AI Leader-Level Search
+# Roadmap: Headhunter AI v2.0 Advanced Intelligence
 
-**Created:** 2026-01-24
+**Created:** 2026-01-25
 **Depth:** Comprehensive
-**Phases:** 10
-**Coverage:** 28/28 v1 requirements mapped
+**Phases:** 15 (v1.0: 1-10, v2.0: 11-15)
+**Coverage:** 26/26 v2.0 requirements mapped
 
 ---
 
 ## Overview
 
-Transform Headhunter from keyword-based search returning ~10 candidates to leader-level semantic search returning 50+ qualified candidates from 23,000+ profiles. This roadmap implements multi-signal scoring, skills intelligence, career trajectory analysis, and transparent match explanations through a 3-stage retrieval pipeline.
+Build on v1.0's leader-level search foundation to add predictive trajectory modeling, natural language search, bias reduction, and compliance tooling. This milestone targets sub-500ms latency (from 1.2s baseline), RNN-based career prediction, and NYC Local Law 144 / EU AI Act compliance.
 
-The approach is enhancement, not replacement. The existing stack (PostgreSQL + pgvector, Redis, Together AI, Gemini embeddings, Fastify microservices) is already aligned with industry best practices.
+The approach remains enhancement, not replacement. All features integrate with existing infrastructure (PostgreSQL + pgvector, Redis, Together AI, Gemini embeddings, Fastify microservices).
 
 ---
 
 ## Progress
+
+### v1.0 Leader-Level Search (Complete)
 
 | Phase | Name | Status | Requirements |
 |-------|------|--------|--------------|
@@ -30,365 +32,237 @@ The approach is enhancement, not replacement. The existing stack (PostgreSQL + p
 | 9 | Match Transparency | Complete | 4 |
 | 10 | Pipeline Integration | Complete | 4 |
 
-**Total:** 28 requirements across 10 phases
+**v1.0 Total:** 28 requirements across 10 phases - COMPLETE
+
+### v2.0 Advanced Intelligence (Active)
+
+| Phase | Name | Status | Requirements |
+|-------|------|--------|--------------|
+| 11 | Performance Foundation | Pending | 5 |
+| 12 | Natural Language Search | Pending | 5 |
+| 13 | ML Trajectory Prediction | Pending | 5 |
+| 14 | Bias Reduction | Pending | 5 |
+| 15 | Compliance Tooling | Pending | 6 |
+
+**v2.0 Total:** 26 requirements across 5 phases
 
 ---
 
-## Phase 1: Reranking Fix
+## Phase 11: Performance Foundation
 
-**Goal:** LLM reranking actually influences final match scores instead of being bypassed.
+**Goal:** Search achieves sub-500ms p95 latency with optimized database access and caching.
 
-**Dependencies:** None (critical bugfix, must be first)
-
-**Plans:** 4 plans in 3 waves
-
-Plans:
-- [x] 01-01-PLAN.md — Preserve raw vector similarity in backend (Wave 1)
-- [x] 01-02-PLAN.md — Fix frontend API score extraction (Wave 2)
-- [x] 01-03-PLAN.md — Display both scores in UI (Wave 2)
-- [x] 01-04-PLAN.md — CSS styling and verification checkpoint (Wave 3)
+**Dependencies:** v1.0 complete (pipeline must exist before optimization)
 
 **Requirements:**
-- PIPE-05: Fix reranking bypass (Match Score currently = Similarity Score)
+- PERF-01: p95 search latency under 500ms (from current 1.2s target)
+- PERF-02: pgvectorscale integration for 28x latency improvement
+- PERF-03: Connection pooling and parallel query execution
+- PERF-04: Embedding pre-computation for entire candidate pool
+- PERF-05: Redis caching strategy with scoring cache invalidation
 
 **Success Criteria:**
-1. Match Score differs from raw Similarity Score for at least 90% of results
-2. LLM reranking response is logged and verified in search results
-3. Candidates with strong qualitative fit (good rationale) rank higher than weak keyword matches
-4. Rerank latency remains under 500ms per batch
+1. User searches and receives results in under 500ms (p95) as measured by response time headers
+2. pgvectorscale extension is enabled and StreamingDiskANN indices replace HNSW
+3. Search logs show parallel execution of vector search, FTS, and trajectory scoring
+4. All 23,000+ candidates have pre-computed embeddings (no on-demand embedding generation)
+5. Redis cache hits for repeated searches return in under 50ms
 
-**Rationale:** Research identified this as a critical bug. Reranking bypass means all the sophisticated LLM analysis is discarded. Nothing else matters until this works.
+**Latency Budget (500ms total):**
+- Embedding query: 50ms
+- Vector search: 100ms
+- Text search: 50ms
+- Scoring/filtering: 100ms
+- Reranking: 200ms
+
+**Research Needed:** Low - pgvectorscale migration is well-documented
 
 ---
 
-## Phase 2: Search Recall Foundation
+## Phase 12: Natural Language Search
 
-**Goal:** Search returns 50+ candidates instead of ~10 by converting exclusionary filters to soft scoring signals.
+**Goal:** Recruiters can search using natural language queries instead of structured filters.
 
-**Dependencies:** Phase 1 (reranking must work before increasing recall)
-
-**Plans:** 5 plans in 3 waves
-
-Plans:
-- [x] 02-01-PLAN.md — Lower similarity thresholds for broad retrieval (Wave 1)
-- [x] 02-02-PLAN.md — Convert level filter to scoring signal (Wave 1)
-- [x] 02-03-PLAN.md — Convert specialty filter to scoring signal (Wave 1)
-- [x] 02-04-PLAN.md — Convert remaining filters to scoring (Wave 2)
-- [x] 02-05-PLAN.md — Integrate scores and add stage logging (Wave 3, checkpoint)
+**Dependencies:** Phase 11 (latency budget must be established before adding NLP)
 
 **Requirements:**
-- SRCL-01: Search returns 50+ candidates from 23,000+ database (not ~10)
-- SRCL-02: Missing data treated as neutral signal (0.5 score), not exclusion
-- SRCL-03: Broad retrieval stage fetches 500+ candidates before scoring
-- SRCL-04: Hard specialty/function filters removed from retrieval stage
+- NLNG-01: Intent parsing extracts role, skills, location, preferences from natural language
+- NLNG-02: Semantic query understanding ("Senior" matches "Lead", "Principal")
+- NLNG-03: Query expansion using skills ontology ("Python dev" includes related skills)
+- NLNG-04: Multi-criteria natural language queries ("Remote Python devs, 5+ years, open to startups")
+- NLNG-05: Graceful fallback to structured search when NLP parsing fails
 
 **Success Criteria:**
-1. User searches for "Python developer" and receives 50+ results (not ~10)
-2. Candidates with missing specialty data appear in results with neutral scoring
-3. Search query log shows 500+ candidates retrieved before scoring stage
-4. No hard WHERE clauses for specialty, function, or optional profile fields in retrieval SQL
-5. Candidates with incomplete profiles appear in results (ranked lower, not excluded)
+1. User types "senior python developer in NYC" and system extracts: role=developer, skill=Python, level=Senior, location=NYC
+2. Searching "Lead engineer" returns candidates with titles "Principal", "Staff", "Senior" (semantic expansion)
+3. Searching "Python dev" returns candidates with Django, Flask, FastAPI skills (ontology expansion)
+4. Complex query "Remote ML engineers, 5+ years, open to startups" parses all 4 criteria correctly
+5. Malformed query "asdfasdf" gracefully falls back to keyword search without error
 
-**Rationale:** The fundamental problem is exclusion. Harvard research shows hard filters exclude 10M+ qualified candidates. Fix the filter cascade before adding features.
+**Technology Stack:**
+- Semantic Router (5-100ms intent classification via vector similarity)
+- Together AI JSON mode for entity extraction
+- Existing skills ontology for query expansion
+
+**Research Needed:** Medium - validate Semantic Router performance on Portuguese-English mixed queries
 
 ---
 
-## Phase 3: Hybrid Search
+## Phase 13: ML Trajectory Prediction
 
-**Goal:** Search uses both semantic understanding AND exact keyword matching for better recall.
+**Goal:** Career trajectory predictions use LSTM model instead of rule-based heuristics.
 
-**Dependencies:** Phase 2 (need broad retrieval working first)
-
-**Plans:** 4 plans in 2 waves
-
-Plans:
-- [x] 03-01-PLAN.md — Fix textScore=0 and add FTS diagnostic logging (Wave 1)
-- [x] 03-02-PLAN.md — Add RRF configuration parameters (Wave 1)
-- [x] 03-03-PLAN.md — Implement RRF fusion SQL and update types (Wave 2)
-- [x] 03-04-PLAN.md — Add summary logging and verification checkpoint (Wave 2)
+**Dependencies:** Phase 12 (NLP parsing informs trajectory context)
 
 **Requirements:**
-- HYBD-01: Vector similarity search via pgvector for semantic matching
-- HYBD-02: BM25 text search for exact keyword matches (rare skills, certifications)
-- HYBD-03: Reciprocal Rank Fusion (RRF) combines vector and text results
-- HYBD-04: Configurable RRF parameter k (default 60) for tuning
+- TRAJ-05: Next role prediction with confidence score using LSTM model
+- TRAJ-06: Tenure prediction (estimated time candidate will stay in role)
+- TRAJ-07: Model confidence indicators (transparency for uncertain predictions)
+- TRAJ-08: Shadow mode deployment comparing ML vs rule-based predictions
+- TRAJ-09: Hireability prediction (likelihood to join company like ours)
 
 **Success Criteria:**
-1. Searching for "K8s" returns candidates with "Kubernetes" in their profiles (semantic match)
-2. Searching for "AWS Solutions Architect" returns candidates with exact certification (BM25 match)
-3. Search results combine candidates found by vector OR text search (union, not intersection)
-4. Admin can configure RRF k parameter without code changes (env var or config)
+1. Each candidate shows predicted next role with confidence percentage (e.g., "Senior Engineer -> Staff Engineer (78%)")
+2. Tenure prediction displays estimated time in current role (e.g., "Likely to stay 18-24 months")
+3. Low-confidence predictions (< 60%) display warning indicator and explanation of uncertainty
+4. Shadow mode logs show side-by-side comparison of ML vs rule-based predictions for validation
+5. Hireability score appears for each candidate (e.g., "High likelihood to join: startup experience, growth trajectory")
 
-**Rationale:** Pure vector search misses exact keyword matches. Pure text search misses semantic relationships. RRF fusion is proven, pure SQL, zero new dependencies.
+**Technology Stack:**
+- PyTorch 2.5+ for LSTM training (offline)
+- ONNX Runtime (onnxruntime-node ^1.23.2) for sub-50ms inference
+- New service: hh-trajectory-svc on port 7109
+
+**Research Needed:** HIGH - training data labeling strategy, LSTM vs GRU architecture choice, ONNX export patterns
+
+**Critical Pitfalls:**
+- Rule-to-ML migration must maintain baseline parity (shadow mode for 4-6 weeks)
+- Sequence model mistraining (one-step lag problem) - test on career changers explicitly
 
 ---
 
-## Phase 4: Multi-Signal Scoring Framework
+## Phase 14: Bias Reduction
 
-**Goal:** Scoring infrastructure exists to compute weighted combinations of signals.
+**Goal:** Search results can be anonymized and bias metrics are visible to administrators.
 
-**Dependencies:** Phase 3 (need hybrid search results to score)
-
-**Plans:** 5 plans in 4 waves
-
-Plans:
-- [x] 04-01-PLAN.md — Create SignalWeightConfig types and role-type presets (Wave 1)
-- [x] 04-02-PLAN.md — Extend search types and create scoring utilities (Wave 2)
-- [x] 04-03-PLAN.md — Integrate signal scoring into SearchService (Wave 3)
-- [x] 04-04-PLAN.md — Wire API layer and module exports (Wave 3)
-- [x] 04-05-PLAN.md — Verification checkpoint (Wave 4)
+**Dependencies:** Phase 13 (trajectory predictions inform bias analysis)
 
 **Requirements:**
-- SCOR-01: Vector similarity score (0-1) as baseline signal
-- SCOR-07: Configurable signal weights per search or role type
-- SCOR-08: Final score as weighted combination of all signals
+- BIAS-01: Resume anonymization toggle (remove name, photo, school names)
+- BIAS-02: Demographic-blind scoring (no demographic proxies in scoring)
+- BIAS-03: Bias metrics dashboard with selection rates by group
+- BIAS-04: Impact ratio calculation (four-fifths rule / 80% threshold)
+- BIAS-05: Diverse slate generation to prevent homogeneous candidate pools
 
 **Success Criteria:**
-1. Each candidate result includes a vector_similarity_score field (0-1 normalized)
-2. Search request can include custom signal weights (e.g., `{ skills: 0.3, trajectory: 0.4 }`)
-3. Final match score is computed as weighted sum: `sum(signal * weight) / sum(weights)`
-4. Default weights are applied when no custom weights specified
-5. Signal weights can be configured per role type (IC vs Manager vs Executive)
+1. Recruiter can toggle "Anonymized View" and candidate cards show only skills/experience (no name, photo, school)
+2. Search scoring algorithm documentation shows no demographic proxies (zip code, graduation year, school name)
+3. Admin dashboard displays selection rate by demographic group with trend over time
+4. Impact ratio alerts appear when any group falls below 80% of highest-selected group
+5. Search results include diversity indicators ("This slate is 85% from same company tier - consider broadening")
 
-**Rationale:** Build the framework before populating signals. The weighted combination pattern applies to all signals we'll add in subsequent phases.
+**Technology Stack:**
+- Fairlearn ^0.13.0 for bias metrics (demographic parity, equalized odds, four-fifths rule)
+- Anonymization middleware in search response transformation
+- Admin dashboard components in headhunter-ui
+
+**Research Needed:** Medium - proxy variable audit, independent auditor selection for LL144
+
+**Critical Pitfalls:**
+- Anonymization proxy leakage (university name reveals demographic info)
+- Compliance theater (bias audit with test data, not production data)
 
 ---
 
-## Phase 5: Skills Infrastructure
+## Phase 15: Compliance Tooling
 
-**Goal:** EllaAI skills taxonomy is available for search with synonym normalization.
+**Goal:** System meets NYC Local Law 144 and EU AI Act requirements for AI-assisted hiring.
 
-**Dependencies:** Phase 4 (scoring framework to integrate skills signals)
-
-**Plans:** 4 plans in 3 waves
-
-Plans:
-- [x] 05-01-PLAN.md — Copy skills-master.ts and create skills-service wrapper (Wave 1)
-- [x] 05-02-PLAN.md — Refactor vector-search.ts to use skills-service (Wave 2)
-- [x] 05-03-PLAN.md — Refactor skill-aware-search.ts to use skills-service (Wave 2)
-- [x] 05-04-PLAN.md — Verification checkpoint (Wave 3)
+**Dependencies:** Phase 14 (bias metrics feed into compliance reporting)
 
 **Requirements:**
-- SKIL-01: EllaAI skills taxonomy (200+ skills) integrated into search
-- SKIL-03: Skill synonym/alias normalization ("JS" = "JavaScript", "K8s" = "Kubernetes")
+- COMP-01: Comprehensive audit logging (who searched what, when, results shown)
+- COMP-02: Decision explanation storage for each ranking
+- COMP-03: NYC Local Law 144 candidate notification system
+- COMP-04: GDPR data subject access request (DSAR) support
+- COMP-05: Data retention policy enforcement (auto-delete after period)
+- COMP-06: Bias audit report generation for NYC LL144 annual requirement
 
 **Success Criteria:**
-1. skills-master.ts from EllaAI exists in functions/src/shared/ (copied, not linked)
-2. Searching for "JS" normalizes to "JavaScript" before matching
-3. Skill lookup by alias returns canonical skill ID
-4. Skill taxonomy is accessible from search service without external API call
+1. Admin can view complete audit log showing: user, timestamp, query, candidates shown, candidates selected
+2. Each ranking decision has stored explanation accessible via API (signal weights, scores, rationale)
+3. Candidates receive automated notification within 10 days of AI-assisted decision per NYC LL144
+4. Data subject can request export of all stored data about them (GDPR Article 15)
+5. Candidate data older than configured retention period (default 4 years) is automatically purged
+6. One-click generation of NYC LL144 bias audit report with impact ratios and methodology
 
-**Rationale:** Skills intelligence requires the taxonomy foundation. Copy the file locally for customization and independence from EllaAI repo.
+**Technology Stack:**
+- PostgreSQL audit schema with 4-year retention
+- BigQuery export for long-term audit storage
+- Notification service integration (email/in-app)
+- Report generation service
 
----
+**Research Needed:** Medium - independent auditor RFP, multi-jurisdiction compliance verification
 
-## Phase 6: Skills Intelligence
-
-**Goal:** Search finds candidates with related and inferred skills, not just exact matches.
-
-**Dependencies:** Phase 5 (taxonomy must be integrated)
-
-**Plans:** 4 plans in 3 waves
-
-Plans:
-- [x] 06-01-PLAN.md — Create skills-graph.ts with BFS expansion (Wave 1)
-- [x] 06-02-PLAN.md — Create skills-inference.ts with title patterns (Wave 1)
-- [x] 06-03-PLAN.md — Integrate skill expansion into search (Wave 2)
-- [x] 06-04-PLAN.md — Verification checkpoint (Wave 3)
-
-**Requirements:**
-- SKIL-02: Related skills expansion ("Python" matches "Django", "Flask" users)
-- SKIL-04: Skills inference from context (patterns in profile data)
-- SKIL-05: Transferable skills surfaced with confidence levels
-
-**Success Criteria:**
-1. Searching for "Python" returns candidates who have "Django" or "Flask" (related skills)
-2. Related skills are flagged with relationship type (e.g., "related", "transferable")
-3. Skills inference detects implied skills from job titles (e.g., "Full Stack" implies JS + backend)
-4. Inferred skills include confidence score (0-1)
-5. Transferable skills (e.g., "Java" -> "Kotlin" pivot potential) appear with explanation
-
-**Rationale:** Skills inference during indexing, not search time, avoids latency. Related skills expand the candidate pool meaningfully.
-
----
-
-## Phase 7: Signal Scoring Implementation
-
-**Goal:** All 8 scoring signals are computed and contribute to final match score.
-
-**Dependencies:** Phase 6 (skills signals require skills infrastructure)
-
-**Plans:** 5 plans in 4 waves
-
-Plans:
-- [x] 07-01-PLAN.md — Create signal-calculators.ts with skill matching functions (Wave 1)
-- [x] 07-02-PLAN.md — Add seniority, recency, and company calculators (Wave 1)
-- [x] 07-03-PLAN.md — Extend types and weight presets (Wave 2)
-- [x] 07-04-PLAN.md — Integrate signals into scoring and search service (Wave 3)
-- [x] 07-05-PLAN.md — Verification checkpoint (Wave 4)
-
-**Requirements:**
-- SCOR-02: Skills exact match score (0-1) for required skills found
-- SCOR-03: Skills inferred score (0-1) for transferable skills detected
-- SCOR-04: Seniority alignment score (0-1) for level appropriateness
-- SCOR-05: Recency boost score (0-1) for recent skill usage
-- SCOR-06: Company relevance score (0-1) for industry/company fit
-
-**Success Criteria:**
-1. Candidate results include skills_exact_score reflecting % of required skills matched
-2. Candidate results include skills_inferred_score for transferable skills detected
-3. Searching for "Senior" returns Senior/Staff candidates ranked higher than Junior
-4. Candidates who used a skill recently (last 2 years) rank higher than those who used it 5+ years ago
-5. Candidates from relevant industries/companies (fintech for fintech role) rank higher
-
-**Rationale:** These are the signals that differentiate leader-level search from keyword matching. Each signal is 0-1 normalized for consistent weighting.
-
----
-
-## Phase 8: Career Trajectory
-
-**Goal:** Career direction and velocity inform candidate ranking.
-
-**Dependencies:** Phase 7 (trajectory is a signal in the scoring framework)
-
-**Plans:** 4 plans in 3 waves
-
-Plans:
-- [x] 08-01-PLAN.md — Trajectory direction classifier (Wave 1)
-- [x] 08-02-PLAN.md — Velocity and type classifiers (Wave 1)
-- [x] 08-03-PLAN.md — Trajectory fit scorer and integration (Wave 2)
-- [x] 08-04-PLAN.md — Verification checkpoint (Wave 3)
-
-**Requirements:**
-- TRAJ-01: Career direction computed from title sequence analysis
-- TRAJ-02: Career velocity computed (fast/normal/slow progression)
-- TRAJ-03: Trajectory fit score for role alignment
-- TRAJ-04: Trajectory type classification (technical, leadership, lateral, pivot)
-
-**Success Criteria:**
-1. Each candidate has computed trajectory_direction (upward, lateral, downward)
-2. Each candidate has computed trajectory_velocity (fast: <2yr/promo, normal: 2-4yr, slow: >4yr)
-3. Manager role search ranks candidates with leadership trajectory higher
-4. Trajectory type classification appears in candidate data (technical_growth, leadership_track, lateral_move, career_pivot)
-5. Trajectory fit score (0-1) reflects alignment between candidate trajectory and role direction
-
-**Rationale:** Career trajectory is the key differentiator for leader-level search. Rule-based computation is explainable and sufficient per research.
-
----
-
-## Phase 9: Match Transparency
-
-**Goal:** Recruiters understand why each candidate matched and how they scored.
-
-**Dependencies:** Phase 8 (need all signals computed to display)
-
-**Plans:** 7 plans in 4 waves
-
-Plans:
-- [x] 09-01-PLAN.md — Frontend types and SignalScoreBreakdown component (Wave 1)
-- [x] 09-02-PLAN.md — SkillChip component with confidence badges (Wave 1)
-- [x] 09-03-PLAN.md — Integrate signal breakdown into candidate card (Wave 2)
-- [x] 09-04-PLAN.md — Sort/filter controls in search results (Wave 2)
-- [x] 09-05-PLAN.md — LLM match rationale generation in rerank service (Wave 3)
-- [x] 09-06-PLAN.md — Display LLM rationale in candidate card (Wave 3)
-- [x] 09-07-PLAN.md — Verification checkpoint (Wave 4)
-
-**Requirements:**
-- TRNS-01: Match score visible to recruiters for each candidate
-- TRNS-02: Component scores shown (skills, trajectory, seniority, etc.)
-- TRNS-03: LLM-generated match rationale for top candidates
-- TRNS-04: Inferred skills displayed with confidence indicators
-
-**Success Criteria:**
-1. Search results UI shows overall match score (0-100) for each candidate
-2. Expandable score breakdown shows individual signal scores (skills: 0.8, trajectory: 0.9, etc.)
-3. Top 10 candidates have LLM-generated "Why this candidate matches" rationale
-4. Inferred skills appear with confidence badge (High: >0.8, Medium: 0.5-0.8, Low: <0.5)
-5. Recruiters can sort/filter by individual signal scores
-
-**Rationale:** Transparency is both a regulatory requirement (NYC/EU) and a usability feature. Recruiters need to understand and trust the ranking.
-
----
-
-## Phase 10: Pipeline Integration
-
-**Goal:** Complete 3-stage pipeline operates end-to-end with proper stage handoffs.
-
-**Dependencies:** Phase 9 (all components must work before integration)
-
-**Plans:** 4 plans in 3 waves
-
-Plans:
-- [x] 10-01-PLAN.md — Pipeline stage configuration and types (Wave 1)
-- [x] 10-02-PLAN.md — Implement 3-stage pipeline with stage logging (Wave 2)
-- [x] 10-03-PLAN.md — Pipeline metrics in response (Wave 2)
-- [x] 10-04-PLAN.md — End-to-end verification checkpoint (Wave 3)
-
-**Requirements:**
-- PIPE-01: 3-stage pipeline: retrieval (500+) -> scoring (top 100) -> reranking (top 50)
-- PIPE-02: Retrieval focuses on recall (don't miss candidates)
-- PIPE-03: Scoring focuses on precision (rank best higher)
-- PIPE-04: Reranking via LLM for nuance and context
-
-**Success Criteria:**
-1. Search logs show clear stage transitions: retrieval count, scoring count, final count
-2. Retrieval stage returns 500+ candidates for typical queries (recall-focused)
-3. Scoring stage reduces to top 100 using signal weights (precision-focused)
-4. Reranking stage uses LLM to produce final top 50 with nuanced ordering
-5. End-to-end search latency remains under p95 1.2s target
-
-**Rationale:** This phase validates the entire system works together. Each stage has clear responsibility and the handoffs are logged for debugging.
+**Critical Pitfalls:**
+- NYC LL144 requires independent auditor, actual historical data, and action on adverse findings
+- EU AI Act classifies recruitment AI as high-risk - requires human oversight in every decision
+- GDPR retention vs. audit log retention conflict (resolve with anonymization after period)
 
 ---
 
 ## Dependency Graph
 
 ```
-Phase 1: Reranking Fix
+v1.0 Foundation (Phases 1-10)
     |
     v
-Phase 2: Search Recall Foundation
+Phase 11: Performance Foundation (latency budget)
     |
     v
-Phase 3: Hybrid Search
+Phase 12: Natural Language Search (NLP + ontology)
     |
     v
-Phase 4: Multi-Signal Scoring Framework
+Phase 13: ML Trajectory Prediction (LSTM + shadow mode)
     |
     v
-Phase 5: Skills Infrastructure
+Phase 14: Bias Reduction (anonymization + metrics)
     |
     v
-Phase 6: Skills Intelligence
-    |
-    v
-Phase 7: Signal Scoring Implementation
-    |
-    v
-Phase 8: Career Trajectory
-    |
-    v
-Phase 9: Match Transparency
-    |
-    v
-Phase 10: Pipeline Integration
+Phase 15: Compliance Tooling (audit + reporting)
 ```
 
-All phases are sequential. Each builds on the previous. No parallel execution paths.
+All v2.0 phases are sequential. Performance must be established before adding latency-heavy ML features. Bias reduction informs compliance reporting.
+
+---
+
+## Timeline Estimate
+
+| Phase | Duration | Cumulative |
+|-------|----------|------------|
+| Phase 11: Performance | 4-6 weeks | 4-6 weeks |
+| Phase 12: NLP Search | 3-4 weeks | 7-10 weeks |
+| Phase 13: ML Trajectory | 6-8 weeks | 13-18 weeks |
+| Phase 14: Bias Reduction | 4-5 weeks | 17-23 weeks |
+| Phase 15: Compliance | 2-3 weeks | 19-26 weeks |
+
+**Total v2.0 Estimate:** 19-26 weeks (5-6 months)
 
 ---
 
 ## Risk Notes
 
-**Phase 3 (Hybrid Search):** BM25 implementation in PostgreSQL may require pg_trgm or ts_rank. Verify extension availability.
+**Phase 11 (Performance):** pgvectorscale requires Cloud SQL extension enablement. Verify compatibility with existing pgvector indices before migration.
 
-**Phase 5 (Skills Infrastructure):** EllaAI skills-master.ts must be copied, not linked. Verify file location and format.
+**Phase 12 (NLP Search):** Semantic Router trained on English. May need fine-tuning for Portuguese-English mixed queries common in Brazil-based recruiters.
 
-**Phase 8 (Career Trajectory):** Rule-based velocity computation requires consistent date formatting in profile data.
+**Phase 13 (ML Trajectory):** Training data quality unknown. May need to start with heuristic-augmented training if historical career outcomes are sparse.
 
-**Phase 10 (Pipeline Integration):** p95 1.2s latency target may require optimization if earlier phases add overhead.
+**Phase 14 (Bias Reduction):** Anonymization must not leak demographic proxies. University names, zip codes, graduation years all reveal protected characteristics.
+
+**Phase 15 (Compliance):** NYC LL144 enforcement is active ($500-$1500 fines per violation). EU AI Act takes effect February 2027 with 35M EUR fines.
 
 ---
 
-*Roadmap created: 2026-01-24*
-*Last updated: 2026-01-25 after Phase 10 completion - v1 COMPLETE*
+*Roadmap created: 2026-01-25*
+*Last updated: 2026-01-25*
