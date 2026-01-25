@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 5 (Skills Infrastructure) IN PROGRESS. Plan 01 complete - EllaAI skills taxonomy copied with O(1) alias normalization.
+**Current Focus:** Phase 5 (Skills Infrastructure) IN PROGRESS. Plans 01 and 03 complete - EllaAI skills taxonomy integrated into skill-aware search.
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -22,9 +22,9 @@
 ## Current Position
 
 **Phase:** 5 of 10 (Skills Infrastructure) - IN PROGRESS
-**Plan:** 1 of ? complete
+**Plan:** 2 of ? complete (05-01, 05-03)
 **Status:** Phase In Progress
-**Last activity:** 2026-01-25 - Completed 05-01-PLAN.md (Skills Infrastructure Setup)
+**Last activity:** 2026-01-25 - Completed 05-03-PLAN.md (Skill-Aware Search Integration)
 
 **Progress:** [████████░░] 80%
 
@@ -40,7 +40,7 @@
 | 2 | Search Recall Foundation | Complete | 5/5 | 100% |
 | 3 | Hybrid Search | Complete | 4/4 | 100% |
 | 4 | Multi-Signal Scoring Framework | Complete | 5/5 | 100% |
-| 5 | Skills Infrastructure | In Progress | 1/? | ~25% |
+| 5 | Skills Infrastructure | In Progress | 2/? | ~50% |
 | 6 | Skills Intelligence | Pending | 0/? | 0% |
 | 7 | Signal Scoring Implementation | Pending | 0/? | 0% |
 | 8 | Career Trajectory | Pending | 0/? | 0% |
@@ -110,6 +110,7 @@
 | Module exports from index.ts | Enable external consumers (tests, other services) | 4.04 |
 | O(1) alias normalization via Map | ALIAS_TO_CANONICAL built at module load for hot path safety | 5.01 |
 | Passthrough unknown skills | Return original input rather than throwing errors | 5.01 |
+| Remove local skill normalization | Centralize in skills-service to eliminate duplication | 5.03 |
 
 ### Technical Notes
 
