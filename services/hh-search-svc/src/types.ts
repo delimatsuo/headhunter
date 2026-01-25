@@ -72,6 +72,23 @@ export interface SignalScores {
 
   /** Skills match score (0-1) - for skill-aware searches, optional */
   skillsMatch?: number;
+
+  // ===== PHASE 7 SIGNALS (all 0-1 normalized, optional) =====
+
+  /** SCOR-02: Skills exact match score (0-1) */
+  skillsExactMatch?: number;
+
+  /** SCOR-03: Skills inferred score (0-1) */
+  skillsInferred?: number;
+
+  /** SCOR-04: Seniority alignment score (0-1) */
+  seniorityAlignment?: number;
+
+  /** SCOR-05: Recency boost score (0-1) */
+  recencyBoost?: number;
+
+  /** SCOR-06: Company relevance score (0-1) */
+  companyRelevance?: number;
 }
 
 export interface HybridSearchResultItem {

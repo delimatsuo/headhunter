@@ -38,6 +38,23 @@ export interface SignalWeightConfig {
 
   /** Skills match score (0-1) - for skill-aware searches, optional */
   skillsMatch?: number;
+
+  // ===== PHASE 7 WEIGHTS (all 0-1, optional) =====
+
+  /** SCOR-02: Weight for skills exact match signal */
+  skillsExactMatch?: number;
+
+  /** SCOR-03: Weight for skills inferred signal */
+  skillsInferred?: number;
+
+  /** SCOR-04: Weight for seniority alignment signal */
+  seniorityAlignment?: number;
+
+  /** SCOR-05: Weight for recency boost signal */
+  recencyBoost?: number;
+
+  /** SCOR-06: Weight for company relevance signal */
+  companyRelevance?: number;
 }
 
 /**
@@ -63,54 +80,78 @@ export type RoleType = 'executive' | 'manager' | 'ic' | 'default';
 export const ROLE_WEIGHT_PRESETS: Record<RoleType, SignalWeightConfig> = {
   // Executive searches (C-level, VP, Director)
   // Function and company matter most - they hire for fit and pedigree
+  // Phase 7: seniorityAlignment and companyRelevance get higher weights
   executive: {
-    vectorSimilarity: 0.10,
-    levelMatch: 0.20,
-    specialtyMatch: 0.05,
-    techStackMatch: 0.05,
-    functionMatch: 0.25,
-    trajectoryFit: 0.15,
-    companyPedigree: 0.20
+    vectorSimilarity: 0.08,
+    levelMatch: 0.12,
+    specialtyMatch: 0.04,
+    techStackMatch: 0.04,
+    functionMatch: 0.20,
+    trajectoryFit: 0.10,
+    companyPedigree: 0.12,
+    skillsExactMatch: 0.02,
+    skillsInferred: 0.02,
+    seniorityAlignment: 0.12,
+    recencyBoost: 0.02,
+    companyRelevance: 0.12
   },
 
   // Manager searches (Engineering Manager, Tech Lead, Senior Manager)
   // Balance of skills, trajectory, and function
+  // Phase 7: balanced distribution across all signals
   manager: {
-    vectorSimilarity: 0.15,
-    levelMatch: 0.15,
-    specialtyMatch: 0.15,
-    techStackMatch: 0.10,
-    functionMatch: 0.15,
-    trajectoryFit: 0.15,
-    companyPedigree: 0.15
+    vectorSimilarity: 0.12,
+    levelMatch: 0.10,
+    specialtyMatch: 0.12,
+    techStackMatch: 0.08,
+    functionMatch: 0.12,
+    trajectoryFit: 0.10,
+    companyPedigree: 0.10,
+    skillsExactMatch: 0.06,
+    skillsInferred: 0.05,
+    seniorityAlignment: 0.06,
+    recencyBoost: 0.04,
+    companyRelevance: 0.05
   },
 
   // IC searches (Senior, Mid, Junior)
   // Specialty and tech stack matter most - exact skill fit
+  // Phase 7: skillsExactMatch and recencyBoost get higher weights (skills-heavy)
   ic: {
-    vectorSimilarity: 0.20,
-    levelMatch: 0.15,
-    specialtyMatch: 0.20,
-    techStackMatch: 0.20,
-    functionMatch: 0.10,
-    trajectoryFit: 0.10,
-    companyPedigree: 0.05
+    vectorSimilarity: 0.12,
+    levelMatch: 0.08,
+    specialtyMatch: 0.12,
+    techStackMatch: 0.12,
+    functionMatch: 0.06,
+    trajectoryFit: 0.06,
+    companyPedigree: 0.02,
+    skillsExactMatch: 0.14,
+    skillsInferred: 0.08,
+    seniorityAlignment: 0.06,
+    recencyBoost: 0.08,
+    companyRelevance: 0.06
   },
 
   // Default fallback (balanced)
+  // Phase 7: evenly distributed across all signals
   default: {
-    vectorSimilarity: 0.15,
-    levelMatch: 0.15,
-    specialtyMatch: 0.15,
-    techStackMatch: 0.15,
-    functionMatch: 0.15,
-    trajectoryFit: 0.10,
-    companyPedigree: 0.15
+    vectorSimilarity: 0.12,
+    levelMatch: 0.10,
+    specialtyMatch: 0.10,
+    techStackMatch: 0.10,
+    functionMatch: 0.10,
+    trajectoryFit: 0.08,
+    companyPedigree: 0.10,
+    skillsExactMatch: 0.08,
+    skillsInferred: 0.06,
+    seniorityAlignment: 0.06,
+    recencyBoost: 0.05,
+    companyRelevance: 0.05
   }
 };
 
 /**
- * Core signal keys (excluding optional skillsMatch)
+ * Core signal keys (excluding optional skillsMatch and Phase 7 optional signals)
  */
 const CORE_SIGNAL_KEYS: (keyof SignalWeightConfig)[] = [
   'vectorSimilarity',
@@ -120,6 +161,17 @@ const CORE_SIGNAL_KEYS: (keyof SignalWeightConfig)[] = [
   'functionMatch',
   'trajectoryFit',
   'companyPedigree'
+];
+
+/**
+ * Phase 7 signal keys (all optional)
+ */
+const PHASE7_SIGNAL_KEYS: (keyof SignalWeightConfig)[] = [
+  'skillsExactMatch',
+  'skillsInferred',
+  'seniorityAlignment',
+  'recencyBoost',
+  'companyRelevance'
 ];
 
 /**
@@ -142,6 +194,13 @@ export function normalizeWeights(weights: SignalWeightConfig): SignalWeightConfi
   // Add optional skillsMatch if present
   if (weights.skillsMatch !== undefined) {
     sum += weights.skillsMatch;
+  }
+
+  // Add Phase 7 signals if present
+  for (const key of PHASE7_SIGNAL_KEYS) {
+    if (weights[key] !== undefined) {
+      sum += weights[key]!;
+    }
   }
 
   // Check if normalization is needed
@@ -168,6 +227,23 @@ export function normalizeWeights(weights: SignalWeightConfig): SignalWeightConfi
   // Preserve optional skillsMatch if present
   if (weights.skillsMatch !== undefined) {
     normalized.skillsMatch = weights.skillsMatch / sum;
+  }
+
+  // Preserve Phase 7 signals if present
+  if (weights.skillsExactMatch !== undefined) {
+    normalized.skillsExactMatch = weights.skillsExactMatch / sum;
+  }
+  if (weights.skillsInferred !== undefined) {
+    normalized.skillsInferred = weights.skillsInferred / sum;
+  }
+  if (weights.seniorityAlignment !== undefined) {
+    normalized.seniorityAlignment = weights.seniorityAlignment / sum;
+  }
+  if (weights.recencyBoost !== undefined) {
+    normalized.recencyBoost = weights.recencyBoost / sum;
+  }
+  if (weights.companyRelevance !== undefined) {
+    normalized.companyRelevance = weights.companyRelevance / sum;
   }
 
   return normalized;
