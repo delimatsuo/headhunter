@@ -97,7 +97,15 @@ export const hybridSearchSchema: FastifySchema = {
         }
       },
       signalWeights: signalWeightsSchema,
-      roleType: roleTypeSchema
+      roleType: roleTypeSchema,
+      // NLP options (NLNG-05)
+      enableNlp: { type: 'boolean', description: 'Enable natural language query parsing' },
+      nlpConfidenceThreshold: {
+        type: 'number',
+        minimum: 0,
+        maximum: 1,
+        description: 'Override NLP confidence threshold (0-1)'
+      }
     }
   },
   response: {
@@ -159,7 +167,9 @@ export const hybridSearchSchema: FastifySchema = {
             retrievalMs: { type: 'integer', minimum: 0 },
             rankingMs: { type: 'integer', minimum: 0 },
             rerankMs: { type: 'integer', minimum: 0 },
-            cacheMs: { type: 'integer', minimum: 0 }
+            cacheMs: { type: 'integer', minimum: 0 },
+            // NLP timing (NLNG-05)
+            nlpMs: { type: 'integer', minimum: 0 }
           }
         },
         metadata: { type: 'object', additionalProperties: true },

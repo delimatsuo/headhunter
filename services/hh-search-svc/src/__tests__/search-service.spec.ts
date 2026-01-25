@@ -1,3 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, afterAll, vi, type Mock } from 'vitest';
+
 const originalEnv = {
   GOOGLE_CLOUD_PROJECT: process.env.GOOGLE_CLOUD_PROJECT,
   AUTH_MODE: process.env.AUTH_MODE,
@@ -15,17 +17,18 @@ import type { PgVectorClient } from '../pgvector-client';
 import type { SearchRedisClient } from '../redis-client';
 import type { RerankClient, RerankResponse } from '../rerank-client';
 import { SearchService } from '../search-service';
-import type { PgHybridSearchRow } from '../types';
+import type { PgHybridSearchRow, NLPParseResult } from '../types';
 import type { PerformanceTracker } from '../performance-tracker';
+import type { QueryParser, ParsedQuery } from '../nlp';
 
 const logger = {
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-  debug: jest.fn(),
-  child: jest.fn()
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  debug: vi.fn(),
+  child: vi.fn()
 };
-(logger.child as jest.Mock).mockReturnValue(logger);
+(logger.child as Mock).mockReturnValue(logger);
 
 const baseConfigTemplate = (): SearchServiceConfig => ({
   base: {
@@ -119,47 +122,47 @@ const createBaseConfig = (): SearchServiceConfig =>
   JSON.parse(JSON.stringify(baseConfigTemplate())) as SearchServiceConfig;
 
 const createPgClient = (): PgVectorClient => ({
-  hybridSearch: jest.fn(),
-  close: jest.fn(),
-  healthCheck: jest.fn().mockResolvedValue({ status: 'healthy' }),
-  initialize: jest.fn()
+  hybridSearch: vi.fn(),
+  close: vi.fn(),
+  healthCheck: vi.fn().mockResolvedValue({ status: 'healthy' }),
+  initialize: vi.fn()
 } as unknown as PgVectorClient);
 
 const createRedisClient = (): SearchRedisClient => ({
-  get: jest.fn(),
-  set: jest.fn(),
-  delete: jest.fn(),
-  buildHybridKey: jest.fn().mockReturnValue('hybrid-key'),
-  buildEmbeddingKey: jest.fn().mockReturnValue('embedding-key'),
-  healthCheck: jest.fn().mockResolvedValue({ status: 'healthy' }),
-  close: jest.fn(),
-  isDisabled: jest.fn().mockReturnValue(false)
+  get: vi.fn(),
+  set: vi.fn(),
+  delete: vi.fn(),
+  buildHybridKey: vi.fn().mockReturnValue('hybrid-key'),
+  buildEmbeddingKey: vi.fn().mockReturnValue('embedding-key'),
+  healthCheck: vi.fn().mockResolvedValue({ status: 'healthy' }),
+  close: vi.fn(),
+  isDisabled: vi.fn().mockReturnValue(false)
 } as unknown as SearchRedisClient);
 
 const createEmbedClient = (): EmbedClient => ({
-  generateEmbedding: jest.fn(),
-  healthCheck: jest.fn().mockResolvedValue({ status: 'healthy' })
+  generateEmbedding: vi.fn(),
+  healthCheck: vi.fn().mockResolvedValue({ status: 'healthy' })
 } as unknown as EmbedClient);
 
 // Unused factory - tests create inline mocks for specific scenarios
 const _createRerankClient = (): RerankClient => ({
-  rerank: jest.fn(),
-  healthCheck: jest.fn().mockResolvedValue({ status: 'healthy' }),
-  isEnabled: jest.fn().mockReturnValue(true)
+  rerank: vi.fn(),
+  healthCheck: vi.fn().mockResolvedValue({ status: 'healthy' }),
+  isEnabled: vi.fn().mockReturnValue(true)
 } as unknown as RerankClient);
 void _createRerankClient; // Silence unused warning
 
 const createPerformanceTracker = () => ({
-  record: jest.fn()
+  record: vi.fn()
 });
 
 describe('SearchService', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
-    jest.resetModules();
+    vi.resetModules();
   });
 
   afterAll(() => {
@@ -351,9 +354,9 @@ describe('SearchService', () => {
     };
 
     const rerankClient = {
-      isEnabled: jest.fn(() => true),
-      rerank: jest.fn().mockResolvedValue(rerankResponse),
-      healthCheck: jest.fn()
+      isEnabled: vi.fn(() => true),
+      rerank: vi.fn().mockResolvedValue(rerankResponse),
+      healthCheck: vi.fn()
     } as unknown as RerankClient;
 
     const performanceTracker = createPerformanceTracker() as unknown as PerformanceTracker;
@@ -385,6 +388,432 @@ describe('SearchService', () => {
     expect(response.results[0].matchReasons).toContain('LLM preferred candidate');
     expect(response.timings.rerankMs).toBe(12);
     expect(response.metadata?.rerank).toMatchObject({ cacheHit: false, usedFallback: false });
+  });
+
+  // =====================================================
+  // NLP Integration Tests (NLNG-05)
+  // =====================================================
+  describe('NLP Integration', () => {
+    // Mock QueryParser
+    const createMockQueryParser = () => ({
+      parse: vi.fn(),
+      initialize: vi.fn().mockResolvedValue(undefined),
+      isInitialized: vi.fn().mockReturnValue(true)
+    });
+
+    it('should skip NLP when enableNlp is false', async () => {
+      const config = createBaseConfig();
+      const mockQueryParser = createMockQueryParser();
+
+      const pgRow: PgHybridSearchRow = {
+        candidate_id: 'cand-nlp-001',
+        vector_score: 0.5,
+        text_score: 0.1,
+        hybrid_score: 0.5,
+        analysis_confidence: 0.9,
+        full_name: 'Test Candidate'
+      };
+
+      const pgClient = createPgClient();
+      pgClient.hybridSearch.mockResolvedValue([pgRow]);
+
+      const embedClient = createEmbedClient();
+      embedClient.generateEmbedding.mockResolvedValue({
+        embedding: [0.1, 0.2],
+        provider: 'test',
+        model: 'test-model',
+        dimensions: 2,
+        latencyMs: 5
+      });
+
+      const redisClient = createRedisClient();
+      redisClient.get.mockResolvedValue(null);
+
+      const performanceTracker = createPerformanceTracker() as unknown as PerformanceTracker;
+
+      const service = new SearchService({
+        config,
+        pgClient,
+        embedClient,
+        redisClient,
+        performanceTracker,
+        logger: getTestLogger(),
+        queryParser: mockQueryParser as unknown as QueryParser
+      });
+
+      await service.hybridSearch(
+        {
+          tenant: { id: 'tenant-alpha', isActive: true },
+          requestId: 'req-nlp-skip'
+        },
+        {
+          query: 'senior python developer',
+          enableNlp: false
+        }
+      );
+
+      expect(mockQueryParser.parse).not.toHaveBeenCalled();
+    });
+
+    it('should apply NLP-extracted skills to filters', async () => {
+      const config = createBaseConfig();
+      const mockQueryParser = createMockQueryParser();
+
+      mockQueryParser.parse.mockResolvedValue({
+        originalQuery: 'senior python developer',
+        parseMethod: 'nlp',
+        confidence: 0.85,
+        intent: 'structured_search',
+        entities: {
+          role: 'developer',
+          skills: ['Python'],
+          expandedSkills: ['Django', 'Flask'],
+          seniority: 'senior'
+        },
+        semanticExpansion: {
+          expandedSeniorities: ['senior', 'sr', 'sr.', 'staff', 'principal'],
+          expandedRoles: ['developer', 'engineer', 'programmer']
+        },
+        timings: { intentMs: 5, extractionMs: 50, expansionMs: 2, totalMs: 57 }
+      } as ParsedQuery);
+
+      const pgRow: PgHybridSearchRow = {
+        candidate_id: 'cand-nlp-002',
+        vector_score: 0.5,
+        text_score: 0.1,
+        hybrid_score: 0.5,
+        analysis_confidence: 0.9,
+        full_name: 'Python Dev'
+      };
+
+      const pgClient = createPgClient();
+      pgClient.hybridSearch.mockResolvedValue([pgRow]);
+
+      const embedClient = createEmbedClient();
+      embedClient.generateEmbedding.mockResolvedValue({
+        embedding: [0.1, 0.2],
+        provider: 'test',
+        model: 'test-model',
+        dimensions: 2,
+        latencyMs: 5
+      });
+
+      const redisClient = createRedisClient();
+      redisClient.get.mockResolvedValue(null);
+
+      const performanceTracker = createPerformanceTracker() as unknown as PerformanceTracker;
+
+      const service = new SearchService({
+        config,
+        pgClient,
+        embedClient,
+        redisClient,
+        performanceTracker,
+        logger: getTestLogger(),
+        queryParser: mockQueryParser as unknown as QueryParser
+      });
+
+      await service.hybridSearch(
+        {
+          tenant: { id: 'tenant-alpha', isActive: true },
+          requestId: 'req-nlp-skills'
+        },
+        {
+          query: 'senior python developer',
+          enableNlp: true
+        }
+      );
+
+      expect(mockQueryParser.parse).toHaveBeenCalledWith('senior python developer');
+
+      // Verify filters were applied
+      const callArgs = pgClient.hybridSearch.mock.calls[0]?.[0];
+      expect(callArgs?.filters?.skills).toContain('Python');
+      expect(callArgs?.filters?.skills).toContain('Django');
+      expect(callArgs?.filters?.skills).toContain('Flask');
+    });
+
+    it('should apply semantic seniority expansion - Lead matches Senior/Staff/Principal', async () => {
+      const config = createBaseConfig();
+      const mockQueryParser = createMockQueryParser();
+
+      mockQueryParser.parse.mockResolvedValue({
+        originalQuery: 'lead engineer',
+        parseMethod: 'nlp',
+        confidence: 0.85,
+        intent: 'structured_search',
+        entities: {
+          role: 'engineer',
+          skills: [],
+          expandedSkills: [],
+          seniority: 'lead'
+        },
+        semanticExpansion: {
+          expandedSeniorities: ['lead', 'tech lead', 'team lead', 'senior', 'staff'],
+          expandedRoles: ['engineer', 'developer', 'programmer']
+        },
+        timings: { intentMs: 3, extractionMs: 40, expansionMs: 2, totalMs: 45 }
+      } as ParsedQuery);
+
+      const pgRow: PgHybridSearchRow = {
+        candidate_id: 'cand-nlp-003',
+        vector_score: 0.5,
+        text_score: 0.1,
+        hybrid_score: 0.5,
+        analysis_confidence: 0.9,
+        full_name: 'Lead Engineer'
+      };
+
+      const pgClient = createPgClient();
+      pgClient.hybridSearch.mockResolvedValue([pgRow]);
+
+      const embedClient = createEmbedClient();
+      embedClient.generateEmbedding.mockResolvedValue({
+        embedding: [0.1, 0.2],
+        provider: 'test',
+        model: 'test-model',
+        dimensions: 2,
+        latencyMs: 5
+      });
+
+      const redisClient = createRedisClient();
+      redisClient.get.mockResolvedValue(null);
+
+      const performanceTracker = createPerformanceTracker() as unknown as PerformanceTracker;
+
+      const service = new SearchService({
+        config,
+        pgClient,
+        embedClient,
+        redisClient,
+        performanceTracker,
+        logger: getTestLogger(),
+        queryParser: mockQueryParser as unknown as QueryParser
+      });
+
+      await service.hybridSearch(
+        {
+          tenant: { id: 'tenant-alpha', isActive: true },
+          requestId: 'req-nlp-seniority'
+        },
+        {
+          query: 'lead engineer',
+          enableNlp: true
+        }
+      );
+
+      // CRITICAL: Verify expanded seniorities are used, not just 'lead'
+      const callArgs = pgClient.hybridSearch.mock.calls[0]?.[0];
+      expect(callArgs?.filters?.seniorityLevels).toContain('lead');
+      expect(callArgs?.filters?.seniorityLevels).toContain('senior');
+      expect(callArgs?.filters?.seniorityLevels).toContain('staff');
+    });
+
+    it('should include NLP metadata in response', async () => {
+      const config = createBaseConfig();
+      const mockQueryParser = createMockQueryParser();
+
+      mockQueryParser.parse.mockResolvedValue({
+        originalQuery: 'python dev',
+        parseMethod: 'nlp',
+        confidence: 0.78,
+        intent: 'structured_search',
+        entities: {
+          skills: ['Python'],
+          expandedSkills: []
+        },
+        semanticExpansion: {
+          expandedSeniorities: [],
+          expandedRoles: []
+        },
+        timings: { intentMs: 3, extractionMs: 45, expansionMs: 1, totalMs: 49 }
+      } as ParsedQuery);
+
+      const pgRow: PgHybridSearchRow = {
+        candidate_id: 'cand-nlp-004',
+        vector_score: 0.5,
+        text_score: 0.1,
+        hybrid_score: 0.5,
+        analysis_confidence: 0.9,
+        full_name: 'Python Developer'
+      };
+
+      const pgClient = createPgClient();
+      pgClient.hybridSearch.mockResolvedValue([pgRow]);
+
+      const embedClient = createEmbedClient();
+      embedClient.generateEmbedding.mockResolvedValue({
+        embedding: [0.1, 0.2],
+        provider: 'test',
+        model: 'test-model',
+        dimensions: 2,
+        latencyMs: 5
+      });
+
+      const redisClient = createRedisClient();
+      redisClient.get.mockResolvedValue(null);
+
+      const performanceTracker = createPerformanceTracker() as unknown as PerformanceTracker;
+
+      const service = new SearchService({
+        config,
+        pgClient,
+        embedClient,
+        redisClient,
+        performanceTracker,
+        logger: getTestLogger(),
+        queryParser: mockQueryParser as unknown as QueryParser
+      });
+
+      const response = await service.hybridSearch(
+        {
+          tenant: { id: 'tenant-alpha', isActive: true },
+          requestId: 'req-nlp-metadata'
+        },
+        {
+          query: 'python dev',
+          enableNlp: true
+        }
+      );
+
+      const nlpMeta = response.metadata?.nlp as NLPParseResult | undefined;
+      expect(nlpMeta).toBeDefined();
+      expect(nlpMeta?.parseMethod).toBe('nlp');
+      expect(nlpMeta?.confidence).toBe(0.78);
+      expect(nlpMeta?.semanticExpansion).toBeDefined();
+    });
+
+    it('should fall back gracefully when NLP fails', async () => {
+      const config = createBaseConfig();
+      const mockQueryParser = createMockQueryParser();
+
+      mockQueryParser.parse.mockRejectedValue(new Error('NLP service unavailable'));
+
+      const pgRow: PgHybridSearchRow = {
+        candidate_id: 'cand-nlp-005',
+        vector_score: 0.5,
+        text_score: 0.1,
+        hybrid_score: 0.5,
+        analysis_confidence: 0.9,
+        full_name: 'Fallback Candidate'
+      };
+
+      const pgClient = createPgClient();
+      pgClient.hybridSearch.mockResolvedValue([pgRow]);
+
+      const embedClient = createEmbedClient();
+      embedClient.generateEmbedding.mockResolvedValue({
+        embedding: [0.1, 0.2],
+        provider: 'test',
+        model: 'test-model',
+        dimensions: 2,
+        latencyMs: 5
+      });
+
+      const redisClient = createRedisClient();
+      redisClient.get.mockResolvedValue(null);
+
+      const performanceTracker = createPerformanceTracker() as unknown as PerformanceTracker;
+
+      const service = new SearchService({
+        config,
+        pgClient,
+        embedClient,
+        redisClient,
+        performanceTracker,
+        logger: getTestLogger(),
+        queryParser: mockQueryParser as unknown as QueryParser
+      });
+
+      // Should not throw
+      const response = await service.hybridSearch(
+        {
+          tenant: { id: 'tenant-alpha', isActive: true },
+          requestId: 'req-nlp-fallback'
+        },
+        {
+          query: 'python developer',
+          enableNlp: true
+        }
+      );
+
+      expect(response.results).toBeDefined();
+      expect(response.metadata?.nlp).toBeUndefined();
+    });
+
+    it('should preserve original query for BM25 text search', async () => {
+      const config = createBaseConfig();
+      const mockQueryParser = createMockQueryParser();
+
+      mockQueryParser.parse.mockResolvedValue({
+        originalQuery: 'senior python developer in NYC',
+        parseMethod: 'nlp',
+        confidence: 0.85,
+        intent: 'structured_search',
+        entities: {
+          skills: ['Python'],
+          expandedSkills: [],
+          location: 'NYC',
+          seniority: 'senior'
+        },
+        semanticExpansion: {
+          expandedSeniorities: ['senior', 'sr', 'staff', 'principal'],
+          expandedRoles: []
+        },
+        timings: { intentMs: 3, extractionMs: 50, expansionMs: 1, totalMs: 54 }
+      } as ParsedQuery);
+
+      const pgRow: PgHybridSearchRow = {
+        candidate_id: 'cand-nlp-006',
+        vector_score: 0.5,
+        text_score: 0.1,
+        hybrid_score: 0.5,
+        analysis_confidence: 0.9,
+        full_name: 'NYC Python Dev'
+      };
+
+      const pgClient = createPgClient();
+      pgClient.hybridSearch.mockResolvedValue([pgRow]);
+
+      const embedClient = createEmbedClient();
+      embedClient.generateEmbedding.mockResolvedValue({
+        embedding: [0.1, 0.2],
+        provider: 'test',
+        model: 'test-model',
+        dimensions: 2,
+        latencyMs: 5
+      });
+
+      const redisClient = createRedisClient();
+      redisClient.get.mockResolvedValue(null);
+
+      const performanceTracker = createPerformanceTracker() as unknown as PerformanceTracker;
+
+      const service = new SearchService({
+        config,
+        pgClient,
+        embedClient,
+        redisClient,
+        performanceTracker,
+        logger: getTestLogger(),
+        queryParser: mockQueryParser as unknown as QueryParser
+      });
+
+      await service.hybridSearch(
+        {
+          tenant: { id: 'tenant-alpha', isActive: true },
+          requestId: 'req-nlp-preserve-query'
+        },
+        {
+          query: 'senior python developer in NYC',
+          enableNlp: true
+        }
+      );
+
+      // Text query should remain the original for BM25
+      const callArgs = pgClient.hybridSearch.mock.calls[0]?.[0];
+      expect(callArgs?.textQuery).toBe('senior python developer in NYC');
+    });
   });
 });
 
