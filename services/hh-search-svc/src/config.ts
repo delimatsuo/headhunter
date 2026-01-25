@@ -68,6 +68,14 @@ export interface RedisCacheConfig {
   keyPrefix: string;
   ttlSeconds: number;
   disable: boolean;
+  /** Search results cache TTL in seconds (default: 600 = 10 min) */
+  searchResultsTtlSeconds: number;
+  /** Rerank scores cache TTL in seconds (default: 21600 = 6 hours) */
+  rerankScoresTtlSeconds: number;
+  /** Specialty lookup cache TTL in seconds (default: 86400 = 24 hours) */
+  specialtyLookupTtlSeconds: number;
+  /** Embedding cache TTL in seconds (default: 3600 = 1 hour) */
+  embeddingTtlSeconds: number;
 }
 
 export interface SearchRuntimeConfig {
@@ -218,7 +226,11 @@ export function getSearchServiceConfig(): SearchServiceConfig {
       process.env.SEARCH_CACHE_TTL_SECONDS,
       Number.isFinite(base.runtime.cacheTtlSeconds) ? base.runtime.cacheTtlSeconds : 180
     ),
-    disable: parseBoolean(process.env.SEARCH_CACHE_PURGE, false)
+    disable: parseBoolean(process.env.SEARCH_CACHE_PURGE, false),
+    searchResultsTtlSeconds: parseNumber(process.env.CACHE_SEARCH_RESULTS_TTL, 600),
+    rerankScoresTtlSeconds: parseNumber(process.env.CACHE_RERANK_SCORES_TTL, 21600),
+    specialtyLookupTtlSeconds: parseNumber(process.env.CACHE_SPECIALTY_LOOKUP_TTL, 86400),
+    embeddingTtlSeconds: parseNumber(process.env.CACHE_EMBEDDING_TTL, 3600)
   };
 
   const embedBaseUrl = normalizeUrl(process.env.EMBED_SERVICE_URL, 'http://localhost:8081');

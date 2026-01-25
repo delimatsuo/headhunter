@@ -199,6 +199,39 @@ export class SearchRedisClient {
     this.metrics = { hits: 0, misses: 0, sets: 0, deletes: 0 };
   }
 
+  /**
+   * Scan for keys matching a pattern.
+   * Uses SCAN to avoid blocking Redis with KEYS command.
+   * Note: Returns up to 1000 keys - for larger sets, use cursor.
+   */
+  async scanKeys(pattern: string, limit: number = 1000): Promise<string[]> {
+    const client = this.createClient();
+    if (!client) {
+      return [];
+    }
+
+    try {
+      const keys: string[] = [];
+      let cursor = '0';
+
+      do {
+        // SCAN returns [cursor, keys[]]
+        const result = await client.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+        cursor = result[0];
+        keys.push(...result[1]);
+
+        if (keys.length >= limit) {
+          break;
+        }
+      } while (cursor !== '0');
+
+      return keys.slice(0, limit);
+    } catch (error) {
+      this.logger.error({ error, pattern }, 'Failed to scan Redis keys.');
+      return [];
+    }
+  }
+
   async healthCheck(): Promise<RedisHealthStatus> {
     if (this.config.disable) {
       return { status: 'disabled', message: 'Caching disabled via configuration.' } satisfies RedisHealthStatus;
