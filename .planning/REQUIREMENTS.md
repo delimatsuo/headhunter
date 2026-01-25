@@ -23,14 +23,14 @@ Requirements for leader-level search. Each maps to roadmap phases.
 
 ### Multi-Signal Scoring
 
-- [ ] **SCOR-01**: Vector similarity score (0-1) as baseline signal
+- [x] **SCOR-01**: Vector similarity score (0-1) as baseline signal
 - [ ] **SCOR-02**: Skills exact match score (0-1) for required skills found
 - [ ] **SCOR-03**: Skills inferred score (0-1) for transferable skills detected
 - [ ] **SCOR-04**: Seniority alignment score (0-1) for level appropriateness
 - [ ] **SCOR-05**: Recency boost score (0-1) for recent skill usage
 - [ ] **SCOR-06**: Company relevance score (0-1) for industry/company fit
-- [ ] **SCOR-07**: Configurable signal weights per search or role type
-- [ ] **SCOR-08**: Final score as weighted combination of all signals
+- [x] **SCOR-07**: Configurable signal weights per search or role type
+- [x] **SCOR-08**: Final score as weighted combination of all signals
 
 ### Skills Intelligence
 
@@ -122,9 +122,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HYBD-02 | Phase 3: Hybrid Search | Complete |
 | HYBD-03 | Phase 3: Hybrid Search | Complete |
 | HYBD-04 | Phase 3: Hybrid Search | Complete |
-| SCOR-01 | Phase 4: Multi-Signal Scoring Framework | Pending |
-| SCOR-07 | Phase 4: Multi-Signal Scoring Framework | Pending |
-| SCOR-08 | Phase 4: Multi-Signal Scoring Framework | Pending |
+| SCOR-01 | Phase 4: Multi-Signal Scoring Framework | Complete |
+| SCOR-07 | Phase 4: Multi-Signal Scoring Framework | Complete |
+| SCOR-08 | Phase 4: Multi-Signal Scoring Framework | Complete |
 | SKIL-01 | Phase 5: Skills Infrastructure | Pending |
 | SKIL-03 | Phase 5: Skills Infrastructure | Pending |
 | SKIL-02 | Phase 6: Skills Intelligence | Pending |
@@ -155,4 +155,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-24*
-*Last updated: 2026-01-24 after Phase 3 completion*
+*Last updated: 2026-01-24 after Phase 4 completion*
