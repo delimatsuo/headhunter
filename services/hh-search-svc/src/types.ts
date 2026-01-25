@@ -211,8 +211,8 @@ export interface NLPParseResult {
 
   /** Semantic expansions applied (Lead -> Senior/Staff/Principal) */
   semanticExpansion?: {
-    expandedSeniorities: string[];
     expandedRoles: string[];
+    expandedSeniorities: string[];
   };
 
   /** Timing breakdown for NLP operations */

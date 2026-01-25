@@ -7,13 +7,16 @@ import type { SearchServiceConfig } from './config';
 import type { EmbedClient } from './embed-client';
 import type {
   FirestoreCandidateRecord,
+  HybridSearchFilters,
   HybridSearchRequest,
   HybridSearchResponse,
   HybridSearchResultItem,
+  NLPParseResult,
   PgHybridSearchRow,
   SearchContext,
   SignalScores
 } from './types';
+import { QueryParser, type ParsedQuery } from './nlp';
 import type { PgVectorClient } from './pgvector-client';
 import type { SearchRedisClient } from './redis-client';
 import type { RerankClient, RerankCandidate, RerankRequest, RerankResponse, MatchRationale } from './rerank-client';
@@ -30,6 +33,8 @@ interface HybridSearchDependencies {
   rerankClient?: RerankClient;
   performanceTracker: PerformanceTracker;
   logger?: Logger;
+  /** NLP query parser for natural language search (NLNG-05) */
+  queryParser?: QueryParser;
 }
 
 function computeSkillMatches(
@@ -130,6 +135,8 @@ export class SearchService {
   private readonly logger: Logger;
   private firestore: Firestore | null = null;
   private readonly embeddingCoalescer = new RequestCoalescer<number[]>();
+  /** NLP query parser for natural language search (NLNG-05) */
+  private readonly queryParser: QueryParser | null;
 
   constructor(deps: HybridSearchDependencies) {
     this.config = deps.config;
@@ -139,6 +146,7 @@ export class SearchService {
     this.rerankClient = deps.rerankClient ?? null;
     this.performanceTracker = deps.performanceTracker;
     this.logger = (deps.logger ?? getLogger({ module: 'search-service' })).child({ module: 'search-service' });
+    this.queryParser = deps.queryParser ?? null;
   }
 
   setFirestore(client: Firestore): void {
@@ -171,6 +179,101 @@ export class SearchService {
     const hash = createHash('sha1');
     hash.update(baseText);
     return hash.digest('hex');
+  }
+
+  /**
+   * Convert NLP ParsedQuery to HybridSearchFilters.
+   * Merges with existing filters, NLP-extracted filters take precedence for empty fields.
+   *
+   * IMPORTANT: Uses semantic expansion for seniority levels so that
+   * "Lead engineer" matches Senior/Staff/Principal candidates.
+   *
+   * @see NLNG-05: NLP integration in search pipeline
+   */
+  private applyNlpFilters(
+    existingFilters: HybridSearchFilters | undefined,
+    parsed: ParsedQuery
+  ): HybridSearchFilters {
+    const filters: HybridSearchFilters = { ...existingFilters };
+
+    // Skills: merge explicit + expanded with existing
+    if (parsed.entities.skills.length > 0 || parsed.entities.expandedSkills.length > 0) {
+      const nlpSkills = [
+        ...parsed.entities.skills,
+        ...parsed.entities.expandedSkills
+      ];
+
+      if (filters.skills && filters.skills.length > 0) {
+        // Merge, avoiding duplicates
+        const allSkills = new Set([
+          ...filters.skills.map(s => s.toLowerCase()),
+          ...nlpSkills.map(s => s.toLowerCase())
+        ]);
+        filters.skills = Array.from(allSkills);
+      } else {
+        filters.skills = nlpSkills;
+      }
+    }
+
+    // Location: only apply if not already set
+    if (parsed.entities.location && !filters.locations?.length) {
+      filters.locations = [parsed.entities.location];
+    }
+
+    // Seniority: Use EXPANDED seniorities from semantic synonyms, not just singular
+    // This is the key link that enables "Lead engineer" -> Senior/Staff/Principal matching
+    if (parsed.semanticExpansion?.expandedSeniorities?.length) {
+      // Use expanded seniorities (includes synonyms like Lead -> [lead, senior, staff])
+      if (!filters.seniorityLevels?.length) {
+        filters.seniorityLevels = parsed.semanticExpansion.expandedSeniorities;
+
+        this.logger.debug(
+          {
+            originalSeniority: parsed.entities.seniority,
+            expandedSeniorities: parsed.semanticExpansion.expandedSeniorities
+          },
+          'Applied semantic seniority expansion to filters'
+        );
+      }
+    } else if (parsed.entities.seniority && !filters.seniorityLevels?.length) {
+      // Fallback: use singular seniority if no expansion available
+      filters.seniorityLevels = [parsed.entities.seniority];
+    }
+
+    // Experience years: only apply if not already set
+    if (parsed.entities.experienceYears) {
+      if (parsed.entities.experienceYears.min !== undefined && filters.minExperienceYears === undefined) {
+        filters.minExperienceYears = parsed.entities.experienceYears.min;
+      }
+      if (parsed.entities.experienceYears.max !== undefined && filters.maxExperienceYears === undefined) {
+        filters.maxExperienceYears = parsed.entities.experienceYears.max;
+      }
+    }
+
+    return filters;
+  }
+
+  /**
+   * Convert ParsedQuery to NLPParseResult for response.
+   * @see NLNG-05
+   */
+  private toNlpParseResult(parsed: ParsedQuery): NLPParseResult {
+    return {
+      parseMethod: parsed.parseMethod,
+      intent: parsed.intent,
+      confidence: parsed.confidence,
+      entities: {
+        role: parsed.entities.role,
+        skills: parsed.entities.skills,
+        expandedSkills: parsed.entities.expandedSkills,
+        seniority: parsed.entities.seniority,
+        location: parsed.entities.location,
+        remote: parsed.entities.remote,
+        experienceYears: parsed.entities.experienceYears
+      },
+      semanticExpansion: parsed.semanticExpansion,
+      timings: parsed.timings
+    };
   }
 
   async hybridSearch(context: SearchContext, request: HybridSearchRequest): Promise<HybridSearchResponse> {
@@ -224,6 +327,57 @@ export class SearchService {
         }
       };
       this.logger.info({ requestId: context.requestId, detectedCountry }, 'Auto-detected country from job description.');
+    }
+
+    // === NLP PARSING (if enabled) - NLNG-05 ===
+    let nlpResult: NLPParseResult | undefined;
+    let parsedQuery: ParsedQuery | undefined;
+
+    if (request.enableNlp && this.queryParser && sanitizedQuery.length >= 3) {
+      const nlpStart = Date.now();
+
+      try {
+        // Parse query - note: we don't have embedding yet, so parser will generate one
+        parsedQuery = await this.queryParser.parse(sanitizedQuery);
+        nlpResult = this.toNlpParseResult(parsedQuery);
+        timings.nlpMs = Date.now() - nlpStart;
+
+        this.logger.info(
+          {
+            requestId: context.requestId,
+            parseMethod: parsedQuery.parseMethod,
+            confidence: parsedQuery.confidence.toFixed(3),
+            extractedSkills: parsedQuery.entities.skills.length,
+            expandedSkills: parsedQuery.entities.expandedSkills.length,
+            semanticSeniorities: parsedQuery.semanticExpansion?.expandedSeniorities?.length ?? 0,
+            nlpMs: timings.nlpMs
+          },
+          'NLP query parsing complete'
+        );
+
+        // Apply extracted filters if NLP succeeded
+        if (parsedQuery.parseMethod === 'nlp') {
+          request = {
+            ...request,
+            filters: this.applyNlpFilters(request.filters, parsedQuery)
+          };
+
+          this.logger.debug(
+            {
+              requestId: context.requestId,
+              appliedFilters: request.filters,
+              seniorityExpansion: parsedQuery.semanticExpansion?.expandedSeniorities
+            },
+            'NLP filters applied to search'
+          );
+        }
+      } catch (error) {
+        this.logger.warn(
+          { error, requestId: context.requestId },
+          'NLP parsing failed, falling back to keyword search'
+        );
+        // Continue with original query
+      }
     }
 
     let embedding = request.embedding;
@@ -559,6 +713,14 @@ export class SearchService {
       } satisfies Record<string, unknown>;
     }
 
+    // Add NLP parsing result to metadata (NLNG-05)
+    if (nlpResult) {
+      response.metadata = {
+        ...response.metadata,
+        nlp: nlpResult
+      } satisfies Record<string, unknown>;
+    }
+
     if (request.includeDebug) {
       response.debug = {
         candidateCount: ranked.length,
@@ -623,7 +785,17 @@ export class SearchService {
           enabled: this.config.search.enableParallelPreSearch,
           preSearchMs: timings.preSearchMs,
           parallelSavingsMs: timings.parallelSavingsMs
-        }
+        },
+        // NLP parsing details (NLNG-05)
+        nlpParsing: nlpResult ? {
+          parseMethod: nlpResult.parseMethod,
+          intent: nlpResult.intent,
+          confidence: nlpResult.confidence,
+          extractedEntities: nlpResult.entities,
+          semanticExpansion: nlpResult.semanticExpansion,
+          appliedFilters: request.filters,
+          timings: nlpResult.timings
+        } : undefined
       };
     }
 
