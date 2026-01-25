@@ -17,6 +17,8 @@ import type { PgVectorClient } from './pgvector-client';
 import type { SearchRedisClient } from './redis-client';
 import type { RerankClient, RerankCandidate, RerankRequest, RerankResponse } from './rerank-client';
 import type { PerformanceTracker } from './performance-tracker';
+import { resolveWeights, type SignalWeightConfig, type RoleType } from './signal-weights';
+import { computeWeightedScore, extractSignalScores, normalizeVectorScore, completeSignalScores } from './scoring';
 
 interface HybridSearchDependencies {
   config: SearchServiceConfig;
@@ -187,6 +189,15 @@ export class SearchService {
       totalMs: 0
     };
 
+    // Resolve signal weights from request or role-type defaults
+    const roleType: RoleType = request.roleType ?? 'default';
+    const resolvedWeights = resolveWeights(request.signalWeights, roleType);
+
+    this.logger.info(
+      { requestId: context.requestId, roleType, weightsApplied: resolvedWeights },
+      'Signal weights resolved for search.'
+    );
+
     // Auto-extract country from job description if not explicitly provided
     const detectedCountry = extractCountryFromJobDescription(request.jobDescription);
     if (detectedCountry && (!request.filters?.countries || request.filters.countries.length === 0)) {
@@ -251,7 +262,7 @@ export class SearchService {
     });
     timings.retrievalMs = Date.now() - retrievalStart;
 
-    let candidates = rows.map((row) => this.hydrateResult(row, request));
+    let candidates = rows.map((row) => this.hydrateResult(row, request, resolvedWeights, roleType));
 
     if (candidates.length === 0 && this.config.firestoreFallback.enabled) {
       const fallbackStart = Date.now();
@@ -275,7 +286,11 @@ export class SearchService {
             weight: 0.1
           })) ?? [],
         matchReasons: ['Fetched via Firestore fallback'],
-        metadata: record.metadata
+        metadata: record.metadata,
+        // Signal scoring fields with neutral defaults (0.5) for fallback
+        signalScores: completeSignalScores({}, 0.5),
+        weightsApplied: resolvedWeights,
+        roleTypeUsed: roleType
       } satisfies HybridSearchResultItem));
     }
 
@@ -353,7 +368,12 @@ export class SearchService {
     return response;
   }
 
-  private hydrateResult(row: PgHybridSearchRow, request: HybridSearchRequest): HybridSearchResultItem {
+  private hydrateResult(
+    row: PgHybridSearchRow,
+    request: HybridSearchRequest,
+    resolvedWeights: SignalWeightConfig,
+    roleType: RoleType
+  ): HybridSearchResultItem {
     const requestedSkills = request.filters?.skills ?? [];
     const { matches, normalizedMatches, coverage } = computeSkillMatches(row.skills ?? undefined, requestedSkills);
 
@@ -389,17 +409,33 @@ export class SearchService {
 
     const baseVector = Number(row.vector_score ?? 0);
     const baseText = Number(row.text_score ?? 0);
-    let hybridScore = Number(row.hybrid_score ?? 0);
 
+    // Extract and normalize signal scores from row
+    const signalScores = extractSignalScores(row);
+
+    // Override vectorSimilarity with normalized value from hybrid search
+    signalScores.vectorSimilarity = normalizeVectorScore(row.vector_score);
+
+    // Compute weighted score from signals
+    const weightedScore = computeWeightedScore(signalScores, resolvedWeights);
+
+    // Use weighted score as base, then apply existing modifiers
+    let hybridScore = weightedScore;
+
+    // Apply skill coverage boost (existing logic)
     if (coverage > 0) {
       hybridScore += coverage * 0.1;
     }
 
+    // Apply confidence penalty (existing logic)
     const confidence = Number(row.analysis_confidence ?? 0);
     if (confidence < this.config.search.confidenceFloor) {
       hybridScore *= 0.9;
       matchReasons.push('Lower profile confidence score');
     }
+
+    // Clamp to 0-1 range
+    hybridScore = Math.max(0, Math.min(1, hybridScore));
 
     const compliance = {
       legalBasis: row.legal_basis ?? undefined,
@@ -432,7 +468,11 @@ export class SearchService {
         })),
       matchReasons,
       metadata: row.metadata ?? undefined,
-      compliance: hasCompliance ? compliance : undefined
+      compliance: hasCompliance ? compliance : undefined,
+      // Signal scoring fields
+      signalScores,
+      weightsApplied: resolvedWeights,
+      roleTypeUsed: roleType
     } satisfies HybridSearchResultItem;
   }
 
