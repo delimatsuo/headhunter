@@ -34,6 +34,11 @@ export interface ParsedQuery {
   entities: ExtractedEntities & {
     expandedSkills: string[];  // After ontology expansion
   };
+  /** Semantic expansions for role and seniority titles */
+  semanticExpansion?: {
+    expandedRoles: string[];
+    expandedSeniorities: string[];
+  };
   timings: {
     intentMs: number;
     extractionMs: number;
