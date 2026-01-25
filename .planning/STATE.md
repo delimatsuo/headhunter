@@ -1,7 +1,7 @@
 # Project State: Headhunter AI Leader-Level Search
 
 **Initialized:** 2026-01-24
-**Current Status:** Phase 4 IN PROGRESS (Multi-Signal Scoring Framework)
+**Current Status:** Phase 4 COMPLETE (Multi-Signal Scoring Framework)
 
 ---
 
@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 4 (Multi-Signal Scoring Framework) in progress. Plans 04-01 and 04-02 complete - SignalWeightConfig types, role-type presets, and scoring computation utilities created. Ready for Plan 04-03 (Response Enrichment).
+**Current Focus:** Phase 4 (Multi-Signal Scoring Framework) COMPLETE. All 4 plans finished - SignalWeightConfig types, role-type presets, scoring utilities, response enrichment, and API layer with module exports. Ready for Phase 5 (Skills Infrastructure).
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -21,14 +21,14 @@
 
 ## Current Position
 
-**Phase:** 4 of 10 (Multi-Signal Scoring Framework)
-**Plan:** 2 of ? complete
-**Status:** In Progress
-**Last activity:** 2026-01-25 - Completed 04-02-PLAN.md (Scoring Implementation)
+**Phase:** 4 of 10 (Multi-Signal Scoring Framework) - COMPLETE
+**Plan:** 4 of 4 complete
+**Status:** Phase Complete
+**Last activity:** 2026-01-25 - Completed 04-04-PLAN.md (API Layer and Module Exports)
 
-**Progress:** [########..] 72%
+**Progress:** [########..] 76%
 
-**Next Action:** Continue with Plan 04-03 (Response Enrichment)
+**Next Action:** Begin Phase 5 (Skills Infrastructure)
 
 ---
 
@@ -39,7 +39,7 @@
 | 1 | Reranking Fix | Complete | 4/4 | 100% |
 | 2 | Search Recall Foundation | Complete | 5/5 | 100% |
 | 3 | Hybrid Search | Complete | 4/4 | 100% |
-| 4 | Multi-Signal Scoring Framework | In Progress | 2/? | 50% |
+| 4 | Multi-Signal Scoring Framework | Complete | 4/4 | 100% |
 | 5 | Skills Infrastructure | Pending | 0/? | 0% |
 | 6 | Skills Intelligence | Pending | 0/? | 0% |
 | 7 | Signal Scoring Implementation | Pending | 0/? | 0% |
@@ -47,7 +47,7 @@
 | 9 | Match Transparency | Pending | 0/? | 0% |
 | 10 | Pipeline Integration | Pending | 0/? | 0% |
 
-**Overall:** 3/10 phases complete (30%)
+**Overall:** 4/10 phases complete (40%)
 
 ---
 
@@ -55,8 +55,8 @@
 
 | Metric | Target | Current | Status |
 |--------|--------|---------|--------|
-| v1 Requirements | 28 | 9 done | In Progress |
-| Phases Complete | 10 | 3 | In Progress |
+| v1 Requirements | 28 | 12 done | In Progress |
+| Phases Complete | 10 | 4 | In Progress |
 | Search Recall | 50+ candidates | Expected improvement | Pending verification |
 | p95 Latency | <1.2s | Unknown | Unmeasured |
 | Cache Hit Rate | >0.98 | Unknown | Unmeasured |
@@ -106,6 +106,8 @@
 | extractSignalScores reads Phase 2 metadata | Uses _*_score fields from metadata object | 4.02 |
 | normalizeVectorScore handles both scales | 0-100 and 0-1 input normalization | 4.02 |
 | weightsApplied field for transparency | Enables debugging which weights were used | 4.02 |
+| Schema validation for signal weights | 0-1 range, enum for roleType | 4.04 |
+| Module exports from index.ts | Enable external consumers (tests, other services) | 4.04 |
 
 ### Technical Notes
 
@@ -152,6 +154,10 @@
 - **completeSignalScores():** Ensures all signal fields present (04-02)
 - **HybridSearchRequest extended:** signalWeights, roleType fields added (04-02)
 - **HybridSearchResultItem extended:** signalScores, weightsApplied, roleTypeUsed fields added (04-02)
+- **Signal weight integration:** Weights resolved and applied in hybridSearch() (04-03)
+- **Response enrichment:** signalScores returned in search results (04-03)
+- **API schema validation:** signalWeights (0-1), roleType enum in schemas.ts (04-04)
+- **Module exports:** signal-weights, scoring, types exported from index.ts (04-04)
 
 ### Blockers
 
@@ -176,6 +182,8 @@ None currently identified.
 - [x] Complete 03-04: Hybrid Search Verification
 - [x] Complete 04-01: SignalWeightConfig Types and Role-Type Presets
 - [x] Complete 04-02: Scoring Implementation
+- [x] Complete 04-03: Response Enrichment
+- [x] Complete 04-04: API Layer and Module Exports
 - [ ] Verify EllaAI skills-master.ts format before copying (Phase 5)
 - [ ] Verify search recall improvement after Phase 2 deployment
 - [x] Note: Hard level filter at step 3.5 (career trajectory) - NOW CONVERTED TO SCORING
@@ -185,28 +193,29 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 04-02-PLAN.md - Scoring Implementation
-**Resume file:** None - ready for Phase 4 Plan 03
+**Stopped at:** Completed 04-04-PLAN.md - API Layer and Module Exports
+**Resume file:** None - ready for Phase 5
 
 ### Context for Next Session
 
-Phase 4 (Multi-Signal Scoring Framework) IN PROGRESS. Plans 04-01 and 04-02 complete:
+Phase 4 (Multi-Signal Scoring Framework) COMPLETE. All 4 plans finished:
 
 | Plan | Name | Status | Commits |
 |------|------|--------|---------|
 | 04-01 | SignalWeightConfig Types | Complete | a6d048a, 724c3d6 |
 | 04-02 | Scoring Implementation | Complete | 6fe692c, 176829f |
-| 04-03 | Response Enrichment | Pending | - |
+| 04-03 | Response Enrichment | Complete | 1df4394, 21accd5 |
+| 04-04 | API Layer and Module Exports | Complete | 10dc61a, 6b2d3bc |
 
-**Phase 4.02 deliverables:**
-- SignalScores interface with all 7 core signals + optional skillsMatch
-- HybridSearchRequest extended with signalWeights, roleType fields
-- HybridSearchResultItem extended with signalScores, weightsApplied, roleTypeUsed fields
+**Phase 4 deliverables:**
+- SignalWeightConfig type with 7 core signals + optional skillsMatch
+- Role-type presets (executive, manager, ic, default)
+- Weight resolution merging request overrides with presets
 - computeWeightedScore() for weighted signal combination
 - extractSignalScores() to extract Phase 2 scores from database rows
-- normalizeVectorScore() for 0-100/0-1 scale handling
-- completeSignalScores() for ensuring all fields present
-- Missing signals default to 0.5 (neutral) preventing NaN
+- signalScores, weightsApplied, roleTypeUsed in search results
+- API schema validation for signalWeights (0-1 range) and roleType enum
+- Module exports for external consumers (tests, other services)
 
 All Phase 1 commits:
 - 01-01: 72954b0, 05b5110, ed14f64, 2e7a888
@@ -227,9 +236,11 @@ All Phase 3 commits:
 - 03-03: 16a6aa5, ce4c4cf, 4b0c79e
 - 03-04: 83b7ecb
 
-Phase 4 commits so far:
+All Phase 4 commits:
 - 04-01: a6d048a, 724c3d6
 - 04-02: 6fe692c, 176829f
+- 04-03: 1df4394, 21accd5
+- 04-04: 10dc61a, 6b2d3bc
 
 ---
 
