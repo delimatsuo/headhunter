@@ -42,10 +42,10 @@ Requirements for leader-level search. Each maps to roadmap phases.
 
 ### Career Trajectory
 
-- [ ] **TRAJ-01**: Career direction computed from title sequence analysis
-- [ ] **TRAJ-02**: Career velocity computed (fast/normal/slow progression)
-- [ ] **TRAJ-03**: Trajectory fit score for role alignment
-- [ ] **TRAJ-04**: Trajectory type classification (technical, leadership, lateral, pivot)
+- [x] **TRAJ-01**: Career direction computed from title sequence analysis
+- [x] **TRAJ-02**: Career velocity computed (fast/normal/slow progression)
+- [x] **TRAJ-03**: Trajectory fit score for role alignment
+- [x] **TRAJ-04**: Trajectory type classification (technical, leadership, lateral, pivot)
 
 ### Match Transparency
 
@@ -135,10 +135,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SCOR-04 | Phase 7: Signal Scoring Implementation | Complete |
 | SCOR-05 | Phase 7: Signal Scoring Implementation | Complete |
 | SCOR-06 | Phase 7: Signal Scoring Implementation | Complete |
-| TRAJ-01 | Phase 8: Career Trajectory | Pending |
-| TRAJ-02 | Phase 8: Career Trajectory | Pending |
-| TRAJ-03 | Phase 8: Career Trajectory | Pending |
-| TRAJ-04 | Phase 8: Career Trajectory | Pending |
+| TRAJ-01 | Phase 8: Career Trajectory | Complete |
+| TRAJ-02 | Phase 8: Career Trajectory | Complete |
+| TRAJ-03 | Phase 8: Career Trajectory | Complete |
+| TRAJ-04 | Phase 8: Career Trajectory | Complete |
 | TRNS-01 | Phase 9: Match Transparency | Pending |
 | TRNS-02 | Phase 9: Match Transparency | Pending |
 | TRNS-03 | Phase 9: Match Transparency | Pending |
@@ -155,4 +155,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-24*
-*Last updated: 2026-01-25 after Phase 7 completion*
+*Last updated: 2026-01-25 after Phase 8 completion*
