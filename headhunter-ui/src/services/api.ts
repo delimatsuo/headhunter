@@ -864,6 +864,7 @@ export const apiService = {
     options?: {
       limit?: number;
       page?: number;
+      includeMatchRationale?: boolean;  // TRNS-03: Request LLM rationale for top candidates
       sourcingStrategy?: {
         target_companies?: string[];
         target_industries?: string[];
@@ -889,6 +890,7 @@ export const apiService = {
         options: {
           limit: options?.limit || 50,
           page: options?.page || 0,
+          includeMatchRationale: options?.includeMatchRationale,  // TRNS-03
           sourcingStrategy: options?.sourcingStrategy,
         }
       });
@@ -930,6 +932,8 @@ export const apiService = {
           // Agentic-specific fields
           concerns: match.rationale?.concerns || [],
           interview_questions: match.rationale?.interview_questions || [],
+          // TRNS-03: LLM-generated match rationale (from backend Plan 09-05)
+          matchRationale: match.matchRationale,
         };
       });
 
@@ -978,7 +982,9 @@ export const apiService = {
           // Phase 9: Signal score transparency fields
           signalScores,
           weightsApplied,
-          roleTypeUsed
+          roleTypeUsed,
+          // TRNS-03: LLM-generated match rationale for top candidates
+          matchRationale: c.matchRationale
         };
       });
 

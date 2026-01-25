@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { JobDescriptionForm, SourcingStrategy } from './JobDescriptionForm';
+import { JobDescriptionForm, SourcingStrategy, JobAnalysis } from './JobDescriptionForm';
 import { SearchResults } from './SearchResults';
 import { AddCandidateModal } from '../Upload/AddCandidateModal';
 import { EngineSelector, EngineType } from './EngineSelector';
@@ -9,17 +9,25 @@ import { JobDescription, SearchResponse, CandidateProfile } from '../../types';
 export const SearchPage: React.FC = () => {
   const [searchResults, setSearchResults] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingPhase, setLoadingPhase] = useState<'analyzing' | 'searching' | null>(null);
   const [error, setError] = useState<string>('');
   const [showAddCandidate, setShowAddCandidate] = useState(false);
   const [searchHistory, setSearchHistory] = useState<JobDescription[]>([]);
   const [displayLimit, setDisplayLimit] = useState(50); // Progressive loading: show 50 at a time
   const [selectedEngine, setSelectedEngine] = useState<EngineType>('legacy');
+  const [currentAnalysis, setCurrentAnalysis] = useState<JobAnalysis | null>(null);
 
-  const handleSearch = async (jobDescription: JobDescription, sourcingStrategy?: SourcingStrategy) => {
+  const handleSearch = async (jobDescription: JobDescription, sourcingStrategy?: SourcingStrategy, analysis?: JobAnalysis) => {
     setLoading(true);
+    setLoadingPhase('searching'); // Analysis happens in form, we start at 'searching'
     setError('');
     setSearchResults(null);
     setDisplayLimit(50); // Reset to 50 on new search
+
+    // Store analysis for display in results
+    if (analysis) {
+      setCurrentAnalysis(analysis);
+    }
 
     try {
       // Use the selected AI engine for the search
@@ -28,6 +36,7 @@ export const SearchPage: React.FC = () => {
         jobDescription,
         {
           limit: 50,
+          includeMatchRationale: true,  // TRNS-03: Request LLM rationale for top 10 candidates
           sourcingStrategy: {
             target_companies: sourcingStrategy?.target_companies,
             target_industries: sourcingStrategy?.target_industries,
@@ -46,6 +55,7 @@ export const SearchPage: React.FC = () => {
       setError(error.message || 'Search failed');
     } finally {
       setLoading(false);
+      setLoadingPhase(null);
     }
   };
 
@@ -88,6 +98,7 @@ export const SearchPage: React.FC = () => {
           <JobDescriptionForm
             onSearch={handleSearch}
             loading={loading}
+            loadingPhase={loadingPhase}
           />
 
           {/* Search History */}
@@ -133,6 +144,7 @@ export const SearchPage: React.FC = () => {
             error={error}
             displayLimit={displayLimit}
             onLoadMore={handleLoadMore}
+            analysis={currentAnalysis}
           />
 
           {/* Tips for better results */}
