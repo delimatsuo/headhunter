@@ -7,6 +7,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { z } from "zod";
 import { VectorSearchService } from "./vector-search";
+import { normalizeSkillName } from "./shared/skills-service";
 
 // Types and schemas for skill-aware search
 const SkillRequirementSchema = z.object({
@@ -124,26 +125,6 @@ class SkillAwareSearchService {
     this.vectorSearchService = new VectorSearchService();
   }
 
-  /**
-   * Parse and normalize skill names
-   */
-  private normalizeSkill(skill: string): string {
-    const skillLower = skill.toLowerCase().trim();
-
-    // Common skill synonyms
-    const synonymMap: Record<string, string> = {
-      "js": "javascript",
-      "python3": "python",
-      "py": "python",
-      "k8s": "kubernetes",
-      "ml": "machine learning",
-      "ai": "artificial intelligence",
-      "nodejs": "node.js",
-      "pm": "project management"
-    };
-
-    return synonymMap[skillLower] || skillLower;
-  }
 
   /**
    * Extract skill profile from candidate data
@@ -176,7 +157,7 @@ class SkillAwareSearchService {
         for (const { list, category } of skillTypes) {
           if (Array.isArray(list)) {
             for (const skillObj of list) {
-              const skillName = this.normalizeSkill(skillObj.skill || skillObj);
+              const skillName = normalizeSkillName(skillObj.skill || skillObj);
               const confidence = skillObj.confidence || 100;
               const evidence = skillObj.evidence || [];
 
@@ -200,7 +181,7 @@ class SkillAwareSearchService {
         for (const skillList of inferredTypes) {
           if (Array.isArray(skillList)) {
             for (const skillObj of skillList) {
-              const skillName = this.normalizeSkill(skillObj.skill);
+              const skillName = normalizeSkillName(skillObj.skill);
               const confidence = skillObj.confidence;
               const category = skillObj.skill_category || "technical";
 
@@ -244,7 +225,7 @@ class SkillAwareSearchService {
     let totalWeight = 0;
 
     for (const requirement of requiredSkills) {
-      const normalizedSkill = this.normalizeSkill(requirement.skill);
+      const normalizedSkill = normalizeSkillName(requirement.skill);
       totalWeight += requirement.weight;
 
       if (candidateSkills[normalizedSkill]) {
@@ -409,7 +390,7 @@ class SkillAwareSearchService {
     // Calculate skill breakdown
     const skillBreakdown: Record<string, number> = {};
     for (const requirement of searchQuery.required_skills) {
-      const normalizedSkill = this.normalizeSkill(requirement.skill);
+      const normalizedSkill = normalizeSkillName(requirement.skill);
       const candidateSkill = skillProfile.skills[normalizedSkill];
       skillBreakdown[requirement.skill] = candidateSkill ? candidateSkill.confidence : 0;
     }
