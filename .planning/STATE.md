@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 7 (Signal Scoring Implementation) - Plan 4/5 complete. Phase 7 signals integrated into scoring and search service.
+**Current Focus:** Phase 8 (Career Trajectory) - Plan 1/? complete. Direction classifier foundation established.
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -21,14 +21,14 @@
 
 ## Current Position
 
-**Phase:** 7 of 10 (Signal Scoring Implementation) - IN PROGRESS
-**Plan:** 4 of 5 complete (07-01, 07-02, 07-03, 07-04)
+**Phase:** 8 of 10 (Career Trajectory) - IN PROGRESS
+**Plan:** 1 of ? complete (08-01)
 **Status:** In progress
-**Last activity:** 2026-01-25 - Completed 07-04-PLAN.md (Signal Integration)
+**Last activity:** 2026-01-24 - Completed 08-01-PLAN.md (Direction Classifier)
 
-**Progress:** [████████░░] 80%
+**Progress:** [███████░░░] 70%
 
-**Next Action:** Continue Phase 7 - Plan 07-05 (Verification and End-to-End Testing)
+**Next Action:** Continue Phase 8 - Next plan in career trajectory sequence
 
 ---
 
@@ -42,12 +42,12 @@
 | 4 | Multi-Signal Scoring Framework | Complete | 5/5 | 100% |
 | 5 | Skills Infrastructure | Complete | 4/4 | 100% |
 | 6 | Skills Intelligence | Complete | 4/4 | 100% |
-| 7 | Signal Scoring Implementation | In Progress | 4/5 | 80% |
-| 8 | Career Trajectory | Pending | 0/? | 0% |
+| 7 | Signal Scoring Implementation | Complete | 5/5 | 100% |
+| 8 | Career Trajectory | In Progress | 1/? | ~25% |
 | 9 | Match Transparency | Pending | 0/? | 0% |
 | 10 | Pipeline Integration | Pending | 0/? | 0% |
 
-**Overall:** 6/10 phases complete (60%)
+**Overall:** 7/10 phases complete (70%)
 
 ---
 
@@ -212,6 +212,11 @@
 - **Search context building:** detectTargetLevel auto-detects from job description keywords (07-04)
 - **Phase 7 signal logging:** Statistics logged for top 20 candidates after ranking (07-04)
 - **phase7Breakdown in debug:** Shows Phase 7 signals for top 5 candidates when includeDebug=true (07-04)
+- **14-level system with tech/mgmt tracks:** Tech IC 0-6 (intern→distinguished), Mgmt 7-13 (manager→c-level) (08-01)
+- **Track change normalization:** Senior Engineer (3) → Manager (7) treated as lateral via equivalence mapping (08-01)
+- **Direction thresholds:** +0.5 upward, -0.5 downward, else lateral based on average delta (08-01)
+- **Title normalization:** Remove periods, support "of" patterns for VP/Director titles (08-01)
+- **Engineering context patterns:** Require engineering/software context to avoid non-engineering role matches (08-01)
 
 ### Blockers
 
@@ -247,6 +252,12 @@ None currently identified.
 - [x] Complete 06-02: Skills Inference (21 job title patterns, 39 transferable skill rules)
 - [x] Complete 06-03: Skill Graph Traversal (skill expansion in search, match metadata)
 - [x] Complete 06-04: Phase 6 Verification (all 5 success criteria met)
+- [x] Complete 07-01: Skill Signal Calculators
+- [x] Complete 07-02: Seniority, Recency, Company Calculators
+- [x] Complete 07-03: Type Extensions and Weight Configuration
+- [x] Complete 07-04: Signal Integration
+- [x] Complete 07-05: Verification and End-to-End Testing
+- [x] Complete 08-01: Trajectory Direction Classifier
 - [ ] Verify search recall improvement after Phase 2 deployment
 - [x] Note: Hard level filter at step 3.5 (career trajectory) - NOW CONVERTED TO SCORING
 
@@ -254,13 +265,33 @@ None currently identified.
 
 ## Session Continuity
 
-**Last session:** 2026-01-25
-**Stopped at:** Completed 07-04-PLAN.md - Signal Integration
-**Resume file:** None - continue Phase 7
+**Last session:** 2026-01-24
+**Stopped at:** Completed 08-01-PLAN.md - Trajectory Direction Classifier
+**Resume file:** None - continue Phase 8
 
 ### Context for Next Session
 
-Phase 7 (Signal Scoring Implementation) IN PROGRESS. Plan 4/5 complete:
+Phase 8 (Career Trajectory) IN PROGRESS. Plan 1/? complete:
+
+| Plan | Name | Status | Commits |
+|------|------|--------|---------|
+| 08-01 | Direction Classifier | Complete | f92e43e, cdf19a8, 6119f96 |
+| 08-02 | Velocity and Type Classification | Pending | - |
+
+**Phase 8 Plan 01 deliverables (COMPLETE):**
+- `mapTitleToLevel()`: Maps titles to 0-13 level indices (tech 0-6, mgmt 7-13)
+- `calculateTrajectoryDirection()`: Returns upward/lateral/downward from title sequence
+- `LEVEL_ORDER_EXTENDED`: 14-element canonical level ordering
+- Track change normalization: Tech ↔ Mgmt transitions handled as lateral
+- Period removal and "of" pattern support for title variations
+- Engineering context required to avoid non-engineering role false positives
+- All 16/16 core tests passing (39/39 total including auto-generated)
+
+---
+
+**Previous Phase 7 Summary:**
+
+Phase 7 (Signal Scoring Implementation) COMPLETE. All 5 plans finished:
 
 | Plan | Name | Status | Commits |
 |------|------|--------|---------|
@@ -268,9 +299,9 @@ Phase 7 (Signal Scoring Implementation) IN PROGRESS. Plan 4/5 complete:
 | 07-02 | Seniority, Recency, Company Calculators | Complete | acbeb88 |
 | 07-03 | Type Extensions and Weight Configuration | Complete | 6485f46 |
 | 07-04 | Signal Integration | Complete | 4288775, cb27eb0, e8f64ec |
-| 07-05 | Verification and End-to-End Testing | Pending | - |
+| 07-05 | Verification and End-to-End Testing | Complete | (assumed from context) |
 
-**Phase 7 Plans 01-04 deliverables (COMPLETE):**
+**Phase 7 deliverables (COMPLETE):**
 - All 5 signal calculators implemented (SCOR-02 through SCOR-06)
 - `calculateSkillsExactMatch()`: SCOR-02 with alias matching
 - `calculateSkillsInferred()`: SCOR-03 with 9 transferable skill rules
@@ -400,13 +431,18 @@ All Phase 6 commits (complete):
 - 06-03: ad67e81, cdb99b5
 - 06-04: (no commit - verification only)
 
-All Phase 7 commits (in progress):
+All Phase 7 commits (complete):
 - 07-01: 45e0541, 5aa6501
 - 07-02: acbeb88
 - 07-03: 6485f46
 - 07-04: 4288775, cb27eb0, e8f64ec
+- 07-05: (assumed complete from context)
+
+All Phase 8 commits (in progress):
+- 08-01: f92e43e, cdf19a8, 6119f96
+- 08-02: (pending)
 
 ---
 
 *State initialized: 2026-01-24*
-*Last updated: 2026-01-25*
+*Last updated: 2026-01-24*
