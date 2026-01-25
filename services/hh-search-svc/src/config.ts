@@ -97,6 +97,8 @@ export interface SearchRuntimeConfig {
   pipelineScoringLimit: number;    // Top N after scoring (default 100)
   pipelineRerankLimit: number;     // Final top N after rerank (default 50)
   pipelineLogStages: boolean;      // Log stage transitions (default true)
+  // Parallel execution (PERF-03)
+  enableParallelPreSearch: boolean;  // Enable parallel pre-search execution (embedding + specialty) (default true)
 }
 
 export interface RerankServiceConfig {
@@ -299,7 +301,9 @@ export function getSearchServiceConfig(): SearchServiceConfig {
     pipelineRetrievalLimit: Math.max(100, parseNumber(process.env.PIPELINE_RETRIEVAL_LIMIT, 500)),
     pipelineScoringLimit: Math.max(50, parseNumber(process.env.PIPELINE_SCORING_LIMIT, 100)),
     pipelineRerankLimit: Math.max(10, parseNumber(process.env.PIPELINE_RERANK_LIMIT, 50)),
-    pipelineLogStages: parseBoolean(process.env.PIPELINE_LOG_STAGES, true)
+    pipelineLogStages: parseBoolean(process.env.PIPELINE_LOG_STAGES, true),
+    // Parallel execution (PERF-03)
+    enableParallelPreSearch: parseBoolean(process.env.ENABLE_PARALLEL_PRE_SEARCH, true)
   };
 
   const firestoreFallback: FirestoreFallbackConfig = {
