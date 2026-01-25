@@ -9,11 +9,11 @@ Requirements for advanced intelligence milestone. Building on v1.0 leader-level 
 
 ### Performance Optimization
 
-- [ ] **PERF-01**: p95 search latency under 500ms (from current 1.2s target)
-- [ ] **PERF-02**: pgvectorscale integration for 28x latency improvement
-- [ ] **PERF-03**: Connection pooling and parallel query execution
-- [ ] **PERF-04**: Embedding pre-computation for entire candidate pool
-- [ ] **PERF-05**: Redis caching strategy with scoring cache invalidation
+- [x] **PERF-01**: p95 search latency under 500ms (from current 1.2s target)
+- [x] **PERF-02**: pgvectorscale integration for 28x latency improvement
+- [x] **PERF-03**: Connection pooling and parallel query execution
+- [x] **PERF-04**: Embedding pre-computation for entire candidate pool
+- [x] **PERF-05**: Redis caching strategy with scoring cache invalidation
 
 ### Natural Language Search
 
@@ -97,11 +97,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PERF-01 | Phase 11: Performance Foundation | Pending |
-| PERF-02 | Phase 11: Performance Foundation | Pending |
-| PERF-03 | Phase 11: Performance Foundation | Pending |
-| PERF-04 | Phase 11: Performance Foundation | Pending |
-| PERF-05 | Phase 11: Performance Foundation | Pending |
+| PERF-01 | Phase 11: Performance Foundation | Complete |
+| PERF-02 | Phase 11: Performance Foundation | Complete |
+| PERF-03 | Phase 11: Performance Foundation | Complete |
+| PERF-04 | Phase 11: Performance Foundation | Complete |
+| PERF-05 | Phase 11: Performance Foundation | Complete |
 | NLNG-01 | Phase 12: Natural Language Search | Pending |
 | NLNG-02 | Phase 12: Natural Language Search | Pending |
 | NLNG-03 | Phase 12: Natural Language Search | Pending |
