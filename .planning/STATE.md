@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 6 (Skills Intelligence) COMPLETE. All success criteria verified. Next: Phase 7 (Signal Scoring Implementation).
+**Current Focus:** Phase 7 (Signal Scoring Implementation) - Plan 1/5 complete. Skill signal calculators (SCOR-02, SCOR-03) implemented.
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -21,14 +21,14 @@
 
 ## Current Position
 
-**Phase:** 6 of 10 (Skills Intelligence) - COMPLETE
-**Plan:** 4 of 4 complete (06-01, 06-02, 06-03, 06-04)
-**Status:** Complete
-**Last activity:** 2026-01-25 - Completed 06-04-PLAN.md (Phase Verification)
+**Phase:** 7 of 10 (Signal Scoring Implementation) - IN PROGRESS
+**Plan:** 1 of 5 complete (07-01)
+**Status:** In progress
+**Last activity:** 2026-01-25 - Completed 07-01-PLAN.md (Skill Signal Calculators)
 
-**Progress:** [████████░░] 75%
+**Progress:** [████████░░] 76%
 
-**Next Action:** Begin Phase 7 (Signal Scoring Implementation)
+**Next Action:** Continue Phase 7 - Plan 07-02 (Seniority and Company Pedigree Calculators)
 
 ---
 
@@ -42,7 +42,7 @@
 | 4 | Multi-Signal Scoring Framework | Complete | 5/5 | 100% |
 | 5 | Skills Infrastructure | Complete | 4/4 | 100% |
 | 6 | Skills Intelligence | Complete | 4/4 | 100% |
-| 7 | Signal Scoring Implementation | Pending | 0/? | 0% |
+| 7 | Signal Scoring Implementation | In Progress | 1/5 | 20% |
 | 8 | Career Trajectory | Pending | 0/? | 0% |
 | 9 | Match Transparency | Pending | 0/? | 0% |
 | 10 | Pipeline Integration | Pending | 0/? | 0% |
@@ -119,6 +119,9 @@
 | Confidence decay: candidate * expansion | Multiply candidate confidence by graph expansion confidence | 6.03 |
 | Match type scoring multipliers | exact=1.0, related=0.9, inferred=0.85 | 6.03 |
 | Top 5 transferable skills per candidate | Limit to prevent result bloat | 6.03 |
+| Skill alias matching via getCommonAliases | Handles variations like js/javascript, k8s/kubernetes | 7.01 |
+| Rule-based transferable skill scoring | 9 skill transfer rules with 0-1 transferability scores | 7.01 |
+| Neutral score default (0.5) | Return 0.5 when required context missing - prevents unfair penalization | 7.01 |
 
 ### Technical Notes
 
@@ -226,10 +229,31 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 06-04-PLAN.md - Phase 6 Complete
-**Resume file:** None - begin Phase 7
+**Stopped at:** Completed 07-01-PLAN.md - Skill Signal Calculators
+**Resume file:** None - continue to 07-02
 
 ### Context for Next Session
+
+Phase 7 (Signal Scoring Implementation) IN PROGRESS. Plan 1/5 complete:
+
+| Plan | Name | Status | Commits |
+|------|------|--------|---------|
+| 07-01 | Skill Signal Calculators | Complete | 45e0541, 5aa6501 |
+| 07-02 | Seniority and Company Pedigree | Pending | - |
+| 07-03 | Career Trajectory Calculator | Pending | - |
+| 07-04 | Combined Signal Scoring | Pending | - |
+| 07-05 | Search Integration and Verification | Pending | - |
+
+**Phase 7 Plan 01 deliverables (COMPLETE):**
+- `calculateSkillsExactMatch()`: SCOR-02 implemented with alias matching
+- `calculateSkillsInferred()`: SCOR-03 implemented with 9 transferable skill rules
+- Context interfaces: SkillMatchContext, SeniorityContext, CompanyContext
+- Constants: LEVEL_ORDER, FAANG_COMPANIES, UNICORN_COMPANIES ready for 07-02
+- All functions return 0-1 scores, 0.5 neutral when context missing
+
+---
+
+**Previous Phase 6 Summary:**
 
 Phase 6 (Skills Intelligence) COMPLETE. All 4 plans finished:
 
@@ -335,6 +359,9 @@ All Phase 6 commits (complete):
 - 06-02: cab859e, f4045f8
 - 06-03: ad67e81, cdb99b5
 - 06-04: (no commit - verification only)
+
+All Phase 7 commits (in progress):
+- 07-01: 45e0541, 5aa6501
 
 ---
 
