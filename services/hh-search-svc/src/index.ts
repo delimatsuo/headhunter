@@ -9,6 +9,41 @@ import { SearchService } from './search-service';
 import { RerankClient } from './rerank-client';
 import { PerformanceTracker } from './performance-tracker';
 
+// =============================================================================
+// Module Exports for External Consumers
+// =============================================================================
+
+// Signal Weights module - weight configuration and role-type presets
+export {
+  type SignalWeightConfig,
+  type RoleType,
+  ROLE_WEIGHT_PRESETS,
+  resolveWeights,
+  normalizeWeights,
+  isValidRoleType,
+  parseRoleType
+} from './signal-weights';
+
+// Scoring module - weighted score computation utilities
+export {
+  computeWeightedScore,
+  extractSignalScores,
+  normalizeVectorScore,
+  completeSignalScores,
+  type SignalScores
+} from './scoring';
+
+// Types - request/response types for search API
+export type {
+  HybridSearchRequest,
+  HybridSearchResponse,
+  HybridSearchResultItem,
+  HybridSearchFilters,
+  HybridSearchTimings,
+  SearchContext,
+  PgHybridSearchRow
+} from './types';
+
 async function bootstrap(): Promise<void> {
   process.env.SERVICE_NAME = process.env.SERVICE_NAME ?? 'hh-search-svc';
   const logger = getLogger({ module: 'bootstrap' });
