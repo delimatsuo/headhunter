@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 6 (Skills Intelligence) IN PROGRESS. Skill inference and transferable skills detection added. Next: Skill graph traversal and skill-aware search.
+**Current Focus:** Phase 6 (Skills Intelligence) IN PROGRESS. Skill expansion, inference, and search integration complete. Next: Phase verification.
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -22,13 +22,13 @@
 ## Current Position
 
 **Phase:** 6 of 10 (Skills Intelligence) - IN PROGRESS
-**Plan:** 2 of 4 complete (06-01, 06-02)
+**Plan:** 3 of 4 complete (06-01, 06-02, 06-03)
 **Status:** In Progress
-**Last activity:** 2026-01-25 - Completed 06-02-PLAN.md (Skills Inference)
+**Last activity:** 2026-01-25 - Completed 06-03-PLAN.md (Skill Graph Traversal)
 
-**Progress:** [██████░░░░] 60%
+**Progress:** [███████░░░] 65%
 
-**Next Action:** Continue with 06-03-PLAN.md (Skill Graph Traversal)
+**Next Action:** Continue with 06-04-PLAN.md (Phase Verification)
 
 ---
 
@@ -41,7 +41,7 @@
 | 3 | Hybrid Search | Complete | 4/4 | 100% |
 | 4 | Multi-Signal Scoring Framework | Complete | 5/5 | 100% |
 | 5 | Skills Infrastructure | Complete | 4/4 | 100% |
-| 6 | Skills Intelligence | In Progress | 2/4 | 50% |
+| 6 | Skills Intelligence | In Progress | 3/4 | 75% |
 | 7 | Signal Scoring Implementation | Pending | 0/? | 0% |
 | 8 | Career Trajectory | Pending | 0/? | 0% |
 | 9 | Match Transparency | Pending | 0/? | 0% |
@@ -115,6 +115,10 @@
 | Rule-based skill inference | 21 job title patterns, explainable, no ML needed | 6.02 |
 | Confidence categories | highly_probable (0.85+), probable (0.65-0.84), likely (0.5-0.64) | 6.02 |
 | Bidirectional transferable skills | Java->Kotlin AND Kotlin->Java explicitly defined | 6.02 |
+| SkillMatchResult tracks matchType | exact/alias/related/partial for transparency | 6.03 |
+| Confidence decay: candidate * expansion | Multiply candidate confidence by graph expansion confidence | 6.03 |
+| Match type scoring multipliers | exact=1.0, related=0.9, inferred=0.85 | 6.03 |
+| Top 5 transferable skills per candidate | Limit to prevent result bloat | 6.03 |
 
 ### Technical Notes
 
@@ -175,6 +179,10 @@
 - **Skills inference created:** 21 job title patterns with confidence scoring (06-02)
 - **Transferable skills added:** 39 rules covering language families, paradigms, domains (06-02)
 - **Module exports unified:** inferSkillsFromTitle, findTransferableSkills via skills-service.ts (06-02)
+- **Skill expansion integrated:** findMatchingSkill uses getCachedSkillExpansion for related matches (06-03)
+- **Match type tracking:** SkillMatchResult includes matchType field for transparency (06-03)
+- **Skill match details in results:** skill_match_details and transferable_opportunities returned (06-03)
+- **Title-based inference in search:** extractSkillProfile infers skills from job titles (06-03)
 
 ### Blockers
 
@@ -208,7 +216,7 @@ None currently identified.
 - [x] Complete 05-04: Phase 5 Verification (all success criteria met)
 - [x] Complete 06-01: Skill Expansion (skills-graph.ts with expandSkills, getRelatedSkillIds)
 - [x] Complete 06-02: Skills Inference (21 job title patterns, 39 transferable skill rules)
-- [ ] Complete 06-03: Skill Graph Traversal
+- [x] Complete 06-03: Skill Graph Traversal (skill expansion in search, match metadata)
 - [ ] Complete 06-04: Phase 6 Verification
 - [ ] Verify search recall improvement after Phase 2 deployment
 - [x] Note: Hard level filter at step 3.5 (career trajectory) - NOW CONVERTED TO SCORING
@@ -218,18 +226,18 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 06-02-PLAN.md - Skills Inference
-**Resume file:** None - continue with 06-03-PLAN.md
+**Stopped at:** Completed 06-03-PLAN.md - Skill Graph Traversal
+**Resume file:** None - continue with 06-04-PLAN.md
 
 ### Context for Next Session
 
-Phase 6 (Skills Intelligence) IN PROGRESS. 2 of 4 plans finished:
+Phase 6 (Skills Intelligence) IN PROGRESS. 3 of 4 plans finished:
 
 | Plan | Name | Status | Commits |
 |------|------|--------|---------|
 | 06-01 | Skill Expansion | Complete | (see 06-01-SUMMARY.md) |
 | 06-02 | Skills Inference | Complete | cab859e, f4045f8 |
-| 06-03 | Skill Graph Traversal | Pending | - |
+| 06-03 | Skill Graph Traversal | Complete | ad67e81, cdb99b5 |
 | 06-04 | Phase Verification | Pending | - |
 
 **Phase 6 deliverables so far:**
@@ -238,6 +246,9 @@ Phase 6 (Skills Intelligence) IN PROGRESS. 2 of 4 plans finished:
 - Job title inference: 21 patterns, confidence scoring
 - Transferable skills: 39 rules with pivot types and learning times
 - Unified exports via skills-service.ts
+- findMatchingSkill() uses skill graph expansion for related matches
+- Skill match details returned in search results (matchType, reasoning)
+- Transferable opportunities returned per candidate
 
 ---
 
@@ -321,6 +332,7 @@ All Phase 5 commits (complete):
 Phase 6 commits (in progress):
 - 06-01: (see 06-01-SUMMARY.md)
 - 06-02: cab859e, f4045f8
+- 06-03: ad67e81, cdb99b5
 
 ---
 
