@@ -3,14 +3,23 @@ import type { Logger } from 'pino';
 
 import type { RedisCacheConfig } from './config';
 
+interface CacheMetrics {
+  hits: number;
+  misses: number;
+  sets: number;
+  deletes: number;
+}
+
 export interface RedisHealthStatus {
   status: 'healthy' | 'degraded' | 'disabled' | 'unavailable';
   latencyMs?: number;
   message?: string;
+  metrics?: CacheMetrics & { hitRate: number };
 }
 
 export class SearchRedisClient {
   private client: Redis | Cluster | null = null;
+  private metrics: CacheMetrics = { hits: 0, misses: 0, sets: 0, deletes: 0 };
 
   constructor(private readonly config: RedisCacheConfig, private readonly logger: Logger) {
     if (config.disable) {
@@ -89,12 +98,15 @@ export class SearchRedisClient {
     try {
       const raw = await client.get(key);
       if (!raw) {
+        this.metrics.misses++;
         return null;
       }
 
+      this.metrics.hits++;
       return JSON.parse(raw) as T;
     } catch (error) {
       this.logger.error({ error, key }, 'Failed to read from Redis.');
+      this.metrics.misses++;
       return null;
     }
   }
@@ -114,8 +126,37 @@ export class SearchRedisClient {
       } else {
         await client.set(key, payload);
       }
+      this.metrics.sets++;
     } catch (error) {
       this.logger.error({ error, key }, 'Failed to write to Redis.');
+    }
+  }
+
+  /**
+   * Set a value with randomized TTL jitter to prevent cache stampede.
+   * Jitter adds ±20% variation to the base TTL.
+   */
+  async setWithJitter<T>(key: string, value: T, baseTtlSeconds?: number): Promise<void> {
+    const client = this.createClient();
+    if (!client) {
+      return;
+    }
+
+    const baseTtl = baseTtlSeconds ?? this.config.ttlSeconds;
+    // Add ±20% jitter to prevent synchronized expiration
+    const jitter = baseTtl * 0.2 * (Math.random() * 2 - 1);
+    const ttl = Math.floor(baseTtl + jitter);
+
+    try {
+      const payload = JSON.stringify(value);
+      if (ttl > 0) {
+        await client.setex(key, ttl, payload);
+      } else {
+        await client.set(key, payload);
+      }
+      this.metrics.sets++;
+    } catch (error) {
+      this.logger.error({ error, key }, 'Failed to write to Redis with jitter.');
     }
   }
 
@@ -127,6 +168,7 @@ export class SearchRedisClient {
 
     try {
       await client.del(key);
+      this.metrics.deletes++;
     } catch (error) {
       this.logger.warn({ error, key }, 'Failed to delete Redis key.');
     }
@@ -144,6 +186,19 @@ export class SearchRedisClient {
     return this.config.disable;
   }
 
+  getMetrics(): CacheMetrics & { hitRate: number } {
+    const total = this.metrics.hits + this.metrics.misses;
+    const hitRate = total > 0 ? this.metrics.hits / total : 0;
+    return {
+      ...this.metrics,
+      hitRate: Math.round(hitRate * 100) / 100
+    };
+  }
+
+  resetMetrics(): void {
+    this.metrics = { hits: 0, misses: 0, sets: 0, deletes: 0 };
+  }
+
   async healthCheck(): Promise<RedisHealthStatus> {
     if (this.config.disable) {
       return { status: 'disabled', message: 'Caching disabled via configuration.' } satisfies RedisHealthStatus;
@@ -159,7 +214,11 @@ export class SearchRedisClient {
       const response = await client.ping();
       const latency = Date.now() - start;
       if (response?.toString().toUpperCase() === 'PONG') {
-        return { status: 'healthy', latencyMs: latency } satisfies RedisHealthStatus;
+        return {
+          status: 'healthy',
+          latencyMs: latency,
+          metrics: this.getMetrics()
+        } satisfies RedisHealthStatus;
       }
       return { status: 'degraded', latencyMs: latency, message: 'Unexpected ping response.' } satisfies RedisHealthStatus;
     } catch (error) {
