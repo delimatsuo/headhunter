@@ -76,7 +76,7 @@
 | p95 Latency | <500ms (v2) | ~1.2s (v1) | Phase 11 target |
 | Search Recall | 50+ candidates | Achieved | Verified |
 | Cache Hit Rate | >0.98 | Unknown | Unmeasured |
-| NLP Tests | 100+ | 144 passing | Phase 12 complete |
+| NLP Tests | 100+ | 153 passing | Phase 12 complete |
 
 ---
 
@@ -145,7 +145,7 @@
 - Skills ontology (200+ skills) in services workspace
 - NLP barrel export at `src/nlp/index.ts`
 - NLPSearchConfig added to config.ts with environment variables
-- **144 passing unit tests total**
+- **153 passing unit tests total**
 
 **v1.0 Deliverables:**
 - 3-stage pipeline with 500/100/50 funnel
@@ -216,7 +216,7 @@ All 6 plans executed successfully:
 - Portuguese language support
 - QueryParser initialized at service startup (background, non-blocking)
 - NLP health status in /health endpoint
-- 144 total NLP tests passing
+- 153 total NLP tests passing
 
 **Phase 12 Success Criteria MET:**
 1. Natural language queries parsed into structured search parameters - YES
