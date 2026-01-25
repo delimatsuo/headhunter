@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 7 (Signal Scoring Implementation) - Plan 2/5 complete. All 5 signal calculators (SCOR-02 through SCOR-06) implemented.
+**Current Focus:** Phase 7 (Signal Scoring Implementation) - Plan 3/5 complete. Type system extended with Phase 7 signals, all weight presets updated.
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -22,13 +22,13 @@
 ## Current Position
 
 **Phase:** 7 of 10 (Signal Scoring Implementation) - IN PROGRESS
-**Plan:** 2 of 5 complete (07-01, 07-02)
+**Plan:** 3 of 5 complete (07-01, 07-02, 07-03)
 **Status:** In progress
-**Last activity:** 2026-01-25 - Completed 07-02-PLAN.md (Seniority, Recency, Company Calculators)
+**Last activity:** 2026-01-25 - Completed 07-03-PLAN.md (Type Extensions and Weight Configuration)
 
-**Progress:** [████████░░] 78%
+**Progress:** [████████░░] 80%
 
-**Next Action:** Continue Phase 7 - Plan 07-03 (next signal scoring task)
+**Next Action:** Continue Phase 7 - Plan 07-04 (next signal scoring task)
 
 ---
 
@@ -42,7 +42,7 @@
 | 4 | Multi-Signal Scoring Framework | Complete | 5/5 | 100% |
 | 5 | Skills Infrastructure | Complete | 4/4 | 100% |
 | 6 | Skills Intelligence | Complete | 4/4 | 100% |
-| 7 | Signal Scoring Implementation | In Progress | 2/5 | 40% |
+| 7 | Signal Scoring Implementation | In Progress | 3/5 | 60% |
 | 8 | Career Trajectory | Pending | 0/? | 0% |
 | 9 | Match Transparency | Pending | 0/? | 0% |
 | 10 | Pipeline Integration | Pending | 0/? | 0% |
@@ -126,6 +126,9 @@
 | Recency decay rate | 0.16 per year (5-year decay to 0.2 floor) - linear decay formula | 7.02 |
 | Company relevance signals | Average of target match, tier score, industry alignment | 7.02 |
 | Recency boost exception | Returns 0.3 (not 0.5) when no skill data found | 7.02 |
+| Phase 7 signals optional | All 5 Phase 7 signals are optional fields - backward compatibility | 7.03 |
+| Weight distribution strategy | Executive favors seniority+company, IC favors skills+recency, Manager balanced | 7.03 |
+| Maintain sum = 1.0 | All weight presets adjusted proportionally to maintain normalized scoring | 7.03 |
 
 ### Technical Notes
 
@@ -195,6 +198,10 @@
 - **calculateCompanyRelevance:** Averages target match, tier score, industry alignment (07-02)
 - **detectCompanyTier:** FAANG=2, Unicorn=1, Startup=0 classification (07-02)
 - **areIndustriesRelated:** Industry relationship mapping for relevance scoring (07-02)
+- **SignalScores extended:** 5 new optional Phase 7 fields (skillsExactMatch, skillsInferred, seniorityAlignment, recencyBoost, companyRelevance) (07-03)
+- **SignalWeightConfig extended:** 5 new optional weight fields matching SignalScores (07-03)
+- **ROLE_WEIGHT_PRESETS updated:** All 4 presets include Phase 7 weights, sum = 1.0 exactly (07-03)
+- **normalizeWeights enhanced:** Includes Phase 7 signals in sum calculation via PHASE7_SIGNAL_KEYS (07-03)
 
 ### Blockers
 
@@ -238,22 +245,22 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 07-02-PLAN.md - Signal Calculators (Seniority, Recency, Company)
+**Stopped at:** Completed 07-03-PLAN.md - Type Extensions and Weight Configuration
 **Resume file:** None - continue Phase 7
 
 ### Context for Next Session
 
-Phase 7 (Signal Scoring Implementation) IN PROGRESS. Plan 2/5 complete:
+Phase 7 (Signal Scoring Implementation) IN PROGRESS. Plan 3/5 complete:
 
 | Plan | Name | Status | Commits |
 |------|------|--------|---------|
 | 07-01 | Skill Signal Calculators | Complete | 45e0541, 5aa6501 |
 | 07-02 | Seniority, Recency, Company Calculators | Complete | acbeb88 |
-| 07-03 | (Next plan) | Pending | - |
+| 07-03 | Type Extensions and Weight Configuration | Complete | 6485f46 |
 | 07-04 | (Next plan) | Pending | - |
 | 07-05 | (Next plan) | Pending | - |
 
-**Phase 7 Plans 01-02 deliverables (COMPLETE):**
+**Phase 7 Plans 01-03 deliverables (COMPLETE):**
 - All 5 signal calculators implemented (SCOR-02 through SCOR-06)
 - `calculateSkillsExactMatch()`: SCOR-02 with alias matching
 - `calculateSkillsInferred()`: SCOR-03 with 9 transferable skill rules
@@ -262,6 +269,10 @@ Phase 7 (Signal Scoring Implementation) IN PROGRESS. Plan 2/5 complete:
 - `calculateCompanyRelevance()`: SCOR-06 with multi-signal averaging
 - Helper functions: detectCompanyTier, areIndustriesRelated
 - All functions return 0-1 scores, 0.5 neutral when context missing
+- SignalScores extended with 5 Phase 7 optional fields
+- SignalWeightConfig extended with 5 Phase 7 optional weight fields
+- All 4 ROLE_WEIGHT_PRESETS updated with Phase 7 weights (sum = 1.0 exactly)
+- normalizeWeights() enhanced to include Phase 7 signals in sum calculation
 
 ---
 
@@ -375,6 +386,7 @@ All Phase 6 commits (complete):
 All Phase 7 commits (in progress):
 - 07-01: 45e0541, 5aa6501
 - 07-02: acbeb88
+- 07-03: 6485f46
 
 ---
 
