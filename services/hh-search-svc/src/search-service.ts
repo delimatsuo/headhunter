@@ -18,7 +18,7 @@ import type { SearchRedisClient } from './redis-client';
 import type { RerankClient, RerankCandidate, RerankRequest, RerankResponse } from './rerank-client';
 import type { PerformanceTracker } from './performance-tracker';
 import { resolveWeights, type SignalWeightConfig, type RoleType } from './signal-weights';
-import { computeWeightedScore, extractSignalScores, normalizeVectorScore, completeSignalScores } from './scoring';
+import { computeWeightedScore, extractSignalScores, normalizeVectorScore, completeSignalScores, type SignalComputationContext } from './scoring';
 
 interface HybridSearchDependencies {
   config: SearchServiceConfig;
@@ -433,13 +433,23 @@ export class SearchService {
     const baseVector = Number(row.vector_score ?? 0);
     const baseText = Number(row.text_score ?? 0);
 
-    // Extract and normalize signal scores from row
-    const signalScores = extractSignalScores(row);
+    // Build search context for Phase 7 signals
+    const signalContext: SignalComputationContext = {
+      requiredSkills: request.filters?.skills,
+      preferredSkills: [], // Could be extended in future
+      targetLevel: this.detectTargetLevel(request),
+      targetCompanies: this.extractTargetCompanies(request),
+      targetIndustries: request.filters?.industries,
+      roleType
+    };
+
+    // Extract and normalize signal scores from row WITH Phase 7 computation
+    const signalScores = extractSignalScores(row, signalContext);
 
     // Override vectorSimilarity with normalized value from hybrid search
     signalScores.vectorSimilarity = normalizeVectorScore(row.vector_score);
 
-    // Compute weighted score from signals
+    // Compute weighted score from signals (including Phase 7)
     const weightedScore = computeWeightedScore(signalScores, resolvedWeights);
 
     // Use weighted score as base, then apply existing modifiers
@@ -672,6 +682,50 @@ export class SearchService {
     return reranked;
   }
 
+
+  /**
+   * Detect target seniority level from request
+   */
+  private detectTargetLevel(request: HybridSearchRequest): string {
+    // Check explicit seniority filter
+    if (request.filters?.seniorityLevels?.length) {
+      return request.filters.seniorityLevels[0];
+    }
+
+    // Try to detect from job description or query
+    const text = (request.jobDescription || request.query || '').toLowerCase();
+
+    if (text.includes('director') || text.includes('vp') || text.includes('vice president')) {
+      return 'director';
+    }
+    if (text.includes('manager') || text.includes('lead')) {
+      return 'manager';
+    }
+    if (text.includes('staff') || text.includes('principal')) {
+      return 'staff';
+    }
+    if (text.includes('senior') || text.includes('sr.')) {
+      return 'senior';
+    }
+    if (text.includes('junior') || text.includes('entry')) {
+      return 'junior';
+    }
+
+    return 'mid'; // Default
+  }
+
+  /**
+   * Extract target companies from request metadata
+   */
+  private extractTargetCompanies(request: HybridSearchRequest): string[] | undefined {
+    // Could be extended to parse from job description
+    // For now, check if metadata has target companies
+    if (request.filters?.metadata?.targetCompanies) {
+      const companies = request.filters.metadata.targetCompanies;
+      return Array.isArray(companies) ? companies.map(String) : undefined;
+    }
+    return undefined;
+  }
 
   private async fetchFromFirestore(tenantId: string, limit: number): Promise<FirestoreCandidateRecord[]> {
     try {
