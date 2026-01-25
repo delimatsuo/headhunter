@@ -37,6 +37,18 @@ export interface HybridSearchRequest {
    * If not provided, defaults to 'default'.
    */
   roleType?: RoleType;
+
+  /**
+   * Whether to generate LLM match rationale for top candidates.
+   * @see TRNS-03
+   */
+  includeMatchRationale?: boolean;
+
+  /**
+   * Maximum number of candidates to generate rationale for.
+   * Defaults to 10.
+   */
+  rationaleLimit?: number;
 }
 
 export interface CandidateSkillMatch {
@@ -132,6 +144,12 @@ export interface HybridSearchResultItem {
    * Which role type preset was used for scoring.
    */
   roleTypeUsed?: RoleType;
+
+  /**
+   * LLM-generated match rationale (only for top candidates).
+   * @see TRNS-03
+   */
+  matchRationale?: MatchRationale;
 }
 
 export interface HybridSearchTimings {
@@ -195,4 +213,22 @@ export interface FirestoreCandidateRecord {
   years_experience?: number;
   analysis_confidence?: number;
   metadata?: Record<string, unknown>;
+}
+
+/**
+ * LLM-generated match rationale for top candidates.
+ * Explains why a candidate is a good fit for the role.
+ * @see TRNS-03
+ */
+export interface MatchRationale {
+  /** 2-3 sentence summary of why candidate matches */
+  summary: string;
+  /** Top 2-3 key strengths */
+  keyStrengths: string[];
+  /** Which signals drove the match */
+  signalHighlights: Array<{
+    signal: string;
+    score: number;
+    reason: string;
+  }>;
 }

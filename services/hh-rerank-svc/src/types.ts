@@ -110,3 +110,21 @@ export interface RerankCacheDescriptor {
   jdHash: string;
   docsetHash: string;
 }
+
+/**
+ * LLM-generated match rationale for top candidates.
+ * Explains why a candidate is a good fit for the role.
+ * @see TRNS-03
+ */
+export interface MatchRationale {
+  /** 2-3 sentence summary of why candidate matches */
+  summary: string;
+  /** Top 2-3 key strengths */
+  keyStrengths: string[];
+  /** Which signals drove the match */
+  signalHighlights: Array<{
+    signal: string;
+    score: number;
+    reason: string;
+  }>;
+}
