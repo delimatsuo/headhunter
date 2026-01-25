@@ -1,93 +1,81 @@
-# Requirements: Headhunter AI Leader-Level Search
+# Requirements: Headhunter AI v2.0 Advanced Intelligence
 
-**Defined:** 2026-01-24
+**Defined:** 2026-01-25
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-## v1 Requirements
+## v2.0 Requirements
 
-Requirements for leader-level search. Each maps to roadmap phases.
-
-### Search Recall (Fix Current Problem)
-
-- [x] **SRCL-01**: Search returns 50+ candidates from 23,000+ database (not ~10)
-- [x] **SRCL-02**: Missing data treated as neutral signal (0.5 score), not exclusion
-- [x] **SRCL-03**: Broad retrieval stage fetches 500+ candidates before scoring
-- [x] **SRCL-04**: Hard specialty/function filters removed from retrieval stage
-
-### Hybrid Search
-
-- [x] **HYBD-01**: Vector similarity search via pgvector for semantic matching
-- [x] **HYBD-02**: BM25 text search for exact keyword matches (rare skills, certifications)
-- [x] **HYBD-03**: Reciprocal Rank Fusion (RRF) combines vector and text results
-- [x] **HYBD-04**: Configurable RRF parameter k (default 60) for tuning
-
-### Multi-Signal Scoring
-
-- [x] **SCOR-01**: Vector similarity score (0-1) as baseline signal
-- [x] **SCOR-02**: Skills exact match score (0-1) for required skills found
-- [x] **SCOR-03**: Skills inferred score (0-1) for transferable skills detected
-- [x] **SCOR-04**: Seniority alignment score (0-1) for level appropriateness
-- [x] **SCOR-05**: Recency boost score (0-1) for recent skill usage
-- [x] **SCOR-06**: Company relevance score (0-1) for industry/company fit
-- [x] **SCOR-07**: Configurable signal weights per search or role type
-- [x] **SCOR-08**: Final score as weighted combination of all signals
-
-### Skills Intelligence
-
-- [x] **SKIL-01**: EllaAI skills taxonomy (200+ skills) integrated into search
-- [x] **SKIL-02**: Related skills expansion ("Python" matches "Django", "Flask" users)
-- [x] **SKIL-03**: Skill synonym/alias normalization ("JS" = "JavaScript", "K8s" = "Kubernetes")
-- [x] **SKIL-04**: Skills inference from context (patterns in profile data)
-- [x] **SKIL-05**: Transferable skills surfaced with confidence levels
-
-### Career Trajectory
-
-- [x] **TRAJ-01**: Career direction computed from title sequence analysis
-- [x] **TRAJ-02**: Career velocity computed (fast/normal/slow progression)
-- [x] **TRAJ-03**: Trajectory fit score for role alignment
-- [x] **TRAJ-04**: Trajectory type classification (technical, leadership, lateral, pivot)
-
-### Match Transparency
-
-- [x] **TRNS-01**: Match score visible to recruiters for each candidate
-- [x] **TRNS-02**: Component scores shown (skills, trajectory, seniority, etc.)
-- [x] **TRNS-03**: LLM-generated match rationale for top candidates
-- [x] **TRNS-04**: Inferred skills displayed with confidence indicators
-
-### Search Pipeline
-
-- [x] **PIPE-01**: 3-stage pipeline: retrieval (500+) -> scoring (top 100) -> reranking (top 50)
-- [x] **PIPE-02**: Retrieval focuses on recall (don't miss candidates)
-- [x] **PIPE-03**: Scoring focuses on precision (rank best higher)
-- [x] **PIPE-04**: Reranking via LLM for nuance and context
-- [x] **PIPE-05**: Fix reranking bypass (Match Score currently = Similarity Score)
-
-## v2 Requirements
-
-Deferred to future release. Valuable but not in current scope.
-
-### Advanced Trajectory
-
-- **TRAJ-05**: RNN-based next-title prediction ("Support Engineer -> QA -> Backend -> ?")
-- **TRAJ-06**: Hireability prediction (will they join a company like ours?)
-- **TRAJ-07**: Success signal detection from career patterns
-
-### Natural Language Interface
-
-- **NLNG-01**: Recruiters can search using natural language ("Find senior Python developers in NYC open to fintech")
-- **NLNG-02**: Query auto-classification into structured search parameters
-
-### Diversity & Bias
-
-- **DIVS-01**: Anonymization mode for bias reduction
-- **DIVS-02**: Diversity indicators in search results
-- **DIVS-03**: Bias audit tooling for compliance (NYC Local Law 144, EU AI Act)
+Requirements for advanced intelligence milestone. Building on v1.0 leader-level search foundation.
 
 ### Performance Optimization
 
-- **PERF-01**: p95 latency under 500ms for search (vs current 1.2s target)
-- **PERF-02**: Embedding pre-computation for entire candidate pool
-- **PERF-03**: Real-time scoring cache invalidation
+- [ ] **PERF-01**: p95 search latency under 500ms (from current 1.2s target)
+- [ ] **PERF-02**: pgvectorscale integration for 28x latency improvement
+- [ ] **PERF-03**: Connection pooling and parallel query execution
+- [ ] **PERF-04**: Embedding pre-computation for entire candidate pool
+- [ ] **PERF-05**: Redis caching strategy with scoring cache invalidation
+
+### Natural Language Search
+
+- [ ] **NLNG-01**: Intent parsing extracts role, skills, location, preferences from natural language
+- [ ] **NLNG-02**: Semantic query understanding ("Senior" matches "Lead", "Principal")
+- [ ] **NLNG-03**: Query expansion using skills ontology ("Python dev" includes related skills)
+- [ ] **NLNG-04**: Multi-criteria natural language queries ("Remote Python devs, 5+ years, open to startups")
+- [ ] **NLNG-05**: Graceful fallback to structured search when NLP parsing fails
+
+### ML Trajectory Prediction
+
+- [ ] **TRAJ-05**: Next role prediction with confidence score using LSTM model
+- [ ] **TRAJ-06**: Tenure prediction (estimated time candidate will stay in role)
+- [ ] **TRAJ-07**: Model confidence indicators (transparency for uncertain predictions)
+- [ ] **TRAJ-08**: Shadow mode deployment comparing ML vs rule-based predictions
+- [ ] **TRAJ-09**: Hireability prediction (likelihood to join company like ours)
+
+### Bias Reduction
+
+- [ ] **BIAS-01**: Resume anonymization toggle (remove name, photo, school names)
+- [ ] **BIAS-02**: Demographic-blind scoring (no demographic proxies in scoring)
+- [ ] **BIAS-03**: Bias metrics dashboard with selection rates by group
+- [ ] **BIAS-04**: Impact ratio calculation (four-fifths rule / 80% threshold)
+- [ ] **BIAS-05**: Diverse slate generation to prevent homogeneous candidate pools
+
+### Compliance Tooling
+
+- [ ] **COMP-01**: Comprehensive audit logging (who searched what, when, results shown)
+- [ ] **COMP-02**: Decision explanation storage for each ranking
+- [ ] **COMP-03**: NYC Local Law 144 candidate notification system
+- [ ] **COMP-04**: GDPR data subject access request (DSAR) support
+- [ ] **COMP-05**: Data retention policy enforcement (auto-delete after period)
+- [ ] **COMP-06**: Bias audit report generation for NYC LL144 annual requirement
+
+## Future Requirements
+
+Deferred beyond v2.0. Valuable but higher complexity.
+
+### Advanced Trajectory Intelligence
+
+- **TRAJ-10**: Career path visualization (interactive journey view)
+- **TRAJ-11**: "Rising star" detection for high-potential candidates
+- **TRAJ-12**: Industry transition prediction
+- **TRAJ-13**: Skill acquisition prediction
+
+### Conversational Search
+
+- **NLNG-06**: Multi-turn refinement ("Show me more junior ones")
+- **NLNG-07**: Proactive suggestions based on search patterns
+- **NLNG-08**: Query-to-JD generation
+
+### Explainable AI
+
+- **XAI-01**: SHAP-based feature importance for rankings
+- **XAI-02**: Counterfactual explanations ("Would rank higher with X skill")
+- **XAI-03**: Recruiter feedback loop for continuous improvement
+
+### Multi-Jurisdiction Compliance
+
+- **COMP-07**: Multi-jurisdiction compliance engine (NYC, EU, Illinois, etc.)
+- **COMP-08**: Real-time bias monitoring with drift alerts
+- **COMP-09**: Third-party audit API
 
 ## Out of Scope
 
@@ -95,17 +83,13 @@ Explicitly excluded. Documented to prevent scope creep.
 
 | Feature | Reason |
 |---------|--------|
-| Hard keyword filters | Anti-pattern: Excludes 10M+ qualified candidates (Harvard study) |
-| Full automation of decisions | Legal risk: Human-in-the-loop required |
-| Opaque scoring | Regulatory risk: NYC/EU require transparency |
-| Agentic AI (autonomous outreach) | Different product category, requires outreach integration |
-| Relationship/network intelligence | Requires social graph data we don't have |
-| Multi-channel sourcing (GitHub, etc.) | Focus on existing 23,000 candidates first |
-| Real-time market intelligence | Requires additional data sources |
-| Internal mobility matching | Different use case than external sourcing |
+| Autonomous hiring decisions (auto-reject/shortlist) | Regulatory risk - EU AI Act prohibits fully automated decisions |
+| Black-box scoring | NYC LL144 and EU AI Act require transparency |
+| Salary offer automation | High legal risk for compensation discrimination |
+| Unbounded data collection | GDPR minimization principle |
+| Full automation without human oversight | Regulatory requirement for human-in-the-loop |
 | Mobile native app | Web-first approach |
 | Real-time chat | Different product focus |
-| ATS/application tracking | This is search/discovery, not applicant tracking |
 
 ## Traceability
 
@@ -113,46 +97,38 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PIPE-05 | Phase 1: Reranking Fix | Complete |
-| SRCL-01 | Phase 2: Search Recall Foundation | Complete |
-| SRCL-02 | Phase 2: Search Recall Foundation | Complete |
-| SRCL-03 | Phase 2: Search Recall Foundation | Complete |
-| SRCL-04 | Phase 2: Search Recall Foundation | Complete |
-| HYBD-01 | Phase 3: Hybrid Search | Complete |
-| HYBD-02 | Phase 3: Hybrid Search | Complete |
-| HYBD-03 | Phase 3: Hybrid Search | Complete |
-| HYBD-04 | Phase 3: Hybrid Search | Complete |
-| SCOR-01 | Phase 4: Multi-Signal Scoring Framework | Complete |
-| SCOR-07 | Phase 4: Multi-Signal Scoring Framework | Complete |
-| SCOR-08 | Phase 4: Multi-Signal Scoring Framework | Complete |
-| SKIL-01 | Phase 5: Skills Infrastructure | Complete |
-| SKIL-03 | Phase 5: Skills Infrastructure | Complete |
-| SKIL-02 | Phase 6: Skills Intelligence | Complete |
-| SKIL-04 | Phase 6: Skills Intelligence | Complete |
-| SKIL-05 | Phase 6: Skills Intelligence | Complete |
-| SCOR-02 | Phase 7: Signal Scoring Implementation | Complete |
-| SCOR-03 | Phase 7: Signal Scoring Implementation | Complete |
-| SCOR-04 | Phase 7: Signal Scoring Implementation | Complete |
-| SCOR-05 | Phase 7: Signal Scoring Implementation | Complete |
-| SCOR-06 | Phase 7: Signal Scoring Implementation | Complete |
-| TRAJ-01 | Phase 8: Career Trajectory | Complete |
-| TRAJ-02 | Phase 8: Career Trajectory | Complete |
-| TRAJ-03 | Phase 8: Career Trajectory | Complete |
-| TRAJ-04 | Phase 8: Career Trajectory | Complete |
-| TRNS-01 | Phase 9: Match Transparency | Complete |
-| TRNS-02 | Phase 9: Match Transparency | Complete |
-| TRNS-03 | Phase 9: Match Transparency | Complete |
-| TRNS-04 | Phase 9: Match Transparency | Complete |
-| PIPE-01 | Phase 10: Pipeline Integration | Complete |
-| PIPE-02 | Phase 10: Pipeline Integration | Complete |
-| PIPE-03 | Phase 10: Pipeline Integration | Complete |
-| PIPE-04 | Phase 10: Pipeline Integration | Complete |
+| PERF-01 | Phase 11: Performance Foundation | Pending |
+| PERF-02 | Phase 11: Performance Foundation | Pending |
+| PERF-03 | Phase 11: Performance Foundation | Pending |
+| PERF-04 | Phase 11: Performance Foundation | Pending |
+| PERF-05 | Phase 11: Performance Foundation | Pending |
+| NLNG-01 | Phase 12: Natural Language Search | Pending |
+| NLNG-02 | Phase 12: Natural Language Search | Pending |
+| NLNG-03 | Phase 12: Natural Language Search | Pending |
+| NLNG-04 | Phase 12: Natural Language Search | Pending |
+| NLNG-05 | Phase 12: Natural Language Search | Pending |
+| TRAJ-05 | Phase 13: ML Trajectory Prediction | Pending |
+| TRAJ-06 | Phase 13: ML Trajectory Prediction | Pending |
+| TRAJ-07 | Phase 13: ML Trajectory Prediction | Pending |
+| TRAJ-08 | Phase 13: ML Trajectory Prediction | Pending |
+| TRAJ-09 | Phase 13: ML Trajectory Prediction | Pending |
+| BIAS-01 | Phase 14: Bias Reduction | Pending |
+| BIAS-02 | Phase 14: Bias Reduction | Pending |
+| BIAS-03 | Phase 14: Bias Reduction | Pending |
+| BIAS-04 | Phase 14: Bias Reduction | Pending |
+| BIAS-05 | Phase 14: Bias Reduction | Pending |
+| COMP-01 | Phase 15: Compliance Tooling | Pending |
+| COMP-02 | Phase 15: Compliance Tooling | Pending |
+| COMP-03 | Phase 15: Compliance Tooling | Pending |
+| COMP-04 | Phase 15: Compliance Tooling | Pending |
+| COMP-05 | Phase 15: Compliance Tooling | Pending |
+| COMP-06 | Phase 15: Compliance Tooling | Pending |
 
 **Coverage:**
-- v1 requirements: 28 total
-- Mapped to phases: 28
+- v2.0 requirements: 26 total
+- Mapped to phases: 26
 - Unmapped: 0
 
 ---
-*Requirements defined: 2026-01-24*
-*Last updated: 2026-01-25 after v1 milestone completion - all 28 requirements complete*
+*Requirements defined: 2026-01-25*
+*Last updated: 2026-01-25 after v2.0 research*
