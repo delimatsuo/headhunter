@@ -10,9 +10,31 @@
 
 import type { SignalWeightConfig } from './signal-weights';
 import type { SignalScores, PgHybridSearchRow } from './types';
+import {
+  calculateSkillsExactMatch,
+  calculateSkillsInferred,
+  calculateSeniorityAlignment,
+  calculateRecencyBoost,
+  calculateCompanyRelevance,
+  detectCompanyTier,
+  type CandidateExperience
+} from './signal-calculators';
 
 // Re-export SignalScores for convenience
 export type { SignalScores } from './types';
+
+/**
+ * Search context for Phase 7 signal computation.
+ * Provides the query-side data needed to compute match scores.
+ */
+export interface SignalComputationContext {
+  requiredSkills?: string[];
+  preferredSkills?: string[];
+  targetLevel?: string;
+  targetCompanies?: string[];
+  targetIndustries?: string[];
+  roleType?: 'executive' | 'manager' | 'ic' | 'default';
+}
 
 /**
  * Computes the final weighted score from individual signals.
@@ -55,6 +77,23 @@ export function computeWeightedScore(
     score += signals.skillsMatch * weights.skillsMatch;
   }
 
+  // Phase 7 signals (only add if both signal and weight exist)
+  if (signals.skillsExactMatch !== undefined && weights.skillsExactMatch) {
+    score += signals.skillsExactMatch * weights.skillsExactMatch;
+  }
+  if (signals.skillsInferred !== undefined && weights.skillsInferred) {
+    score += signals.skillsInferred * weights.skillsInferred;
+  }
+  if (signals.seniorityAlignment !== undefined && weights.seniorityAlignment) {
+    score += signals.seniorityAlignment * weights.seniorityAlignment;
+  }
+  if (signals.recencyBoost !== undefined && weights.recencyBoost) {
+    score += signals.recencyBoost * weights.recencyBoost;
+  }
+  if (signals.companyRelevance !== undefined && weights.companyRelevance) {
+    score += signals.companyRelevance * weights.companyRelevance;
+  }
+
   return score;
 }
 
@@ -77,16 +116,20 @@ function extractScore(
 
 /**
  * Extracts signal scores from a PgHybridSearchRow.
- * Normalizes vector score to 0-1 range (database may return 0-100 or 0-1).
+ * When signalContext is provided, also computes Phase 7 signals.
  *
  * @param row - Database row with scores
+ * @param signalContext - Optional search context for Phase 7 signals
  * @returns SignalScores with all signals extracted and normalized
  *
  * @example
  * const signals = extractSignalScores(dbRow);
  * const score = computeWeightedScore(signals, weights);
  */
-export function extractSignalScores(row: PgHybridSearchRow): SignalScores {
+export function extractSignalScores(
+  row: PgHybridSearchRow,
+  signalContext?: SignalComputationContext
+): SignalScores {
   // Normalize vector score to 0-1 (handle both 0-100 and 0-1 scales)
   const rawVector = Number(row.vector_score ?? 0);
   const vectorSimilarity = rawVector > 1 ? rawVector / 100 : rawVector;
@@ -95,7 +138,7 @@ export function extractSignalScores(row: PgHybridSearchRow): SignalScores {
   // These will be populated by Phase 2 scoring or default to 0.5
   const metadata = row.metadata as Record<string, unknown> | null;
 
-  return {
+  const scores: SignalScores = {
     vectorSimilarity,
     levelMatch: extractScore(metadata, '_level_score'),
     specialtyMatch: extractScore(metadata, '_specialty_score'),
@@ -104,6 +147,57 @@ export function extractSignalScores(row: PgHybridSearchRow): SignalScores {
     trajectoryFit: extractScore(metadata, '_trajectory_score'),
     companyPedigree: extractScore(metadata, '_company_score')
   };
+
+  // Phase 7 signals (only compute if context provided)
+  if (signalContext) {
+    const candidateSkills = extractCandidateSkills(row);
+    const candidateExperience = extractCandidateExperience(row);
+    const candidateCompanies = extractCandidateCompanies(row);
+    const candidateIndustries = (row.industries || []) as string[];
+    const candidateLevel = extractCandidateLevel(row);
+    const companyTier = detectCompanyTier(candidateCompanies);
+
+    // SCOR-02: Skills exact match
+    scores.skillsExactMatch = calculateSkillsExactMatch(candidateSkills, {
+      requiredSkills: signalContext.requiredSkills || [],
+      preferredSkills: signalContext.preferredSkills || []
+    });
+
+    // SCOR-03: Skills inferred
+    scores.skillsInferred = calculateSkillsInferred(candidateSkills, {
+      requiredSkills: signalContext.requiredSkills || [],
+      preferredSkills: signalContext.preferredSkills || []
+    });
+
+    // SCOR-04: Seniority alignment
+    scores.seniorityAlignment = calculateSeniorityAlignment(
+      candidateLevel,
+      companyTier,
+      {
+        targetLevel: signalContext.targetLevel || 'mid',
+        roleType: signalContext.roleType || 'default'
+      }
+    );
+
+    // SCOR-05: Recency boost
+    scores.recencyBoost = calculateRecencyBoost(
+      candidateExperience,
+      signalContext.requiredSkills || []
+    );
+
+    // SCOR-06: Company relevance
+    scores.companyRelevance = calculateCompanyRelevance(
+      candidateCompanies,
+      candidateIndustries,
+      companyTier,
+      {
+        targetCompanies: signalContext.targetCompanies,
+        targetIndustries: signalContext.targetIndustries
+      }
+    );
+  }
+
+  return scores;
 }
 
 /**
@@ -141,4 +235,97 @@ export function completeSignalScores(
     companyPedigree: partial.companyPedigree ?? defaultValue,
     ...(partial.skillsMatch !== undefined && { skillsMatch: partial.skillsMatch })
   };
+}
+
+/**
+ * Extract candidate skills from row data
+ */
+function extractCandidateSkills(row: PgHybridSearchRow): string[] {
+  const skills: string[] = [];
+
+  // From skills array
+  if (row.skills) {
+    skills.push(...row.skills);
+  }
+
+  // From metadata intelligent_analysis
+  const metadata = row.metadata as Record<string, unknown> | null;
+  if (metadata?.intelligent_analysis) {
+    const analysis = metadata.intelligent_analysis as Record<string, unknown>;
+
+    // Explicit skills
+    if (analysis.explicit_skills) {
+      const explicit = analysis.explicit_skills as Record<string, unknown>;
+      if (Array.isArray(explicit.technical_skills)) {
+        explicit.technical_skills.forEach((s: unknown) => {
+          if (typeof s === 'string') skills.push(s);
+          else if (s && typeof s === 'object' && 'skill' in s) skills.push(String((s as {skill: string}).skill));
+        });
+      }
+    }
+  }
+
+  return [...new Set(skills)];
+}
+
+/**
+ * Extract candidate level from row data
+ */
+function extractCandidateLevel(row: PgHybridSearchRow): string | null {
+  const metadata = row.metadata as Record<string, unknown> | null;
+
+  if (metadata?.intelligent_analysis) {
+    const analysis = metadata.intelligent_analysis as Record<string, unknown>;
+    if (analysis.career_trajectory_analysis) {
+      const trajectory = analysis.career_trajectory_analysis as Record<string, unknown>;
+      if (trajectory.current_level) return String(trajectory.current_level);
+    }
+  }
+
+  if (metadata?.current_level) return String(metadata.current_level);
+  return null;
+}
+
+/**
+ * Extract candidate companies from row data
+ */
+function extractCandidateCompanies(row: PgHybridSearchRow): string[] {
+  const companies: string[] = [];
+  const metadata = row.metadata as Record<string, unknown> | null;
+
+  if (metadata?.intelligent_analysis) {
+    const analysis = metadata.intelligent_analysis as Record<string, unknown>;
+    if (Array.isArray(analysis.experience)) {
+      (analysis.experience as Array<{company?: string}>).forEach(exp => {
+        if (exp.company) companies.push(exp.company);
+      });
+    }
+  }
+
+  return [...new Set(companies)];
+}
+
+/**
+ * Extract candidate experience for recency calculation
+ */
+function extractCandidateExperience(row: PgHybridSearchRow): CandidateExperience[] {
+  const experience: CandidateExperience[] = [];
+  const metadata = row.metadata as Record<string, unknown> | null;
+
+  if (metadata?.intelligent_analysis) {
+    const analysis = metadata.intelligent_analysis as Record<string, unknown>;
+    if (Array.isArray(analysis.experience)) {
+      (analysis.experience as Array<Record<string, unknown>>).forEach(exp => {
+        experience.push({
+          title: String(exp.title || ''),
+          skills: Array.isArray(exp.skills) ? exp.skills.map(String) : [],
+          startDate: exp.start_date as string | undefined,
+          endDate: exp.end_date as string | null | undefined,
+          isCurrent: Boolean(exp.is_current)
+        });
+      });
+    }
+  }
+
+  return experience;
 }
