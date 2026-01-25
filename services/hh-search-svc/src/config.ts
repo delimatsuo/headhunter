@@ -80,6 +80,11 @@ export interface SearchRuntimeConfig {
   rrfK: number;              // RRF k parameter, controls top-rank favoritism (default 60)
   perMethodLimit: number;    // Candidates retrieved per search method before fusion (default 100)
   enableRrf: boolean;        // Feature flag to toggle RRF vs weighted sum (default true)
+  // Pipeline stage limits (PIPE-01)
+  pipelineRetrievalLimit: number;  // Target retrieval count (default 500)
+  pipelineScoringLimit: number;    // Top N after scoring (default 100)
+  pipelineRerankLimit: number;     // Final top N after rerank (default 50)
+  pipelineLogStages: boolean;      // Log stage transitions (default true)
 }
 
 export interface RerankServiceConfig {
@@ -271,7 +276,12 @@ export function getSearchServiceConfig(): SearchServiceConfig {
     // RRF configuration
     rrfK: Math.max(1, parseNumber(process.env.SEARCH_RRF_K, 60)),
     perMethodLimit: Math.max(10, parseNumber(process.env.SEARCH_PER_METHOD_LIMIT, 100)),
-    enableRrf: parseBoolean(process.env.SEARCH_ENABLE_RRF, true)
+    enableRrf: parseBoolean(process.env.SEARCH_ENABLE_RRF, true),
+    // Pipeline stage limits (PIPE-01)
+    pipelineRetrievalLimit: Math.max(100, parseNumber(process.env.PIPELINE_RETRIEVAL_LIMIT, 500)),
+    pipelineScoringLimit: Math.max(50, parseNumber(process.env.PIPELINE_SCORING_LIMIT, 100)),
+    pipelineRerankLimit: Math.max(10, parseNumber(process.env.PIPELINE_RERANK_LIMIT, 50)),
+    pipelineLogStages: parseBoolean(process.env.PIPELINE_LOG_STAGES, true)
   };
 
   const firestoreFallback: FirestoreFallbackConfig = {
