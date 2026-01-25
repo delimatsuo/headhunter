@@ -35,10 +35,10 @@ Requirements for leader-level search. Each maps to roadmap phases.
 ### Skills Intelligence
 
 - [x] **SKIL-01**: EllaAI skills taxonomy (200+ skills) integrated into search
-- [ ] **SKIL-02**: Related skills expansion ("Python" matches "Django", "Flask" users)
+- [x] **SKIL-02**: Related skills expansion ("Python" matches "Django", "Flask" users)
 - [x] **SKIL-03**: Skill synonym/alias normalization ("JS" = "JavaScript", "K8s" = "Kubernetes")
-- [ ] **SKIL-04**: Skills inference from context (patterns in profile data)
-- [ ] **SKIL-05**: Transferable skills surfaced with confidence levels
+- [x] **SKIL-04**: Skills inference from context (patterns in profile data)
+- [x] **SKIL-05**: Transferable skills surfaced with confidence levels
 
 ### Career Trajectory
 
@@ -127,9 +127,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SCOR-08 | Phase 4: Multi-Signal Scoring Framework | Complete |
 | SKIL-01 | Phase 5: Skills Infrastructure | Complete |
 | SKIL-03 | Phase 5: Skills Infrastructure | Complete |
-| SKIL-02 | Phase 6: Skills Intelligence | Pending |
-| SKIL-04 | Phase 6: Skills Intelligence | Pending |
-| SKIL-05 | Phase 6: Skills Intelligence | Pending |
+| SKIL-02 | Phase 6: Skills Intelligence | Complete |
+| SKIL-04 | Phase 6: Skills Intelligence | Complete |
+| SKIL-05 | Phase 6: Skills Intelligence | Complete |
 | SCOR-02 | Phase 7: Signal Scoring Implementation | Pending |
 | SCOR-03 | Phase 7: Signal Scoring Implementation | Pending |
 | SCOR-04 | Phase 7: Signal Scoring Implementation | Pending |
@@ -155,4 +155,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-24*
-*Last updated: 2026-01-25 after Phase 5 completion*
+*Last updated: 2026-01-25 after Phase 6 completion*
