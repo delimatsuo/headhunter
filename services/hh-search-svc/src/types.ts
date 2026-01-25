@@ -161,6 +161,30 @@ export interface HybridSearchTimings {
   rerankMs?: number;
 }
 
+/**
+ * Pipeline stage metrics for debugging and SLO tracking.
+ * @see PIPE-01: 3-stage pipeline logging requirement
+ */
+export interface PipelineStageMetrics {
+  /** Stage 1: Retrieval - candidates returned from hybrid search */
+  retrievalCount: number;
+  retrievalMs: number;
+
+  /** Stage 2: Scoring - candidates after signal weighting and cutoff */
+  scoringCount: number;
+  scoringMs: number;
+
+  /** Stage 3: Reranking - final candidates after LLM rerank */
+  rerankCount: number;
+  rerankMs: number;
+
+  /** Whether LLM reranking was applied (vs passthrough) */
+  rerankApplied: boolean;
+
+  /** Total pipeline latency */
+  totalMs: number;
+}
+
 export interface HybridSearchResponse {
   results: HybridSearchResultItem[];
   total: number;
@@ -169,6 +193,8 @@ export interface HybridSearchResponse {
   timings: HybridSearchTimings;
   metadata?: Record<string, unknown>;
   debug?: Record<string, unknown>;
+  /** Pipeline execution metrics for stage debugging */
+  pipelineMetrics?: PipelineStageMetrics;
 }
 
 export interface SearchContext {
