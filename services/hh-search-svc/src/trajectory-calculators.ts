@@ -59,6 +59,34 @@ const MANAGEMENT_MIN_INDEX = 7;
  */
 export type TrajectoryDirection = 'upward' | 'lateral' | 'downward';
 
+/**
+ * Trajectory velocity indicating speed of career progression.
+ */
+export type TrajectoryVelocity = 'fast' | 'normal' | 'slow';
+
+/**
+ * Trajectory type indicating career track and movement pattern.
+ */
+export type TrajectoryType = 'technical_growth' | 'leadership_track' | 'lateral_move' | 'career_pivot';
+
+/**
+ * Experience entry with title and optional dates.
+ */
+export interface ExperienceEntry {
+  title: string;
+  startDate?: string; // ISO date string or null
+  endDate?: string;   // ISO date string or null
+}
+
+/**
+ * Career trajectory data from Together AI enrichment.
+ */
+export interface CareerTrajectoryData {
+  promotion_velocity?: 'fast' | 'normal' | 'slow';
+  current_level?: string;
+  trajectory_type?: string;
+}
+
 // ============================================================================
 // Title Mapping Functions
 // ============================================================================
@@ -179,4 +207,166 @@ export function calculateTrajectoryDirection(
   if (averageDelta > 0.5) return 'upward';
   if (averageDelta < -0.5) return 'downward';
   return 'lateral';
+}
+
+// ============================================================================
+// Velocity Classification
+// ============================================================================
+
+/**
+ * Calculates trajectory velocity from experience entries with dates.
+ * Falls back to Together AI promotion_velocity field when dates unavailable.
+ *
+ * Rules:
+ * - Fast: < 2 years average per level increase
+ * - Normal: 2-4 years average per level increase
+ * - Slow: > 4 years average per level increase
+ *
+ * @param experiences - Array of experience entries with titles and dates
+ * @param togetherAiData - Optional career trajectory data from Together AI enrichment
+ * @returns Velocity classification
+ */
+export function calculateTrajectoryVelocity(
+  experiences: ExperienceEntry[],
+  togetherAiData?: CareerTrajectoryData
+): TrajectoryVelocity {
+  // Try to compute from experience dates
+  if (experiences && experiences.length >= 2) {
+    const validEntries = experiences.filter(exp =>
+      exp.title && exp.startDate && exp.endDate
+    );
+
+    if (validEntries.length >= 2) {
+      // Map to levels and dates
+      const levelsWithDates = validEntries
+        .map(exp => ({
+          level: mapTitleToLevel(exp.title),
+          startDate: new Date(exp.startDate!),
+          endDate: new Date(exp.endDate!)
+        }))
+        .filter(entry => entry.level !== -1)
+        .sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+
+      if (levelsWithDates.length >= 2) {
+        // Calculate level increases and time spans
+        let totalLevelIncrease = 0;
+        let totalYears = 0;
+
+        for (let i = 1; i < levelsWithDates.length; i++) {
+          const levelChange = levelsWithDates[i].level - levelsWithDates[i - 1].level;
+          if (levelChange > 0) {
+            const years = (levelsWithDates[i].startDate.getTime() - levelsWithDates[i - 1].startDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
+            totalLevelIncrease += levelChange;
+            totalYears += years;
+          }
+        }
+
+        if (totalLevelIncrease > 0 && totalYears > 0) {
+          const yearsPerLevel = totalYears / totalLevelIncrease;
+
+          if (yearsPerLevel < 2) return 'fast';
+          if (yearsPerLevel > 4) return 'slow';
+          return 'normal';
+        }
+      }
+    }
+  }
+
+  // Fallback to Together AI data
+  if (togetherAiData?.promotion_velocity) {
+    return togetherAiData.promotion_velocity;
+  }
+
+  // Default to normal when insufficient data
+  return 'normal';
+}
+
+// ============================================================================
+// Type Classification
+// ============================================================================
+
+/**
+ * Classifies trajectory type based on title progression and track changes.
+ *
+ * Rules:
+ * - technical_growth: IC progression (Staff, Principal, etc.) without management
+ * - leadership_track: Management progression (Manager, Director, VP)
+ * - career_pivot: Track changes (IC -> Manager) or function changes
+ * - lateral_move: Same-level moves with no clear progression
+ *
+ * @param titleSequence - Array of job titles in chronological order (oldest first)
+ * @returns Trajectory type classification
+ */
+export function classifyTrajectoryType(
+  titleSequence: string[]
+): TrajectoryType {
+  if (!titleSequence || titleSequence.length < 2) {
+    return 'lateral_move'; // Default for insufficient data
+  }
+
+  // Map titles to levels
+  const levels = titleSequence.map(mapTitleToLevel);
+  const validLevels = levels.filter(l => l !== -1);
+
+  if (validLevels.length < 2) {
+    return 'lateral_move'; // Default when insufficient valid levels
+  }
+
+  // Check for track changes (IC <-> Management)
+  let hasTrackChange = false;
+  let hasTechnicalGrowth = false;
+  let hasLeadershipGrowth = false;
+
+  for (let i = 1; i < validLevels.length; i++) {
+    const prev = validLevels[i - 1];
+    const curr = validLevels[i];
+
+    const prevIsTech = prev <= TECHNICAL_MAX_INDEX;
+    const currIsTech = curr <= TECHNICAL_MAX_INDEX;
+
+    // Detect track changes
+    if (prevIsTech !== currIsTech) {
+      hasTrackChange = true;
+    }
+
+    // Detect growth within tracks
+    if (prevIsTech && currIsTech && curr > prev) {
+      hasTechnicalGrowth = true;
+    }
+
+    if (!prevIsTech && !currIsTech && curr > prev) {
+      hasLeadershipGrowth = true;
+    }
+  }
+
+  // Check for function changes (detected by keyword changes in titles)
+  const functionKeywords = titleSequence.map(title => {
+    const lower = title.toLowerCase();
+    if (/\b(front[-\s]?end|frontend|ui|ux)\b/i.test(lower)) return 'frontend';
+    if (/\b(back[-\s]?end|backend|server)\b/i.test(lower)) return 'backend';
+    if (/\b(full[-\s]?stack|fullstack)\b/i.test(lower)) return 'fullstack';
+    if (/\b(data|analytics|ml|machine learning)\b/i.test(lower)) return 'data';
+    if (/\b(devops|sre|infrastructure|platform)\b/i.test(lower)) return 'devops';
+    if (/\b(mobile|ios|android)\b/i.test(lower)) return 'mobile';
+    if (/\b(security|infosec)\b/i.test(lower)) return 'security';
+    return 'general';
+  });
+
+  const uniqueFunctions = new Set(functionKeywords.filter(f => f !== 'general'));
+  const hasFunctionChange = uniqueFunctions.size > 1;
+
+  // Classification logic
+  if (hasTrackChange || hasFunctionChange) {
+    return 'career_pivot';
+  }
+
+  if (hasTechnicalGrowth) {
+    return 'technical_growth';
+  }
+
+  if (hasLeadershipGrowth) {
+    return 'leadership_track';
+  }
+
+  return 'lateral_move';
 }
