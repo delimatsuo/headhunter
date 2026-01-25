@@ -92,3 +92,20 @@ export {
   cosineSimilarity,
   averageEmbeddings
 } from './vector-utils';
+
+// ============================================================================
+// SEMANTIC SYNONYMS
+// ============================================================================
+
+export {
+  expandSenioritySynonyms,
+  expandRoleSynonyms,
+  expandSemanticSynonyms,
+  matchesSeniorityLevel,
+  getSeniorityIndex,
+  compareSeniorityLevels,
+  SENIORITY_SYNONYMS,
+  ROLE_SYNONYMS,
+  SENIORITY_HIERARCHY,
+  type SemanticExpansionResult
+} from './semantic-synonyms';

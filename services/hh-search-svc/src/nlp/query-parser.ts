@@ -35,6 +35,7 @@ import type { ParsedQuery, NLPConfig, IntentType, ExtractedEntities } from './ty
 import { IntentRouter } from './intent-router';
 import { createEntityExtractor, type EntityExtractor } from './entity-extractor';
 import { QueryExpander } from './query-expander';
+import { expandSemanticSynonyms } from './semantic-synonyms';
 
 // ============================================================================
 // CONFIGURATION
@@ -269,6 +270,22 @@ export class QueryParser {
       'Skills expanded'
     );
 
+    // Step 6: Expand semantic synonyms for seniority and roles
+    const semanticExpansion = expandSemanticSynonyms({
+      role: entities.role,
+      seniority: entities.seniority
+    });
+
+    this.logger.debug(
+      {
+        originalSeniority: entities.seniority,
+        expandedSeniorities: semanticExpansion.expandedSeniorities,
+        originalRole: entities.role,
+        expandedRoles: semanticExpansion.expandedRoles
+      },
+      'Semantic synonyms expanded'
+    );
+
     timings.totalMs = Date.now() - totalStart;
 
     const result: ParsedQuery = {
@@ -282,6 +299,7 @@ export class QueryParser {
           s => !entities.skills.map(sk => sk.toLowerCase()).includes(s.toLowerCase())
         )
       },
+      semanticExpansion,
       timings
     };
 
