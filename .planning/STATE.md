@@ -22,13 +22,13 @@
 ## Current Position
 
 **Phase:** 10 of 10 (Pipeline Integration) - IN PROGRESS
-**Plan:** 2 of 5 complete (10-02)
+**Plan:** 3 of 5 complete (10-03)
 **Status:** In progress
-**Last activity:** 2026-01-25 - Completed 10-02-PLAN.md (3-Stage Pipeline Implementation)
+**Last activity:** 2026-01-25 - Completed 10-03-PLAN.md (Pipeline Metrics)
 
-**Progress:** [█████████░] 94%
+**Progress:** [█████████░] 96%
 
-**Next Action:** Execute 10-03 (Scoring Stage Implementation)
+**Next Action:** Execute 10-04 (Pipeline Optimization)
 
 ---
 
@@ -45,9 +45,9 @@
 | 7 | Signal Scoring Implementation | Complete | 5/5 | 100% |
 | 8 | Career Trajectory | Complete | 4/4 | 100% |
 | 9 | Match Transparency | Complete | 7/7 | 100% |
-| 10 | Pipeline Integration | In Progress | 2/5 | 40% |
+| 10 | Pipeline Integration | In Progress | 3/5 | 60% |
 
-**Overall:** 9.4/10 phases complete (94%)
+**Overall:** 9.6/10 phases complete (96%)
 
 ---
 
@@ -158,6 +158,10 @@
 | Stage 2 uses scoringLimit for rerank input | Apply pipelineScoringLimit cutoff before calling applyRerankIfEnabled | 10.02 |
 | Stage 3 applies final rerankLimit | Slice to pipelineRerankLimit after reranking completes | 10.02 |
 | Structured stage logging format | Each stage logs: name, requestId, counts, cutoff, latency | 10.02 |
+| Track metrics in local object | Initialize pipelineMetrics at start, populate at each stage boundary | 10.03 |
+| Include pipeline metrics in every response | pipelineMetrics field for SLO tracking and monitoring | 10.03 |
+| Pipeline breakdown in debug output | Detailed stage transitions with inputs/outputs/cutoffs for troubleshooting | 10.03 |
+| Single summary log for pipeline funnel | One log line showing complete flow: retrieval(N) → scoring(M) → rerank(K) | 10.03 |
 
 ### Technical Notes
 
@@ -256,6 +260,12 @@
 - **Pipeline stage config:** pipelineRetrievalLimit, pipelineScoringLimit, pipelineRerankLimit, pipelineLogStages (10-01)
 - **PipelineStageMetrics interface:** Tracks count and timing for retrieval, scoring, rerank stages (10-01)
 - **pipelineMetrics field:** Added to HybridSearchResponse for stage debugging (10-01)
+- **3-stage pipeline implementation:** Explicit stage handoffs with cutoffs at retrieval/scoring/rerank boundaries (10-02)
+- **Stage logging:** STAGE 1-3 logs showing count, target, cutoff, latency for each stage (10-02)
+- **Pipeline metrics tracking:** Local pipelineMetrics object populated at each stage boundary (10-03)
+- **Pipeline metrics in response:** pipelineMetrics included in HybridSearchResponse for monitoring (10-03)
+- **Pipeline breakdown in debug:** pipelineBreakdown with stage inputs/outputs/cutoffs for troubleshooting (10-03)
+- **Pipeline summary log:** Single log line showing complete funnel: retrieval(N) → scoring(M) → rerank(K) (10-03)
 
 ### Blockers
 
@@ -528,11 +538,16 @@ All Phase 8 commits (complete):
 - 08-03: bea7aba, b0eb10f, d0cb4c7
 - 08-04: 7ee25f3
 
-All Phase 9 commits (in progress):
+All Phase 9 commits (complete):
 - 09-01: ba6b223, 959c34e, e87318c
 - 09-02: def5e13
 - 09-03: 2497f51
 - 09-04: a8bab04, 702e6e7, f8fc89e
+
+All Phase 10 commits (in progress):
+- 10-01: cf15bcf, b0c87ce
+- 10-02: e6ad20f, d1745e7
+- 10-03: a1a7acb
 
 ---
 
