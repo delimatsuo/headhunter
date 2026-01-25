@@ -218,6 +218,15 @@ Plans:
 
 **Dependencies:** Phase 6 (skills signals require skills infrastructure)
 
+**Plans:** 5 plans in 4 waves
+
+Plans:
+- [ ] 07-01-PLAN.md — Create signal-calculators.ts with skill matching functions (Wave 1)
+- [ ] 07-02-PLAN.md — Add seniority, recency, and company calculators (Wave 1)
+- [ ] 07-03-PLAN.md — Extend types and weight presets (Wave 2)
+- [ ] 07-04-PLAN.md — Integrate signals into scoring and search service (Wave 3)
+- [ ] 07-05-PLAN.md — Verification checkpoint (Wave 4)
+
 **Requirements:**
 - SCOR-02: Skills exact match score (0-1) for required skills found
 - SCOR-03: Skills inferred score (0-1) for transferable skills detected
