@@ -139,3 +139,15 @@ export {
     clearSkillExpansionCache,
     type SkillExpansionResult
 } from './skills-graph';
+
+// ============================================================================
+// RE-EXPORTS FROM SKILLS-INFERENCE
+// ============================================================================
+
+// Re-export skill inference functions for job title analysis and transferable skills
+export {
+    inferSkillsFromTitle,
+    findTransferableSkills,
+    type InferredSkill,
+    type TransferableSkill
+} from './skills-inference';
