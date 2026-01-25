@@ -34,6 +34,7 @@ export interface PgVectorHealth {
   poolUtilization: number;  // (poolSize - idleConnections) / poolSize
   poolMax: number;
   poolMin: number;
+  indexType: 'hnsw' | 'diskann';
   message?: string;
 }
 
@@ -256,6 +257,7 @@ export class PgVectorClient {
       const minRrfScore = rrfScores.length > 0 ? Math.min(...rrfScores) : 0;
 
       this.logger.info({
+        indexType: this.config.indexType,
         totalResults: result.rows.length,
         vectorOnly: vectorOnlyCount,
         textOnly: textOnlyCount,
@@ -317,7 +319,8 @@ export class PgVectorClient {
         waitingRequests,
         poolUtilization: Math.round(poolUtilization * 100) / 100,
         poolMax: this.config.poolMax,
-        poolMin: this.config.poolMin
+        poolMin: this.config.poolMin,
+        indexType: this.config.indexType
       } satisfies PgVectorHealth;
     } catch (error) {
       this.logger.error({ error }, 'pgvector health check failed.');
@@ -330,6 +333,7 @@ export class PgVectorClient {
         poolUtilization: 0,
         poolMax: this.config.poolMax,
         poolMin: this.config.poolMin,
+        indexType: this.config.indexType,
         message: error instanceof Error ? error.message : 'Unknown error'
       } satisfies PgVectorHealth;
     }

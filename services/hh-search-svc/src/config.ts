@@ -52,6 +52,10 @@ export interface PgVectorConfig {
   statementTimeoutMs: number;
   hnswEfSearch?: number;
   enableAutoMigrate: boolean;
+  /** Index type to use for vector search: 'hnsw' | 'diskann' */
+  indexType: 'hnsw' | 'diskann';
+  /** StreamingDiskANN search list size (runtime tuning) */
+  diskannSearchListSize: number;
 }
 
 export interface RedisCacheConfig {
@@ -260,7 +264,9 @@ export function getSearchServiceConfig(): SearchServiceConfig {
     connectionTimeoutMs: parseNumber(process.env.PGVECTOR_CONNECTION_TIMEOUT_MS, 3_000),
     statementTimeoutMs: parseNumber(process.env.PGVECTOR_STATEMENT_TIMEOUT_MS, 10_000),
     hnswEfSearch,
-    enableAutoMigrate: parseBoolean(process.env.ENABLE_AUTO_MIGRATE, false)
+    enableAutoMigrate: parseBoolean(process.env.ENABLE_AUTO_MIGRATE, false),
+    indexType: (process.env.PGVECTOR_INDEX_TYPE ?? 'hnsw') as 'hnsw' | 'diskann',
+    diskannSearchListSize: parseNumber(process.env.DISKANN_SEARCH_LIST_SIZE, 100)
   };
 
   const search: SearchRuntimeConfig = {
