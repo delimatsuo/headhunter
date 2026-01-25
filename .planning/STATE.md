@@ -23,14 +23,14 @@
 ## Current Position
 
 **Milestone:** v2.0 Advanced Intelligence
-**Phase:** 13 - ML Trajectory Prediction (PLANNED)
-**Plan:** 0 of 7 executed
-**Status:** Phase 13 planned - 7 plans in 4 waves ready
-**Last activity:** 2026-01-25 - Phase 13 research completed, planning completed
+**Phase:** 13 - ML Trajectory Prediction (IN PROGRESS)
+**Plan:** 2 of 7 executed
+**Status:** Phase 13 in progress - ML training pipeline complete
+**Last activity:** 2026-01-25 - Completed 13-02-PLAN.md (ML training pipeline)
 
 **Progress:** [##########] v1.0 100% | [####------] v2.0: 2/5 phases (40%)
 
-**Next Action:** /gsd:execute-phase 13 (ML Trajectory Prediction)
+**Next Action:** Continue Phase 13 execution (13-03 or next plan)
 
 ---
 
@@ -40,7 +40,7 @@
 |-------|------|--------|--------------|----------|
 | 11 | Performance Foundation | Complete | 5 | 100% |
 | 12 | Natural Language Search | Complete | 5 | 100% |
-| 13 | ML Trajectory Prediction | Planned | 5 | 0% |
+| 13 | ML Trajectory Prediction | In Progress | 5 | 29% |
 | 14 | Bias Reduction | Pending | 5 | 0% |
 | 15 | Compliance Tooling | Pending | 6 | 0% |
 
@@ -113,6 +113,10 @@
 | Shadow mode for ML transition | 4-6 weeks side-by-side to validate ML matches rule-based baseline | 13 |
 | Fairlearn for bias metrics | Actively maintained, simpler API than AIF360 | 14 |
 | PostgreSQL for audit logs | No new databases, 4-year retention in existing infrastructure | 15 |
+| Rename ml-training to ml_training | Python doesn't recognize modules with hyphens in names | 13 |
+| PyTorch dynamo exporter with fallback | Better LSTM handling, fallback ensures compatibility | 13 |
+| Multi-task loss (0.1x auxiliary) | Primary task is next role; auxiliary tasks provide regularization | 13 |
+| hidden_dim=16 for LSTM | Research-validated for career prediction (RESEARCH.md) | 13 |
 
 ### Key Decisions (v1.0 - Archived)
 
@@ -147,6 +151,19 @@
 - NLPSearchConfig added to config.ts with environment variables
 - **153 passing unit tests total**
 
+**Phase 13 Deliverables (IN PROGRESS - 2/7 plans):**
+- hh-trajectory-svc Fastify server (port 7109) with health endpoint
+- TypeScript types: TrajectoryPrediction, MLPredictionConfig
+- ONNX session management singleton pattern
+- Python ML training pipeline (scripts/ml_training/trajectory/)
+- Data preparation with temporal_split (prevents leakage)
+- TitleEncoder with normalization and abbreviation mapping
+- CareerTrajectoryLSTM (bidirectional, hidden_dim=16)
+- Training loop with multi-task loss and early stopping
+- ONNX export with dynamo=True and dynamic_shapes
+- Isotonic calibration with ECE < 0.05 target
+- Evaluation with career changer testing
+
 **v1.0 Deliverables:**
 - 3-stage pipeline with 500/100/50 funnel
 - Hybrid search (vector + BM25 via RRF)
@@ -175,7 +192,10 @@ None currently identified.
 - [x] Execute 12-04-PLAN.md (Query Parser Orchestrator)
 - [x] Execute 12-05-PLAN.md (SearchService Integration)
 - [x] Execute 12-06-PLAN.md (NLP Integration & Semantic Synonyms)
-- [ ] Plan Phase 13 (ML Trajectory Prediction) - 5 plans to create
+- [x] Plan Phase 13 (ML Trajectory Prediction) - 7 plans created
+- [x] Execute 13-01-PLAN.md (hh-trajectory-svc setup)
+- [x] Execute 13-02-PLAN.md (ML training pipeline)
+- [ ] Continue Phase 13 execution (5 more plans)
 - [ ] Verify pgvectorscale Cloud SQL compatibility
 - [ ] Run embedding backfill in production after Cloud SQL migration
 - [ ] Prepare training data for trajectory LSTM (Phase 13 blocker)
@@ -190,7 +210,7 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Phase 12 verified complete
+**Stopped at:** Completed 13-02-PLAN.md (ML training pipeline)
 **Resume file:** None
 
 ### Context for Next Session
