@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 7 (Signal Scoring Implementation) - Plan 3/5 complete. Type system extended with Phase 7 signals, all weight presets updated.
+**Current Focus:** Phase 7 (Signal Scoring Implementation) - Plan 4/5 complete. Phase 7 signals integrated into scoring and search service.
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -22,13 +22,13 @@
 ## Current Position
 
 **Phase:** 7 of 10 (Signal Scoring Implementation) - IN PROGRESS
-**Plan:** 3 of 5 complete (07-01, 07-02, 07-03)
+**Plan:** 4 of 5 complete (07-01, 07-02, 07-03, 07-04)
 **Status:** In progress
-**Last activity:** 2026-01-25 - Completed 07-03-PLAN.md (Type Extensions and Weight Configuration)
+**Last activity:** 2026-01-25 - Completed 07-04-PLAN.md (Signal Integration)
 
 **Progress:** [████████░░] 80%
 
-**Next Action:** Continue Phase 7 - Plan 07-04 (next signal scoring task)
+**Next Action:** Continue Phase 7 - Plan 07-05 (Verification and End-to-End Testing)
 
 ---
 
@@ -42,7 +42,7 @@
 | 4 | Multi-Signal Scoring Framework | Complete | 5/5 | 100% |
 | 5 | Skills Infrastructure | Complete | 4/4 | 100% |
 | 6 | Skills Intelligence | Complete | 4/4 | 100% |
-| 7 | Signal Scoring Implementation | In Progress | 3/5 | 60% |
+| 7 | Signal Scoring Implementation | In Progress | 4/5 | 80% |
 | 8 | Career Trajectory | Pending | 0/? | 0% |
 | 9 | Match Transparency | Pending | 0/? | 0% |
 | 10 | Pipeline Integration | Pending | 0/? | 0% |
@@ -129,6 +129,9 @@
 | Phase 7 signals optional | All 5 Phase 7 signals are optional fields - backward compatibility | 7.03 |
 | Weight distribution strategy | Executive favors seniority+company, IC favors skills+recency, Manager balanced | 7.03 |
 | Maintain sum = 1.0 | All weight presets adjusted proportionally to maintain normalized scoring | 7.03 |
+| SignalComputationContext interface | Separate interface for Phase 7 computation, avoids conflict with auth SearchContext | 7.04 |
+| Conditional Phase 7 computation | Only compute Phase 7 signals when signalContext provided - backward compatible | 7.04 |
+| Auto-detect target level | Extract from job description keywords with 'mid' fallback - improves UX | 7.04 |
 
 ### Technical Notes
 
@@ -202,6 +205,13 @@
 - **SignalWeightConfig extended:** 5 new optional weight fields matching SignalScores (07-03)
 - **ROLE_WEIGHT_PRESETS updated:** All 4 presets include Phase 7 weights, sum = 1.0 exactly (07-03)
 - **normalizeWeights enhanced:** Includes Phase 7 signals in sum calculation via PHASE7_SIGNAL_KEYS (07-03)
+- **SignalComputationContext created:** Separate interface for Phase 7 signal computation context (07-04)
+- **extractSignalScores enhanced:** Accepts optional signalContext, computes Phase 7 signals when provided (07-04)
+- **computeWeightedScore enhanced:** Includes Phase 7 signals in weighted sum (07-04)
+- **Helper functions added:** extractCandidateSkills, extractCandidateLevel, extractCandidateCompanies, extractCandidateExperience (07-04)
+- **Search context building:** detectTargetLevel auto-detects from job description keywords (07-04)
+- **Phase 7 signal logging:** Statistics logged for top 20 candidates after ranking (07-04)
+- **phase7Breakdown in debug:** Shows Phase 7 signals for top 5 candidates when includeDebug=true (07-04)
 
 ### Blockers
 
@@ -245,22 +255,22 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 07-03-PLAN.md - Type Extensions and Weight Configuration
+**Stopped at:** Completed 07-04-PLAN.md - Signal Integration
 **Resume file:** None - continue Phase 7
 
 ### Context for Next Session
 
-Phase 7 (Signal Scoring Implementation) IN PROGRESS. Plan 3/5 complete:
+Phase 7 (Signal Scoring Implementation) IN PROGRESS. Plan 4/5 complete:
 
 | Plan | Name | Status | Commits |
 |------|------|--------|---------|
 | 07-01 | Skill Signal Calculators | Complete | 45e0541, 5aa6501 |
 | 07-02 | Seniority, Recency, Company Calculators | Complete | acbeb88 |
 | 07-03 | Type Extensions and Weight Configuration | Complete | 6485f46 |
-| 07-04 | (Next plan) | Pending | - |
-| 07-05 | (Next plan) | Pending | - |
+| 07-04 | Signal Integration | Complete | 4288775, cb27eb0, e8f64ec |
+| 07-05 | Verification and End-to-End Testing | Pending | - |
 
-**Phase 7 Plans 01-03 deliverables (COMPLETE):**
+**Phase 7 Plans 01-04 deliverables (COMPLETE):**
 - All 5 signal calculators implemented (SCOR-02 through SCOR-06)
 - `calculateSkillsExactMatch()`: SCOR-02 with alias matching
 - `calculateSkillsInferred()`: SCOR-03 with 9 transferable skill rules
@@ -273,6 +283,13 @@ Phase 7 (Signal Scoring Implementation) IN PROGRESS. Plan 3/5 complete:
 - SignalWeightConfig extended with 5 Phase 7 optional weight fields
 - All 4 ROLE_WEIGHT_PRESETS updated with Phase 7 weights (sum = 1.0 exactly)
 - normalizeWeights() enhanced to include Phase 7 signals in sum calculation
+- **NEW:** SignalComputationContext interface for Phase 7 signal computation
+- **NEW:** extractSignalScores computes Phase 7 signals when context provided
+- **NEW:** computeWeightedScore includes Phase 7 signals in weighted sum
+- **NEW:** Helper functions: extractCandidateSkills, extractCandidateLevel, extractCandidateCompanies, extractCandidateExperience
+- **NEW:** Search context building in hydrateResult with auto-detection
+- **NEW:** Phase 7 signal statistics logging (top 20 sample)
+- **NEW:** phase7Breakdown in debug output (top 5 candidates)
 
 ---
 
@@ -387,6 +404,7 @@ All Phase 7 commits (in progress):
 - 07-01: 45e0541, 5aa6501
 - 07-02: acbeb88
 - 07-03: 6485f46
+- 07-04: 4288775, cb27eb0, e8f64ec
 
 ---
 
