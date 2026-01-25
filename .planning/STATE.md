@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 4 (Multi-Signal Scoring Framework) COMPLETE AND VERIFIED. All 5 plans finished - SignalWeightConfig types, role-type presets, scoring utilities, response enrichment, API layer with module exports, and verification. Ready for Phase 5 (Skills Infrastructure).
+**Current Focus:** Phase 5 (Skills Infrastructure) IN PROGRESS. Plan 01 complete - EllaAI skills taxonomy copied with O(1) alias normalization.
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -21,14 +21,14 @@
 
 ## Current Position
 
-**Phase:** 4 of 10 (Multi-Signal Scoring Framework) - COMPLETE AND VERIFIED
-**Plan:** 5 of 5 complete
-**Status:** Phase Complete and Verified
-**Last activity:** 2026-01-25 - Completed 04-05-PLAN.md (Verification)
+**Phase:** 5 of 10 (Skills Infrastructure) - IN PROGRESS
+**Plan:** 1 of ? complete
+**Status:** Phase In Progress
+**Last activity:** 2026-01-25 - Completed 05-01-PLAN.md (Skills Infrastructure Setup)
 
-**Progress:** [########..] 76%
+**Progress:** [████████░░] 80%
 
-**Next Action:** Begin Phase 5 (Skills Infrastructure)
+**Next Action:** Continue Phase 5
 
 ---
 
@@ -40,7 +40,7 @@
 | 2 | Search Recall Foundation | Complete | 5/5 | 100% |
 | 3 | Hybrid Search | Complete | 4/4 | 100% |
 | 4 | Multi-Signal Scoring Framework | Complete | 5/5 | 100% |
-| 5 | Skills Infrastructure | Pending | 0/? | 0% |
+| 5 | Skills Infrastructure | In Progress | 1/? | ~25% |
 | 6 | Skills Intelligence | Pending | 0/? | 0% |
 | 7 | Signal Scoring Implementation | Pending | 0/? | 0% |
 | 8 | Career Trajectory | Pending | 0/? | 0% |
@@ -108,6 +108,8 @@
 | weightsApplied field for transparency | Enables debugging which weights were used | 4.02 |
 | Schema validation for signal weights | 0-1 range, enum for roleType | 4.04 |
 | Module exports from index.ts | Enable external consumers (tests, other services) | 4.04 |
+| O(1) alias normalization via Map | ALIAS_TO_CANONICAL built at module load for hot path safety | 5.01 |
+| Passthrough unknown skills | Return original input rather than throwing errors | 5.01 |
 
 ### Technical Notes
 
@@ -158,6 +160,9 @@
 - **Response enrichment:** signalScores returned in search results (04-03)
 - **API schema validation:** signalWeights (0-1), roleType enum in schemas.ts (04-04)
 - **Module exports:** signal-weights, scoring, types exported from index.ts (04-04)
+- **Skills taxonomy copied:** 468 skills from EllaAI across 15 categories (05-01)
+- **ALIAS_TO_CANONICAL Map:** 468+ entries for O(1) lookups (05-01)
+- **Skills service created:** normalizeSkillName, skillsMatch, getSkillAliases, getCanonicalSkillId (05-01)
 
 ### Blockers
 
@@ -185,7 +190,7 @@ None currently identified.
 - [x] Complete 04-03: Response Enrichment
 - [x] Complete 04-04: API Layer and Module Exports
 - [x] Complete 04-05: Verification (build/compile/exports verified)
-- [ ] Verify EllaAI skills-master.ts format before copying (Phase 5)
+- [x] Complete 05-01: Skills Infrastructure Setup (EllaAI taxonomy copied)
 - [ ] Verify search recall improvement after Phase 2 deployment
 - [x] Note: Hard level filter at step 3.5 (career trajectory) - NOW CONVERTED TO SCORING
 
@@ -194,10 +199,28 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 04-05-PLAN.md - Verification
-**Resume file:** None - ready for Phase 5
+**Stopped at:** Completed 05-01-PLAN.md - Skills Infrastructure Setup
+**Resume file:** None - ready for next Phase 5 plan
 
 ### Context for Next Session
+
+Phase 5 (Skills Infrastructure) IN PROGRESS. Plan 01 complete:
+
+| Plan | Name | Status | Commits |
+|------|------|--------|---------|
+| 05-01 | Skills Infrastructure Setup | Complete | 9fb960e |
+
+**Phase 5 Plan 01 deliverables:**
+- EllaAI skills taxonomy copied (468 skills, 15 categories)
+- skills-master.ts created with MASTER_SKILLS array
+- skills-service.ts created with O(1) alias normalization
+- ALIAS_TO_CANONICAL Map with 468+ entries
+- normalizeSkillName, skillsMatch, getSkillAliases, getCanonicalSkillId helpers
+- All TypeScript compilation passes
+
+---
+
+**Previous Phase 4 Summary:**
 
 Phase 4 (Multi-Signal Scoring Framework) COMPLETE AND VERIFIED. All 5 plans finished:
 
