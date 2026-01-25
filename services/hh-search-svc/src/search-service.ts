@@ -190,6 +190,18 @@ export class SearchService {
       totalMs: 0
     };
 
+    // Pipeline metrics tracking (PIPE-01)
+    const pipelineMetrics = {
+      retrievalCount: 0,
+      retrievalMs: 0,
+      scoringCount: 0,
+      scoringMs: 0,
+      rerankCount: 0,
+      rerankMs: 0,
+      rerankApplied: false,
+      totalMs: 0
+    };
+
     // Resolve signal weights from request or role-type defaults
     const roleType: RoleType = request.roleType ?? 'default';
     const resolvedWeights = resolveWeights(request.signalWeights, roleType);
@@ -244,6 +256,7 @@ export class SearchService {
       }
     }
 
+    // === STAGE 1: RETRIEVAL (recall-focused) ===
     const retrievalStart = Date.now();
     const rows = await this.pgClient.hybridSearch({
       tenantId: context.tenant.id,
@@ -261,7 +274,23 @@ export class SearchService {
       perMethodLimit: this.config.search.perMethodLimit,
       enableRrf: this.config.search.enableRrf
     });
-    timings.retrievalMs = Date.now() - retrievalStart;
+    const retrievalMs = Date.now() - retrievalStart;
+    timings.retrievalMs = retrievalMs;
+
+    // Update pipeline metrics for Stage 1
+    pipelineMetrics.retrievalCount = rows.length;
+    pipelineMetrics.retrievalMs = retrievalMs;
+
+    // Stage 1 logging
+    if (this.config.search.pipelineLogStages) {
+      this.logger.info({
+        stage: 'STAGE 1: RETRIEVAL',
+        requestId: context.requestId,
+        count: rows.length,
+        target: this.config.search.pipelineRetrievalLimit,
+        latencyMs: retrievalMs
+      }, 'Pipeline Stage 1 complete - retrieval focused on recall');
+    }
 
     let candidates = rows.map((row) => this.hydrateResult(row, request, resolvedWeights, roleType));
 
@@ -295,9 +324,30 @@ export class SearchService {
       } satisfies HybridSearchResultItem));
     }
 
+    // === STAGE 2: SCORING (precision-focused) ===
+    const scoringStart = Date.now();
     const rankingStart = Date.now();
     let ranked = this.rankCandidates(candidates, request);
-    timings.rankingMs = Date.now() - rankingStart;
+    const rankingMs = Date.now() - rankingStart;
+    timings.rankingMs = rankingMs;
+
+    // Apply scoring stage cutoff - keep only top N for reranking
+    const preScoringCount = ranked.length;
+    const scoringLimit = this.config.search.pipelineScoringLimit;
+    ranked = ranked.slice(0, scoringLimit);
+    const scoringMs = Date.now() - scoringStart;
+
+    // Stage 2 logging
+    if (this.config.search.pipelineLogStages) {
+      this.logger.info({
+        stage: 'STAGE 2: SCORING',
+        requestId: context.requestId,
+        inputCount: preScoringCount,
+        outputCount: ranked.length,
+        cutoff: scoringLimit,
+        latencyMs: scoringMs
+      }, 'Pipeline Stage 2 complete - scoring focused on precision');
+    }
 
     // Log Phase 7 signal statistics for debugging
     if (ranked.length > 0) {
@@ -340,13 +390,35 @@ export class SearchService {
       }
     }
 
-    const rerankOutcome = await this.applyRerankIfEnabled(context, request, ranked, limit);
+    // === STAGE 3: RERANKING (nuance via LLM) ===
+    const rerankStart = Date.now();
+    const rerankOutcome = await this.applyRerankIfEnabled(context, request, ranked, scoringLimit);
 
     if (rerankOutcome) {
       ranked = rerankOutcome.results;
       if (rerankOutcome.timingsMs !== undefined) {
         timings.rerankMs = rerankOutcome.timingsMs;
       }
+    }
+
+    // Apply final rerank cutoff
+    const preRerankCount = ranked.length;
+    const rerankLimit = this.config.search.pipelineRerankLimit;
+    ranked = ranked.slice(0, rerankLimit);
+    const rerankMs = Date.now() - rerankStart;
+
+    // Stage 3 logging
+    if (this.config.search.pipelineLogStages) {
+      this.logger.info({
+        stage: 'STAGE 3: RERANKING',
+        requestId: context.requestId,
+        inputCount: preRerankCount,
+        outputCount: ranked.length,
+        cutoff: rerankLimit,
+        rerankApplied: Boolean(rerankOutcome && !rerankOutcome.metadata?.usedFallback),
+        llmProvider: rerankOutcome?.metadata?.llmProvider ?? 'none',
+        latencyMs: rerankMs
+      }, 'Pipeline Stage 3 complete - LLM reranking for nuance');
     }
 
     // Generate match rationales for top candidates if requested (TRNS-03)
