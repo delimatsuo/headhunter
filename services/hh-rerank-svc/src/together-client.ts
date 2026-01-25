@@ -5,7 +5,8 @@ import type { Logger } from 'pino';
 import type { TogetherAIConfig } from './config.js';
 import type {
   TogetherChatCompletionRequestPayload,
-  TogetherChatCompletionResponsePayload
+  TogetherChatCompletionResponsePayload,
+  MatchRationale
 } from './types.js';
 
 type PRetryExports = {
@@ -330,6 +331,136 @@ export class TogetherClient {
     }
 
     return { status: 'healthy', failureCount: this.failureCount } satisfies TogetherHealthStatus;
+  }
+
+  /**
+   * Generate LLM match rationale for a candidate.
+   * Explains why the candidate is a good fit for the role.
+   * @see TRNS-03
+   */
+  async generateMatchRationale(
+    jobDescription: string,
+    candidateSummary: string,
+    topSignals: Array<{ name: string; score: number }>,
+    options: { requestId: string; tenantId: string }
+  ): Promise<MatchRationale> {
+    const fallbackRationale: MatchRationale = {
+      summary: 'Match analysis unavailable.',
+      keyStrengths: [],
+      signalHighlights: []
+    };
+
+    if (!this.config.enable || !this.axios) {
+      this.logger.debug('Match rationale skipped because client is disabled.');
+      return fallbackRationale;
+    }
+
+    if (this.isCircuitOpen()) {
+      this.logger.warn({ tenantId: options.tenantId }, 'Together circuit open. Skipping match rationale.');
+      return fallbackRationale;
+    }
+
+    const prompt = this.buildRationalePrompt(jobDescription, candidateSummary, topSignals);
+
+    const payload: TogetherChatCompletionRequestPayload = {
+      model: this.config.model,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a recruitment assistant that explains candidate-job matches concisely. Always respond with valid JSON.'
+        },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 300,
+      response_format: { type: 'json_object' }
+    };
+
+    try {
+      const result = await this.rerank(payload, {
+        requestId: options.requestId,
+        tenantId: options.tenantId,
+        topN: 1,
+        budgetMs: 5000 // 5 second budget for rationale generation
+      });
+
+      if (!result?.data?.choices?.[0]?.message?.content) {
+        this.logger.warn({ requestId: options.requestId }, 'No rationale content in Together response.');
+        return fallbackRationale;
+      }
+
+      return this.parseRationaleResponse(result.data.choices[0].message.content);
+    } catch (error) {
+      this.logger.error({ error, requestId: options.requestId }, 'Failed to generate match rationale.');
+      return fallbackRationale;
+    }
+  }
+
+  private buildRationalePrompt(
+    jobDescription: string,
+    candidateSummary: string,
+    topSignals: Array<{ name: string; score: number }>
+  ): string {
+    const signalsList = topSignals
+      .map((s) => `- ${s.name}: ${Math.round(s.score * 100)}%`)
+      .join('\n');
+
+    // Truncate inputs to prevent context overflow
+    const truncatedJd = jobDescription.slice(0, 500);
+    const truncatedSummary = candidateSummary.slice(0, 500);
+
+    return `Given:
+Job Description: ${truncatedJd}${jobDescription.length > 500 ? '...' : ''}
+
+Candidate Summary: ${truncatedSummary}${candidateSummary.length > 500 ? '...' : ''}
+
+Top Match Signals:
+${signalsList || '- No signals available'}
+
+Generate a brief match explanation in JSON format:
+{
+  "summary": "2-3 sentence explanation of why this candidate matches",
+  "keyStrengths": ["strength 1", "strength 2"],
+  "signalHighlights": [
+    {"signal": "Skills Match", "score": 0.92, "reason": "why this signal is relevant"}
+  ]
+}
+
+Focus on concrete qualifications and relevance to the role.`;
+  }
+
+  private parseRationaleResponse(response: string): MatchRationale {
+    try {
+      const parsed = JSON.parse(response) as Record<string, unknown>;
+      return {
+        summary: typeof parsed.summary === 'string' ? parsed.summary : 'Match analysis unavailable.',
+        keyStrengths: Array.isArray(parsed.keyStrengths)
+          ? parsed.keyStrengths.filter((s): s is string => typeof s === 'string')
+          : [],
+        signalHighlights: Array.isArray(parsed.signalHighlights)
+          ? parsed.signalHighlights
+              .filter(
+                (h): h is { signal: string; score: number; reason: string } =>
+                  typeof h === 'object' &&
+                  h !== null &&
+                  typeof (h as Record<string, unknown>).signal === 'string' &&
+                  typeof (h as Record<string, unknown>).score === 'number' &&
+                  typeof (h as Record<string, unknown>).reason === 'string'
+              )
+              .map((h) => ({
+                signal: h.signal,
+                score: h.score,
+                reason: h.reason
+              }))
+          : []
+      };
+    } catch {
+      return {
+        summary: 'Match analysis unavailable.',
+        keyStrengths: [],
+        signalHighlights: []
+      };
+    }
   }
 
   async close(): Promise<void> {
