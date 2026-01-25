@@ -31,6 +31,9 @@ export interface PgVectorHealth {
   poolSize: number;
   idleConnections: number;
   waitingRequests: number;
+  poolUtilization: number;  // (poolSize - idleConnections) / poolSize
+  poolMax: number;
+  poolMin: number;
   message?: string;
 }
 
@@ -95,6 +98,13 @@ export class PgVectorClient {
     await this.initialize();
 
     return this.withClient(async (client) => {
+      // Capture pool metrics for observability
+      const poolMetrics = {
+        poolSize: this.pool.totalCount,
+        idle: this.pool.idleCount ?? 0,
+        waiting: this.pool.waitingCount ?? 0
+      };
+
       // FTS diagnostic logging - log query parameters
       this.logger.info({
         textQuery: query.textQuery,
@@ -212,9 +222,19 @@ export class PgVectorClient {
 
       const filterClause = filters.length > 0 ? `AND ${filters.join('\n    AND ')}` : '';
 
-      const efSearch = this.config.hnswEfSearch;
-      if (efSearch && Number.isFinite(efSearch) && efSearch > 0) {
-        await client.query(`SET LOCAL hnsw.ef_search = ${Math.floor(efSearch)}`);
+      // Set index-specific runtime parameters
+      if (this.config.indexType === 'diskann') {
+        const searchListSize = this.config.diskannSearchListSize;
+        if (searchListSize > 0) {
+          await client.query(`SET LOCAL diskann.query_search_list_size = ${Math.floor(searchListSize)}`);
+        }
+        this.logger.debug({ indexType: 'diskann', searchListSize }, 'Using StreamingDiskANN index');
+      } else {
+        const efSearch = this.config.hnswEfSearch;
+        if (efSearch && Number.isFinite(efSearch) && efSearch > 0) {
+          await client.query(`SET LOCAL hnsw.ef_search = ${Math.floor(efSearch)}`);
+          this.logger.debug({ indexType: 'hnsw', efSearch }, 'Using HNSW index');
+        }
       }
 
       // Choose SQL based on enableRrf flag (RRF vs weighted sum for A/B testing)
@@ -248,7 +268,8 @@ export class PgVectorClient {
         },
         textQuery: query.textQuery?.slice(0, 50),
         rrfK: query.rrfK,
-        enableRrf: query.enableRrf
+        enableRrf: query.enableRrf,
+        poolMetrics
       }, 'RRF hybrid search summary');
 
       // Warn if FTS expected but not contributing
@@ -275,12 +296,28 @@ export class PgVectorClient {
         return Number(result.rows[0]?.total ?? 0);
       });
 
+      const poolSize = this.pool.totalCount;
+      const idleConnections = this.pool.idleCount ?? 0;
+      const waitingRequests = this.pool.waitingCount ?? 0;
+      const poolUtilization = poolSize > 0 ? (poolSize - idleConnections) / poolSize : 0;
+
+      // Log warning if pool is under pressure
+      if (waitingRequests > 5) {
+        this.logger.warn(
+          { waitingRequests, poolSize, poolMax: this.config.poolMax },
+          'Pool saturation warning: requests waiting for connections'
+        );
+      }
+
       return {
-        status: 'healthy',
+        status: waitingRequests > 10 ? 'degraded' : 'healthy',
         totalCandidates: total,
-        poolSize: this.pool.totalCount,
-        idleConnections: this.pool.idleCount ?? 0,
-        waitingRequests: this.pool.waitingCount ?? 0
+        poolSize,
+        idleConnections,
+        waitingRequests,
+        poolUtilization: Math.round(poolUtilization * 100) / 100,
+        poolMax: this.config.poolMax,
+        poolMin: this.config.poolMin
       } satisfies PgVectorHealth;
     } catch (error) {
       this.logger.error({ error }, 'pgvector health check failed.');
@@ -290,6 +327,9 @@ export class PgVectorClient {
         poolSize: this.pool.totalCount,
         idleConnections: this.pool.idleCount ?? 0,
         waitingRequests: this.pool.waitingCount ?? 0,
+        poolUtilization: 0,
+        poolMax: this.config.poolMax,
+        poolMin: this.config.poolMin,
         message: error instanceof Error ? error.message : 'Unknown error'
       } satisfies PgVectorHealth;
     }
