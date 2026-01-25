@@ -27,7 +27,7 @@ The approach is enhancement, not replacement. The existing stack (PostgreSQL + p
 | 6 | Skills Intelligence | Complete | 3 |
 | 7 | Signal Scoring Implementation | Complete | 5 |
 | 8 | Career Trajectory | Complete | 4 |
-| 9 | Match Transparency | Pending | 4 |
+| 9 | Match Transparency | Complete | 4 |
 | 10 | Pipeline Integration | Pending | 4 |
 
 **Total:** 28 requirements across 10 phases
@@ -285,13 +285,13 @@ Plans:
 **Plans:** 7 plans in 4 waves
 
 Plans:
-- [ ] 09-01-PLAN.md — Frontend types and SignalScoreBreakdown component (Wave 1)
-- [ ] 09-02-PLAN.md — SkillChip component with confidence badges (Wave 1)
-- [ ] 09-03-PLAN.md — Integrate signal breakdown into candidate card (Wave 2)
-- [ ] 09-04-PLAN.md — Sort/filter controls in search results (Wave 2)
-- [ ] 09-05-PLAN.md — LLM match rationale generation in rerank service (Wave 3)
-- [ ] 09-06-PLAN.md — Display LLM rationale in candidate card (Wave 3)
-- [ ] 09-07-PLAN.md — Verification checkpoint (Wave 4)
+- [x] 09-01-PLAN.md — Frontend types and SignalScoreBreakdown component (Wave 1)
+- [x] 09-02-PLAN.md — SkillChip component with confidence badges (Wave 1)
+- [x] 09-03-PLAN.md — Integrate signal breakdown into candidate card (Wave 2)
+- [x] 09-04-PLAN.md — Sort/filter controls in search results (Wave 2)
+- [x] 09-05-PLAN.md — LLM match rationale generation in rerank service (Wave 3)
+- [x] 09-06-PLAN.md — Display LLM rationale in candidate card (Wave 3)
+- [x] 09-07-PLAN.md — Verification checkpoint (Wave 4)
 
 **Requirements:**
 - TRNS-01: Match score visible to recruiters for each candidate
@@ -383,4 +383,4 @@ All phases are sequential. Each builds on the previous. No parallel execution pa
 ---
 
 *Roadmap created: 2026-01-24*
-*Last updated: 2026-01-25 after Phase 7 completion*
+*Last updated: 2026-01-25 after Phase 9 completion*
