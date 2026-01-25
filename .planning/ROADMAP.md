@@ -24,7 +24,7 @@ The approach is enhancement, not replacement. The existing stack (PostgreSQL + p
 | 3 | Hybrid Search | Complete | 4 |
 | 4 | Multi-Signal Scoring Framework | Complete | 3 |
 | 5 | Skills Infrastructure | Complete | 2 |
-| 6 | Skills Intelligence | Pending | 3 |
+| 6 | Skills Intelligence | Planned | 3 |
 | 7 | Signal Scoring Implementation | Pending | 5 |
 | 8 | Career Trajectory | Pending | 4 |
 | 9 | Match Transparency | Pending | 4 |
@@ -188,6 +188,14 @@ Plans:
 
 **Dependencies:** Phase 5 (taxonomy must be integrated)
 
+**Plans:** 4 plans in 3 waves
+
+Plans:
+- [ ] 06-01-PLAN.md — Create skills-graph.ts with BFS expansion (Wave 1)
+- [ ] 06-02-PLAN.md — Create skills-inference.ts with title patterns (Wave 1)
+- [ ] 06-03-PLAN.md — Integrate skill expansion into search (Wave 2)
+- [ ] 06-04-PLAN.md — Verification checkpoint (Wave 3)
+
 **Requirements:**
 - SKIL-02: Related skills expansion ("Python" matches "Django", "Flask" users)
 - SKIL-04: Skills inference from context (patterns in profile data)
@@ -347,4 +355,4 @@ All phases are sequential. Each builds on the previous. No parallel execution pa
 ---
 
 *Roadmap created: 2026-01-24*
-*Last updated: 2026-01-25 after Phase 5 completion*
+*Last updated: 2026-01-25 after Phase 6 planning*
