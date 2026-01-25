@@ -173,6 +173,57 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         </div>
       </div>
 
+      {/* Sort and Filter Controls */}
+      <div className="results-controls">
+        <div className="sort-control">
+          <label htmlFor="sort-select">Sort by:</label>
+          <select
+            id="sort-select"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortOption)}
+            className="sort-select"
+          >
+            <option value="overall">Best Match</option>
+            <option value="skills">Skills Match</option>
+            <option value="trajectory">Career Trajectory</option>
+            <option value="recency">Skill Recency</option>
+            <option value="seniority">Seniority Fit</option>
+          </select>
+        </div>
+
+        <div className="filter-control">
+          <label htmlFor="skill-filter">
+            Min Skill Score: {minSkillScore}%
+          </label>
+          <input
+            id="skill-filter"
+            type="range"
+            min="0"
+            max="100"
+            step="10"
+            value={minSkillScore}
+            onChange={(e) => setMinSkillScore(parseInt(e.target.value, 10))}
+            className="filter-slider"
+          />
+        </div>
+
+        {minSkillScore > 0 && (
+          <button
+            className="clear-filters"
+            onClick={() => setMinSkillScore(0)}
+          >
+            Clear filter
+          </button>
+        )}
+
+        {/* Show filtered count when filter is active */}
+        {minSkillScore > 0 && filteredCount !== totalMatches && (
+          <span className="filter-count">
+            ({filteredCount} of {totalMatches} shown)
+          </span>
+        )}
+      </div>
+
       {/* Collapsible AI Analysis Summary */}
       {analysis && (
         <div style={{
