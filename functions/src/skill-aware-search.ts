@@ -7,7 +7,13 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { z } from "zod";
 import { VectorSearchService } from "./vector-search";
-import { normalizeSkillName } from "./shared/skills-service";
+import {
+  normalizeSkillName,
+  inferSkillsFromTitle,
+  findTransferableSkills,
+  type InferredSkill,
+  type TransferableSkill
+} from "./shared/skills-service";
 
 // Types and schemas for skill-aware search
 const SkillRequirementSchema = z.object({
@@ -128,19 +134,48 @@ class SkillAwareSearchService {
 
   /**
    * Extract skill profile from candidate data
+   * Enhanced with job title inference and transferable skills detection
    */
   private extractSkillProfile(candidateData: any): {
-    skills: Record<string, { confidence: number; category: string; evidence: string[] }>;
+    skills: Record<string, { confidence: number; category: string; evidence: string[]; matchType?: string }>;
     average_confidence: number;
     skill_categories: Record<string, number>;
+    transferableSkills?: TransferableSkill[];
   } {
-    const skills: Record<string, { confidence: number; category: string; evidence: string[] }> = {};
+    const skills: Record<string, { confidence: number; category: string; evidence: string[]; matchType?: string }> = {};
     const skillCategories: Record<string, number> = {};
 
     try {
       const analysis = candidateData.recruiter_analysis;
       if (!analysis) {
-        return { skills, average_confidence: 0, skill_categories: skillCategories };
+        // Even without recruiter_analysis, try title inference
+        const currentTitle = candidateData.current_role ||
+                             candidateData.professional?.current_title ||
+                             candidateData.intelligent_analysis?.career_trajectory_analysis?.current_level || '';
+
+        if (currentTitle) {
+          const titleInferred = inferSkillsFromTitle(currentTitle);
+          for (const inferred of titleInferred) {
+            const skillName = normalizeSkillName(inferred.skill);
+            skills[skillName] = {
+              confidence: inferred.confidence * 100,  // Convert 0-1 to 0-100
+              category: 'technical',
+              evidence: [inferred.reasoning],
+              matchType: 'inferred'
+            };
+            skillCategories['inferred'] = (skillCategories['inferred'] || 0) + 1;
+          }
+        }
+
+        const explicitSkillNames = Object.keys(skills);
+        const transferableSkills = findTransferableSkills(explicitSkillNames);
+
+        const confidenceValues = Object.values(skills).map(s => s.confidence);
+        const avgConfidence = confidenceValues.length > 0
+          ? confidenceValues.reduce((a, b) => a + b, 0) / confidenceValues.length
+          : 0;
+
+        return { skills, average_confidence: avgConfidence, skill_categories: skillCategories, transferableSkills };
       }
 
       // Process explicit skills
@@ -161,14 +196,14 @@ class SkillAwareSearchService {
               const confidence = skillObj.confidence || 100;
               const evidence = skillObj.evidence || [];
 
-              skills[skillName] = { confidence, category, evidence };
+              skills[skillName] = { confidence, category, evidence, matchType: 'explicit' };
               skillCategories[category] = (skillCategories[category] || 0) + 1;
             }
           }
         }
       }
 
-      // Process inferred skills
+      // Process inferred skills from profile analysis
       if (analysis.inferred_skills) {
         const inferred = analysis.inferred_skills;
         const inferredTypes = [
@@ -190,7 +225,8 @@ class SkillAwareSearchService {
                 skills[skillName] = {
                   confidence,
                   category,
-                  evidence: [skillObj.reasoning || "Inferred from profile"]
+                  evidence: [skillObj.reasoning || "Inferred from profile"],
+                  matchType: 'inferred'
                 };
                 skillCategories[category] = (skillCategories[category] || 0) + 1;
               }
@@ -199,13 +235,40 @@ class SkillAwareSearchService {
         }
       }
 
+      // NEW: Infer skills from current job title
+      const currentTitle = candidateData.current_role ||
+                           candidateData.professional?.current_title ||
+                           candidateData.intelligent_analysis?.career_trajectory_analysis?.current_level || '';
+
+      if (currentTitle) {
+        const titleInferred = inferSkillsFromTitle(currentTitle);
+        for (const inferred of titleInferred) {
+          const skillName = normalizeSkillName(inferred.skill);
+
+          // Only add if not already present with higher confidence
+          if (!skills[skillName] || skills[skillName].confidence < inferred.confidence * 100) {
+            skills[skillName] = {
+              confidence: inferred.confidence * 100,  // Convert 0-1 to 0-100
+              category: 'technical',
+              evidence: [inferred.reasoning],
+              matchType: 'inferred'
+            };
+            skillCategories['inferred'] = (skillCategories['inferred'] || 0) + 1;
+          }
+        }
+      }
+
+      // NEW: Detect transferable skills
+      const explicitSkillNames = Object.keys(skills);
+      const transferableSkills = findTransferableSkills(explicitSkillNames);
+
       // Calculate average confidence
       const confidenceValues = Object.values(skills).map(s => s.confidence);
       const avgConfidence = confidenceValues.length > 0
         ? confidenceValues.reduce((a, b) => a + b, 0) / confidenceValues.length
         : 0;
 
-      return { skills, average_confidence: avgConfidence, skill_categories: skillCategories };
+      return { skills, average_confidence: avgConfidence, skill_categories: skillCategories, transferableSkills };
     } catch (error) {
       console.error("Error extracting skill profile:", error);
       return { skills, average_confidence: 0, skill_categories: skillCategories };
@@ -214,6 +277,7 @@ class SkillAwareSearchService {
 
   /**
    * Calculate skill match score
+   * Enhanced with match type multipliers for scoring transparency
    */
   private calculateSkillMatch(candidateSkills: Record<string, any>,
     requiredSkills: SkillRequirement[]): number {
@@ -230,18 +294,28 @@ class SkillAwareSearchService {
 
       if (candidateSkills[normalizedSkill]) {
         const skillData = candidateSkills[normalizedSkill];
+
+        // Apply match type penalty based on how the skill was derived
+        // Explicit/exact matches get full credit, inferred/related get penalties
+        let matchTypeMultiplier = 1.0;
+        if (skillData.matchType === 'inferred') {
+          matchTypeMultiplier = 0.85;  // 15% penalty for inferred skills
+        } else if (skillData.matchType === 'related') {
+          matchTypeMultiplier = 0.9;   // 10% penalty for related skills
+        }
+
         if (skillData.confidence >= requirement.minimum_confidence) {
-          totalScore += skillData.confidence * requirement.weight;
+          totalScore += skillData.confidence * requirement.weight * matchTypeMultiplier;
         } else {
           // Penalty for below threshold
-          totalScore += skillData.confidence * 0.5 * requirement.weight;
+          totalScore += skillData.confidence * 0.5 * requirement.weight * matchTypeMultiplier;
         }
       } else {
         // Check for related skills
         let relatedScore = 0;
         for (const [candidateSkill, skillData] of Object.entries(candidateSkills)) {
           if (this.areSkillsRelated(normalizedSkill, candidateSkill)) {
-            relatedScore = Math.max(relatedScore, skillData.confidence * 0.7);
+            relatedScore = Math.max(relatedScore, (skillData as any).confidence * 0.7);
           }
         }
         totalScore += relatedScore * requirement.weight;
