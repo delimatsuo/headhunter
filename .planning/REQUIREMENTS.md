@@ -24,11 +24,11 @@ Requirements for leader-level search. Each maps to roadmap phases.
 ### Multi-Signal Scoring
 
 - [x] **SCOR-01**: Vector similarity score (0-1) as baseline signal
-- [ ] **SCOR-02**: Skills exact match score (0-1) for required skills found
-- [ ] **SCOR-03**: Skills inferred score (0-1) for transferable skills detected
-- [ ] **SCOR-04**: Seniority alignment score (0-1) for level appropriateness
-- [ ] **SCOR-05**: Recency boost score (0-1) for recent skill usage
-- [ ] **SCOR-06**: Company relevance score (0-1) for industry/company fit
+- [x] **SCOR-02**: Skills exact match score (0-1) for required skills found
+- [x] **SCOR-03**: Skills inferred score (0-1) for transferable skills detected
+- [x] **SCOR-04**: Seniority alignment score (0-1) for level appropriateness
+- [x] **SCOR-05**: Recency boost score (0-1) for recent skill usage
+- [x] **SCOR-06**: Company relevance score (0-1) for industry/company fit
 - [x] **SCOR-07**: Configurable signal weights per search or role type
 - [x] **SCOR-08**: Final score as weighted combination of all signals
 
@@ -130,11 +130,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SKIL-02 | Phase 6: Skills Intelligence | Complete |
 | SKIL-04 | Phase 6: Skills Intelligence | Complete |
 | SKIL-05 | Phase 6: Skills Intelligence | Complete |
-| SCOR-02 | Phase 7: Signal Scoring Implementation | Pending |
-| SCOR-03 | Phase 7: Signal Scoring Implementation | Pending |
-| SCOR-04 | Phase 7: Signal Scoring Implementation | Pending |
-| SCOR-05 | Phase 7: Signal Scoring Implementation | Pending |
-| SCOR-06 | Phase 7: Signal Scoring Implementation | Pending |
+| SCOR-02 | Phase 7: Signal Scoring Implementation | Complete |
+| SCOR-03 | Phase 7: Signal Scoring Implementation | Complete |
+| SCOR-04 | Phase 7: Signal Scoring Implementation | Complete |
+| SCOR-05 | Phase 7: Signal Scoring Implementation | Complete |
+| SCOR-06 | Phase 7: Signal Scoring Implementation | Complete |
 | TRAJ-01 | Phase 8: Career Trajectory | Pending |
 | TRAJ-02 | Phase 8: Career Trajectory | Pending |
 | TRAJ-03 | Phase 8: Career Trajectory | Pending |
@@ -155,4 +155,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-24*
-*Last updated: 2026-01-25 after Phase 6 completion*
+*Last updated: 2026-01-25 after Phase 7 completion*

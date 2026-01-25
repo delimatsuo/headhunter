@@ -25,7 +25,7 @@ The approach is enhancement, not replacement. The existing stack (PostgreSQL + p
 | 4 | Multi-Signal Scoring Framework | Complete | 3 |
 | 5 | Skills Infrastructure | Complete | 2 |
 | 6 | Skills Intelligence | Complete | 3 |
-| 7 | Signal Scoring Implementation | Pending | 5 |
+| 7 | Signal Scoring Implementation | Complete | 5 |
 | 8 | Career Trajectory | Pending | 4 |
 | 9 | Match Transparency | Pending | 4 |
 | 10 | Pipeline Integration | Pending | 4 |
@@ -221,11 +221,11 @@ Plans:
 **Plans:** 5 plans in 4 waves
 
 Plans:
-- [ ] 07-01-PLAN.md — Create signal-calculators.ts with skill matching functions (Wave 1)
-- [ ] 07-02-PLAN.md — Add seniority, recency, and company calculators (Wave 1)
-- [ ] 07-03-PLAN.md — Extend types and weight presets (Wave 2)
-- [ ] 07-04-PLAN.md — Integrate signals into scoring and search service (Wave 3)
-- [ ] 07-05-PLAN.md — Verification checkpoint (Wave 4)
+- [x] 07-01-PLAN.md — Create signal-calculators.ts with skill matching functions (Wave 1)
+- [x] 07-02-PLAN.md — Add seniority, recency, and company calculators (Wave 1)
+- [x] 07-03-PLAN.md — Extend types and weight presets (Wave 2)
+- [x] 07-04-PLAN.md — Integrate signals into scoring and search service (Wave 3)
+- [x] 07-05-PLAN.md — Verification checkpoint (Wave 4)
 
 **Requirements:**
 - SCOR-02: Skills exact match score (0-1) for required skills found
@@ -364,4 +364,4 @@ All phases are sequential. Each builds on the previous. No parallel execution pa
 ---
 
 *Roadmap created: 2026-01-24*
-*Last updated: 2026-01-25 after Phase 6 completion*
+*Last updated: 2026-01-25 after Phase 7 completion*
