@@ -10,6 +10,19 @@ export interface PerformanceSample {
   cacheHit: boolean;
   rerankApplied?: boolean;
   timestamp?: number;
+
+  // Phase 11: Extended metrics
+  indexType?: 'hnsw' | 'diskann';
+  vectorSearchMs?: number;
+  textSearchMs?: number;
+  scoringMs?: number;
+  parallelSavingsMs?: number;
+  poolWaitMs?: number;
+
+  // Cache metrics
+  embeddingCacheHit?: boolean;
+  rerankCacheHit?: boolean;
+  specialtyCacheHit?: boolean;
 }
 
 export interface MetricSnapshot {
@@ -122,5 +135,75 @@ export class PerformanceTracker {
     const index = Math.ceil(rank * sortedValues.length) - 1;
     const boundedIndex = Math.min(sortedValues.length - 1, Math.max(0, index));
     return sortedValues[boundedIndex];
+  }
+
+  /**
+   * Calculate percentile from recorded samples.
+   * @param percentile - 0 to 100 (e.g., 95 for p95)
+   */
+  getPercentile(percentile: number): number {
+    if (this.samples.length === 0) {
+      return 0;
+    }
+
+    const sorted = [...this.samples].map(s => s.totalMs).sort((a, b) => a - b);
+    const index = Math.ceil((percentile / 100) * sorted.length) - 1;
+    return sorted[Math.max(0, index)];
+  }
+
+  /**
+   * Get p50, p95, p99 latencies.
+   */
+  getLatencyPercentiles(): { p50: number; p95: number; p99: number } {
+    return {
+      p50: this.getPercentile(50),
+      p95: this.getPercentile(95),
+      p99: this.getPercentile(99)
+    };
+  }
+
+  /**
+   * Get average latency breakdown by stage.
+   */
+  getStageBreakdown(): {
+    embedding: number;
+    vectorSearch: number;
+    textSearch: number;
+    scoring: number;
+    rerank: number;
+    total: number;
+  } {
+    if (this.samples.length === 0) {
+      return { embedding: 0, vectorSearch: 0, textSearch: 0, scoring: 0, rerank: 0, total: 0 };
+    }
+
+    const sum = (arr: (number | undefined)[]): number =>
+      arr.reduce((a, b) => (a ?? 0) + (b ?? 0), 0) ?? 0;
+    const n = this.samples.length;
+
+    return {
+      embedding: sum(this.samples.map(s => s.embeddingMs)) / n,
+      vectorSearch: sum(this.samples.map(s => s.vectorSearchMs)) / n,
+      textSearch: sum(this.samples.map(s => s.textSearchMs)) / n,
+      scoring: sum(this.samples.map(s => s.scoringMs)) / n,
+      rerank: sum(this.samples.map(s => s.rerankMs)) / n,
+      total: sum(this.samples.map(s => s.totalMs)) / n
+    };
+  }
+
+  /**
+   * Get latency breakdown by index type.
+   */
+  getLatencyByIndexType(): { hnsw: number; diskann: number } {
+    const hnsw = this.samples.filter(s => s.indexType === 'hnsw');
+    const diskann = this.samples.filter(s => s.indexType === 'diskann');
+
+    const avgMs = (arr: PerformanceSample[]): number =>
+      arr.length > 0 ? arr.reduce((a, b) => a + b.totalMs, 0) / arr.length : 0;
+
+    return {
+      hnsw: avgMs(hnsw),
+      diskann: avgMs(diskann)
+    };
   }
 }
