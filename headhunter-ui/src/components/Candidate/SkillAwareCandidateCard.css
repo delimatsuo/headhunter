@@ -982,3 +982,88 @@
 .breakdown-toggle .chevron.expanded {
   transform: rotate(180deg);
 }
+
+/* LLM Match Rationale Section - TRNS-03 */
+.match-rationale-section {
+  margin-top: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f3e5f5 0%, #e8f5e9 100%);
+  border-radius: 12px;
+  border-left: 4px solid #7c4dff;
+}
+
+.rationale-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #5e35b1;
+}
+
+.rationale-header .ai-sparkle-icon {
+  font-size: 16px;
+}
+
+.rationale-summary {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #424242;
+}
+
+.key-strengths {
+  margin-bottom: 12px;
+}
+
+.strengths-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #616161;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.strengths-list {
+  margin: 8px 0 0 0;
+  padding-left: 20px;
+}
+
+.strengths-list li {
+  font-size: 13px;
+  color: #424242;
+  margin-bottom: 4px;
+}
+
+.signal-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.signal-highlight-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: white;
+  border-radius: 8px;
+  font-size: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.signal-highlight-name {
+  font-weight: 600;
+  color: #5e35b1;
+}
+
+.signal-highlight-score {
+  font-weight: 700;
+  color: #2e7d32;
+}
+
+.signal-highlight-reason {
+  color: #757575;
+  font-style: italic;
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Tooltip } from '@mui/material';
-import { CandidateProfile, SkillAssessment, SkillMatchData, SignalScores, SignalWeightConfig } from '../../types';
+import { CandidateProfile, SkillAssessment, SkillMatchData, SignalScores, SignalWeightConfig, LLMMatchRationale } from '../../types';
 import { SkillConfidenceDisplay } from '../Skills/SkillConfidenceDisplay';
 import { SignalScoreBreakdown } from '../Match/SignalScoreBreakdown';
 import { SkillChip } from '../Match/SkillChip';
@@ -30,6 +30,8 @@ interface SkillAwareCandidateCardProps {
   signalScores?: SignalScores;
   weightsApplied?: SignalWeightConfig;
   roleTypeUsed?: string;
+  // LLM match rationale (TRNS-03)
+  matchRationale?: LLMMatchRationale;
 }
 
 export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = ({
@@ -46,6 +48,7 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
   signalScores,
   weightsApplied,
   roleTypeUsed,
+  matchRationale,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [skillAssessment, setSkillAssessment] = useState<SkillAssessment | null>(null);
@@ -609,6 +612,41 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
                 signalScores={signalScores}
                 weightsApplied={weightsApplied}
               />
+            )}
+          </div>
+        )}
+
+        {/* LLM Match Rationale - TRNS-03 */}
+        {matchRationale && matchRationale.summary && (
+          <div className="match-rationale-section">
+            <h4 className="rationale-header">
+              <span className="ai-sparkle-icon">&#10024;</span>
+              Why This Candidate Matches
+            </h4>
+
+            <p className="rationale-summary">{matchRationale.summary}</p>
+
+            {matchRationale.keyStrengths && matchRationale.keyStrengths.length > 0 && (
+              <div className="key-strengths">
+                <span className="strengths-label">Key Strengths:</span>
+                <ul className="strengths-list">
+                  {matchRationale.keyStrengths.map((strength, idx) => (
+                    <li key={idx}>{strength}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {matchRationale.signalHighlights && matchRationale.signalHighlights.length > 0 && (
+              <div className="signal-highlights">
+                {matchRationale.signalHighlights.map((highlight, idx) => (
+                  <div key={idx} className="signal-highlight-item">
+                    <span className="signal-highlight-name">{highlight.signal}</span>
+                    <span className="signal-highlight-score">{Math.round(highlight.score * 100)}%</span>
+                    <span className="signal-highlight-reason">{highlight.reason}</span>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         )}
