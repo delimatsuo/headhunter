@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
-import { SearchResponse, CandidateProfile } from '../../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { SearchResponse, CandidateProfile, SignalScores, CandidateMatch } from '../../types';
 import { SkillAwareCandidateCard } from '../Candidate/SkillAwareCandidateCard';
 import { EditCandidateModal } from '../Candidate/EditCandidateModal';
 import { JobAnalysis } from './JobDescriptionForm';
+
+// Sort options type
+type SortOption = 'overall' | 'skills' | 'trajectory' | 'recency' | 'seniority';
 
 interface SearchResultsProps {
   results: SearchResponse | null;
@@ -29,6 +32,27 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [analysisExpanded, setAnalysisExpanded] = useState(false);
 
+  // Sort and filter state with localStorage persistence
+  const [sortBy, setSortBy] = useState<SortOption>(() => {
+    const saved = localStorage.getItem('hh_search_sortBy');
+    return (saved as SortOption) || 'overall';
+  });
+
+  const [minSkillScore, setMinSkillScore] = useState<number>(() => {
+    const saved = localStorage.getItem('hh_search_minSkillScore');
+    return saved ? parseInt(saved, 10) : 0;
+  });
+
+  // Persist sort preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('hh_search_sortBy', sortBy);
+  }, [sortBy]);
+
+  // Persist filter preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('hh_search_minSkillScore', minSkillScore.toString());
+  }, [minSkillScore]);
+
   const handleEditClick = (candidate: CandidateProfile) => {
     setEditingCandidate(candidate);
     setIsEditModalOpen(true);
@@ -53,6 +77,40 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     market_analysis: '',
     recommendations: []
   } } = results || {};
+
+  // Sorted and filtered matches computation
+  const sortedAndFilteredMatches = useMemo(() => {
+    if (!matches || matches.length === 0) return [];
+
+    // Type-safe helper to get signal score from CandidateMatch
+    const getSignalScore = (match: CandidateMatch, signal: keyof SignalScores): number => {
+      return match.signalScores?.[signal] ?? 0.5; // neutral if missing
+    };
+
+    // Filter by minimum skill score
+    // NOTE: signalScores is at result level per CandidateMatch interface
+    let filtered = matches.filter((m: CandidateMatch) => {
+      const skillScore = getSignalScore(m, 'skillsExactMatch');
+      return skillScore * 100 >= minSkillScore;
+    });
+
+    // Sort based on selection
+    return filtered.sort((a: CandidateMatch, b: CandidateMatch) => {
+      switch (sortBy) {
+        case 'skills':
+          return getSignalScore(b, 'skillsExactMatch') - getSignalScore(a, 'skillsExactMatch');
+        case 'trajectory':
+          return getSignalScore(b, 'trajectoryFit') - getSignalScore(a, 'trajectoryFit');
+        case 'recency':
+          return getSignalScore(b, 'recencyBoost') - getSignalScore(a, 'recencyBoost');
+        case 'seniority':
+          return getSignalScore(b, 'seniorityAlignment') - getSignalScore(a, 'seniorityAlignment');
+        case 'overall':
+        default:
+          return (b.score ?? 0) - (a.score ?? 0);
+      }
+    });
+  }, [matches, sortBy, minSkillScore]);
 
   // Show full screen loading only if we have no results yet
   if (loading && (!matches || matches.length === 0)) {
@@ -85,8 +143,9 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 
 
   const totalMatches = matches?.length || 0;
-  const displayedMatches = matches?.slice(0, displayLimit) || [];
-  const hasMore = totalMatches > displayLimit;
+  const filteredCount = sortedAndFilteredMatches.length;
+  const displayedMatches = sortedAndFilteredMatches.slice(0, displayLimit);
+  const hasMore = filteredCount > displayLimit;
 
   return (
     <div className="search-results">
