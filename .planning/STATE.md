@@ -1,7 +1,7 @@
 # Project State: Headhunter AI Leader-Level Search
 
 **Initialized:** 2026-01-24
-**Current Status:** Phase 9 IN PROGRESS (Match Transparency) - Plans 01, 02 complete
+**Current Status:** Phase 9 IN PROGRESS (Match Transparency) - Plans 01, 02, 03 complete
 
 ---
 
@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 9 (Match Transparency) IN PROGRESS - Plans 01, 02 complete. Building UI transparency components.
+**Current Focus:** Phase 9 (Match Transparency) IN PROGRESS - Plans 01, 02, 03 complete. Building UI transparency components.
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -22,13 +22,13 @@
 ## Current Position
 
 **Phase:** 9 of 10 (Match Transparency) - IN PROGRESS
-**Plan:** 2 of 7 complete (09-01, 09-02)
+**Plan:** 3 of 7 complete (09-01, 09-02, 09-03)
 **Status:** In progress
-**Last activity:** 2026-01-25 - Completed 09-01-PLAN.md (Signal Score Breakdown UI)
+**Last activity:** 2026-01-25 - Completed 09-03-PLAN.md (Card Integration)
 
-**Progress:** [████████░░] 83%
+**Progress:** [████████░░] 84%
 
-**Next Action:** Continue Phase 9 with 09-03 (Card Integration)
+**Next Action:** Continue Phase 9 with 09-04 (Search Results Integration)
 
 ---
 
@@ -44,7 +44,7 @@
 | 6 | Skills Intelligence | Complete | 4/4 | 100% |
 | 7 | Signal Scoring Implementation | Complete | 5/5 | 100% |
 | 8 | Career Trajectory | Complete | 4/4 | 100% |
-| 9 | Match Transparency | In Progress | 2/7 | ~29% |
+| 9 | Match Transparency | In Progress | 3/7 | ~43% |
 | 10 | Pipeline Integration | Pending | 0/? | 0% |
 
 **Overall:** 8/10 phases complete (80%)
@@ -145,6 +145,9 @@
 | SkillChip confidence thresholds | High (>=0.8), Medium (0.5-0.79), Low (<0.5) per TRNS-04 | 9.02 |
 | SkillChip confidence labels | 'High', 'Likely', 'Possible' - clear non-technical language | 9.02 |
 | Dashed border for inferred skills | Visual distinction from explicit skills (solid border) | 9.02 |
+| Signal breakdown as optional expandable section | Keep card compact by default; power users can expand for detail | 9.03 |
+| 15 skill limit in display | Prevent UI clutter while showing most relevant skills | 9.03 |
+| Cast inferred skills to any for reasoning | Backend may include reasoning field not in current type definition | 9.03 |
 
 ### Technical Notes
 
@@ -233,6 +236,9 @@
 - **SkillChip component created:** React component with confidence badges for inferred skills (09-02)
 - **MUI Tooltip integration:** Evidence display on hover for inferred skills (09-02)
 - **CSS confidence-based coloring:** Green=high, orange=medium, gray=low (09-02)
+- **SignalScoreBreakdown integrated:** Expandable section in candidate card after AI hero (09-03)
+- **SkillChip integrated:** Skills cloud uses SkillChip with confidence badges (09-03)
+- **getSkillsForDisplay helper:** Normalizes explicit and inferred skills for unified display (09-03)
 
 ### Blockers
 
@@ -283,23 +289,32 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 09-02-PLAN.md - SkillChip Component (Phase 9 IN PROGRESS)
+**Stopped at:** Completed 09-03-PLAN.md - Card Integration (Phase 9 IN PROGRESS)
 **Resume file:** None - continue with remaining Phase 9 plans
 
 ### Context for Next Session
 
-Phase 9 (Match Transparency) IN PROGRESS. Plan 02 complete:
+Phase 9 (Match Transparency) IN PROGRESS. Plans 01, 02, 03 complete:
 
 | Plan | Name | Status | Commits |
 |------|------|--------|---------|
+| 09-01 | Signal Score Breakdown UI | Complete | ba6b223, 959c34e, e87318c |
 | 09-02 | SkillChip Component | Complete | def5e13 |
+| 09-03 | Card Integration | Complete | 2497f51 |
 
-**Phase 9 deliverables (09-02):**
+**Phase 9 deliverables (09-03):**
+- SignalScoreBreakdown integrated into SkillAwareCandidateCard
+- SkillChip components in skill cloud with confidence badges
+- New props: signalScores, weightsApplied, roleTypeUsed
+- Expandable signal breakdown section after AI hero section
+- getSkillsForDisplay() helper normalizing explicit/inferred skills
+- CSS styling for breakdown toggle and chevron animation
+
+**Previous Phase 9 deliverables (09-01, 09-02):**
+- SignalScores and SignalWeightConfig frontend types
+- SignalScoreBreakdown React component with horizontal bars
 - SkillChip React component with confidence badges
-- Confidence thresholds: High (>=0.8), Medium (0.5-0.79), Low (<0.5)
-- MUI Tooltip integration for evidence display
-- CSS styling with green/orange/gray confidence coloring
-- Component exported from headhunter-ui/src/components/Match/
+- Color coding: green (high), orange (medium), gray (low)
 
 ---
 
