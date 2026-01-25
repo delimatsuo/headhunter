@@ -29,7 +29,8 @@ import {
   SkillAssessment,
   SkillMatchData,
   SavedSearch,
-  VectorSearchResult
+  VectorSearchResult,
+  SignalScores
 } from '../types';
 
 export class ApiError extends Error {
@@ -37,6 +38,34 @@ export class ApiError extends Error {
     super(message);
     this.name = 'ApiError';
   }
+}
+
+/**
+ * Extract SignalScores from legacy score_breakdown format.
+ * Maps phase2_* fields from backend legacy-engine to SignalScores interface.
+ * Returns undefined if no score_breakdown available.
+ */
+function extractSignalScoresFromBreakdown(scoreBreakdown: Record<string, number> | undefined): SignalScores | undefined {
+  if (!scoreBreakdown) return undefined;
+
+  // Check if we have any phase2 scores to map
+  const hasPhase2Scores = scoreBreakdown.phase2_level !== undefined ||
+    scoreBreakdown.phase2_specialty !== undefined ||
+    scoreBreakdown.phase2_tech_stack !== undefined;
+
+  if (!hasPhase2Scores) return undefined;
+
+  // Map legacy score_breakdown to SignalScores format
+  // phase2_* scores are already 0-1 normalized
+  return {
+    vectorSimilarity: scoreBreakdown.vector ?? 0.5,
+    levelMatch: scoreBreakdown.phase2_level ?? 0.5,
+    specialtyMatch: scoreBreakdown.phase2_specialty ?? 0.5,
+    techStackMatch: scoreBreakdown.phase2_tech_stack ?? 0.5,
+    functionMatch: scoreBreakdown.phase2_function_title ?? scoreBreakdown.function ?? 0.5,
+    trajectoryFit: scoreBreakdown.phase2_trajectory ?? 0.5,
+    companyPedigree: scoreBreakdown.company ?? 0.5
+  };
 }
 
 export const apiService = {
@@ -906,41 +935,52 @@ export const apiService = {
 
       // Transform to CandidateMatch format for SearchResponse
       // Pass through the FULL candidate object
-      const matches = candidates.map((c: any) => ({
-        candidate: {
-          ...c,
-          candidate_id: c.candidate_id,
-          name: c.profile?.name || 'Unknown',
-          current_role: c.profile?.current_role || c.profile?.current_level,
-          current_company: c.profile?.current_company,
-          years_experience: c.profile?.years_experience,
-          skills: c.profile?.skills || c.profile?.top_skills?.map((s: any) => s.skill) || [],
-          linkedin_url: c.profile?.linkedin_url,
-          resume_url: c.profile?.resume_url,
-          overall_score: c.overall_score,
-          // Pass through all analysis data
-          intelligent_analysis: c.intelligent_analysis,
-          resume_analysis: c.resume_analysis,
-          original_data: c.original_data,
-          // Include rationale for display
-          summary: c.summary,
-          rationale: c.rationale?.[0] ? {
-            overall_assessment: c.summary,
-            strengths: c.rationale,
+      const matches = candidates.map((c: any) => {
+        // Extract signalScores from result (if from hh-search-svc) or build from score_breakdown
+        const signalScores = c.signalScores || extractSignalScoresFromBreakdown(c.match_metadata?.score_breakdown);
+        const weightsApplied = c.weightsApplied;
+        const roleTypeUsed = c.roleTypeUsed;
+
+        return {
+          candidate: {
+            ...c,
+            candidate_id: c.candidate_id,
+            name: c.profile?.name || 'Unknown',
+            current_role: c.profile?.current_role || c.profile?.current_level,
+            current_company: c.profile?.current_company,
+            years_experience: c.profile?.years_experience,
+            skills: c.profile?.skills || c.profile?.top_skills?.map((s: any) => s.skill) || [],
+            linkedin_url: c.profile?.linkedin_url,
+            resume_url: c.profile?.resume_url,
+            overall_score: c.overall_score,
+            // Pass through all analysis data
+            intelligent_analysis: c.intelligent_analysis,
+            resume_analysis: c.resume_analysis,
+            original_data: c.original_data,
+            // Include rationale for display
+            summary: c.summary,
+            rationale: c.rationale?.[0] ? {
+              overall_assessment: c.summary,
+              strengths: c.rationale,
+              gaps: c.concerns || [],
+              risk_factors: []
+            } : undefined,
+            matchReasons: c.matchReasons || c.rationale,
+          },
+          score: c.overall_score / 100, // LLM-influenced match score (0-1 scale)
+          similarity: (c.match_metadata?.raw_vector_similarity || c.vector_similarity_score || 0) / 100, // Raw vector similarity (0-1 scale)
+          rationale: {
+            overall_assessment: c.summary || 'Matched based on profile similarity',
+            strengths: c.rationale || [],
             gaps: c.concerns || [],
             risk_factors: []
-          } : undefined,
-          matchReasons: c.matchReasons || c.rationale,
-        },
-        score: c.overall_score / 100, // LLM-influenced match score (0-1 scale)
-        similarity: (c.match_metadata?.raw_vector_similarity || c.vector_similarity_score || 0) / 100, // Raw vector similarity (0-1 scale)
-        rationale: {
-          overall_assessment: c.summary || 'Matched based on profile similarity',
-          strengths: c.rationale || [],
-          gaps: c.concerns || [],
-          risk_factors: []
-        }
-      }));
+          },
+          // Phase 9: Signal score transparency fields
+          signalScores,
+          weightsApplied,
+          roleTypeUsed
+        };
+      });
 
       // TODO: Remove after Phase 1 verification
       // Debug: Log score differentiation
