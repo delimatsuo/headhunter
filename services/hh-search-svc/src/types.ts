@@ -159,6 +159,9 @@ export interface HybridSearchTimings {
   rankingMs?: number;
   cacheMs?: number;
   rerankMs?: number;
+  // Parallel execution metrics (PERF-03)
+  preSearchMs?: number;
+  parallelSavingsMs?: number;
 }
 
 /**

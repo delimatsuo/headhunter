@@ -20,6 +20,7 @@ import type { RerankClient, RerankCandidate, RerankRequest, RerankResponse, Matc
 import type { PerformanceTracker } from './performance-tracker';
 import { resolveWeights, type SignalWeightConfig, type RoleType } from './signal-weights';
 import { computeWeightedScore, extractSignalScores, normalizeVectorScore, completeSignalScores, type SignalComputationContext } from './scoring';
+import { executeParallelPreSearch, RequestCoalescer, calculateParallelSavings } from './parallel-search';
 
 interface HybridSearchDependencies {
   config: SearchServiceConfig;
@@ -128,6 +129,7 @@ export class SearchService {
   private readonly performanceTracker: PerformanceTracker;
   private readonly logger: Logger;
   private firestore: Firestore | null = null;
+  private readonly embeddingCoalescer = new RequestCoalescer<number[]>();
 
   constructor(deps: HybridSearchDependencies) {
     this.config = deps.config;
@@ -228,32 +230,79 @@ export class SearchService {
     let embeddingCacheKey: string | null = null;
     const embeddingCacheToken = this.computeEmbeddingCacheToken(request);
 
-    if ((!embedding || embedding.length === 0) && this.redisClient && !this.redisClient.isDisabled() && embeddingCacheToken) {
-      embeddingCacheKey = this.redisClient.buildEmbeddingKey(context.tenant.id, embeddingCacheToken);
-      const cachedEmbedding = await this.redisClient.get<number[]>(embeddingCacheKey);
-      if (Array.isArray(cachedEmbedding) && cachedEmbedding.length > 0) {
-        embedding = cachedEmbedding;
-      }
-    }
-
+    // === PARALLEL PRE-SEARCH EXECUTION ===
+    // If embedding not provided, execute embedding generation and specialty lookup in parallel
     if (!embedding || embedding.length === 0) {
-      const embeddingStart = Date.now();
-      const embeddingText = sanitizedQuery || request.jobDescription || request.query || ' ';
-      const result = await this.embedClient.generateEmbedding({
-        tenantId: context.tenant.id,
-        requestId: context.requestId,
-        query: embeddingText,
-        metadata: {
-          source: 'hh-search-svc',
-          requestId: context.requestId
+      // Define embedding fetcher with cache check and coalescing
+      const embeddingPromise = async (): Promise<number[]> => {
+        // Check cache first
+        if (embeddingCacheToken && this.redisClient && !this.redisClient.isDisabled()) {
+          embeddingCacheKey = this.redisClient.buildEmbeddingKey(context.tenant.id, embeddingCacheToken);
+          const cached = await this.redisClient.get<number[]>(embeddingCacheKey);
+          if (Array.isArray(cached) && cached.length > 0) {
+            return cached;
+          }
         }
-      });
-      timings.embeddingMs = Date.now() - embeddingStart;
-      embedding = result.embedding;
 
-      if (embeddingCacheKey && this.redisClient && !this.redisClient.isDisabled() && Array.isArray(embedding) && embedding.length > 0) {
-        await this.redisClient.set(embeddingCacheKey, embedding);
+        // Generate embedding with coalescing to prevent duplicate requests
+        const embeddingText = sanitizedQuery || request.jobDescription || request.query || ' ';
+        const coalescingKey = embeddingCacheKey ?? embeddingText;
+
+        return this.embeddingCoalescer.getOrFetch(coalescingKey, async () => {
+          const result = await this.embedClient.generateEmbedding({
+            tenantId: context.tenant.id,
+            requestId: context.requestId,
+            query: embeddingText,
+            metadata: { source: 'hh-search-svc', requestId: context.requestId }
+          });
+
+          // Cache the result
+          if (embeddingCacheKey && this.redisClient && !this.redisClient.isDisabled() && result.embedding.length > 0) {
+            await this.redisClient.set(embeddingCacheKey, result.embedding);
+          }
+
+          return result.embedding;
+        });
+      };
+
+      // Define specialty fetcher (placeholder - specialty is computed during hydration)
+      // Future optimization: pre-fetch specialties for filter
+      const specialtyPromise = async (): Promise<string | null> => {
+        // Placeholder - specialty is computed during hydration
+        return null;
+      };
+
+      const { embedding: parallelEmbedding, timings: preSearchTimings } = await executeParallelPreSearch(
+        embeddingPromise,
+        specialtyPromise,
+        this.logger
+      );
+
+      if (!parallelEmbedding || parallelEmbedding.length === 0) {
+        throw badRequestError('Failed to generate embedding for search query.');
       }
+
+      embedding = parallelEmbedding;
+      timings.embeddingMs = preSearchTimings.embeddingMs;
+      timings.preSearchMs = preSearchTimings.totalMs;
+
+      // Track parallel savings (for now, specialty is placeholder so savings minimal)
+      // As we add more parallel operations, savings will increase
+      const parallelSavings = calculateParallelSavings(
+        preSearchTimings.totalMs,
+        preSearchTimings.embeddingMs,
+        preSearchTimings.specialtyMs
+      );
+      timings.parallelSavingsMs = parallelSavings;
+
+      this.logger.debug(
+        {
+          preSearchMs: preSearchTimings.totalMs,
+          parallelSavings,
+          coalescerPending: this.embeddingCoalescer.pendingCount
+        },
+        'Pre-search parallel execution complete'
+      );
     }
 
     // === STAGE 1: RETRIEVAL (recall-focused) ===
