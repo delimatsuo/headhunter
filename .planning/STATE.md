@@ -87,6 +87,9 @@
 |----------|-----------|-------|
 | Performance before features | Latency budget must be established before adding NLP/ML overhead | 11 |
 | pgvectorscale over Pinecone | Stay on existing PostgreSQL, 28x improvement documented | 11 |
+| Side-by-side HNSW + DiskANN indices | Feature flag enables A/B testing; instant rollback if issues | 11 |
+| Default to HNSW, opt-in to DiskANN | HNSW proven stable; DiskANN requires Cloud SQL compatibility verification | 11 |
+| Runtime tunable search_list_size | Allows recall/latency tradeoff without redeployment | 11 |
 | poolMax=20, poolMin=5 | Cloud Run concurrency + warm connections for sub-500ms p95 | 11 |
 | Parallel pool warmup | Minimize cold-start latency with Promise.all connection acquisition | 11 |
 | Semantic Router for NLP | 5-100ms vector-based routing, not LLM-based parsing | 12 |
