@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 7 (Signal Scoring Implementation) - Plan 1/5 complete. Skill signal calculators (SCOR-02, SCOR-03) implemented.
+**Current Focus:** Phase 7 (Signal Scoring Implementation) - Plan 2/5 complete. All 5 signal calculators (SCOR-02 through SCOR-06) implemented.
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -22,13 +22,13 @@
 ## Current Position
 
 **Phase:** 7 of 10 (Signal Scoring Implementation) - IN PROGRESS
-**Plan:** 1 of 5 complete (07-01)
+**Plan:** 2 of 5 complete (07-01, 07-02)
 **Status:** In progress
-**Last activity:** 2026-01-25 - Completed 07-01-PLAN.md (Skill Signal Calculators)
+**Last activity:** 2026-01-25 - Completed 07-02-PLAN.md (Seniority, Recency, Company Calculators)
 
-**Progress:** [████████░░] 76%
+**Progress:** [████████░░] 78%
 
-**Next Action:** Continue Phase 7 - Plan 07-02 (Seniority and Company Pedigree Calculators)
+**Next Action:** Continue Phase 7 - Plan 07-03 (next signal scoring task)
 
 ---
 
@@ -42,7 +42,7 @@
 | 4 | Multi-Signal Scoring Framework | Complete | 5/5 | 100% |
 | 5 | Skills Infrastructure | Complete | 4/4 | 100% |
 | 6 | Skills Intelligence | Complete | 4/4 | 100% |
-| 7 | Signal Scoring Implementation | In Progress | 1/5 | 20% |
+| 7 | Signal Scoring Implementation | In Progress | 2/5 | 40% |
 | 8 | Career Trajectory | Pending | 0/? | 0% |
 | 9 | Match Transparency | Pending | 0/? | 0% |
 | 10 | Pipeline Integration | Pending | 0/? | 0% |
@@ -122,6 +122,10 @@
 | Skill alias matching via getCommonAliases | Handles variations like js/javascript, k8s/kubernetes | 7.01 |
 | Rule-based transferable skill scoring | 9 skill transfer rules with 0-1 transferability scores | 7.01 |
 | Neutral score default (0.5) | Return 0.5 when required context missing - prevents unfair penalization | 7.01 |
+| Seniority tier adjustment | FAANG +1 level, Startup -1 level - account for company quality | 7.02 |
+| Recency decay rate | 0.16 per year (5-year decay to 0.2 floor) - linear decay formula | 7.02 |
+| Company relevance signals | Average of target match, tier score, industry alignment | 7.02 |
+| Recency boost exception | Returns 0.3 (not 0.5) when no skill data found | 7.02 |
 
 ### Technical Notes
 
@@ -186,6 +190,11 @@
 - **Match type tracking:** SkillMatchResult includes matchType field for transparency (06-03)
 - **Skill match details in results:** skill_match_details and transferable_opportunities returned (06-03)
 - **Title-based inference in search:** extractSkillProfile infers skills from job titles (06-03)
+- **calculateSeniorityAlignment:** Distance-based scoring with company tier adjustment (07-02)
+- **calculateRecencyBoost:** Decay formula 1.0 - (years_since * 0.16), floor at 0.2 (07-02)
+- **calculateCompanyRelevance:** Averages target match, tier score, industry alignment (07-02)
+- **detectCompanyTier:** FAANG=2, Unicorn=1, Startup=0 classification (07-02)
+- **areIndustriesRelated:** Industry relationship mapping for relevance scoring (07-02)
 
 ### Blockers
 
@@ -229,26 +238,29 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 07-01-PLAN.md - Skill Signal Calculators
-**Resume file:** None - continue to 07-02
+**Stopped at:** Completed 07-02-PLAN.md - Signal Calculators (Seniority, Recency, Company)
+**Resume file:** None - continue Phase 7
 
 ### Context for Next Session
 
-Phase 7 (Signal Scoring Implementation) IN PROGRESS. Plan 1/5 complete:
+Phase 7 (Signal Scoring Implementation) IN PROGRESS. Plan 2/5 complete:
 
 | Plan | Name | Status | Commits |
 |------|------|--------|---------|
 | 07-01 | Skill Signal Calculators | Complete | 45e0541, 5aa6501 |
-| 07-02 | Seniority and Company Pedigree | Pending | - |
-| 07-03 | Career Trajectory Calculator | Pending | - |
-| 07-04 | Combined Signal Scoring | Pending | - |
-| 07-05 | Search Integration and Verification | Pending | - |
+| 07-02 | Seniority, Recency, Company Calculators | Complete | acbeb88 |
+| 07-03 | (Next plan) | Pending | - |
+| 07-04 | (Next plan) | Pending | - |
+| 07-05 | (Next plan) | Pending | - |
 
-**Phase 7 Plan 01 deliverables (COMPLETE):**
-- `calculateSkillsExactMatch()`: SCOR-02 implemented with alias matching
-- `calculateSkillsInferred()`: SCOR-03 implemented with 9 transferable skill rules
-- Context interfaces: SkillMatchContext, SeniorityContext, CompanyContext
-- Constants: LEVEL_ORDER, FAANG_COMPANIES, UNICORN_COMPANIES ready for 07-02
+**Phase 7 Plans 01-02 deliverables (COMPLETE):**
+- All 5 signal calculators implemented (SCOR-02 through SCOR-06)
+- `calculateSkillsExactMatch()`: SCOR-02 with alias matching
+- `calculateSkillsInferred()`: SCOR-03 with 9 transferable skill rules
+- `calculateSeniorityAlignment()`: SCOR-04 with company tier adjustment
+- `calculateRecencyBoost()`: SCOR-05 with decay formula
+- `calculateCompanyRelevance()`: SCOR-06 with multi-signal averaging
+- Helper functions: detectCompanyTier, areIndustriesRelated
 - All functions return 0-1 scores, 0.5 neutral when context missing
 
 ---
@@ -362,6 +374,7 @@ All Phase 6 commits (complete):
 
 All Phase 7 commits (in progress):
 - 07-01: 45e0541, 5aa6501
+- 07-02: acbeb88
 
 ---
 
