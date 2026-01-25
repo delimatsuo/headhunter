@@ -126,3 +126,16 @@ export {
     type Skill,
     type SkillCategory
 } from './skills-master';
+
+// ============================================================================
+// RE-EXPORTS FROM SKILLS-GRAPH
+// ============================================================================
+
+// Re-export skill expansion functions for graph-based skill lookups
+export {
+    expandSkills,
+    getCachedSkillExpansion,
+    getRelatedSkillIds,
+    clearSkillExpansionCache,
+    type SkillExpansionResult
+} from './skills-graph';
