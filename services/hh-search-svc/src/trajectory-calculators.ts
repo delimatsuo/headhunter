@@ -415,3 +415,150 @@ export function classifyTrajectoryType(
 
   return 'lateral_move';
 }
+
+// ============================================================================
+// Trajectory Fit Scoring (TRAJ-03)
+// ============================================================================
+
+/**
+ * Context about the target role for trajectory fit scoring.
+ */
+export interface TrajectoryContext {
+  /** Target career track (technical vs management) */
+  targetTrack?: 'technical' | 'management';
+  /** Role growth type (high-growth startup vs established company) */
+  roleGrowthType?: 'high_growth' | 'stable' | 'turnaround';
+  /** Whether career pivots are acceptable for this role */
+  allowPivot?: boolean;
+}
+
+/**
+ * Computed trajectory metrics for a candidate.
+ */
+export interface TrajectoryMetrics {
+  direction: TrajectoryDirection;
+  velocity: TrajectoryVelocity;
+  type: TrajectoryType;
+}
+
+/**
+ * Scoring matrix for direction + velocity combinations.
+ * High-growth roles reward fast velocity, stable roles reward steady progression.
+ */
+const DIRECTION_VELOCITY_SCORES: Record<string, Record<string, number>> = {
+  upward: {
+    fast: 1.0,     // Perfect for high-growth
+    normal: 0.9,   // Good steady progression
+    slow: 0.7      // Still upward, just slower
+  },
+  lateral: {
+    fast: 0.6,     // Fast lateral moves can indicate job hopping
+    normal: 0.5,   // Neutral
+    slow: 0.4      // Stagnant
+  },
+  downward: {
+    fast: 0.3,     // Red flag
+    normal: 0.3,   // Red flag
+    slow: 0.3      // Red flag
+  }
+};
+
+/**
+ * Scoring for track alignment with target role.
+ */
+const TRACK_ALIGNMENT_SCORES: Record<string, number> = {
+  technical_growth_technical: 1.0,      // Perfect match: IC track for IC role
+  leadership_track_management: 1.0,     // Perfect match: Mgmt track for mgmt role
+  technical_growth_management: 0.6,     // Mismatch: IC trajectory for mgmt role
+  leadership_track_technical: 0.5,      // Bigger mismatch: Mgmt trajectory for IC role
+  lateral_move_technical: 0.7,          // Lateral IC moves are okay for IC roles
+  lateral_move_management: 0.6,         // Lateral mgmt moves less ideal
+  career_pivot_technical: 0.5,          // Pivots need context
+  career_pivot_management: 0.5          // Pivots need context
+};
+
+/**
+ * Modifiers based on role growth type.
+ */
+const GROWTH_TYPE_MODIFIERS: Record<string, Record<string, number>> = {
+  high_growth: {
+    fast: 1.2,      // Bonus for fast velocity in high-growth
+    normal: 1.0,    // No penalty
+    slow: 0.8       // Slight penalty
+  },
+  stable: {
+    fast: 1.0,      // No bonus for fast velocity
+    normal: 1.1,    // Slight bonus for steady
+    slow: 0.9       // Slight penalty
+  },
+  turnaround: {
+    fast: 1.1,      // Value speed in turnarounds
+    normal: 1.0,    // No penalty
+    slow: 0.7       // Bigger penalty
+  }
+};
+
+/**
+ * Calculates trajectory fit score (0-1) based on role requirements.
+ *
+ * Scoring logic:
+ * 1. Base score from direction + velocity matrix
+ * 2. Adjust for track alignment (technical vs management)
+ * 3. Apply growth type modifier
+ * 4. Handle pivots based on allowPivot flag
+ *
+ * @param metrics - Computed trajectory metrics for candidate
+ * @param context - Target role context
+ * @returns Fit score (0-1, higher = better fit)
+ */
+export function calculateTrajectoryFit(
+  metrics: TrajectoryMetrics,
+  context: TrajectoryContext = {}
+): number {
+  // Start with direction + velocity base score
+  let score = DIRECTION_VELOCITY_SCORES[metrics.direction]?.[metrics.velocity] ?? 0.5;
+
+  // Apply track alignment
+  if (context.targetTrack) {
+    const alignmentKey = `${metrics.type}_${context.targetTrack}`;
+    const alignmentScore = TRACK_ALIGNMENT_SCORES[alignmentKey];
+    if (alignmentScore !== undefined) {
+      // Weight alignment 50% for final score
+      score = (score * 0.5) + (alignmentScore * 0.5);
+    }
+  }
+
+  // Apply growth type modifier
+  if (context.roleGrowthType) {
+    const modifier = GROWTH_TYPE_MODIFIERS[context.roleGrowthType]?.[metrics.velocity] ?? 1.0;
+    score *= modifier;
+  }
+
+  // Handle career pivots
+  if (metrics.type === 'career_pivot' && !context.allowPivot) {
+    score *= 0.7; // Penalty for pivots when not explicitly allowed
+  }
+
+  // Ensure score stays in 0-1 range
+  return Math.max(0, Math.min(1, score));
+}
+
+/**
+ * Convenience function to compute trajectory metrics from title sequence.
+ *
+ * @param titleSequence - Array of job titles in chronological order (oldest first)
+ * @param experiences - Optional experience entries with dates
+ * @param togetherAiData - Optional Together AI career trajectory data
+ * @returns Computed trajectory metrics
+ */
+export function computeTrajectoryMetrics(
+  titleSequence: string[],
+  experiences?: ExperienceEntry[],
+  togetherAiData?: CareerTrajectoryData
+): TrajectoryMetrics {
+  return {
+    direction: calculateTrajectoryDirection(titleSequence),
+    velocity: calculateTrajectoryVelocity(experiences || [], togetherAiData),
+    type: classifyTrajectoryType(titleSequence)
+  };
+}
