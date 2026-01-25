@@ -17,11 +17,11 @@ Requirements for advanced intelligence milestone. Building on v1.0 leader-level 
 
 ### Natural Language Search
 
-- [ ] **NLNG-01**: Intent parsing extracts role, skills, location, preferences from natural language
-- [ ] **NLNG-02**: Semantic query understanding ("Senior" matches "Lead", "Principal")
-- [ ] **NLNG-03**: Query expansion using skills ontology ("Python dev" includes related skills)
-- [ ] **NLNG-04**: Multi-criteria natural language queries ("Remote Python devs, 5+ years, open to startups")
-- [ ] **NLNG-05**: Graceful fallback to structured search when NLP parsing fails
+- [x] **NLNG-01**: Intent parsing extracts role, skills, location, preferences from natural language
+- [x] **NLNG-02**: Semantic query understanding ("Senior" matches "Lead", "Principal")
+- [x] **NLNG-03**: Query expansion using skills ontology ("Python dev" includes related skills)
+- [x] **NLNG-04**: Multi-criteria natural language queries ("Remote Python devs, 5+ years, open to startups")
+- [x] **NLNG-05**: Graceful fallback to structured search when NLP parsing fails
 
 ### ML Trajectory Prediction
 
@@ -102,11 +102,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PERF-03 | Phase 11: Performance Foundation | Complete |
 | PERF-04 | Phase 11: Performance Foundation | Complete |
 | PERF-05 | Phase 11: Performance Foundation | Complete |
-| NLNG-01 | Phase 12: Natural Language Search | Pending |
-| NLNG-02 | Phase 12: Natural Language Search | Pending |
-| NLNG-03 | Phase 12: Natural Language Search | Pending |
-| NLNG-04 | Phase 12: Natural Language Search | Pending |
-| NLNG-05 | Phase 12: Natural Language Search | Pending |
+| NLNG-01 | Phase 12: Natural Language Search | Complete |
+| NLNG-02 | Phase 12: Natural Language Search | Complete |
+| NLNG-03 | Phase 12: Natural Language Search | Complete |
+| NLNG-04 | Phase 12: Natural Language Search | Complete |
+| NLNG-05 | Phase 12: Natural Language Search | Complete |
 | TRAJ-05 | Phase 13: ML Trajectory Prediction | Pending |
 | TRAJ-06 | Phase 13: ML Trajectory Prediction | Pending |
 | TRAJ-07 | Phase 13: ML Trajectory Prediction | Pending |
@@ -131,4 +131,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-25*
-*Last updated: 2026-01-25 after v2.0 research*
+*Last updated: 2026-01-25 - Phase 12 complete (NLNG-01 to NLNG-05)*
