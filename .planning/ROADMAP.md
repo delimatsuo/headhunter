@@ -26,7 +26,7 @@ The approach is enhancement, not replacement. The existing stack (PostgreSQL + p
 | 5 | Skills Infrastructure | Complete | 2 |
 | 6 | Skills Intelligence | Complete | 3 |
 | 7 | Signal Scoring Implementation | Complete | 5 |
-| 8 | Career Trajectory | Pending | 4 |
+| 8 | Career Trajectory | Complete | 4 |
 | 9 | Match Transparency | Pending | 4 |
 | 10 | Pipeline Integration | Pending | 4 |
 
@@ -254,10 +254,10 @@ Plans:
 **Plans:** 4 plans in 3 waves
 
 Plans:
-- [ ] 08-01-PLAN.md — Trajectory direction classifier (Wave 1)
-- [ ] 08-02-PLAN.md — Velocity and type classifiers (Wave 1)
-- [ ] 08-03-PLAN.md — Trajectory fit scorer and integration (Wave 2)
-- [ ] 08-04-PLAN.md — Verification checkpoint (Wave 3)
+- [x] 08-01-PLAN.md — Trajectory direction classifier (Wave 1)
+- [x] 08-02-PLAN.md — Velocity and type classifiers (Wave 1)
+- [x] 08-03-PLAN.md — Trajectory fit scorer and integration (Wave 2)
+- [x] 08-04-PLAN.md — Verification checkpoint (Wave 3)
 
 **Requirements:**
 - TRAJ-01: Career direction computed from title sequence analysis
