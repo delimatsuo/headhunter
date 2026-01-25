@@ -44,6 +44,24 @@ export type {
   PgHybridSearchRow
 } from './types';
 
+// Trajectory calculators (Phase 8)
+export {
+  calculateTrajectoryDirection,
+  calculateTrajectoryVelocity,
+  classifyTrajectoryType,
+  calculateTrajectoryFit,
+  computeTrajectoryMetrics,
+  mapTitleToLevel,
+  LEVEL_ORDER_EXTENDED,
+  type TrajectoryDirection,
+  type TrajectoryVelocity,
+  type TrajectoryType,
+  type TrajectoryMetrics,
+  type TrajectoryContext,
+  type ExperienceEntry,
+  type CareerTrajectoryData
+} from './trajectory-calculators';
+
 async function bootstrap(): Promise<void> {
   process.env.SERVICE_NAME = process.env.SERVICE_NAME ?? 'hh-search-svc';
   const logger = getLogger({ module: 'bootstrap' });
