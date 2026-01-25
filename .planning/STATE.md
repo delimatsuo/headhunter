@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 8 (Career Trajectory) - Plan 1/? complete. Direction classifier foundation established.
+**Current Focus:** Phase 8 (Career Trajectory) - Plan 2/? complete. Velocity and type classifiers added.
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -22,9 +22,9 @@
 ## Current Position
 
 **Phase:** 8 of 10 (Career Trajectory) - IN PROGRESS
-**Plan:** 1 of ? complete (08-01)
+**Plan:** 2 of ? complete (08-01, 08-02)
 **Status:** In progress
-**Last activity:** 2026-01-24 - Completed 08-01-PLAN.md (Direction Classifier)
+**Last activity:** 2026-01-24 - Completed 08-02-PLAN.md (Velocity and Type Classifiers)
 
 **Progress:** [███████░░░] 70%
 
@@ -43,7 +43,7 @@
 | 5 | Skills Infrastructure | Complete | 4/4 | 100% |
 | 6 | Skills Intelligence | Complete | 4/4 | 100% |
 | 7 | Signal Scoring Implementation | Complete | 5/5 | 100% |
-| 8 | Career Trajectory | In Progress | 1/? | ~25% |
+| 8 | Career Trajectory | In Progress | 2/? | ~50% |
 | 9 | Match Transparency | Pending | 0/? | 0% |
 | 10 | Pipeline Integration | Pending | 0/? | 0% |
 
@@ -132,6 +132,10 @@
 | SignalComputationContext interface | Separate interface for Phase 7 computation, avoids conflict with auth SearchContext | 7.04 |
 | Conditional Phase 7 computation | Only compute Phase 7 signals when signalContext provided - backward compatible | 7.04 |
 | Auto-detect target level | Extract from job description keywords with 'mid' fallback - improves UX | 7.04 |
+| Velocity thresholds: fast/normal/slow | <2yr fast, 2-4yr normal, >4yr slow per level - industry standard timelines | 8.02 |
+| Together AI fallback for velocity | Use promotion_velocity field when dates unavailable - ensures broad coverage | 8.02 |
+| Function change detection before filtering | Check keywords before level filtering - catches pivots in unmapped titles | 8.02 |
+| Track change = career pivot | IC↔Management transitions detected as pivots regardless of level | 8.02 |
 
 ### Technical Notes
 
@@ -258,6 +262,7 @@ None currently identified.
 - [x] Complete 07-04: Signal Integration
 - [x] Complete 07-05: Verification and End-to-End Testing
 - [x] Complete 08-01: Trajectory Direction Classifier
+- [x] Complete 08-02: Velocity and Type Classifiers
 - [ ] Verify search recall improvement after Phase 2 deployment
 - [x] Note: Hard level filter at step 3.5 (career trajectory) - NOW CONVERTED TO SCORING
 
@@ -266,26 +271,34 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-24
-**Stopped at:** Completed 08-01-PLAN.md - Trajectory Direction Classifier
+**Stopped at:** Completed 08-02-PLAN.md - Velocity and Type Classifiers
 **Resume file:** None - continue Phase 8
 
 ### Context for Next Session
 
-Phase 8 (Career Trajectory) IN PROGRESS. Plan 1/? complete:
+Phase 8 (Career Trajectory) IN PROGRESS. Plan 2/? complete:
 
 | Plan | Name | Status | Commits |
 |------|------|--------|---------|
 | 08-01 | Direction Classifier | Complete | f92e43e, cdf19a8, 6119f96 |
-| 08-02 | Velocity and Type Classification | Pending | - |
+| 08-02 | Velocity and Type Classifiers | Complete | 0cf3ecd |
 
-**Phase 8 Plan 01 deliverables (COMPLETE):**
-- `mapTitleToLevel()`: Maps titles to 0-13 level indices (tech 0-6, mgmt 7-13)
-- `calculateTrajectoryDirection()`: Returns upward/lateral/downward from title sequence
-- `LEVEL_ORDER_EXTENDED`: 14-element canonical level ordering
-- Track change normalization: Tech ↔ Mgmt transitions handled as lateral
-- Period removal and "of" pattern support for title variations
-- Engineering context required to avoid non-engineering role false positives
-- All 16/16 core tests passing (39/39 total including auto-generated)
+**Phase 8 Plans 01-02 deliverables (COMPLETE):**
+- **Direction Classifier (08-01):**
+  - `mapTitleToLevel()`: Maps titles to 0-13 level indices (tech 0-6, mgmt 7-13)
+  - `calculateTrajectoryDirection()`: Returns upward/lateral/downward from title sequence
+  - `LEVEL_ORDER_EXTENDED`: 14-element canonical level ordering
+  - Track change normalization: Tech ↔ Mgmt transitions handled as lateral
+  - Period removal and "of" pattern support for title variations
+  - Engineering context required to avoid non-engineering role false positives
+- **Velocity and Type Classifiers (08-02):**
+  - `calculateTrajectoryVelocity()`: Returns fast/normal/slow based on promotion timing
+  - `classifyTrajectoryType()`: Returns technical_growth/leadership_track/career_pivot/lateral_move
+  - Date-based velocity calculation (years per level)
+  - Together AI `promotion_velocity` fallback when dates unavailable
+  - Function change detection (frontend/backend/data/devops keywords)
+  - Track change detection for career pivots
+  - All 39/39 tests passing (direction + velocity + type + title mapping)
 
 ---
 
