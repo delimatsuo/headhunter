@@ -28,7 +28,7 @@ The approach is enhancement, not replacement. The existing stack (PostgreSQL + p
 | 7 | Signal Scoring Implementation | Complete | 5 |
 | 8 | Career Trajectory | Complete | 4 |
 | 9 | Match Transparency | Complete | 4 |
-| 10 | Pipeline Integration | Pending | 4 |
+| 10 | Pipeline Integration | In Progress | 4 |
 
 **Total:** 28 requirements across 10 phases
 
@@ -316,6 +316,14 @@ Plans:
 
 **Dependencies:** Phase 9 (all components must work before integration)
 
+**Plans:** 4 plans in 3 waves
+
+Plans:
+- [ ] 10-01-PLAN.md — Pipeline stage configuration and types (Wave 1)
+- [ ] 10-02-PLAN.md — Implement 3-stage pipeline with stage logging (Wave 2)
+- [ ] 10-03-PLAN.md — Pipeline metrics in response (Wave 2)
+- [ ] 10-04-PLAN.md — End-to-end verification checkpoint (Wave 3)
+
 **Requirements:**
 - PIPE-01: 3-stage pipeline: retrieval (500+) -> scoring (top 100) -> reranking (top 50)
 - PIPE-02: Retrieval focuses on recall (don't miss candidates)
@@ -383,4 +391,4 @@ All phases are sequential. Each builds on the previous. No parallel execution pa
 ---
 
 *Roadmap created: 2026-01-24*
-*Last updated: 2026-01-25 after Phase 9 completion*
+*Last updated: 2026-01-25 after Phase 10 planning*
