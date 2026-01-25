@@ -23,7 +23,7 @@ The approach is enhancement, not replacement. The existing stack (PostgreSQL + p
 | 2 | Search Recall Foundation | Complete | 4 |
 | 3 | Hybrid Search | Complete | 4 |
 | 4 | Multi-Signal Scoring Framework | Complete | 3 |
-| 5 | Skills Infrastructure | Pending | 2 |
+| 5 | Skills Infrastructure | Planned | 2 |
 | 6 | Skills Intelligence | Pending | 3 |
 | 7 | Signal Scoring Implementation | Pending | 5 |
 | 8 | Career Trajectory | Pending | 4 |
@@ -132,11 +132,11 @@ Plans:
 **Plans:** 5 plans in 4 waves
 
 Plans:
-- [ ] 04-01-PLAN.md — Create SignalWeightConfig types and role-type presets (Wave 1)
-- [ ] 04-02-PLAN.md — Extend search types and create scoring utilities (Wave 2)
-- [ ] 04-03-PLAN.md — Integrate signal scoring into SearchService (Wave 3)
-- [ ] 04-04-PLAN.md — Wire API layer and module exports (Wave 3)
-- [ ] 04-05-PLAN.md — Verification checkpoint (Wave 4)
+- [x] 04-01-PLAN.md — Create SignalWeightConfig types and role-type presets (Wave 1)
+- [x] 04-02-PLAN.md — Extend search types and create scoring utilities (Wave 2)
+- [x] 04-03-PLAN.md — Integrate signal scoring into SearchService (Wave 3)
+- [x] 04-04-PLAN.md — Wire API layer and module exports (Wave 3)
+- [x] 04-05-PLAN.md — Verification checkpoint (Wave 4)
 
 **Requirements:**
 - SCOR-01: Vector similarity score (0-1) as baseline signal
@@ -159,6 +159,14 @@ Plans:
 **Goal:** EllaAI skills taxonomy is available for search with synonym normalization.
 
 **Dependencies:** Phase 4 (scoring framework to integrate skills signals)
+
+**Plans:** 4 plans in 3 waves
+
+Plans:
+- [ ] 05-01-PLAN.md — Copy skills-master.ts and create skills-service wrapper (Wave 1)
+- [ ] 05-02-PLAN.md — Refactor vector-search.ts to use skills-service (Wave 2)
+- [ ] 05-03-PLAN.md — Refactor skill-aware-search.ts to use skills-service (Wave 2)
+- [ ] 05-04-PLAN.md — Verification checkpoint (Wave 3)
 
 **Requirements:**
 - SKIL-01: EllaAI skills taxonomy (200+ skills) integrated into search
@@ -339,4 +347,4 @@ All phases are sequential. Each builds on the previous. No parallel execution pa
 ---
 
 *Roadmap created: 2026-01-24*
-*Last updated: 2026-01-24 after Phase 4 planning*
+*Last updated: 2026-01-25 after Phase 5 planning*
