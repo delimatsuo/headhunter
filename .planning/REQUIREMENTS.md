@@ -49,17 +49,17 @@ Requirements for leader-level search. Each maps to roadmap phases.
 
 ### Match Transparency
 
-- [ ] **TRNS-01**: Match score visible to recruiters for each candidate
-- [ ] **TRNS-02**: Component scores shown (skills, trajectory, seniority, etc.)
-- [ ] **TRNS-03**: LLM-generated match rationale for top candidates
-- [ ] **TRNS-04**: Inferred skills displayed with confidence indicators
+- [x] **TRNS-01**: Match score visible to recruiters for each candidate
+- [x] **TRNS-02**: Component scores shown (skills, trajectory, seniority, etc.)
+- [x] **TRNS-03**: LLM-generated match rationale for top candidates
+- [x] **TRNS-04**: Inferred skills displayed with confidence indicators
 
 ### Search Pipeline
 
-- [ ] **PIPE-01**: 3-stage pipeline: retrieval (500+) -> scoring (top 100) -> reranking (top 50)
-- [ ] **PIPE-02**: Retrieval focuses on recall (don't miss candidates)
-- [ ] **PIPE-03**: Scoring focuses on precision (rank best higher)
-- [ ] **PIPE-04**: Reranking via LLM for nuance and context
+- [x] **PIPE-01**: 3-stage pipeline: retrieval (500+) -> scoring (top 100) -> reranking (top 50)
+- [x] **PIPE-02**: Retrieval focuses on recall (don't miss candidates)
+- [x] **PIPE-03**: Scoring focuses on precision (rank best higher)
+- [x] **PIPE-04**: Reranking via LLM for nuance and context
 - [x] **PIPE-05**: Fix reranking bypass (Match Score currently = Similarity Score)
 
 ## v2 Requirements
@@ -139,14 +139,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TRAJ-02 | Phase 8: Career Trajectory | Complete |
 | TRAJ-03 | Phase 8: Career Trajectory | Complete |
 | TRAJ-04 | Phase 8: Career Trajectory | Complete |
-| TRNS-01 | Phase 9: Match Transparency | Pending |
-| TRNS-02 | Phase 9: Match Transparency | Pending |
-| TRNS-03 | Phase 9: Match Transparency | Pending |
-| TRNS-04 | Phase 9: Match Transparency | Pending |
-| PIPE-01 | Phase 10: Pipeline Integration | Pending |
-| PIPE-02 | Phase 10: Pipeline Integration | Pending |
-| PIPE-03 | Phase 10: Pipeline Integration | Pending |
-| PIPE-04 | Phase 10: Pipeline Integration | Pending |
+| TRNS-01 | Phase 9: Match Transparency | Complete |
+| TRNS-02 | Phase 9: Match Transparency | Complete |
+| TRNS-03 | Phase 9: Match Transparency | Complete |
+| TRNS-04 | Phase 9: Match Transparency | Complete |
+| PIPE-01 | Phase 10: Pipeline Integration | Complete |
+| PIPE-02 | Phase 10: Pipeline Integration | Complete |
+| PIPE-03 | Phase 10: Pipeline Integration | Complete |
+| PIPE-04 | Phase 10: Pipeline Integration | Complete |
 
 **Coverage:**
 - v1 requirements: 28 total
@@ -155,4 +155,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-24*
-*Last updated: 2026-01-25 after Phase 8 completion*
+*Last updated: 2026-01-25 after v1 milestone completion - all 28 requirements complete*
