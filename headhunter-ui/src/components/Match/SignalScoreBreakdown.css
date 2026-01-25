@@ -1,0 +1,171 @@
+/**
+ * Signal Score Breakdown Component Styles
+ *
+ * Color coding:
+ * - Excellent (>= 70%): Green
+ * - Good (40-69%): Yellow/Amber
+ * - Fair (< 40%): Red
+ */
+
+.signal-breakdown {
+  padding: 12px;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.signal-breakdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.signal-breakdown-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.signal-breakdown-toggle {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.signal-breakdown-toggle:hover {
+  background-color: #e0e7ff;
+}
+
+.signal-breakdown-toggle:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Signal List */
+.signal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.signal-list.collapsed {
+  /* Collapsed state shows top 3 only */
+}
+
+.signal-list.expanded {
+  /* Expanded state shows all signals */
+}
+
+/* Signal Row */
+.signal-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.signal-label {
+  flex: 0 0 130px;
+  font-size: 12px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.signal-bar-container {
+  flex: 1;
+  height: 8px;
+  background-color: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  min-width: 80px;
+}
+
+.signal-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease-out;
+}
+
+/* Color Classes - Bar fill */
+.signal-bar.excellent {
+  background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+}
+
+.signal-bar.good {
+  background: linear-gradient(90deg, #eab308 0%, #ca8a04 100%);
+}
+
+.signal-bar.fair {
+  background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+}
+
+/* Signal Value */
+.signal-value {
+  flex: 0 0 40px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.signal-value.excellent {
+  color: #16a34a;
+}
+
+.signal-value.good {
+  color: #ca8a04;
+}
+
+.signal-value.fair {
+  color: #dc2626;
+}
+
+/* Hover state for signal row */
+.signal-row:hover .signal-bar-container {
+  background-color: #cbd5e1;
+}
+
+.signal-row:hover .signal-label {
+  color: #334155;
+}
+
+/* Animation for expanding */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.signal-list.expanded .signal-row {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 400px) {
+  .signal-label {
+    flex: 0 0 100px;
+    font-size: 11px;
+  }
+
+  .signal-value {
+    flex: 0 0 35px;
+    font-size: 11px;
+  }
+
+  .signal-bar-container {
+    min-width: 60px;
+  }
+}
