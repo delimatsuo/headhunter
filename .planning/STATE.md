@@ -164,6 +164,8 @@
 - **Skills taxonomy copied:** 468 skills from EllaAI across 15 categories (05-01)
 - **ALIAS_TO_CANONICAL Map:** 468+ entries for O(1) lookups (05-01)
 - **Skills service created:** normalizeSkillName, skillsMatch, getSkillAliases, getCanonicalSkillId (05-01)
+- **skill-aware-search refactored:** Removed local 8-entry synonym map, uses centralized skills-service (05-03)
+- **Skill coverage expanded:** 8 → 468 skills in skill-aware search (05-03)
 
 ### Blockers
 
@@ -192,6 +194,7 @@ None currently identified.
 - [x] Complete 04-04: API Layer and Module Exports
 - [x] Complete 04-05: Verification (build/compile/exports verified)
 - [x] Complete 05-01: Skills Infrastructure Setup (EllaAI taxonomy copied)
+- [x] Complete 05-03: Skill-Aware Search Integration (centralized normalization)
 - [ ] Verify search recall improvement after Phase 2 deployment
 - [x] Note: Hard level filter at step 3.5 (career trajectory) - NOW CONVERTED TO SCORING
 
@@ -200,24 +203,24 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 05-01-PLAN.md - Skills Infrastructure Setup
+**Stopped at:** Completed 05-03-PLAN.md - Skill-Aware Search Integration
 **Resume file:** None - ready for next Phase 5 plan
 
 ### Context for Next Session
 
-Phase 5 (Skills Infrastructure) IN PROGRESS. Plan 01 complete:
+Phase 5 (Skills Infrastructure) IN PROGRESS. Plans 01 and 03 complete:
 
 | Plan | Name | Status | Commits |
 |------|------|--------|---------|
 | 05-01 | Skills Infrastructure Setup | Complete | 9fb960e |
+| 05-03 | Skill-Aware Search Integration | Complete | 074a953 |
 
-**Phase 5 Plan 01 deliverables:**
-- EllaAI skills taxonomy copied (468 skills, 15 categories)
-- skills-master.ts created with MASTER_SKILLS array
-- skills-service.ts created with O(1) alias normalization
-- ALIAS_TO_CANONICAL Map with 468+ entries
-- normalizeSkillName, skillsMatch, getSkillAliases, getCanonicalSkillId helpers
-- All TypeScript compilation passes
+**Phase 5 Plan 03 deliverables:**
+- Removed hardcoded 8-entry synonym map from skill-aware-search.ts
+- Integrated centralized skills-service with normalizeSkillName()
+- Expanded skill coverage from 8 to 468 skills
+- All 4 call sites updated to use centralized normalization
+- TypeScript compilation passes without errors
 
 ---
 
@@ -268,6 +271,10 @@ All Phase 4 commits:
 - 04-03: 1df4394, 21accd5
 - 04-04: 10dc61a, 6b2d3bc
 - 04-05: (no commit - verification only)
+
+All Phase 5 commits (in progress):
+- 05-01: 9fb960e
+- 05-03: 074a953
 
 ---
 
