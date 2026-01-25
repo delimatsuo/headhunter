@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 8 (Career Trajectory) - Plan 2/? complete. Velocity and type classifiers added.
+**Current Focus:** Phase 8 (Career Trajectory) COMPLETE - All 3 plans finished. Trajectory fit scoring integrated.
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -21,14 +21,14 @@
 
 ## Current Position
 
-**Phase:** 8 of 10 (Career Trajectory) - IN PROGRESS
-**Plan:** 2 of ? complete (08-01, 08-02)
-**Status:** In progress
-**Last activity:** 2026-01-24 - Completed 08-02-PLAN.md (Velocity and Type Classifiers)
+**Phase:** 8 of 10 (Career Trajectory) - COMPLETE
+**Plan:** 3 of 3 complete (08-01, 08-02, 08-03)
+**Status:** Phase complete
+**Last activity:** 2026-01-24 - Completed 08-03-PLAN.md (Trajectory Fit Scorer)
 
-**Progress:** [███████░░░] 70%
+**Progress:** [████████░░] 80%
 
-**Next Action:** Continue Phase 8 - Next plan in career trajectory sequence
+**Next Action:** Begin Phase 9 (Match Transparency) - Expose trajectory signals and scoring breakdown
 
 ---
 
@@ -43,11 +43,11 @@
 | 5 | Skills Infrastructure | Complete | 4/4 | 100% |
 | 6 | Skills Intelligence | Complete | 4/4 | 100% |
 | 7 | Signal Scoring Implementation | Complete | 5/5 | 100% |
-| 8 | Career Trajectory | In Progress | 2/? | ~50% |
+| 8 | Career Trajectory | Complete | 3/3 | 100% |
 | 9 | Match Transparency | Pending | 0/? | 0% |
 | 10 | Pipeline Integration | Pending | 0/? | 0% |
 
-**Overall:** 7/10 phases complete (70%)
+**Overall:** 8/10 phases complete (80%)
 
 ---
 
@@ -56,7 +56,7 @@
 | Metric | Target | Current | Status |
 |--------|--------|---------|--------|
 | v1 Requirements | 28 | 14 done | In Progress |
-| Phases Complete | 10 | 6 | In Progress |
+| Phases Complete | 10 | 8 | In Progress |
 | Search Recall | 50+ candidates | Expected improvement | Pending verification |
 | p95 Latency | <1.2s | Unknown | Unmeasured |
 | Cache Hit Rate | >0.98 | Unknown | Unmeasured |
@@ -136,6 +136,12 @@
 | Together AI fallback for velocity | Use promotion_velocity field when dates unavailable - ensures broad coverage | 8.02 |
 | Function change detection before filtering | Check keywords before level filtering - catches pivots in unmapped titles | 8.02 |
 | Track change = career pivot | IC↔Management transitions detected as pivots regardless of level | 8.02 |
+| Direction+velocity matrix base score | Upward+fast=1.0, lateral+normal=0.5, downward=0.3 - foundation for fit scoring | 8.03 |
+| Track alignment weighted 50% | Balance base score and track alignment: (base * 0.5) + (alignment * 0.5) | 8.03 |
+| High-growth roles boost fast velocity | 1.2x modifier for fast velocity in high-growth - rewards rapid progression | 8.03 |
+| Stable roles favor normal velocity | 1.1x modifier for normal velocity in stable - rewards steady progression | 8.03 |
+| Career pivot penalty when not allowed | 0.7x penalty when allowPivot=false - discourages career changes unless explicitly acceptable | 8.03 |
+| Trajectory fit score clamped 0-1 | Prevent modifier overflow by clamping final score to valid range | 8.03 |
 
 ### Technical Notes
 
@@ -271,23 +277,23 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-24
-**Stopped at:** Completed 08-02-PLAN.md - Velocity and Type Classifiers
-**Resume file:** None - continue Phase 8
+**Stopped at:** Completed 08-03-PLAN.md - Trajectory Fit Scorer (Phase 8 COMPLETE)
+**Resume file:** None - ready for Phase 9
 
 ### Context for Next Session
 
-Phase 8 (Career Trajectory) IN PROGRESS. Plan 2/? complete:
+Phase 8 (Career Trajectory) COMPLETE. All 3 plans finished:
 
 | Plan | Name | Status | Commits |
 |------|------|--------|---------|
 | 08-01 | Direction Classifier | Complete | f92e43e, cdf19a8, 6119f96 |
 | 08-02 | Velocity and Type Classifiers | Complete | 0cf3ecd |
+| 08-03 | Trajectory Fit Scorer | Complete | bea7aba, b0eb10f, d0cb4c7 |
 
-**Phase 8 Plans 01-02 deliverables (COMPLETE):**
+**Phase 8 deliverables (ALL COMPLETE):**
 - **Direction Classifier (08-01):**
   - `mapTitleToLevel()`: Maps titles to 0-13 level indices (tech 0-6, mgmt 7-13)
   - `calculateTrajectoryDirection()`: Returns upward/lateral/downward from title sequence
-  - `LEVEL_ORDER_EXTENDED`: 14-element canonical level ordering
   - Track change normalization: Tech ↔ Mgmt transitions handled as lateral
   - Period removal and "of" pattern support for title variations
   - Engineering context required to avoid non-engineering role false positives
@@ -298,7 +304,16 @@ Phase 8 (Career Trajectory) IN PROGRESS. Plan 2/? complete:
   - Together AI `promotion_velocity` fallback when dates unavailable
   - Function change detection (frontend/backend/data/devops keywords)
   - Track change detection for career pivots
-  - All 39/39 tests passing (direction + velocity + type + title mapping)
+- **Trajectory Fit Scorer (08-03):**
+  - `calculateTrajectoryFit()`: 0-1 role alignment scoring with direction+velocity matrices
+  - `computeTrajectoryMetrics()`: Convenience wrapper for all trajectory metrics
+  - `TrajectoryContext`: Role requirements interface (targetTrack, roleGrowthType, allowPivot)
+  - Direction+velocity scoring matrix (upward+fast=1.0, downward=0.3)
+  - Track alignment scoring (technical vs management, weighted 50%)
+  - Growth type modifiers (high-growth 1.2x fast, stable 1.1x normal)
+  - Career pivot handling (0.7x penalty when allowPivot=false)
+  - Integration into extractSignalScores with Phase 7 signals
+  - All 54/54 tests passing (39 from 08-01/08-02, 15 new for 08-03)
 
 ---
 
@@ -451,9 +466,10 @@ All Phase 7 commits (complete):
 - 07-04: 4288775, cb27eb0, e8f64ec
 - 07-05: (assumed complete from context)
 
-All Phase 8 commits (in progress):
+All Phase 8 commits (complete):
 - 08-01: f92e43e, cdf19a8, 6119f96
-- 08-02: (pending)
+- 08-02: 0cf3ecd
+- 08-03: bea7aba, b0eb10f, d0cb4c7
 
 ---
 
