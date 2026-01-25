@@ -8,6 +8,8 @@ import { SearchRedisClient } from './redis-client';
 import { SearchService } from './search-service';
 import { RerankClient } from './rerank-client';
 import { PerformanceTracker } from './performance-tracker';
+import { QueryParser } from './nlp';
+import type { NLPConfig } from './nlp/types';
 
 // =============================================================================
 // Module Exports for External Consumers
@@ -79,7 +81,8 @@ async function bootstrap(): Promise<void> {
 
     // Track initialization state with mutable dependency container
     const state = {
-      isReady: false
+      isReady: false,
+      nlpInitialized: false
     };
     const dependencies = {
       config,
@@ -88,6 +91,7 @@ async function bootstrap(): Promise<void> {
       pgClient: null as PgVectorClient | null,
       embedClient: null as EmbedClient | null,
       rerankClient: null as RerankClient | null,
+      queryParser: null as QueryParser | null,
       performanceTracker,
       state  // Pass state to routes
     };
@@ -172,6 +176,54 @@ async function bootstrap(): Promise<void> {
           logger.info('Rerank disabled via configuration.');
         }
 
+        // Initialize QueryParser if NLP is enabled (NLNG-05)
+        let queryParser: QueryParser | null = null;
+        if (config.nlp.enabled) {
+          logger.info('Initializing QueryParser (NLP)...');
+          const nlpConfig: NLPConfig = {
+            enabled: config.nlp.enabled,
+            intentConfidenceThreshold: config.nlp.intentConfidenceThreshold,
+            extractionTimeoutMs: config.nlp.extractionTimeoutMs,
+            cacheExtractionResults: config.nlp.cacheExtractionResults,
+            enableQueryExpansion: config.nlp.enableQueryExpansion,
+            expansionDepth: config.nlp.expansionDepth,
+            expansionConfidenceThreshold: config.nlp.expansionConfidenceThreshold
+          };
+
+          queryParser = new QueryParser({
+            generateEmbedding: async (text: string) => {
+              // Use the embed client for generating embeddings
+              const result = await embedClient!.generateEmbedding({
+                tenantId: 'system',
+                requestId: `nlp-init-${Date.now()}`,
+                query: text
+              });
+              return result.embedding;
+            },
+            logger: getLogger({ module: 'query-parser' }),
+            config: nlpConfig,
+            togetherApiKey: process.env.TOGETHER_API_KEY
+          });
+
+          // Initialize in background (non-blocking) but track completion
+          queryParser.initialize()
+            .then(() => {
+              state.nlpInitialized = true;
+              logger.info({
+                nlpEnabled: config.nlp.enabled,
+                intentThreshold: config.nlp.intentConfidenceThreshold,
+                extractionTimeout: config.nlp.extractionTimeoutMs
+              }, 'QueryParser initialized successfully');
+            })
+            .catch((error) => {
+              logger.error({ error }, 'Failed to initialize QueryParser - NLP features may be degraded');
+            });
+
+          dependencies.queryParser = queryParser;
+        } else {
+          logger.info('NLP disabled via configuration');
+        }
+
         logger.info('Initializing search service...');
         dependencies.service = new SearchService({
           config,
@@ -179,6 +231,7 @@ async function bootstrap(): Promise<void> {
           embedClient: dependencies.embedClient,
           redisClient: dependencies.redisClient ?? undefined,
           rerankClient: dependencies.rerankClient ?? undefined,
+          queryParser: queryParser ?? undefined,
           performanceTracker,
           logger: getLogger({ module: 'search-service' })
         });

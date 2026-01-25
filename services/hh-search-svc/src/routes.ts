@@ -19,7 +19,9 @@ interface RegisterRoutesOptions {
   embedClient: EmbedClient | null;
   rerankClient: RerankClient | null;
   performanceTracker: PerformanceTracker;
-  state: { isReady: boolean };
+  state: { isReady: boolean; nlpInitialized: boolean };
+  /** NLP query parser for health check reporting */
+  queryParser?: { isInitialized: () => boolean } | null;
 }
 
 interface CandidateSearchRequest {
@@ -101,11 +103,27 @@ export async function registerRoutes(
           pgvector: pgHealth,
           redis: redisHealth,
           embeddings: embedHealth,
-          rerank: rerankHealth ?? { status: 'unavailable', message: 'Rerank health unavailable' }
+          rerank: rerankHealth ?? { status: 'unavailable', message: 'Rerank health unavailable' },
+          nlp: {
+            enabled: dependencies.config.nlp.enabled,
+            initialized: dependencies.queryParser?.isInitialized() ?? false,
+            status: dependencies.config.nlp.enabled
+              ? (dependencies.queryParser?.isInitialized() ? 'ready' : 'initializing')
+              : 'disabled'
+          }
         },
         metrics: dependencies.performanceTracker.getSnapshot()
       } satisfies Record<string, unknown>;
     }
+
+    // NLP health status (NLNG-05)
+    const nlpHealth = {
+      enabled: dependencies.config.nlp.enabled,
+      initialized: dependencies.queryParser?.isInitialized() ?? false,
+      status: dependencies.config.nlp.enabled
+        ? (dependencies.queryParser?.isInitialized() ? 'ready' : 'initializing')
+        : 'disabled'
+    };
 
     return {
       status: 'ok',
@@ -113,6 +131,7 @@ export async function registerRoutes(
       redis: redisHealth,
       embeddings: embedHealth,
       rerank: rerankHealth ?? { status: 'disabled' },
+      nlp: nlpHealth,
       metrics: dependencies.performanceTracker.getSnapshot()
     } satisfies Record<string, unknown>;
   };
