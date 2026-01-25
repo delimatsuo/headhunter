@@ -1,7 +1,7 @@
 # Project State: Headhunter AI Leader-Level Search
 
 **Initialized:** 2026-01-24
-**Current Status:** Phase 3 COMPLETE (Hybrid Search)
+**Current Status:** Phase 4 IN PROGRESS (Multi-Signal Scoring Framework)
 
 ---
 
@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 3 (Hybrid Search) complete. All 4 plans executed. RRF hybrid search with FTS and vector search now operational. Ready for Phase 4 (Multi-Signal Scoring Framework).
+**Current Focus:** Phase 4 (Multi-Signal Scoring Framework) in progress. Plan 04-01 complete - SignalWeightConfig types and role-type presets created. Foundation for configurable signal weights established.
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -21,14 +21,14 @@
 
 ## Current Position
 
-**Phase:** 3 of 10 (Hybrid Search)
-**Plan:** 4 of 4 complete
-**Status:** COMPLETE
-**Last activity:** 2026-01-24 - Completed 03-04-PLAN.md (Hybrid Search Verification)
+**Phase:** 4 of 10 (Multi-Signal Scoring Framework)
+**Plan:** 1 of ? complete
+**Status:** In Progress
+**Last activity:** 2026-01-24 - Completed 04-01-PLAN.md (SignalWeightConfig Types)
 
-**Progress:** [#######...] 65%
+**Progress:** [########..] 70%
 
-**Next Action:** Begin Phase 4 (Multi-Signal Scoring Framework)
+**Next Action:** Continue with Plan 04-02 (Scoring Implementation)
 
 ---
 
@@ -39,7 +39,7 @@
 | 1 | Reranking Fix | Complete | 4/4 | 100% |
 | 2 | Search Recall Foundation | Complete | 5/5 | 100% |
 | 3 | Hybrid Search | Complete | 4/4 | 100% |
-| 4 | Multi-Signal Scoring Framework | Pending | 0/? | 0% |
+| 4 | Multi-Signal Scoring Framework | In Progress | 1/? | 25% |
 | 5 | Skills Infrastructure | Pending | 0/? | 0% |
 | 6 | Skills Intelligence | Pending | 0/? | 0% |
 | 7 | Signal Scoring Implementation | Pending | 0/? | 0% |
@@ -96,6 +96,11 @@
 | enableRrf=true default | New behavior enabled by default for A/B testing capability | 3.02 |
 | Use hybrid_score for RRF stats | Currently weighted sum, stats still useful for score distribution | 3.04 |
 | FTS warning on hasTextQuery but no matches | Help diagnose search_document population issues | 3.04 |
+| 7 core signals in SignalWeightConfig | vectorSimilarity, levelMatch, specialtyMatch, techStackMatch, functionMatch, trajectoryFit, companyPedigree | 4.01 |
+| Optional skillsMatch signal | Reserved for skill-aware searches (Phase 6) | 4.01 |
+| Executive preset: function/pedigree weighted | Function (0.25) and companyPedigree (0.20) matter most for exec searches | 4.01 |
+| IC preset: specialty/techStack weighted | Specialty (0.20) and techStack (0.20) matter most for IC searches | 4.01 |
+| GEMINI_BLEND_WEIGHT default 0.7 | Rerank score blending weight configurable | 4.01 |
 
 ### Technical Notes
 
@@ -129,6 +134,12 @@
 - **RRF logging added:** Config logged before each hybrid search (03-02)
 - **RRF summary logging:** Shows vectorOnly, textOnly, both, noScore counts and score stats (03-04)
 - **FTS warning:** Logged when text query provided but FTS returns no matches (03-04)
+- **SignalWeightConfig created:** 7 core signals + optional skillsMatch (04-01)
+- **ROLE_WEIGHT_PRESETS:** executive, manager, ic, default with appropriate weight distributions (04-01)
+- **Signal weight env vars:** SIGNAL_WEIGHT_* for default customization (04-01)
+- **normalizeWeights():** Ensures weights sum to 1.0 (04-01)
+- **resolveWeights():** Merges request overrides with role presets (04-01)
+- **getSignalWeightDefaults():** Returns env-configured defaults (04-01)
 
 ### Blockers
 
@@ -151,6 +162,8 @@ None currently identified.
 - [x] Complete 03-02: RRF Configuration Parameters
 - [x] Complete 03-03: RRF Scoring SQL
 - [x] Complete 03-04: Hybrid Search Verification
+- [x] Complete 04-01: SignalWeightConfig Types and Role-Type Presets
+- [ ] Complete 04-02: Scoring Implementation (pending)
 - [ ] Verify EllaAI skills-master.ts format before copying (Phase 5)
 - [ ] Verify search recall improvement after Phase 2 deployment
 - [x] Note: Hard level filter at step 3.5 (career trajectory) - NOW CONVERTED TO SCORING
@@ -159,34 +172,31 @@ None currently identified.
 
 ## Session Continuity
 
-**Last session:** 2026-01-24T23:48:00Z
-**Stopped at:** Completed 03-04-PLAN.md - Hybrid Search Verification
-**Resume file:** None - ready for Phase 4
+**Last session:** 2026-01-24
+**Stopped at:** Completed 04-01-PLAN.md - SignalWeightConfig Types and Role-Type Presets
+**Resume file:** None - ready for Phase 4 Plan 02
 
 ### Context for Next Session
 
-Phase 3 (Hybrid Search) COMPLETE. All 4 plans executed:
+Phase 4 (Multi-Signal Scoring Framework) IN PROGRESS. Plan 04-01 complete:
 
 | Plan | Name | Status | Commits |
 |------|------|--------|---------|
-| 03-01 | FTS Fix and Diagnostic Logging | Complete | 70098c4, d303cd5 |
-| 03-02 | RRF Configuration Parameters | Complete | d75aeb8, d7c1df1, c02a3bf |
-| 03-03 | RRF Scoring SQL | Complete | (see 03-03-SUMMARY) |
-| 03-04 | Hybrid Search Verification | Complete | 83b7ecb |
+| 04-01 | SignalWeightConfig Types | Complete | a6d048a, 724c3d6 |
+| 04-02 | Scoring Implementation | Pending | - |
+| 04-03 | Response Enrichment | Pending | - |
 
-**Phase 3 deliverables:**
-- Vector similarity search via pgvector (cosine distance)
-- Full-text search via PostgreSQL FTS (ts_rank_cd)
-- FULL OUTER JOIN combining both search methods
-- RRF configuration (k=60, perMethodLimit=100, enableRrf=true)
-- Comprehensive logging for debugging and validation
-- FTS warning when expected but not contributing
-
-**Phase 3 requirements met:**
-- HYBD-01: Vector similarity search (working)
-- HYBD-02: BM25 text search (textScore > 0)
-- HYBD-03: RRF combines results (FULL OUTER JOIN + hybrid_score)
-- HYBD-04: Configurable k parameter (SEARCH_RRF_K)
+**Phase 4.01 deliverables:**
+- SignalWeightConfig interface with all 7 core signals
+- Optional skillsMatch for skill-aware searches
+- RoleType union (executive, manager, ic, default)
+- ROLE_WEIGHT_PRESETS with role-specific weight distributions
+- normalizeWeights() for weight sum validation
+- resolveWeights() for merging request overrides with presets
+- SignalWeightEnvConfig with all 8 env config fields
+- SIGNAL_WEIGHT_* environment variables
+- GEMINI_BLEND_WEIGHT environment variable
+- getSignalWeightDefaults() for integration
 
 All Phase 1 commits:
 - 01-01: 72954b0, 05b5110, ed14f64, 2e7a888
@@ -207,7 +217,10 @@ All Phase 3 commits:
 - 03-03: 16a6aa5, ce4c4cf, 4b0c79e
 - 03-04: 83b7ecb
 
+Phase 4 commits so far:
+- 04-01: a6d048a, 724c3d6
+
 ---
 
 *State initialized: 2026-01-24*
-*Last updated: 2026-01-24T23:48:00Z*
+*Last updated: 2026-01-24*
