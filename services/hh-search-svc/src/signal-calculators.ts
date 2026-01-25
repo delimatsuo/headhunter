@@ -277,3 +277,254 @@ export function calculateSkillsInferred(
   const coverage = inferredMatches / context.requiredSkills.length;
   return avgTransferability * coverage;
 }
+
+/**
+ * SCOR-04: Calculate seniority alignment score.
+ *
+ * Returns 0-1 score based on how well candidate seniority matches target level,
+ * accounting for company tier (FAANG candidates are effectively +1 level).
+ *
+ * Distance-based scoring:
+ * - 0 levels apart: 1.0
+ * - 1 level apart: 0.8
+ * - 2 levels apart: 0.6
+ * - 3 levels apart: 0.4
+ * - 4+ levels apart: 0.2
+ *
+ * Company tier adjustment:
+ * - FAANG (tier 2): +1 effective level
+ * - Unicorn (tier 1): no adjustment
+ * - Startup (tier 0): -1 effective level
+ *
+ * @param candidateLevel - Candidate's seniority level
+ * @param companyTier - Company tier: 0=startup, 1=unicorn, 2=FAANG
+ * @param context - Target level and role type
+ * @returns 0.0 (far apart) to 1.0 (perfect match), 0.5 if unknown
+ */
+export function calculateSeniorityAlignment(
+  candidateLevel: string | null | undefined,
+  companyTier: number,
+  context: SeniorityContext
+): number {
+  if (!candidateLevel || candidateLevel === 'unknown' || candidateLevel.trim() === '') {
+    return 0.5; // Neutral score when level is unknown
+  }
+
+  const normalizedCandidate = candidateLevel.toLowerCase().trim();
+  const normalizedTarget = context.targetLevel.toLowerCase().trim();
+
+  // Map common variations to canonical level names
+  const levelMap: Record<string, string> = {
+    'entry': 'junior',
+    'associate': 'junior',
+    'intermediate': 'mid',
+    'sr': 'senior',
+    'lead': 'staff',
+    'distinguished': 'principal',
+    'em': 'manager',
+    'engineering manager': 'manager',
+    'cto': 'c-level',
+  };
+
+  const candidateMapped = levelMap[normalizedCandidate] || normalizedCandidate;
+  const targetMapped = levelMap[normalizedTarget] || normalizedTarget;
+
+  const candidateIndex = LEVEL_ORDER.indexOf(candidateMapped);
+  const targetIndex = LEVEL_ORDER.indexOf(targetMapped);
+
+  if (candidateIndex === -1 || targetIndex === -1) {
+    return 0.5; // Neutral score when level not in LEVEL_ORDER
+  }
+
+  // Apply company tier adjustment: FAANG +1, Startup -1
+  const tierAdjustment = companyTier - 1;
+  const effectiveIndex = Math.min(
+    Math.max(0, candidateIndex + tierAdjustment),
+    LEVEL_ORDER.length - 1
+  );
+
+  const distance = Math.abs(effectiveIndex - targetIndex);
+
+  if (distance === 0) return 1.0;
+  if (distance === 1) return 0.8;
+  if (distance === 2) return 0.6;
+  if (distance === 3) return 0.4;
+  return 0.2;
+}
+
+/**
+ * SCOR-05: Calculate recency boost score.
+ *
+ * Returns 0-1 score based on how recently the candidate used required skills.
+ * Current role = 1.0, decays to 0.2 for 5+ years ago.
+ *
+ * Decay formula: 1.0 - (years_since * 0.16)
+ * - 0 years (current): 1.0
+ * - 1 year ago: 0.84
+ * - 2 years ago: 0.68
+ * - 3 years ago: 0.52
+ * - 4 years ago: 0.36
+ * - 5+ years ago: 0.2 (floor)
+ *
+ * @param candidateExperience - Candidate's work history
+ * @param requiredSkills - Skills being searched for
+ * @returns Score 0-1 based on skill recency, 0.5 if no context
+ */
+export function calculateRecencyBoost(
+  candidateExperience: CandidateExperience[],
+  requiredSkills: string[]
+): number {
+  if (!requiredSkills || requiredSkills.length === 0) {
+    return 0.5; // Neutral score when no required skills
+  }
+  if (!candidateExperience || candidateExperience.length === 0) {
+    return 0.5; // Neutral score when no experience data
+  }
+
+  const now = new Date();
+  const normalizedRequired = requiredSkills.map(s => s.toLowerCase().trim());
+  let totalRecencyScore = 0;
+  let skillsWithData = 0;
+
+  for (const requiredSkill of normalizedRequired) {
+    const aliases = [requiredSkill, ...getCommonAliases(requiredSkill)];
+    let bestRecency = 0;
+
+    for (const exp of candidateExperience) {
+      const expSkills = (exp.skills || []).map(s => s.toLowerCase().trim());
+      const hasSkill = aliases.some(alias =>
+        expSkills.some(es => es.includes(alias) || alias.includes(es))
+      );
+
+      if (!hasSkill) continue;
+
+      if (exp.isCurrent) {
+        bestRecency = 1.0;
+        break;
+      }
+
+      if (exp.endDate) {
+        const endDate = typeof exp.endDate === 'string' ? new Date(exp.endDate) : exp.endDate;
+        if (!isNaN(endDate.getTime())) {
+          const yearsSince = (now.getTime() - endDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+          const recency = Math.max(0.2, 1.0 - yearsSince * 0.16);
+          bestRecency = Math.max(bestRecency, recency);
+        }
+      }
+    }
+
+    if (bestRecency > 0) {
+      totalRecencyScore += bestRecency;
+      skillsWithData++;
+    }
+  }
+
+  if (skillsWithData === 0) {
+    return 0.3; // Low score when no skill data found (not neutral)
+  }
+
+  return totalRecencyScore / normalizedRequired.length;
+}
+
+/**
+ * Helper: Detect company tier from company names.
+ *
+ * @param companyNames - List of company names from candidate's experience
+ * @returns 0=startup, 1=unicorn, 2=FAANG
+ */
+export function detectCompanyTier(companyNames: string[]): number {
+  if (!companyNames || companyNames.length === 0) {
+    return 0;
+  }
+
+  for (const company of companyNames) {
+    const lower = company.toLowerCase().trim();
+    if (FAANG_COMPANIES.some(f => lower.includes(f) || f.includes(lower))) {
+      return 2;
+    }
+    if (UNICORN_COMPANIES.some(u => lower.includes(u) || u.includes(lower))) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/**
+ * Helper: Check if two industries are related based on domain knowledge.
+ */
+function areIndustriesRelated(industry1: string, industry2: string): boolean {
+  const RELATED_INDUSTRIES: Record<string, string[]> = {
+    'fintech': ['financial services', 'banking', 'payments'],
+    'e-commerce': ['retail', 'marketplace'],
+    'healthtech': ['healthcare', 'medical'],
+    'edtech': ['education', 'learning'],
+    'saas': ['software', 'enterprise software'],
+  };
+
+  const related1 = RELATED_INDUSTRIES[industry1] || [];
+  const related2 = RELATED_INDUSTRIES[industry2] || [];
+
+  return related1.includes(industry2) || related2.includes(industry1);
+}
+
+/**
+ * SCOR-06: Calculate company relevance score.
+ *
+ * Returns 0-1 score combining:
+ * - Target company match: 1.0 if match, 0.0 if not
+ * - Company tier: 1.0 (FAANG), 0.7 (unicorn), 0.4 (startup)
+ * - Industry alignment: 1.0 if match/related, 0.3 if not
+ *
+ * Final score is average of available signals.
+ *
+ * @param candidateCompanies - Companies from candidate's experience
+ * @param candidateIndustries - Industries from candidate's experience
+ * @param companyTier - Pre-computed company tier (0-2)
+ * @param context - Target companies and industries
+ * @returns Score 0-1 combining tier, target, and industry signals
+ */
+export function calculateCompanyRelevance(
+  candidateCompanies: string[],
+  candidateIndustries: string[],
+  companyTier: number,
+  context: CompanyContext
+): number {
+  let score = 0;
+  let signals = 0;
+
+  // Signal 1: Target company match
+  if (context.targetCompanies && context.targetCompanies.length > 0) {
+    const normalizedCompanies = (candidateCompanies || []).map(c => c.toLowerCase().trim());
+    const hasTargetCompany = context.targetCompanies.some(target => {
+      const normalizedTarget = target.toLowerCase().trim();
+      return normalizedCompanies.some(
+        cc => cc.includes(normalizedTarget) || normalizedTarget.includes(cc)
+      );
+    });
+    score += hasTargetCompany ? 1.0 : 0.0;
+    signals++;
+  }
+
+  // Signal 2: Company tier score
+  const tierScore = companyTier >= 2 ? 1.0 : companyTier >= 1 ? 0.7 : 0.4;
+  score += tierScore;
+  signals++;
+
+  // Signal 3: Industry alignment
+  if (context.targetIndustries && context.targetIndustries.length > 0) {
+    const normalizedIndustries = (candidateIndustries || []).map(i => i.toLowerCase().trim());
+    const hasMatchingIndustry = context.targetIndustries.some(target => {
+      const normalizedTarget = target.toLowerCase().trim();
+      return normalizedIndustries.some(
+        ci =>
+          ci.includes(normalizedTarget) ||
+          normalizedTarget.includes(ci) ||
+          areIndustriesRelated(ci, normalizedTarget)
+      );
+    });
+    score += hasMatchingIndustry ? 1.0 : 0.3;
+    signals++;
+  }
+
+  return signals > 0 ? score / signals : 0.5;
+}
