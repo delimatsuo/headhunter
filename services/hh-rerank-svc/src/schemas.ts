@@ -47,6 +47,69 @@ const candidateSchema = {
   }
 } as const;
 
+/**
+ * Schema for match rationale generation endpoint.
+ * @see TRNS-03
+ */
+export const matchRationaleSchema: FastifySchema = {
+  body: {
+    type: 'object',
+    additionalProperties: false,
+    required: ['jobDescription', 'candidateSummary', 'topSignals'],
+    properties: {
+      jobDescription: { type: 'string', minLength: 10, maxLength: 10000 },
+      candidateSummary: { type: 'string', minLength: 1, maxLength: 5000 },
+      topSignals: {
+        type: 'array',
+        items: {
+          type: 'object',
+          required: ['name', 'score'],
+          properties: {
+            name: { type: 'string', minLength: 1, maxLength: 100 },
+            score: { type: 'number', minimum: 0, maximum: 1 }
+          }
+        },
+        minItems: 0,
+        maxItems: 10
+      }
+    }
+  },
+  response: {
+    200: {
+      type: 'object',
+      required: ['summary', 'keyStrengths', 'signalHighlights'],
+      properties: {
+        summary: { type: 'string' },
+        keyStrengths: {
+          type: 'array',
+          items: { type: 'string' }
+        },
+        signalHighlights: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['signal', 'score', 'reason'],
+            properties: {
+              signal: { type: 'string' },
+              score: { type: 'number' },
+              reason: { type: 'string' }
+            }
+          }
+        }
+      }
+    },
+    400: {
+      type: 'object',
+      required: ['code', 'message'],
+      properties: {
+        code: { type: 'string' },
+        message: { type: 'string' },
+        details: { type: 'object', additionalProperties: true }
+      }
+    }
+  }
+};
+
 export const rerankSchema: FastifySchema = {
   body: {
     type: 'object',

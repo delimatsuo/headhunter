@@ -3,7 +3,7 @@ import { badRequestError } from '@hh/common';
 
 import type { RerankServiceConfig } from './config.js';
 import { RerankRedisClient } from './redis-client.js';
-import { rerankSchema } from './schemas.js';
+import { rerankSchema, matchRationaleSchema } from './schemas.js';
 import type { RerankRequest, RerankResponse } from './types.js';
 import { TogetherClient } from './together-client.js';
 import { GeminiClient } from './gemini-client.js';
@@ -140,6 +140,48 @@ export async function registerRoutes(
       }
 
       return response;
+    }
+  );
+
+  /**
+   * Match rationale generation endpoint.
+   * Generates LLM-based match rationale for a candidate.
+   * @see TRNS-03
+   */
+  interface MatchRationaleRequestBody {
+    jobDescription: string;
+    candidateSummary: string;
+    topSignals: Array<{ name: string; score: number }>;
+  }
+
+  app.post(
+    '/v1/search/rationale',
+    {
+      schema: matchRationaleSchema
+    },
+    async (request: FastifyRequest<{ Body: MatchRationaleRequestBody }>, reply: FastifyReply) => {
+      if (!request.tenant) {
+        throw badRequestError('Tenant context is required.');
+      }
+
+      if (!dependencies.togetherClient) {
+        reply.status(503);
+        return { error: 'Service initializing' };
+      }
+
+      const { jobDescription, candidateSummary, topSignals } = request.body;
+
+      const rationale = await dependencies.togetherClient.generateMatchRationale(
+        jobDescription,
+        candidateSummary,
+        topSignals,
+        {
+          requestId: request.requestContext.requestId,
+          tenantId: request.tenant.id
+        }
+      );
+
+      return rationale;
     }
   );
 }

@@ -11,11 +11,12 @@ import type {
   HybridSearchResponse,
   HybridSearchResultItem,
   PgHybridSearchRow,
-  SearchContext
+  SearchContext,
+  SignalScores
 } from './types';
 import type { PgVectorClient } from './pgvector-client';
 import type { SearchRedisClient } from './redis-client';
-import type { RerankClient, RerankCandidate, RerankRequest, RerankResponse } from './rerank-client';
+import type { RerankClient, RerankCandidate, RerankRequest, RerankResponse, MatchRationale } from './rerank-client';
 import type { PerformanceTracker } from './performance-tracker';
 import { resolveWeights, type SignalWeightConfig, type RoleType } from './signal-weights';
 import { computeWeightedScore, extractSignalScores, normalizeVectorScore, completeSignalScores, type SignalComputationContext } from './scoring';
@@ -346,6 +347,15 @@ export class SearchService {
       if (rerankOutcome.timingsMs !== undefined) {
         timings.rerankMs = rerankOutcome.timingsMs;
       }
+    }
+
+    // Generate match rationales for top candidates if requested (TRNS-03)
+    if (request.includeMatchRationale && ranked.length > 0) {
+      ranked = await this.addMatchRationales(
+        context,
+        request,
+        ranked
+      );
     }
 
     const response: HybridSearchResponse = {
@@ -798,5 +808,163 @@ export class SearchService {
       this.logger.error({ error }, 'Firestore fallback failed.');
       return [];
     }
+  }
+
+  /**
+   * Add LLM-generated match rationales for top candidates.
+   * @see TRNS-03
+   */
+  private async addMatchRationales(
+    context: SearchContext,
+    request: HybridSearchRequest,
+    candidates: HybridSearchResultItem[]
+  ): Promise<HybridSearchResultItem[]> {
+    if (!this.rerankClient || !this.rerankClient.isEnabled()) {
+      this.logger.debug({ requestId: context.requestId }, 'Match rationale skipped - rerank client not available.');
+      return candidates;
+    }
+
+    const rationaleLimit = request.rationaleLimit ?? 10;
+    const topCandidates = candidates.slice(0, rationaleLimit);
+    const jobDescription = request.jobDescription ?? request.query ?? '';
+
+    if (jobDescription.trim().length === 0) {
+      this.logger.warn({ requestId: context.requestId }, 'Match rationale skipped - no job description.');
+      return candidates;
+    }
+
+    // Compute JD hash for cache key
+    const jdHash = request.jdHash ?? createHash('sha1').update(jobDescription).digest('hex').slice(0, 16);
+
+    // Generate rationales in parallel with Redis caching
+    const rationaleResults = await Promise.all(
+      topCandidates.map(async (candidate) => {
+        // Check cache first
+        const cacheKey = `rationale:${candidate.candidateId}:${jdHash}`;
+
+        if (this.redisClient && !this.redisClient.isDisabled()) {
+          try {
+            const cached = await this.redisClient.get<MatchRationale>(cacheKey);
+            if (cached && typeof cached === 'object' && 'summary' in cached) {
+              this.logger.debug({ candidateId: candidate.candidateId }, 'Match rationale cache hit.');
+              return { candidateId: candidate.candidateId, rationale: cached };
+            }
+          } catch (error) {
+            this.logger.warn({ error, candidateId: candidate.candidateId }, 'Failed to read rationale from cache.');
+          }
+        }
+
+        // Generate new rationale
+        const topSignals = this.getTopSignals(candidate.signalScores, 3);
+        const candidateSummary = this.buildCandidateSummary(candidate);
+
+        try {
+          const rationale = await this.rerankClient!.generateMatchRationale(
+            {
+              jobDescription,
+              candidateSummary,
+              topSignals
+            },
+            {
+              tenantId: context.tenant.id,
+              requestId: context.requestId
+            }
+          );
+
+          // Cache for 24 hours (86400 seconds)
+          if (this.redisClient && !this.redisClient.isDisabled()) {
+            try {
+              await this.redisClient.set(cacheKey, rationale, 86400);
+              this.logger.debug({ candidateId: candidate.candidateId }, 'Match rationale cached.');
+            } catch (error) {
+              this.logger.warn({ error, candidateId: candidate.candidateId }, 'Failed to cache rationale.');
+            }
+          }
+
+          return { candidateId: candidate.candidateId, rationale };
+        } catch (error) {
+          this.logger.warn({ error, candidateId: candidate.candidateId }, 'Failed to generate match rationale.');
+          return { candidateId: candidate.candidateId, rationale: null };
+        }
+      })
+    );
+
+    // Build a map of candidate ID to rationale
+    const rationaleMap = new Map<string, MatchRationale>();
+    for (const result of rationaleResults) {
+      if (result.rationale) {
+        rationaleMap.set(result.candidateId, result.rationale);
+      }
+    }
+
+    // Merge rationales into candidates
+    return candidates.map((candidate) => ({
+      ...candidate,
+      matchRationale: rationaleMap.get(candidate.candidateId)
+    }));
+  }
+
+  /**
+   * Get the top N signal scores with human-readable names.
+   */
+  private getTopSignals(
+    scores: SignalScores | undefined,
+    limit: number
+  ): Array<{ name: string; score: number }> {
+    if (!scores) return [];
+
+    const signalNames: Record<string, string> = {
+      skillsExactMatch: 'Skills Match',
+      trajectoryFit: 'Career Trajectory',
+      seniorityAlignment: 'Seniority Fit',
+      recencyBoost: 'Skill Recency',
+      companyRelevance: 'Company Fit',
+      vectorSimilarity: 'Semantic Match',
+      levelMatch: 'Level Match',
+      specialtyMatch: 'Specialty Match',
+      techStackMatch: 'Tech Stack',
+      functionMatch: 'Function Fit',
+      companyPedigree: 'Company Quality',
+      skillsInferred: 'Inferred Skills',
+      skillsMatch: 'Skills Match'
+    };
+
+    return Object.entries(scores)
+      .filter(([, score]) => typeof score === 'number' && score > 0)
+      .sort(([, a], [, b]) => (b as number) - (a as number))
+      .slice(0, limit)
+      .map(([key, score]) => ({
+        name: signalNames[key] || key,
+        score: score as number
+      }));
+  }
+
+  /**
+   * Build a concise candidate summary for rationale generation.
+   */
+  private buildCandidateSummary(candidate: HybridSearchResultItem): string {
+    const parts: string[] = [];
+
+    if (candidate.fullName) {
+      parts.push(candidate.fullName);
+    }
+    if (candidate.title) {
+      parts.push(candidate.title);
+    }
+    if (candidate.yearsExperience) {
+      parts.push(`${candidate.yearsExperience} years exp`);
+    }
+    if (candidate.skills && candidate.skills.length > 0) {
+      const topSkills = candidate.skills
+        .slice(0, 5)
+        .map((s) => s.name)
+        .join(', ');
+      parts.push(topSkills);
+    }
+    if (candidate.headline) {
+      parts.push(candidate.headline.slice(0, 100));
+    }
+
+    return parts.join(' | ') || 'No candidate details available';
   }
 }

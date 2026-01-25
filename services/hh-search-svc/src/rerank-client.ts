@@ -81,6 +81,26 @@ export interface RerankHealthStatus {
   latencyMs?: number;
 }
 
+/**
+ * LLM-generated match rationale for top candidates.
+ * @see TRNS-03
+ */
+export interface MatchRationale {
+  summary: string;
+  keyStrengths: string[];
+  signalHighlights: Array<{
+    signal: string;
+    score: number;
+    reason: string;
+  }>;
+}
+
+export interface MatchRationaleRequest {
+  jobDescription: string;
+  candidateSummary: string;
+  topSignals: Array<{ name: string; score: number }>;
+}
+
 export class RerankClient {
   private readonly http: AxiosInstance;
   private failureCount = 0;
@@ -205,5 +225,47 @@ export class RerankClient {
 
   private resetCircuit(): void {
     this.failureCount = 0;
+  }
+
+  /**
+   * Generate LLM match rationale for a candidate.
+   * @see TRNS-03
+   */
+  async generateMatchRationale(
+    request: MatchRationaleRequest,
+    context: { tenantId: string; requestId: string }
+  ): Promise<MatchRationale> {
+    const fallbackRationale: MatchRationale = {
+      summary: 'Match analysis unavailable.',
+      keyStrengths: [],
+      signalHighlights: []
+    };
+
+    if (!this.config.enabled) {
+      return fallbackRationale;
+    }
+
+    const headers: Record<string, string> = {
+      'X-Tenant-ID': context.tenantId,
+      'X-Request-ID': context.requestId
+    };
+
+    const authHeader = await this.resolveAuthHeader();
+    if (authHeader) {
+      headers.Authorization = authHeader;
+    }
+
+    try {
+      const response = await this.http.post<MatchRationale>('/v1/search/rationale', request, {
+        headers,
+        timeout: 5000 // 5 second timeout for rationale generation
+      });
+
+      this.logger.debug({ requestId: context.requestId }, 'Match rationale generated.');
+      return response.data;
+    } catch (error) {
+      this.logger.warn({ error, requestId: context.requestId }, 'Match rationale generation failed.');
+      return fallbackRationale;
+    }
   }
 }
