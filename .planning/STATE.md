@@ -1,7 +1,7 @@
 # Project State: Headhunter AI Leader-Level Search
 
 **Initialized:** 2026-01-24
-**Current Status:** Phase 9 IN PROGRESS (Match Transparency) - Plans 01, 02, 03 complete
+**Current Status:** Phase 9 IN PROGRESS (Match Transparency) - Plans 01, 02, 03, 04 complete
 
 ---
 
@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 9 (Match Transparency) IN PROGRESS - Plans 01, 02, 03 complete. Building UI transparency components.
+**Current Focus:** Phase 9 (Match Transparency) IN PROGRESS - Plans 01, 02, 03, 04 complete. Building UI transparency components.
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -22,13 +22,13 @@
 ## Current Position
 
 **Phase:** 9 of 10 (Match Transparency) - IN PROGRESS
-**Plan:** 3 of 7 complete (09-01, 09-02, 09-03)
+**Plan:** 4 of 7 complete (09-01, 09-02, 09-03, 09-04)
 **Status:** In progress
-**Last activity:** 2026-01-25 - Completed 09-03-PLAN.md (Card Integration)
+**Last activity:** 2026-01-25 - Completed 09-04-PLAN.md (Sort and Filter Controls)
 
-**Progress:** [████████░░] 84%
+**Progress:** [████████░░] 86%
 
-**Next Action:** Continue Phase 9 with 09-04 (Search Results Integration)
+**Next Action:** Continue Phase 9 with 09-05 (Match Confidence)
 
 ---
 
@@ -44,7 +44,7 @@
 | 6 | Skills Intelligence | Complete | 4/4 | 100% |
 | 7 | Signal Scoring Implementation | Complete | 5/5 | 100% |
 | 8 | Career Trajectory | Complete | 4/4 | 100% |
-| 9 | Match Transparency | In Progress | 3/7 | ~43% |
+| 9 | Match Transparency | In Progress | 4/7 | ~57% |
 | 10 | Pipeline Integration | Pending | 0/? | 0% |
 
 **Overall:** 8/10 phases complete (80%)
@@ -148,6 +148,10 @@
 | Signal breakdown as optional expandable section | Keep card compact by default; power users can expand for detail | 9.03 |
 | 15 skill limit in display | Prevent UI clutter while showing most relevant skills | 9.03 |
 | Cast inferred skills to any for reasoning | Backend may include reasoning field not in current type definition | 9.03 |
+| useMemo for sortedAndFilteredMatches | Prevents expensive re-computation on every render | 9.04 |
+| 0.5 neutral default for missing signals | Matches backend convention for fair sorting | 9.04 |
+| 10% step for filter slider | Balances granularity with usability (10 positions) | 9.04 |
+| localStorage keys prefixed with hh_search_ | Namespace for localStorage to avoid collisions | 9.04 |
 
 ### Technical Notes
 
@@ -239,6 +243,10 @@
 - **SignalScoreBreakdown integrated:** Expandable section in candidate card after AI hero (09-03)
 - **SkillChip integrated:** Skills cloud uses SkillChip with confidence badges (09-03)
 - **getSkillsForDisplay helper:** Normalizes explicit and inferred skills for unified display (09-03)
+- **Sort/filter controls added:** Sort dropdown and filter slider in SearchResults (09-04)
+- **5 sort options:** overall, skills, trajectory, recency, seniority (09-04)
+- **Filter by skillsExactMatch:** Threshold slider filters candidates below minimum (09-04)
+- **localStorage persistence:** Sort/filter preferences saved to localStorage (09-04)
 
 ### Blockers
 
@@ -289,31 +297,32 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 09-03-PLAN.md - Card Integration (Phase 9 IN PROGRESS)
+**Stopped at:** Completed 09-04-PLAN.md - Sort and Filter Controls (Phase 9 IN PROGRESS)
 **Resume file:** None - continue with remaining Phase 9 plans
 
 ### Context for Next Session
 
-Phase 9 (Match Transparency) IN PROGRESS. Plans 01, 02, 03 complete:
+Phase 9 (Match Transparency) IN PROGRESS. Plans 01, 02, 03, 04 complete:
 
 | Plan | Name | Status | Commits |
 |------|------|--------|---------|
 | 09-01 | Signal Score Breakdown UI | Complete | ba6b223, 959c34e, e87318c |
 | 09-02 | SkillChip Component | Complete | def5e13 |
 | 09-03 | Card Integration | Complete | 2497f51 |
+| 09-04 | Sort and Filter Controls | Complete | a8bab04, 702e6e7, f8fc89e |
 
-**Phase 9 deliverables (09-03):**
-- SignalScoreBreakdown integrated into SkillAwareCandidateCard
-- SkillChip components in skill cloud with confidence badges
-- New props: signalScores, weightsApplied, roleTypeUsed
-- Expandable signal breakdown section after AI hero section
-- getSkillsForDisplay() helper normalizing explicit/inferred skills
-- CSS styling for breakdown toggle and chevron animation
+**Phase 9 deliverables (09-04):**
+- Sort dropdown with 5 options (Best Match, Skills Match, Career Trajectory, Skill Recency, Seniority Fit)
+- Filter slider for minimum skill score (0-100%, step 10%)
+- localStorage persistence for sort/filter preferences
+- useMemo-based sorting/filtering computation
+- CSS styling for controls with responsive stacking
 
-**Previous Phase 9 deliverables (09-01, 09-02):**
+**Previous Phase 9 deliverables (09-01, 09-02, 09-03):**
 - SignalScores and SignalWeightConfig frontend types
 - SignalScoreBreakdown React component with horizontal bars
 - SkillChip React component with confidence badges
+- SignalScoreBreakdown integrated into SkillAwareCandidateCard
 - Color coding: green (high), orange (medium), gray (low)
 
 ---
@@ -511,7 +520,10 @@ All Phase 8 commits (complete):
 - 08-04: 7ee25f3
 
 All Phase 9 commits (in progress):
+- 09-01: ba6b223, 959c34e, e87318c
 - 09-02: def5e13
+- 09-03: 2497f51
+- 09-04: a8bab04, 702e6e7, f8fc89e
 
 ---
 
