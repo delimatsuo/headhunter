@@ -97,6 +97,29 @@ export interface FirestoreFallbackConfig {
   concurrency: number;
 }
 
+/**
+ * Signal weight environment configuration for multi-signal scoring.
+ * These values provide defaults that can be overridden via request or role-type presets.
+ */
+export interface SignalWeightEnvConfig {
+  /** Default vector similarity weight (0-1) */
+  defaultVectorWeight: number;
+  /** Default level/seniority match weight (0-1) */
+  defaultLevelWeight: number;
+  /** Default specialty match weight (0-1) */
+  defaultSpecialtyWeight: number;
+  /** Default tech stack match weight (0-1) */
+  defaultTechStackWeight: number;
+  /** Default function alignment weight (0-1) */
+  defaultFunctionWeight: number;
+  /** Default career trajectory weight (0-1) */
+  defaultTrajectoryWeight: number;
+  /** Default company pedigree weight (0-1) */
+  defaultCompanyWeight: number;
+  /** Weight for Gemini rerank score blending (default 0.7) */
+  geminiBlendWeight: number;
+}
+
 export interface SearchServiceConfig {
   base: ServiceConfig;
   embed: EmbedServiceConfig;
@@ -105,6 +128,7 @@ export interface SearchServiceConfig {
   rerank: RerankServiceConfig;
   search: SearchRuntimeConfig;
   firestoreFallback: FirestoreFallbackConfig;
+  signalWeights: SignalWeightEnvConfig;
 }
 
 let cachedConfig: SearchServiceConfig | null = null;
@@ -255,6 +279,18 @@ export function getSearchServiceConfig(): SearchServiceConfig {
     concurrency: Math.max(1, parseNumber(process.env.SEARCH_FIRESTORE_CONCURRENCY, 8))
   };
 
+  // Signal weight configuration for multi-signal scoring framework
+  const signalWeights: SignalWeightEnvConfig = {
+    defaultVectorWeight: parseNumber(process.env.SIGNAL_WEIGHT_VECTOR, 0.15),
+    defaultLevelWeight: parseNumber(process.env.SIGNAL_WEIGHT_LEVEL, 0.15),
+    defaultSpecialtyWeight: parseNumber(process.env.SIGNAL_WEIGHT_SPECIALTY, 0.15),
+    defaultTechStackWeight: parseNumber(process.env.SIGNAL_WEIGHT_TECH_STACK, 0.15),
+    defaultFunctionWeight: parseNumber(process.env.SIGNAL_WEIGHT_FUNCTION, 0.15),
+    defaultTrajectoryWeight: parseNumber(process.env.SIGNAL_WEIGHT_TRAJECTORY, 0.10),
+    defaultCompanyWeight: parseNumber(process.env.SIGNAL_WEIGHT_COMPANY, 0.15),
+    geminiBlendWeight: parseNumber(process.env.GEMINI_BLEND_WEIGHT, 0.7)
+  };
+
   cachedConfig = {
     base,
     embed,
@@ -262,7 +298,8 @@ export function getSearchServiceConfig(): SearchServiceConfig {
     redis,
     rerank,
     search,
-    firestoreFallback
+    firestoreFallback,
+    signalWeights
   };
 
   // Production security validation
@@ -305,4 +342,31 @@ function validateProductionSecurity(config: SearchServiceConfig): void {
 
 export function resetSearchServiceConfig(): void {
   cachedConfig = null;
+}
+
+/**
+ * Returns signal weight defaults built from environment variables.
+ * Used by signal-weights.ts as fallback defaults when no role-type preset is used.
+ *
+ * @returns SignalWeightConfig-compatible object with environment-configured weights
+ */
+export function getSignalWeightDefaults(): {
+  vectorSimilarity: number;
+  levelMatch: number;
+  specialtyMatch: number;
+  techStackMatch: number;
+  functionMatch: number;
+  trajectoryFit: number;
+  companyPedigree: number;
+} {
+  const config = getSearchServiceConfig();
+  return {
+    vectorSimilarity: config.signalWeights.defaultVectorWeight,
+    levelMatch: config.signalWeights.defaultLevelWeight,
+    specialtyMatch: config.signalWeights.defaultSpecialtyWeight,
+    techStackMatch: config.signalWeights.defaultTechStackWeight,
+    functionMatch: config.signalWeights.defaultFunctionWeight,
+    trajectoryFit: config.signalWeights.defaultTrajectoryWeight,
+    companyPedigree: config.signalWeights.defaultCompanyWeight
+  };
 }
