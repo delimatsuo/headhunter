@@ -24,13 +24,13 @@
 
 **Milestone:** v2.0 Advanced Intelligence
 **Phase:** 13 - ML Trajectory Prediction (IN PROGRESS)
-**Plan:** 1 of 7 executed
-**Status:** Phase 13 in progress - service scaffolding complete
-**Last activity:** 2026-01-25 - Completed 13-01-PLAN.md (hh-trajectory-svc scaffolding)
+**Plan:** 4 of 7 executed
+**Status:** Phase 13 in progress - Shadow mode infrastructure complete
+**Last activity:** 2026-01-25 - Completed 13-04-PLAN.md (Shadow mode for ML validation)
 
 **Progress:** [##########] v1.0 100% | [####------] v2.0: 2/5 phases (40%)
 
-**Next Action:** Continue Phase 13 execution (13-02 or next plan)
+**Next Action:** Continue Phase 13 execution (13-05 or next plan)
 
 ---
 
@@ -40,7 +40,7 @@
 |-------|------|--------|--------------|----------|
 | 11 | Performance Foundation | Complete | 5 | 100% |
 | 12 | Natural Language Search | Complete | 5 | 100% |
-| 13 | ML Trajectory Prediction | In Progress | 5 | 14% |
+| 13 | ML Trajectory Prediction | In Progress | 5 | 57% |
 | 14 | Bias Reduction | Pending | 5 | 0% |
 | 15 | Compliance Tooling | Pending | 6 | 0% |
 
@@ -115,6 +115,10 @@
 | PostgreSQL for audit logs | No new databases, 4-year retention in existing infrastructure | 15 |
 | Disable auth and rate-limit temporarily | Focus on core functionality first, enable after Plan 02 ONNX integration | 13 |
 | Use stub responses in predict endpoint | Actual ONNX inference deferred to Plan 02 | 13 |
+| ONNX session singleton pattern | Prevent repeated model loading (expensive ~100ms+) across requests | 13 |
+| Linear interpolation for calibration | Matches scikit-learn IsotonicRegression without Python dependency | 13 |
+| Confidence threshold 0.6 for ML predictions | Balance precision vs recall for uncertainty flagging | 13 |
+| Background predictor initialization | Cloud Run fast startup, setImmediate() non-blocking model load | 13 |
 
 ### Key Decisions (v1.0 - Archived)
 
@@ -149,13 +153,21 @@
 - NLPSearchConfig added to config.ts with environment variables
 - **153 passing unit tests total**
 
-**Phase 13 Deliverables (IN PROGRESS - 1/7 plans):**
+**Phase 13 Deliverables (IN PROGRESS - 3/7 plans):**
 - hh-trajectory-svc Fastify server (port 7109) with health and predict endpoints
 - TypeScript types: TrajectoryPrediction, PredictRequest, PredictResponse, ShadowLog, HealthResponse
 - Service configuration with environment variable parsing
-- Lazy initialization pattern for model loading
+- Python ML training pipeline: data prep, LSTM model, ONNX export, calibration, evaluation
+- ONNX session singleton with optimized config (CPU, graph optimization, 4 threads)
+- Input encoder with title normalization (abbreviations, lowercase, punctuation)
+- Isotonic regression calibrator via linear interpolation
+- TrajectoryPredictor orchestrating inference, encoding, and calibration
+- /predict endpoint using ML inference with calibrated confidence
+- /predict/health endpoint for predictor status
+- Uncertainty reason generation for low confidence predictions
+- Background initialization with setImmediate for non-blocking startup
+- Graceful shutdown with ONNX session disposal
 - Multi-stage Dockerfile following service mesh patterns
-- Stub prediction responses (actual ONNX inference in Plan 02)
 
 **v1.0 Deliverables:**
 - 3-stage pipeline with 500/100/50 funnel
@@ -187,8 +199,9 @@ None currently identified.
 - [x] Execute 12-06-PLAN.md (NLP Integration & Semantic Synonyms)
 - [x] Plan Phase 13 (ML Trajectory Prediction) - 7 plans created
 - [x] Execute 13-01-PLAN.md (hh-trajectory-svc scaffolding)
-- [ ] Execute 13-02-PLAN.md (ONNX integration)
-- [ ] Continue Phase 13 execution (5 more plans)
+- [x] Execute 13-02-PLAN.md (Python ML training pipeline)
+- [x] Execute 13-03-PLAN.md (ONNX inference integration)
+- [ ] Continue Phase 13 execution (4 more plans)
 - [ ] Verify pgvectorscale Cloud SQL compatibility
 - [ ] Run embedding backfill in production after Cloud SQL migration
 - [ ] Prepare training data for trajectory LSTM (Phase 13 blocker)
@@ -203,29 +216,41 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 13-01-PLAN.md (hh-trajectory-svc scaffolding)
+**Stopped at:** Completed 13-04-PLAN.md (Shadow mode for ML validation)
 **Resume file:** None
 
-### Context for Next Session
+**Phase 13 Wave 2 COMPLETE (Plans 01-04):**
 
-**Phase 13 Plan 01 COMPLETE:**
+All 4 plans executed successfully:
 
-All 3 tasks executed successfully:
+**Plan 01 (Wave 1):** hh-trajectory-svc Scaffolding
+- 3 tasks, 3 commits (4aaf03e, 411c9ee, 642e7a5)
+- Service on port 7109 with health and predict routes
 
-- Task 1: Package configuration with onnxruntime-node dependency (Commit 4aaf03e)
-- Task 2: Core service files - config, types, index (Commit 411c9ee)
-- Task 3: Health/predict routes and Dockerfile (Commit 642e7a5)
+**Plan 02 (Wave 2):** ML Training Pipeline
+- 4 tasks, 4 commits (c186da5, d3740b9, b6a34c4, 896dca7)
+- Python LSTM training with ONNX export and calibration
+
+**Plan 03 (Wave 2):** ONNX Inference Engine
+- 3 tasks, 3 commits (896dca7, 603ee3f, 2c3aa7a)
+- TrajectoryPredictor with ONNX Runtime integration
+
+**Plan 04 (Wave 2):** Shadow Mode Infrastructure
+- 3 tasks, 3 commits (f470a18, bffd1b6, be39ca3)
+- Comparison logging with promotion readiness tracking
 
 **Key Deliverables:**
-- hh-trajectory-svc service on port 7109
-- Health endpoint returns service status and modelLoaded flag
-- Predict endpoint accepts career sequences, returns stub predictions
-- Multi-stage Dockerfile with proper user permissions
-- Lazy initialization pattern for future ONNX model loading
+- hh-trajectory-svc service fully functional
+- ONNX Runtime integration complete
+- Shadow mode for ML vs rule-based validation
+- GET /shadow/stats endpoint (promotion criteria: >85% direction, >80% velocity, >1000 comparisons)
+- Batch logging with 60-second auto-flush
 
 **Deviations:**
-- Fixed duplicate /ready route registration
-- Fixed under-pressure health check to throw error when model not loaded
+- None - all plans executed as written
+
+**Next:** Plan 05 (Wave 3) - Training data pipeline or next plan in sequence
+
 - Disabled auth and rate-limit temporarily (TODO: re-enable before production)
 - Fixed TypeScript type error in predict route error response
 
