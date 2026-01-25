@@ -1,7 +1,7 @@
 # Project State: Headhunter AI v2.0 Advanced Intelligence
 
 **Initialized:** 2026-01-24
-**Current Status:** Phase 12 In Progress - Plan 01 complete
+**Current Status:** Phase 12 In Progress - Plan 02 complete
 
 ---
 
@@ -24,13 +24,13 @@
 
 **Milestone:** v2.0 Advanced Intelligence
 **Phase:** 12 - Natural Language Search (IN PROGRESS)
-**Plan:** 1 of 5 executed
-**Status:** Plan 12-01 complete (Semantic Router Lite)
-**Last activity:** 2026-01-25 - Completed 12-01-PLAN.md (Intent classification)
+**Plan:** 2 of 5 executed
+**Status:** Plan 12-02 complete (Entity Extraction)
+**Last activity:** 2026-01-25 - Completed 12-02-PLAN.md (Entity Extraction)
 
-**Progress:** [##########] v1.0 100% | [##--------] v2.0 Phase 12: 20%
+**Progress:** [##########] v1.0 100% | [####------] v2.0 Phase 12: 40%
 
-**Next Action:** Execute 12-02-PLAN.md (Entity Extraction)
+**Next Action:** Execute 12-03-PLAN.md (Query Expansion)
 
 ---
 
@@ -39,7 +39,7 @@
 | Phase | Name | Status | Requirements | Progress |
 |-------|------|--------|--------------|----------|
 | 11 | Performance Foundation | Complete | 5 | 100% |
-| 12 | Natural Language Search | In Progress | 5 | 20% |
+| 12 | Natural Language Search | In Progress | 5 | 40% |
 | 13 | ML Trajectory Prediction | Pending | 5 | 0% |
 | 14 | Bias Reduction | Pending | 5 | 0% |
 | 15 | Compliance Tooling | Pending | 6 | 0% |
@@ -97,6 +97,9 @@
 | Semantic Router for NLP | 5-100ms vector-based routing, not LLM-based parsing | 12 |
 | Confidence threshold 0.6 default | Balances precision vs recall for intent classification | 12 |
 | Portuguese utterances in routes | Brazilian recruiter market support | 12 |
+| 150ms extraction timeout | Per RESEARCH.md latency budget, fallback to empty on timeout | 12 |
+| Post-extraction hallucination filter | Validate skills against query text instead of relying on LLM | 12 |
+| Bidirectional abbreviation matching | Support js->JavaScript and JavaScript->js lookups | 12 |
 | ONNX Runtime for inference | Sub-50ms CPU inference, no GPU dependency, portable | 13 |
 | Shadow mode for ML transition | 4-6 weeks side-by-side to validate ML matches rule-based baseline | 13 |
 | Fairlearn for bias metrics | Actively maintained, simpler API than AIF360 | 14 |
@@ -121,9 +124,10 @@
 
 **Phase 12 Deliverables (In Progress):**
 - IntentRouter class with semantic routing (NLNG-01)
+- EntityExtractor class with Together AI JSON mode (NLNG-02)
 - NLP types: IntentType, IntentRoute, ParsedQuery, ExtractedEntities
 - Vector utilities: cosineSimilarity, averageEmbeddings
-- 19 passing unit tests
+- 52 passing unit tests (19 intent + 33 entity)
 
 **v1.0 Deliverables:**
 - 3-stage pipeline with 500/100/50 funnel
@@ -148,7 +152,7 @@ None currently identified.
 - [x] Execute 11-05-PLAN.md (Performance tracking + backfill)
 - [x] Plan Phase 12 (Natural Language Search) - 5 plans created
 - [x] Execute 12-01-PLAN.md (Semantic Router Lite)
-- [ ] Execute 12-02-PLAN.md (Entity Extraction)
+- [x] Execute 12-02-PLAN.md (Entity Extraction)
 - [ ] Execute 12-03-PLAN.md (Query Expansion)
 - [ ] Execute 12-04-PLAN.md (Search Integration)
 - [ ] Execute 12-05-PLAN.md (Verification & Tuning)
@@ -166,28 +170,33 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 12-01-PLAN.md (Semantic Router Lite)
+**Stopped at:** Completed 12-02-PLAN.md (Entity Extraction)
 **Resume file:** None
 
 ### Context for Next Session
 
-**Phase 12 Plan 01 (Semantic Router Lite) COMPLETE:**
+**Phase 12 Plan 02 (Entity Extraction) COMPLETE:**
 
-All 3 tasks executed successfully:
+All 2 tasks executed successfully:
 
-- Task 1: NLP types and vector utilities - `1bf0a33`
-- Task 2: IntentRouter implementation - `ee702df`
-- Task 3: Unit tests (19 passing) - `3edaafc`
+- Task 1: EntityExtractor implementation - `6c33fdb`
+- Task 2: Unit tests (33 passing) - `b764b3f`
 
 **Deliverables:**
-- `services/hh-search-svc/src/nlp/types.ts` - NLP type definitions
-- `services/hh-search-svc/src/nlp/vector-utils.ts` - Cosine similarity and averaging
-- `services/hh-search-svc/src/nlp/intent-router.ts` - IntentRouter class
-- `services/hh-search-svc/src/nlp/__tests__/intent-router.spec.ts` - Unit tests
+- `services/hh-search-svc/src/nlp/entity-extractor.ts` - EntityExtractor class
+- `services/hh-search-svc/src/nlp/__tests__/entity-extractor.spec.ts` - Unit tests
+- `services/hh-search-svc/package.json` - Added together-ai@0.33.0
+
+**Key Features:**
+- Together AI JSON mode with schema enforcement
+- Hallucination filtering (validates skills against query)
+- Portuguese term normalization (pleno -> mid, gerente -> manager)
+- Abbreviation matching (js -> JavaScript, k8s -> Kubernetes)
+- 150ms timeout with graceful fallback
 
 **Ready for:**
-- 12-02: Entity Extraction (uses ParsedQuery, ExtractedEntities types)
-- 12-03: Query Expansion (uses skill ontology)
+- 12-03: Query Expansion (uses extracted skills for ontology lookup)
+- 12-04: Search Integration (orchestrates intent + extraction + expansion)
 
 ---
 
@@ -211,4 +220,4 @@ v2.0 Roadmap complete. 5 phases defined with 26 requirements mapped:
 ---
 
 *State initialized: 2026-01-24*
-*Last updated: 2026-01-25 - Completed Phase 12 Plan 01 (Semantic Router Lite)*
+*Last updated: 2026-01-25 - Completed Phase 12 Plan 02 (Entity Extraction)*
