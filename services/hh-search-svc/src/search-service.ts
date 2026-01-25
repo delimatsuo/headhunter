@@ -298,6 +298,47 @@ export class SearchService {
     let ranked = this.rankCandidates(candidates, request);
     timings.rankingMs = Date.now() - rankingStart;
 
+    // Log Phase 7 signal statistics for debugging
+    if (ranked.length > 0) {
+      const phase7Stats = {
+        avgSkillsExact: 0,
+        avgSkillsInferred: 0,
+        avgSeniority: 0,
+        avgRecency: 0,
+        avgCompanyRelevance: 0,
+        candidatesWithPhase7: 0
+      };
+
+      for (const r of ranked.slice(0, 20)) { // Sample top 20
+        if (r.signalScores?.skillsExactMatch !== undefined) {
+          phase7Stats.avgSkillsExact += r.signalScores.skillsExactMatch;
+          phase7Stats.avgSkillsInferred += r.signalScores.skillsInferred ?? 0;
+          phase7Stats.avgSeniority += r.signalScores.seniorityAlignment ?? 0;
+          phase7Stats.avgRecency += r.signalScores.recencyBoost ?? 0;
+          phase7Stats.avgCompanyRelevance += r.signalScores.companyRelevance ?? 0;
+          phase7Stats.candidatesWithPhase7++;
+        }
+      }
+
+      if (phase7Stats.candidatesWithPhase7 > 0) {
+        const n = phase7Stats.candidatesWithPhase7;
+        this.logger.info(
+          {
+            requestId: context.requestId,
+            phase7Signals: {
+              sampleSize: n,
+              avgSkillsExact: (phase7Stats.avgSkillsExact / n).toFixed(3),
+              avgSkillsInferred: (phase7Stats.avgSkillsInferred / n).toFixed(3),
+              avgSeniority: (phase7Stats.avgSeniority / n).toFixed(3),
+              avgRecency: (phase7Stats.avgRecency / n).toFixed(3),
+              avgCompanyRelevance: (phase7Stats.avgCompanyRelevance / n).toFixed(3)
+            }
+          },
+          'Phase 7 signal statistics computed.'
+        );
+      }
+    }
+
     const rerankOutcome = await this.applyRerankIfEnabled(context, request, ranked, limit);
 
     if (rerankOutcome) {
@@ -360,6 +401,15 @@ export class SearchService {
           textRank: r.textRank,
           // Individual signal scores
           signalScores: r.signalScores
+        })),
+        // Phase 7 signal breakdown
+        phase7Breakdown: ranked.slice(0, 5).map(r => ({
+          candidateId: r.candidateId,
+          skillsExactMatch: r.signalScores?.skillsExactMatch,
+          skillsInferred: r.signalScores?.skillsInferred,
+          seniorityAlignment: r.signalScores?.seniorityAlignment,
+          recencyBoost: r.signalScores?.recencyBoost,
+          companyRelevance: r.signalScores?.companyRelevance
         }))
       };
     }
