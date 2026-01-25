@@ -21,14 +21,14 @@
 
 ## Current Position
 
-**Phase:** 9 of 10 (Match Transparency) - COMPLETE
-**Plan:** 7 of 7 complete (09-01 through 09-07)
-**Status:** Phase complete, verified
-**Last activity:** 2026-01-25 - Completed Phase 9 (Match Transparency)
+**Phase:** 10 of 10 (Pipeline Integration) - IN PROGRESS
+**Plan:** 1 of 5 complete (10-01)
+**Status:** In progress
+**Last activity:** 2026-01-25 - Completed 10-01-PLAN.md (Pipeline Stage Configuration)
 
-**Progress:** [█████████░] 90%
+**Progress:** [█████████░] 92%
 
-**Next Action:** Begin Phase 10 (Pipeline Integration)
+**Next Action:** Execute 10-02 (Retrieval Stage Implementation)
 
 ---
 
@@ -45,9 +45,9 @@
 | 7 | Signal Scoring Implementation | Complete | 5/5 | 100% |
 | 8 | Career Trajectory | Complete | 4/4 | 100% |
 | 9 | Match Transparency | Complete | 7/7 | 100% |
-| 10 | Pipeline Integration | Pending | 0/? | 0% |
+| 10 | Pipeline Integration | In Progress | 1/5 | 20% |
 
-**Overall:** 9/10 phases complete (90%)
+**Overall:** 9.2/10 phases complete (92%)
 
 ---
 
@@ -152,6 +152,9 @@
 | 0.5 neutral default for missing signals | Matches backend convention for fair sorting | 9.04 |
 | 10% step for filter slider | Balances granularity with usability (10 positions) | 9.04 |
 | localStorage keys prefixed with hh_search_ | Namespace for localStorage to avoid collisions | 9.04 |
+| Default pipeline stages: 500/100/50 | Retrieval=500, scoring=100, rerank=50 for Phase 10 3-stage pipeline | 10.01 |
+| Minimum limits: 100/50/10 | Math.max guards prevent misconfiguration of empty result sets | 10.01 |
+| Pipeline logging enabled by default | pipelineLogStages=true for debugging and SLO tracking | 10.01 |
 
 ### Technical Notes
 
@@ -247,6 +250,9 @@
 - **5 sort options:** overall, skills, trajectory, recency, seniority (09-04)
 - **Filter by skillsExactMatch:** Threshold slider filters candidates below minimum (09-04)
 - **localStorage persistence:** Sort/filter preferences saved to localStorage (09-04)
+- **Pipeline stage config:** pipelineRetrievalLimit, pipelineScoringLimit, pipelineRerankLimit, pipelineLogStages (10-01)
+- **PipelineStageMetrics interface:** Tracks count and timing for retrieval, scoring, rerank stages (10-01)
+- **pipelineMetrics field:** Added to HybridSearchResponse for stage debugging (10-01)
 
 ### Blockers
 
@@ -297,8 +303,8 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 09-04-PLAN.md - Sort and Filter Controls (Phase 9 IN PROGRESS)
-**Resume file:** None - continue with remaining Phase 9 plans
+**Stopped at:** Completed 10-01-PLAN.md - Pipeline Stage Configuration (Phase 10 IN PROGRESS)
+**Resume file:** None - continue with 10-02 (Retrieval Stage Implementation)
 
 ### Context for Next Session
 
