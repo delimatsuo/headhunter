@@ -78,7 +78,7 @@ export interface SearchRuntimeConfig {
   rerankIncludeReasons: boolean;
   // RRF configuration
   rrfK: number;              // RRF k parameter, controls top-rank favoritism (default 60)
-  perMethodLimit: number;    // Candidates retrieved per search method before fusion (default 100)
+  perMethodLimit: number;    // Candidates retrieved per search method before fusion (default 300 for 500+ retrieval)
   enableRrf: boolean;        // Feature flag to toggle RRF vs weighted sum (default true)
   // Pipeline stage limits (PIPE-01)
   pipelineRetrievalLimit: number;  // Target retrieval count (default 500)
@@ -275,7 +275,7 @@ export function getSearchServiceConfig(): SearchServiceConfig {
     rerankIncludeReasons: parseBoolean(process.env.SEARCH_RERANK_INCLUDE_REASONS, true),
     // RRF configuration
     rrfK: Math.max(1, parseNumber(process.env.SEARCH_RRF_K, 60)),
-    perMethodLimit: Math.max(10, parseNumber(process.env.SEARCH_PER_METHOD_LIMIT, 100)),
+    perMethodLimit: Math.max(10, parseNumber(process.env.SEARCH_PER_METHOD_LIMIT, 300)),  // Increased from 100 to 300 for 500+ retrieval
     enableRrf: parseBoolean(process.env.SEARCH_ENABLE_RRF, true),
     // Pipeline stage limits (PIPE-01)
     pipelineRetrievalLimit: Math.max(100, parseNumber(process.env.PIPELINE_RETRIEVAL_LIMIT, 500)),
