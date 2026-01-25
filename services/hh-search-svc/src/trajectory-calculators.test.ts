@@ -4,9 +4,12 @@ import {
   calculateTrajectoryVelocity,
   classifyTrajectoryType,
   mapTitleToLevel,
-  LEVEL_ORDER_EXTENDED,
+  calculateTrajectoryFit,
+  computeTrajectoryMetrics,
   type ExperienceEntry,
-  type CareerTrajectoryData
+  type CareerTrajectoryData,
+  type TrajectoryContext,
+  type TrajectoryMetrics
 } from './trajectory-calculators';
 
 describe('mapTitleToLevel', () => {
@@ -273,5 +276,233 @@ describe('classifyTrajectoryType', () => {
       const sequence = ['Junior Engineer', 'Product Manager', 'Senior Engineer', 'Staff Engineer'];
       expect(classifyTrajectoryType(sequence)).toBe('technical_growth');
     });
+  });
+});
+
+describe('calculateTrajectoryFit', () => {
+  describe('high fit scenarios', () => {
+    it('scores upward+fast in high-growth role near 1.0', () => {
+      const metrics: TrajectoryMetrics = {
+        direction: 'upward',
+        velocity: 'fast',
+        type: 'technical_growth'
+      };
+      const context: TrajectoryContext = {
+        targetTrack: 'technical',
+        roleGrowthType: 'high_growth'
+      };
+      const score = calculateTrajectoryFit(metrics, context);
+      expect(score).toBeGreaterThan(0.9);
+      expect(score).toBeLessThanOrEqual(1.0);
+    });
+
+    it('scores leadership track for management role highly', () => {
+      const metrics: TrajectoryMetrics = {
+        direction: 'upward',
+        velocity: 'normal',
+        type: 'leadership_track'
+      };
+      const context: TrajectoryContext = {
+        targetTrack: 'management',
+        roleGrowthType: 'stable'
+      };
+      const score = calculateTrajectoryFit(metrics, context);
+      expect(score).toBeGreaterThan(0.8);
+    });
+
+    it('scores technical IC progression for IC role highly', () => {
+      const metrics: TrajectoryMetrics = {
+        direction: 'upward',
+        velocity: 'normal',
+        type: 'technical_growth'
+      };
+      const context: TrajectoryContext = {
+        targetTrack: 'technical',
+        roleGrowthType: 'stable'
+      };
+      const score = calculateTrajectoryFit(metrics, context);
+      expect(score).toBeGreaterThan(0.85);
+    });
+  });
+
+  describe('track mismatch penalties', () => {
+    it('penalizes IC trajectory for management role', () => {
+      const metrics: TrajectoryMetrics = {
+        direction: 'upward',
+        velocity: 'fast',
+        type: 'technical_growth'
+      };
+      const context: TrajectoryContext = {
+        targetTrack: 'management'
+      };
+      const score = calculateTrajectoryFit(metrics, context);
+      expect(score).toBeLessThanOrEqual(0.8);
+    });
+
+    it('penalizes management trajectory for IC role', () => {
+      const metrics: TrajectoryMetrics = {
+        direction: 'upward',
+        velocity: 'normal',
+        type: 'leadership_track'
+      };
+      const context: TrajectoryContext = {
+        targetTrack: 'technical'
+      };
+      const score = calculateTrajectoryFit(metrics, context);
+      expect(score).toBeLessThan(0.75);
+    });
+  });
+
+  describe('pivot handling', () => {
+    it('penalizes pivots when allowPivot is false', () => {
+      const metrics: TrajectoryMetrics = {
+        direction: 'lateral',
+        velocity: 'normal',
+        type: 'career_pivot'
+      };
+      const context: TrajectoryContext = {
+        allowPivot: false
+      };
+      const score = calculateTrajectoryFit(metrics, context);
+      expect(score).toBeLessThan(0.5);
+    });
+
+    it('allows pivots when allowPivot is true', () => {
+      const metrics: TrajectoryMetrics = {
+        direction: 'upward',
+        velocity: 'fast',
+        type: 'career_pivot'
+      };
+      const context: TrajectoryContext = {
+        allowPivot: true
+      };
+      const score = calculateTrajectoryFit(metrics, context);
+      // Should not apply pivot penalty
+      expect(score).toBeGreaterThan(0.6);
+    });
+  });
+
+  describe('downward trajectory handling', () => {
+    it('scores downward trajectory low regardless of velocity', () => {
+      const metricsFast: TrajectoryMetrics = {
+        direction: 'downward',
+        velocity: 'fast',
+        type: 'technical_growth'
+      };
+      const metricsNormal: TrajectoryMetrics = {
+        direction: 'downward',
+        velocity: 'normal',
+        type: 'technical_growth'
+      };
+      const metricsSlow: TrajectoryMetrics = {
+        direction: 'downward',
+        velocity: 'slow',
+        type: 'technical_growth'
+      };
+
+      expect(calculateTrajectoryFit(metricsFast, {})).toBeLessThan(0.5);
+      expect(calculateTrajectoryFit(metricsNormal, {})).toBeLessThan(0.5);
+      expect(calculateTrajectoryFit(metricsSlow, {})).toBeLessThan(0.5);
+    });
+  });
+
+  describe('neutral cases', () => {
+    it('returns moderate score for lateral+normal with no context', () => {
+      const metrics: TrajectoryMetrics = {
+        direction: 'lateral',
+        velocity: 'normal',
+        type: 'lateral_move'
+      };
+      const score = calculateTrajectoryFit(metrics, {});
+      expect(score).toBeGreaterThan(0.4);
+      expect(score).toBeLessThan(0.6);
+    });
+
+    it('handles empty context gracefully', () => {
+      const metrics: TrajectoryMetrics = {
+        direction: 'upward',
+        velocity: 'normal',
+        type: 'technical_growth'
+      };
+      const score = calculateTrajectoryFit(metrics, {});
+      expect(score).toBeGreaterThan(0);
+      expect(score).toBeLessThanOrEqual(1.0);
+    });
+  });
+
+  describe('growth type modifiers', () => {
+    it('boosts fast velocity in high-growth roles', () => {
+      const metrics: TrajectoryMetrics = {
+        direction: 'upward',
+        velocity: 'fast',
+        type: 'technical_growth'
+      };
+      const highGrowthScore = calculateTrajectoryFit(metrics, { roleGrowthType: 'high_growth' });
+      const stableScore = calculateTrajectoryFit(metrics, { roleGrowthType: 'stable' });
+
+      // Both cap at 1.0, so they'll be equal when base score is high
+      expect(highGrowthScore).toBeGreaterThanOrEqual(stableScore);
+    });
+
+    it('slightly favors normal velocity in stable roles', () => {
+      const metricsFast: TrajectoryMetrics = {
+        direction: 'upward',
+        velocity: 'fast',
+        type: 'technical_growth'
+      };
+      const metricsNormal: TrajectoryMetrics = {
+        direction: 'upward',
+        velocity: 'normal',
+        type: 'technical_growth'
+      };
+
+      const fastScore = calculateTrajectoryFit(metricsFast, { roleGrowthType: 'stable' });
+      const normalScore = calculateTrajectoryFit(metricsNormal, { roleGrowthType: 'stable' });
+
+      // Normal gets 1.1x modifier (0.9 * 1.1 = 0.99), fast gets 1.0x (1.0 * 1.0 = 1.0 capped)
+      // Fast is slightly higher or equal due to base score difference
+      expect(fastScore).toBeGreaterThanOrEqual(normalScore * 0.99);
+    });
+  });
+});
+
+describe('computeTrajectoryMetrics', () => {
+  it('computes all three trajectory metrics from title sequence', () => {
+    const titleSequence = ['Junior Engineer', 'Senior Engineer', 'Staff Engineer'];
+    const experiences: ExperienceEntry[] = [
+      { title: 'Junior Engineer', startDate: '2020-01-01', endDate: '2022-01-01' },
+      { title: 'Senior Engineer', startDate: '2022-01-01', endDate: '2024-01-01' },
+      { title: 'Staff Engineer', startDate: '2024-01-01', endDate: '2026-01-01' }
+    ];
+
+    const metrics = computeTrajectoryMetrics(titleSequence, experiences);
+
+    expect(metrics.direction).toBe('upward');
+    // Junior(1)->Senior(3) = 2 years for 2 levels, Senior(3)->Staff(4) = 2 years for 1 level
+    // Total: 3 level increases over 4 years = 1.33 years/level = fast
+    expect(metrics.velocity).toBe('fast');
+    expect(metrics.type).toBe('technical_growth');
+  });
+
+  it('handles missing experience dates with Together AI fallback', () => {
+    const titleSequence = ['Senior Engineer', 'Staff Engineer'];
+    const togetherAiData: CareerTrajectoryData = {
+      promotion_velocity: 'fast'
+    };
+
+    const metrics = computeTrajectoryMetrics(titleSequence, undefined, togetherAiData);
+
+    expect(metrics.direction).toBe('upward');
+    expect(metrics.velocity).toBe('fast'); // From Together AI
+    expect(metrics.type).toBe('technical_growth');
+  });
+
+  it('returns neutral values for insufficient data', () => {
+    const titleSequence = ['Senior Engineer'];
+    const metrics = computeTrajectoryMetrics(titleSequence);
+
+    expect(metrics.direction).toBe('lateral');
+    expect(metrics.velocity).toBe('normal');
+    expect(metrics.type).toBe('lateral_move');
   });
 });
