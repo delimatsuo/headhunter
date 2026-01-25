@@ -117,6 +117,28 @@ export interface FirestoreFallbackConfig {
 }
 
 /**
+ * NLP Search configuration for natural language query parsing.
+ * Controls intent classification, entity extraction, and query expansion.
+ * @see Phase 12: Natural Language Search
+ */
+export interface NLPSearchConfig {
+  /** Enable NLP parsing (default: true) */
+  enabled: boolean;
+  /** Confidence threshold for intent classification (default: 0.6) */
+  intentConfidenceThreshold: number;
+  /** Timeout for entity extraction LLM call in ms (default: 100) */
+  extractionTimeoutMs: number;
+  /** Cache extraction results in memory (default: true) */
+  cacheExtractionResults: boolean;
+  /** Enable skill expansion using ontology (default: true) */
+  enableQueryExpansion: boolean;
+  /** Graph traversal depth for skill expansion (default: 1) */
+  expansionDepth: number;
+  /** Min confidence for expanded skills (default: 0.8) */
+  expansionConfidenceThreshold: number;
+}
+
+/**
  * Signal weight environment configuration for multi-signal scoring.
  * These values provide defaults that can be overridden via request or role-type presets.
  */
@@ -148,6 +170,7 @@ export interface SearchServiceConfig {
   search: SearchRuntimeConfig;
   firestoreFallback: FirestoreFallbackConfig;
   signalWeights: SignalWeightEnvConfig;
+  nlp: NLPSearchConfig;
 }
 
 let cachedConfig: SearchServiceConfig | null = null;
@@ -323,6 +346,17 @@ export function getSearchServiceConfig(): SearchServiceConfig {
     geminiBlendWeight: parseNumber(process.env.GEMINI_BLEND_WEIGHT, 0.7)
   };
 
+  // NLP configuration for natural language query parsing (Phase 12)
+  const nlp: NLPSearchConfig = {
+    enabled: parseBoolean(process.env.NLP_SEARCH_ENABLED, true),
+    intentConfidenceThreshold: parseNumber(process.env.NLP_INTENT_CONFIDENCE_THRESHOLD, 0.6),
+    extractionTimeoutMs: parseNumber(process.env.NLP_EXTRACTION_TIMEOUT_MS, 100),
+    cacheExtractionResults: parseBoolean(process.env.NLP_CACHE_EXTRACTION, true),
+    enableQueryExpansion: parseBoolean(process.env.NLP_QUERY_EXPANSION_ENABLED, true),
+    expansionDepth: Math.max(1, parseNumber(process.env.NLP_EXPANSION_DEPTH, 1)),
+    expansionConfidenceThreshold: parseNumber(process.env.NLP_EXPANSION_CONFIDENCE_THRESHOLD, 0.8)
+  };
+
   cachedConfig = {
     base,
     embed,
@@ -331,7 +365,8 @@ export function getSearchServiceConfig(): SearchServiceConfig {
     rerank,
     search,
     firestoreFallback,
-    signalWeights
+    signalWeights,
+    nlp
   };
 
   // Production security validation
