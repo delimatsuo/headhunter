@@ -254,11 +254,11 @@ export function getSearchServiceConfig(): SearchServiceConfig {
     embeddingsTable: validateTableName(process.env.PGVECTOR_EMBEDDINGS_TABLE ?? 'candidate_embeddings', 'embeddings'),
     profilesTable: validateTableName(process.env.PGVECTOR_PROFILES_TABLE ?? 'candidate_profiles', 'profiles'),
     dimensions: Math.max(32, parseNumber(process.env.PGVECTOR_DIMENSIONS, 768)),
-    poolMax: parseNumber(process.env.PGVECTOR_POOL_MAX, 10),
-    poolMin: parseNumber(process.env.PGVECTOR_POOL_MIN, 0),
-    idleTimeoutMs: parseNumber(process.env.PGVECTOR_IDLE_TIMEOUT_MS, 30_000),
-    connectionTimeoutMs: parseNumber(process.env.PGVECTOR_CONNECTION_TIMEOUT_MS, 5_000),
-    statementTimeoutMs: parseNumber(process.env.PGVECTOR_STATEMENT_TIMEOUT_MS, 30_000),
+    poolMax: parseNumber(process.env.PGVECTOR_POOL_MAX, 20),
+    poolMin: parseNumber(process.env.PGVECTOR_POOL_MIN, 5),
+    idleTimeoutMs: parseNumber(process.env.PGVECTOR_IDLE_TIMEOUT_MS, 60_000),
+    connectionTimeoutMs: parseNumber(process.env.PGVECTOR_CONNECTION_TIMEOUT_MS, 3_000),
+    statementTimeoutMs: parseNumber(process.env.PGVECTOR_STATEMENT_TIMEOUT_MS, 10_000),
     hnswEfSearch,
     enableAutoMigrate: parseBoolean(process.env.ENABLE_AUTO_MIGRATE, false)
   };
