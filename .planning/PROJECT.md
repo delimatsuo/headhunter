@@ -8,15 +8,30 @@ An AI-powered recruitment analytics system that helps recruiters find the right 
 
 **Find candidates who are actually qualified, not just candidates who happen to have the right keywords.** When search returns results, they should be people a recruiter would actually want to contact.
 
+## Current Milestone: v2.0 Advanced Intelligence
+
+**Goal:** Add predictive trajectory modeling, natural language search, and compliance tooling to the leader-level search foundation.
+
+**Target features:**
+- RNN-based career trajectory prediction ("Support → QA → Backend → ?")
+- Natural language search interface for recruiters
+- Bias reduction and compliance tools (NYC Local Law 144, EU AI Act)
+- Performance optimization for sub-500ms latency
+
 ## Requirements
 
 ### Validated
 
-These capabilities exist and are working in the current codebase:
+v1.0 capabilities (shipped and verified):
 
+- ✓ 3-stage pipeline: retrieval (500+) → scoring (100) → reranking (50) — v1.0
+- ✓ Hybrid search: Vector + BM25 with RRF fusion — v1.0
+- ✓ Multi-signal scoring: 8 weighted signals — v1.0
+- ✓ Skills intelligence: 468 skills with inference and transferability — v1.0
+- ✓ Career trajectory: direction, velocity, fit scoring — v1.0
+- ✓ Match transparency: score breakdowns, skill chips, LLM rationale — v1.0
 - ✓ Hybrid search combining vector embeddings with text search — existing
 - ✓ LLM-based reranking via Together AI or Gemini — existing
-- ✓ Candidate profile enrichment with career trajectory data — existing
 - ✓ Multi-tenant isolation via JWT authentication — existing
 - ✓ Embedding generation via Gemini/VertexAI — existing
 - ✓ Redis caching for rerank results — existing
@@ -27,16 +42,19 @@ These capabilities exist and are working in the current codebase:
 
 ### Active
 
-These are the improvements we're building to achieve leader-level search:
+v2.0 improvements:
 
-- [ ] Remove hard filters that exclude candidates with missing data
-- [ ] Implement multi-signal scoring (8 weighted signals instead of pass/fail)
-- [ ] Add career trajectory analysis to predict candidate potential
-- [ ] Build skills inference using EllaAI taxonomy (200+ skills with adjacency graph)
-- [ ] Implement hybrid BM25 + vector search for better recall
-- [ ] 3-stage search pipeline: broad retrieval → scoring → LLM reranking
-- [ ] Treat missing data as neutral signal (0.5 score) not exclusion
-- [ ] Surface transferable skills from related skill relationships
+- [ ] RNN-based next-title prediction for career trajectory
+- [ ] Hireability prediction (will they join a company like ours?)
+- [ ] Success signal detection from career patterns
+- [ ] Natural language search interface for recruiters
+- [ ] Query auto-classification into structured parameters
+- [ ] Anonymization mode for bias reduction
+- [ ] Diversity indicators in search results
+- [ ] Bias audit tooling for compliance
+- [ ] p95 latency under 500ms (vs current 1.2s target)
+- [ ] Embedding pre-computation for entire candidate pool
+- [ ] Real-time scoring cache invalidation
 
 ### Out of Scope
 
@@ -44,6 +62,8 @@ These are the improvements we're building to achieve leader-level search:
 - Candidate application tracking — this is search/discovery, not ATS
 - Job posting/requisition management — out of scope for search improvements
 - Mobile native app — web-first approach
+- Agentic AI (autonomous outreach) — requires outreach integration
+- Multi-channel sourcing (GitHub, etc.) — focus on existing candidates first
 
 ## Context
 
@@ -72,10 +92,11 @@ These are the improvements we're building to achieve leader-level search:
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Use EllaAI skills taxonomy | Already built, 200+ skills with adjacency graph | — Pending |
-| 3-stage pipeline over single pass | Industry research shows this is how leaders build search | — Pending |
-| Scoring-first over filter-first | Filters exclude potential matches; scoring includes with lower weight | — Pending |
-| Copy skills-master.ts to headhunter | Maintain local copy for customization | — Pending |
+| Use EllaAI skills taxonomy | Already built, 200+ skills with adjacency graph | ✓ Good |
+| 3-stage pipeline over single pass | Industry research shows this is how leaders build search | ✓ Good |
+| Scoring-first over filter-first | Filters exclude potential matches; scoring includes with lower weight | ✓ Good |
+| Copy skills-master.ts to headhunter | Maintain local copy for customization | ✓ Good |
+| Rule-based trajectory (v1) | Explainable, sufficient per research; ML for v2 | ✓ Good |
 
 ---
-*Last updated: 2026-01-24 after initialization*
+*Last updated: 2026-01-25 after v1.0 completion, v2.0 milestone started*
