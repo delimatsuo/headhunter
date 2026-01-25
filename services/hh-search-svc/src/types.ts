@@ -49,6 +49,24 @@ export interface HybridSearchRequest {
    * Defaults to 10.
    */
   rationaleLimit?: number;
+
+  /**
+   * Enable natural language query parsing.
+   * When true, the query will be parsed to extract:
+   * - Role, skills, seniority, location, experience years
+   * - Skills will be expanded using ontology
+   * If parsing fails or confidence is low, falls back to keyword search.
+   * @default false
+   * @see NLNG-05
+   */
+  enableNlp?: boolean;
+
+  /**
+   * Override NLP confidence threshold for this request.
+   * Queries with lower confidence will fall back to keyword search.
+   * @default 0.6
+   */
+  nlpConfidenceThreshold?: number;
 }
 
 export interface CandidateSkillMatch {
@@ -162,6 +180,48 @@ export interface HybridSearchTimings {
   // Parallel execution metrics (PERF-03)
   preSearchMs?: number;
   parallelSavingsMs?: number;
+  /** NLP parsing time in ms (NLNG-05) */
+  nlpMs?: number;
+}
+
+/**
+ * NLP parsing metadata included in response when enableNlp is true.
+ * @see NLNG-05: NLP integration in search pipeline
+ */
+export interface NLPParseResult {
+  /** Whether NLP parsing was used or fell back to keyword */
+  parseMethod: 'nlp' | 'keyword_fallback';
+
+  /** Intent classification result */
+  intent: 'structured_search' | 'similarity_search' | 'keyword_fallback';
+
+  /** Confidence score of intent classification (0-1) */
+  confidence: number;
+
+  /** Entities extracted from query */
+  entities: {
+    role?: string;
+    skills: string[];
+    expandedSkills: string[];
+    seniority?: string;
+    location?: string;
+    remote?: boolean;
+    experienceYears?: { min?: number; max?: number };
+  };
+
+  /** Semantic expansions applied (Lead -> Senior/Staff/Principal) */
+  semanticExpansion?: {
+    expandedSeniorities: string[];
+    expandedRoles: string[];
+  };
+
+  /** Timing breakdown for NLP operations */
+  timings: {
+    intentMs: number;
+    extractionMs: number;
+    expansionMs: number;
+    totalMs: number;
+  };
 }
 
 /**
