@@ -19,12 +19,18 @@ import {
   detectCompanyTier,
   type CandidateExperience
 } from './signal-calculators';
+import {
+  calculateTrajectoryFit,
+  computeTrajectoryMetrics,
+  type TrajectoryContext,
+  type ExperienceEntry
+} from './trajectory-calculators';
 
 // Re-export SignalScores for convenience
 export type { SignalScores } from './types';
 
 /**
- * Search context for Phase 7 signal computation.
+ * Search context for Phase 7+ signal computation.
  * Provides the query-side data needed to compute match scores.
  */
 export interface SignalComputationContext {
@@ -34,6 +40,11 @@ export interface SignalComputationContext {
   targetCompanies?: string[];
   targetIndustries?: string[];
   roleType?: 'executive' | 'manager' | 'ic' | 'default';
+
+  // Phase 8: Trajectory context
+  targetTrack?: 'technical' | 'management';
+  roleGrowthType?: 'high_growth' | 'stable' | 'turnaround';
+  allowPivot?: boolean;
 }
 
 /**
@@ -195,6 +206,51 @@ export function extractSignalScores(
         targetIndustries: signalContext.targetIndustries
       }
     );
+
+    // Phase 8: Trajectory fit scoring (TRAJ-03)
+    // Extract title sequence from experience
+    const titleSequence = candidateExperience
+      .sort((a, b) => {
+        const aTime = a.startDate ? new Date(a.startDate).getTime() : 0;
+        const bTime = b.startDate ? new Date(b.startDate).getTime() : 0;
+        return aTime - bTime;
+      })
+      .map(exp => exp.title)
+      .filter(Boolean);
+
+    if (titleSequence.length >= 2) {
+      // Convert CandidateExperience[] to ExperienceEntry[] for velocity calculation
+      const experienceEntries: ExperienceEntry[] = candidateExperience.map(exp => {
+        const startDate = exp.startDate instanceof Date
+          ? exp.startDate.toISOString()
+          : exp.startDate;
+        const endDate = exp.endDate instanceof Date
+          ? exp.endDate.toISOString()
+          : typeof exp.endDate === 'string'
+          ? exp.endDate
+          : undefined;
+
+        return { title: exp.title, startDate, endDate };
+      });
+
+      const togetherAiData = extractTogetherAITrajectory(row);
+
+      // Compute trajectory metrics
+      const metrics = computeTrajectoryMetrics(titleSequence, experienceEntries, togetherAiData);
+
+      // Build trajectory context from signal context
+      const trajectoryContext: TrajectoryContext = {
+        targetTrack: signalContext.targetTrack || inferTargetTrack(signalContext.roleType),
+        roleGrowthType: signalContext.roleGrowthType,
+        allowPivot: signalContext.allowPivot
+      };
+
+      // Calculate trajectory fit score
+      const trajectoryFitScore = calculateTrajectoryFit(metrics, trajectoryContext);
+
+      // Override the Phase 2 trajectory score with Phase 8 computed value
+      scores.trajectoryFit = trajectoryFitScore;
+    }
   }
 
   return scores;
@@ -328,4 +384,37 @@ function extractCandidateExperience(row: PgHybridSearchRow): CandidateExperience
   }
 
   return experience;
+}
+
+/**
+ * Extract Together AI trajectory data from metadata
+ */
+function extractTogetherAITrajectory(row: PgHybridSearchRow) {
+  const metadata = row.metadata as Record<string, unknown> | null;
+
+  if (metadata?.intelligent_analysis) {
+    const analysis = metadata.intelligent_analysis as Record<string, unknown>;
+    if (analysis.career_trajectory_analysis) {
+      const trajectory = analysis.career_trajectory_analysis as Record<string, unknown>;
+      return {
+        promotion_velocity: trajectory.promotion_velocity as 'fast' | 'normal' | 'slow' | undefined,
+        current_level: trajectory.current_level as string | undefined,
+        trajectory_type: trajectory.trajectory_type as string | undefined
+      };
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Infer target track from role type or job description.
+ * Defaults to 'technical' for IC roles, 'management' for manager/executive.
+ */
+function inferTargetTrack(
+  roleType?: 'executive' | 'manager' | 'ic' | 'default'
+): 'technical' | 'management' | undefined {
+  if (!roleType || roleType === 'default') return undefined;
+  if (roleType === 'ic') return 'technical';
+  return 'management'; // executive or manager
 }
