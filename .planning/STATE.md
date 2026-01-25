@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 9 (Match Transparency) COMPLETE - All transparency features built. Ready for Phase 10.
+**Current Focus:** Phase 10 (Pipeline Integration) IN PROGRESS - 4 of 5 plans complete. Pipeline optimized for 500+ retrieval.
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -22,13 +22,13 @@
 ## Current Position
 
 **Phase:** 10 of 10 (Pipeline Integration) - IN PROGRESS
-**Plan:** 3 of 5 complete (10-03)
+**Plan:** 4 of 5 complete (10-04)
 **Status:** In progress
-**Last activity:** 2026-01-25 - Completed 10-03-PLAN.md (Pipeline Metrics)
+**Last activity:** 2026-01-25 - Completed 10-04-PLAN.md (Pipeline Optimization)
 
-**Progress:** [█████████░] 96%
+**Progress:** [█████████░] 98%
 
-**Next Action:** Execute 10-04 (Pipeline Optimization)
+**Next Action:** Execute 10-05 (End-to-End Verification)
 
 ---
 
@@ -45,9 +45,9 @@
 | 7 | Signal Scoring Implementation | Complete | 5/5 | 100% |
 | 8 | Career Trajectory | Complete | 4/4 | 100% |
 | 9 | Match Transparency | Complete | 7/7 | 100% |
-| 10 | Pipeline Integration | In Progress | 3/5 | 60% |
+| 10 | Pipeline Integration | In Progress | 4/5 | 80% |
 
-**Overall:** 9.6/10 phases complete (96%)
+**Overall:** 9.8/10 phases complete (98%)
 
 ---
 
@@ -162,6 +162,8 @@
 | Include pipeline metrics in every response | pipelineMetrics field for SLO tracking and monitoring | 10.03 |
 | Pipeline breakdown in debug output | Detailed stage transitions with inputs/outputs/cutoffs for troubleshooting | 10.03 |
 | Single summary log for pipeline funnel | One log line showing complete flow: retrieval(N) → scoring(M) → rerank(K) | 10.03 |
+| perMethodLimit raised to 300 | Increased from 100 to enable 500+ retrieval via RRF fusion of vector+FTS results | 10.04 |
+| Static verification workflow | Grep-based verification of pipeline structure when runtime testing unavailable | 10.04 |
 
 ### Technical Notes
 
@@ -266,6 +268,8 @@
 - **Pipeline metrics in response:** pipelineMetrics included in HybridSearchResponse for monitoring (10-03)
 - **Pipeline breakdown in debug:** pipelineBreakdown with stage inputs/outputs/cutoffs for troubleshooting (10-03)
 - **Pipeline summary log:** Single log line showing complete funnel: retrieval(N) → scoring(M) → rerank(K) (10-03)
+- **perMethodLimit optimized:** Raised from 100 to 300 for 500+ retrieval capacity (10-04)
+- **Static pipeline verification:** Grep-based structure verification confirms all 3 stages implemented (10-04)
 
 ### Blockers
 
@@ -316,12 +320,12 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 10-02-PLAN.md - 3-Stage Pipeline Implementation (Phase 10 IN PROGRESS)
-**Resume file:** None - continue with 10-03 (Scoring Stage Implementation)
+**Stopped at:** Completed 10-04-PLAN.md - Pipeline Optimization (Phase 10 IN PROGRESS)
+**Resume file:** None - continue with 10-05 (End-to-End Verification)
 
 ### Context for Next Session
 
-Phase 9 (Match Transparency) IN PROGRESS. Plans 01, 02, 03, 04 complete:
+Phase 10 (Pipeline Integration) IN PROGRESS. Plans 01, 02, 03, 04 complete:
 
 | Plan | Name | Status | Commits |
 |------|------|--------|---------|
@@ -547,7 +551,8 @@ All Phase 9 commits (complete):
 All Phase 10 commits (in progress):
 - 10-01: cf15bcf, b0c87ce
 - 10-02: e6ad20f, d1745e7
-- 10-03: a1a7acb
+- 10-03: a1a7acb, 8149880
+- 10-04: 03f0b4e
 
 ---
 
