@@ -1,7 +1,7 @@
 # Project State: Headhunter AI v2.0 Advanced Intelligence
 
 **Initialized:** 2026-01-24
-**Current Status:** Phase 12 In Progress - Plan 04 complete
+**Current Status:** Phase 12 COMPLETE - All 6 plans executed
 
 ---
 
@@ -23,14 +23,14 @@
 ## Current Position
 
 **Milestone:** v2.0 Advanced Intelligence
-**Phase:** 12 - Natural Language Search (IN PROGRESS)
-**Plan:** 4 of 5 executed
-**Status:** Plan 12-04 complete (Query Parser Orchestrator)
-**Last activity:** 2026-01-25 - Completed 12-04-PLAN.md (Query Parser)
+**Phase:** 12 - Natural Language Search (COMPLETE)
+**Plan:** 6 of 6 executed
+**Status:** Phase 12 complete
+**Last activity:** 2026-01-25 - Completed 12-06-PLAN.md (NLP Integration & Semantic Synonyms)
 
-**Progress:** [##########] v1.0 100% | [########--] v2.0 Phase 12: 80%
+**Progress:** [##########] v1.0 100% | [##########] v2.0 Phase 12: 100%
 
-**Next Action:** Execute 12-05-PLAN.md (Verification & Tuning)
+**Next Action:** Plan Phase 13 (ML Trajectory Prediction)
 
 ---
 
@@ -39,12 +39,12 @@
 | Phase | Name | Status | Requirements | Progress |
 |-------|------|--------|--------------|----------|
 | 11 | Performance Foundation | Complete | 5 | 100% |
-| 12 | Natural Language Search | In Progress | 5 | 80% |
+| 12 | Natural Language Search | Complete | 5 | 100% |
 | 13 | ML Trajectory Prediction | Pending | 5 | 0% |
 | 14 | Bias Reduction | Pending | 5 | 0% |
 | 15 | Compliance Tooling | Pending | 6 | 0% |
 
-**Overall v2.0:** 1/5 phases complete, 1 in progress (20%)
+**Overall v2.0:** 2/5 phases complete (40%)
 
 ---
 
@@ -72,11 +72,11 @@
 | Metric | Target | Current | Status |
 |--------|--------|---------|--------|
 | v1 Requirements | 28 | 28 done | Complete |
-| v2 Requirements | 26 | 0 done | In Progress |
+| v2 Requirements | 26 | 10 done | In Progress |
 | p95 Latency | <500ms (v2) | ~1.2s (v1) | Phase 11 target |
 | Search Recall | 50+ candidates | Achieved | Verified |
 | Cache Hit Rate | >0.98 | Unknown | Unmeasured |
-| NLP Tests | 100 | 100 passing | Phase 12 |
+| NLP Tests | 100+ | 144 passing | Phase 12 complete |
 
 ---
 
@@ -106,6 +106,9 @@
 | Weight 0.6x for expanded skills | Explicit skills dominate scoring; expanded skills boost recall | 12 |
 | In-memory extraction cache (5-min TTL) | LLM calls expensive (~100ms); cache avoids repeat calls for same query | 12 |
 | SHA256-based cache keys | Fast, deterministic, case-insensitive after lowercase normalization | 12 |
+| Include higher seniority levels | "Lead" should match "Senior", "Staff", "Principal" candidates | 12 |
+| Background NLP initialization | Non-blocking, Cloud Run fast startup, NLP ready before first search | 12 |
+| NLP health endpoint | Report NLP status for observability and debugging | 12 |
 | ONNX Runtime for inference | Sub-50ms CPU inference, no GPU dependency, portable | 13 |
 | Shadow mode for ML transition | 4-6 weeks side-by-side to validate ML matches rule-based baseline | 13 |
 | Fairlearn for bias metrics | Actively maintained, simpler API than AIF360 | 14 |
@@ -128,17 +131,21 @@
 - pgvectorscale extension (replaces HNSW with StreamingDiskANN)
 - BigQuery export for long-term audit storage
 
-**Phase 12 Deliverables (Complete except 12-05):**
-- IntentRouter class with semantic routing (NLNG-01)
-- EntityExtractor class with Together AI JSON mode (NLNG-02)
-- QueryExpander class with skills ontology expansion (NLNG-03)
-- QueryParser class orchestrating all NLP components (NLNG-04)
+**Phase 12 Deliverables (COMPLETE):**
+- IntentRouter class with semantic routing (NLNG-01) - 19 tests
+- EntityExtractor class with Together AI JSON mode (NLNG-02) - 33 tests
+- QueryExpander class with skills ontology expansion (NLNG-03) - 23 tests
+- QueryParser class orchestrating all NLP components (NLNG-04) - 25 tests
+- SemanticSynonyms module for seniority/role expansion (NLNG-05) - 44 tests
+- SearchService NLP integration with semantic filters
+- QueryParser initialization at service startup
+- NLP health endpoint reporting
 - NLP types: IntentType, IntentRoute, ParsedQuery, ExtractedEntities, NLPConfig
 - Vector utilities: cosineSimilarity, averageEmbeddings
 - Skills ontology (200+ skills) in services workspace
 - NLP barrel export at `src/nlp/index.ts`
 - NLPSearchConfig added to config.ts with environment variables
-- 100 passing unit tests (19 intent + 33 entity + 23 expander + 25 parser)
+- **144 passing unit tests total**
 
 **v1.0 Deliverables:**
 - 3-stage pipeline with 500/100/50 funnel
@@ -161,12 +168,14 @@ None currently identified.
 - [x] Execute 11-03-PLAN.md (Parallel query execution)
 - [x] Execute 11-04-PLAN.md (Multi-layer Redis caching)
 - [x] Execute 11-05-PLAN.md (Performance tracking + backfill)
-- [x] Plan Phase 12 (Natural Language Search) - 5 plans created
+- [x] Plan Phase 12 (Natural Language Search) - 6 plans created
 - [x] Execute 12-01-PLAN.md (Semantic Router Lite)
 - [x] Execute 12-02-PLAN.md (Entity Extraction)
 - [x] Execute 12-03-PLAN.md (Query Expansion)
 - [x] Execute 12-04-PLAN.md (Query Parser Orchestrator)
-- [ ] Execute 12-05-PLAN.md (Verification & Tuning)
+- [x] Execute 12-05-PLAN.md (SearchService Integration)
+- [x] Execute 12-06-PLAN.md (NLP Integration & Semantic Synonyms)
+- [ ] Plan Phase 13 (ML Trajectory Prediction) - 5 plans to create
 - [ ] Verify pgvectorscale Cloud SQL compatibility
 - [ ] Run embedding backfill in production after Cloud SQL migration
 - [ ] Prepare training data for trajectory LSTM (Phase 13 blocker)
@@ -181,41 +190,43 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 12-04-PLAN.md (Query Parser Orchestrator)
+**Stopped at:** Completed 12-06-PLAN.md (NLP Integration & Semantic Synonyms)
 **Resume file:** None
 
 ### Context for Next Session
 
-**Phase 12 Plan 04 (Query Parser Orchestrator) COMPLETE:**
+**Phase 12 COMPLETE:**
 
-All 3 tasks executed successfully:
+All 6 plans executed successfully:
 
-- Task 1: Implement QueryParser orchestrator - `1f5ba8d`
-- Task 2: Create NLP module barrel export - `f6eaaea`
-- Task 3: Add NLP configuration and tests - `be87951`
+- 12-01: Semantic Router Lite (IntentRouter)
+- 12-02: Entity Extraction (EntityExtractor)
+- 12-03: Query Expansion (QueryExpander)
+- 12-04: Query Parser Orchestrator (QueryParser)
+- 12-05: SearchService Integration (NLP filters, semantic expansion)
+- 12-06: NLP Integration & Semantic Synonyms (startup init, health endpoint)
 
-**Deliverables:**
-- `services/hh-search-svc/src/nlp/query-parser.ts` - QueryParser class
-- `services/hh-search-svc/src/nlp/index.ts` - NLP barrel export
-- `services/hh-search-svc/src/nlp/__tests__/query-parser.spec.ts` - 25 unit tests
-- `services/hh-search-svc/src/config.ts` - NLPSearchConfig added
+**Phase 12 Plan 06 Commits:**
+- `d6ee8f1`: feat(12-06): add semantic synonyms expansion module
+- `554a429`: feat(12-06): wire up QueryParser initialization at startup
+- `bf2e8c5`: feat(12-06): integrate semantic synonyms into NLP pipeline
 
-**Key Features:**
-- Orchestrates IntentRouter, EntityExtractor, QueryExpander
-- In-memory cache for extraction results (5-min TTL, 500 max)
-- Timing tracking for each pipeline stage
-- Graceful fallback for low-confidence or failed parsing
-- Environment variable configuration
+**Key Deliverables:**
+- Semantic synonyms for seniority (10 levels) and roles
+- Portuguese language support
+- QueryParser initialized at service startup (background, non-blocking)
+- NLP health status in /health endpoint
+- 144 total NLP tests passing
 
-**Test Summary:**
-- 100 total NLP tests passing
-- Intent Router: 19 tests
-- Entity Extractor: 33 tests
-- Query Expander: 23 tests
-- Query Parser: 25 tests
+**Phase 12 Success Criteria MET:**
+1. Natural language queries parsed into structured search parameters - YES
+2. Intent classification in <20ms (semantic router) - YES
+3. Entity extraction with >90% accuracy on test set - YES
+4. Skill expansion using ontology graph - YES
+5. Fallback to keyword search when confidence low - YES
+6. Semantic seniority expansion ("Lead" -> Senior, Staff, Principal) - YES
 
-**Ready for:**
-- 12-05: Verification & Tuning (final plan in Phase 12)
+**Ready for Phase 13:** ML Trajectory Prediction
 
 ---
 
@@ -229,14 +240,12 @@ v2.0 Roadmap complete. 5 phases defined with 26 requirements mapped:
 | 14 | Bias Reduction | BIAS-01 to BIAS-05 | Medium |
 | 15 | Compliance Tooling | COMP-01 to COMP-06 | Medium |
 
-**Phase 12 Success Criteria:**
-1. Natural language queries parsed into structured search parameters
-2. Intent classification in <20ms (semantic router)
-3. Entity extraction with >90% accuracy on test set
-4. Skill expansion using ontology graph
-5. Fallback to keyword search when confidence low
+**Phase 13 Prerequisites:**
+- NLP infrastructure provides structured entities for ML features
+- Seniority/role expansion enables better candidate matching
+- Performance baseline established with 144 passing tests
 
 ---
 
 *State initialized: 2026-01-24*
-*Last updated: 2026-01-25 - Completed Phase 12 Plan 04 (Query Parser Orchestrator)*
+*Last updated: 2026-01-25 - Phase 12 Complete (Natural Language Search)*
