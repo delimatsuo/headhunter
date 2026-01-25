@@ -316,7 +316,12 @@ export class SearchService {
       metadata: {
         vectorWeight: this.config.search.vectorWeight,
         textWeight: this.config.search.textWeight,
-        minSimilarity: this.config.search.minSimilarity
+        minSimilarity: this.config.search.minSimilarity,
+        // Signal scoring configuration
+        signalWeights: {
+          roleType,
+          weightsApplied: resolvedWeights
+        }
       }
     };
 
@@ -332,12 +337,19 @@ export class SearchService {
         candidateCount: ranked.length,
         filtersApplied: request.filters ?? {},
         minSimilarity: this.config.search.minSimilarity,
-        // RRF configuration and score breakdown for debugging
+        // RRF configuration
         rrfConfig: {
           enabled: this.config.search.enableRrf,
           k: this.config.search.rrfK,
           perMethodLimit: this.config.search.perMethodLimit
         },
+        // Signal scoring configuration
+        signalScoringConfig: {
+          roleType,
+          weightsApplied: resolvedWeights,
+          requestOverrides: request.signalWeights ?? null
+        },
+        // Enhanced score breakdown with signal scores
         scoreBreakdown: ranked.slice(0, 5).map(r => ({
           candidateId: r.candidateId,
           score: r.score,
@@ -345,15 +357,26 @@ export class SearchService {
           textScore: r.textScore,
           rrfScore: r.rrfScore,
           vectorRank: r.vectorRank,
-          textRank: r.textRank
+          textRank: r.textRank,
+          // Individual signal scores
+          signalScores: r.signalScores
         }))
       };
     }
 
     timings.totalMs = Date.now() - totalStart;
     this.logger.info(
-      { requestId: context.requestId, tenantId: context.tenant.id, timings, resultCount: response.results.length },
-      'Hybrid search completed.'
+      {
+        requestId: context.requestId,
+        tenantId: context.tenant.id,
+        timings,
+        resultCount: response.results.length,
+        roleType,
+        avgWeightedScore: response.results.length > 0
+          ? (response.results.reduce((sum, r) => sum + r.score, 0) / response.results.length).toFixed(3)
+          : 0
+      },
+      'Hybrid search with signal scoring completed.'
     );
 
     this.performanceTracker.record({
