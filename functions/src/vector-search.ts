@@ -7,7 +7,13 @@
 import * as admin from "firebase-admin";
 import { getEmbeddingProvider } from "./embedding-provider";
 import { getPgVectorClient, PgVectorClient, CandidateRecord } from "./pgvector-client";
-import { normalizeSkillName, skillsMatch } from './shared/skills-service';
+import {
+  normalizeSkillName,
+  skillsMatch,
+  getCachedSkillExpansion,
+  findTransferableSkills,
+  type SkillExpansionResult
+} from './shared/skills-service';
 
 // Types for vector search
 interface EmbeddingData {
@@ -84,6 +90,17 @@ interface SkillAwareSearchQuery {
   org_id?: string;
 }
 
+/**
+ * Result from skill matching including match type for transparency
+ */
+interface SkillMatchResult {
+  skill: string;
+  confidence: number;
+  matchType: 'exact' | 'alias' | 'related' | 'partial';
+  distance?: number;  // Graph distance for related matches
+  reasoning?: string; // Why this matched
+}
+
 interface SkillAwareSearchResult {
   candidate_id: string;
   overall_score: number;
@@ -105,6 +122,19 @@ interface SkillAwareSearchResult {
   };
   metadata: EmbeddingData["metadata"];
   match_reasons: string[];
+  skill_match_details?: Array<{
+    queriedSkill: string;
+    matchedSkill: string;
+    matchType: 'exact' | 'alias' | 'related' | 'inferred' | 'transferable' | 'partial';
+    confidence: number;
+    reasoning?: string;
+  }>;
+  transferable_opportunities?: Array<{
+    fromSkill: string;
+    toSkill: string;
+    transferabilityScore: number;
+    reasoning: string;
+  }>;
   profile?: {
     name?: string;
     current_role?: string;
@@ -843,6 +873,8 @@ export class VectorSearchService {
           ranking_factors: skillScores.ranking_factors,
           metadata: vectorResult.metadata,
           match_reasons: matchReasons,
+          skill_match_details: skillScores.skill_match_details,
+          transferable_opportunities: skillScores.transferable_opportunities,
           profile: {
             name: candidateData?.name,
             // Extract actual job title from experience data (most accurate)
@@ -1035,6 +1067,7 @@ export class VectorSearchService {
 
   /**
    * Calculate skill-aware scoring for a candidate
+   * Enhanced to track match details and transferable skill opportunities
    */
   private calculateSkillAwareScores(candidateData: any, query: SkillAwareSearchQuery): {
     skill_match_score: number;
@@ -1042,10 +1075,15 @@ export class VectorSearchService {
     experience_match_score: number;
     skill_breakdown: Record<string, number>;
     ranking_factors: SkillAwareSearchResult['ranking_factors'];
+    skill_match_details: NonNullable<SkillAwareSearchResult['skill_match_details']>;
+    transferable_opportunities: NonNullable<SkillAwareSearchResult['transferable_opportunities']>;
   } {
     const candidateSkills = this.extractCandidateSkills(candidateData);
     const requiredSkills = query.required_skills || [];
     const preferredSkills = query.preferred_skills || [];
+
+    // Track skill match details for transparency
+    const skillMatchDetails: NonNullable<SkillAwareSearchResult['skill_match_details']> = [];
 
     // Calculate required skills match
     let requiredSkillsMatched = 0;
@@ -1057,11 +1095,20 @@ export class VectorSearchService {
       const weight = requiredSkill.weight || 1.0;
       totalRequiredWeight += weight;
 
-      const candidateSkill = this.findMatchingSkill(candidateSkills, requiredSkill.skill);
+      const candidateSkill = this.findMatchingSkill(candidateSkills, requiredSkill.skill, true);
 
       if (candidateSkill) {
         const confidence = candidateSkill.confidence;
         const meetsMinimum = confidence >= (requiredSkill.minimum_confidence || 70);
+
+        // Track the match details
+        skillMatchDetails.push({
+          queriedSkill: requiredSkill.skill,
+          matchedSkill: candidateSkill.skill,
+          matchType: candidateSkill.matchType,
+          confidence: candidateSkill.confidence,
+          reasoning: candidateSkill.reasoning
+        });
 
         if (meetsMinimum) {
           requiredSkillsMatched++;
@@ -1076,7 +1123,7 @@ export class VectorSearchService {
       }
     }
 
-    // Calculate preferred skills match  
+    // Calculate preferred skills match
     let preferredSkillsMatched = 0;
     let totalPreferredWeight = 0;
     let weightedPreferredScore = 0;
@@ -1085,15 +1132,33 @@ export class VectorSearchService {
       const weight = preferredSkill.weight || 0.5;
       totalPreferredWeight += weight;
 
-      const candidateSkill = this.findMatchingSkill(candidateSkills, preferredSkill.skill);
+      const candidateSkill = this.findMatchingSkill(candidateSkills, preferredSkill.skill, true);
 
       if (candidateSkill && candidateSkill.confidence >= (preferredSkill.minimum_confidence || 60)) {
         preferredSkillsMatched++;
         weightedPreferredScore += candidateSkill.confidence * weight;
         skillBreakdown[preferredSkill.skill] = candidateSkill.confidence;
+
+        // Track the match details
+        skillMatchDetails.push({
+          queriedSkill: preferredSkill.skill,
+          matchedSkill: candidateSkill.skill,
+          matchType: candidateSkill.matchType,
+          confidence: candidateSkill.confidence,
+          reasoning: candidateSkill.reasoning
+        });
       } else if (candidateSkill) {
         skillBreakdown[preferredSkill.skill] = candidateSkill.confidence;
         weightedPreferredScore += candidateSkill.confidence * 0.3 * weight; // Partial credit
+
+        // Track partial matches too
+        skillMatchDetails.push({
+          queriedSkill: preferredSkill.skill,
+          matchedSkill: candidateSkill.skill,
+          matchType: candidateSkill.matchType,
+          confidence: candidateSkill.confidence,
+          reasoning: candidateSkill.reasoning
+        });
       } else {
         skillBreakdown[preferredSkill.skill] = 0;
       }
@@ -1114,6 +1179,17 @@ export class VectorSearchService {
     // Calculate experience match score
     const experienceMatchScore = this.calculateExperienceMatch(candidateData, query);
 
+    // Get transferable skills from candidate's existing skills
+    const candidateSkillNames = candidateSkills.map(s => s.skill);
+    const transferable = findTransferableSkills(candidateSkillNames)
+      .slice(0, 5)  // Top 5 opportunities
+      .map(t => ({
+        fromSkill: t.fromSkill,
+        toSkill: t.toSkill,
+        transferabilityScore: t.transferabilityScore,
+        reasoning: t.reasoning
+      }));
+
     return {
       skill_match_score: skillMatchScore,
       confidence_score: averageConfidence,
@@ -1127,7 +1203,9 @@ export class VectorSearchService {
         average_skill_confidence: averageConfidence,
         experience_alignment: this.getExperienceAlignment(candidateData, query),
         vector_similarity: 0 // Will be set later
-      }
+      },
+      skill_match_details: skillMatchDetails,
+      transferable_opportunities: transferable
     };
   }
 
@@ -1263,20 +1341,54 @@ export class VectorSearchService {
   }
 
   /**
-   * Find matching skill with fuzzy matching
-   * Uses centralized skills-service for alias resolution
+   * Find matching skill with fuzzy matching and skill expansion
+   * Uses centralized skills-service for alias resolution and graph-based expansion
+   *
+   * @param candidateSkills - Skills the candidate has
+   * @param targetSkill - Skill being searched for
+   * @param useExpansion - Whether to use skill graph expansion (default: true)
+   * @returns SkillMatchResult with match type and confidence, or null if no match
    */
-  private findMatchingSkill(candidateSkills: Array<{ skill: string, confidence: number, source: string, category: string }>, targetSkill: string): { skill: string, confidence: number } | null {
-    // Normalize both target and candidate skills using centralized taxonomy
-    const normalizedTarget = normalizeSkillName(targetSkill);
-
-    // Exact match via alias normalization (e.g., "JS" matches "JavaScript")
+  private findMatchingSkill(
+    candidateSkills: Array<{ skill: string, confidence: number, source: string, category: string }>,
+    targetSkill: string,
+    useExpansion: boolean = true
+  ): SkillMatchResult | null {
+    // 1. Exact match via alias normalization (e.g., "JS" matches "JavaScript")
     const aliasMatch = candidateSkills.find(s => skillsMatch(s.skill, targetSkill));
     if (aliasMatch) {
-      return { skill: aliasMatch.skill, confidence: aliasMatch.confidence };
+      return {
+        skill: aliasMatch.skill,
+        confidence: aliasMatch.confidence,
+        matchType: 'exact',
+        reasoning: 'Direct skill match'
+      };
     }
 
-    // Partial match (skill contains target or vice versa) - only for 3+ characters
+    // 2. Related skill match via graph expansion
+    if (useExpansion) {
+      const expansion = getCachedSkillExpansion(targetSkill, 2);
+
+      for (const related of expansion.relatedSkills) {
+        const relatedMatch = candidateSkills.find(s =>
+          skillsMatch(s.skill, related.skillName)
+        );
+
+        if (relatedMatch) {
+          // Apply confidence decay: candidate confidence * expansion confidence
+          const effectiveConfidence = relatedMatch.confidence * related.confidence;
+          return {
+            skill: relatedMatch.skill,
+            confidence: effectiveConfidence,
+            matchType: 'related',
+            distance: related.distance,
+            reasoning: `Related to ${targetSkill} via ${related.relationshipType} relationship`
+          };
+        }
+      }
+    }
+
+    // 3. Partial match (skill contains target or vice versa) - only for 3+ characters
     // This prevents spurious matches like "go" matching "Django"
     if (targetSkill.length >= 3) {
       const target = targetSkill.toLowerCase();
@@ -1286,7 +1398,9 @@ export class VectorSearchService {
       if (partialMatch) {
         return {
           skill: partialMatch.skill,
-          confidence: partialMatch.confidence * 0.8 // Penalty for partial match
+          confidence: partialMatch.confidence * 0.8,
+          matchType: 'partial',
+          reasoning: 'Partial string match'
         };
       }
     }
