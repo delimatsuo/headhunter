@@ -40,7 +40,7 @@ The approach remains enhancement, not replacement. All features integrate with e
 |-------|------|--------|--------------|
 | 11 | Performance Foundation | Complete | 5 |
 | 12 | Natural Language Search | Complete | 5 |
-| 13 | ML Trajectory Prediction | Pending | 5 |
+| 13 | ML Trajectory Prediction | Planned | 5 |
 | 14 | Bias Reduction | Pending | 5 |
 | 15 | Compliance Tooling | Pending | 6 |
 
@@ -154,6 +154,25 @@ Plans:
 
 **Dependencies:** Phase 12 (NLP parsing informs trajectory context)
 
+**Plans:** 7 plans
+
+Plans:
+- [ ] 13-01-PLAN.md - hh-trajectory-svc service scaffolding (Fastify on port 7109)
+- [ ] 13-02-PLAN.md - Python ML training pipeline (LSTM model, data preparation)
+- [ ] 13-03-PLAN.md - ONNX inference engine integration
+- [ ] 13-04-PLAN.md - Shadow mode infrastructure for ML vs rule-based comparison
+- [ ] 13-05-PLAN.md - hh-search-svc integration with ML trajectory client
+- [ ] 13-06-PLAN.md - UI components for trajectory prediction display
+- [ ] 13-07-PLAN.md - Test suite and phase verification
+
+**Status:** Planned. 7 plans in 4 waves ready for execution.
+
+**Wave Structure:**
+- Wave 1: 13-01 (service scaffold), 13-02 (Python training) - Independent foundation
+- Wave 2: 13-03 (ONNX inference), 13-04 (shadow mode) - Depends on Wave 1
+- Wave 3: 13-05 (search integration), 13-06 (UI components) - Depends on Wave 2
+- Wave 4: 13-07 (verification) - Depends on all
+
 **Requirements:**
 - TRAJ-05: Next role prediction with confidence score using LSTM model
 - TRAJ-06: Tenure prediction (estimated time candidate will stay in role)
@@ -170,10 +189,10 @@ Plans:
 
 **Technology Stack:**
 - PyTorch 2.5+ for LSTM training (offline)
-- ONNX Runtime (onnxruntime-node ^1.23.2) for sub-50ms inference
+- ONNX Runtime (onnxruntime-node ^1.22.0) for sub-50ms inference
 - New service: hh-trajectory-svc on port 7109
 
-**Research Needed:** HIGH - training data labeling strategy, LSTM vs GRU architecture choice, ONNX export patterns
+**Research Needed:** HIGH - research completed in 13-RESEARCH.md
 
 **Critical Pitfalls:**
 - Rule-to-ML migration must maintain baseline parity (shadow mode for 4-6 weeks)
@@ -305,4 +324,4 @@ All v2.0 phases are sequential. Performance must be established before adding la
 ---
 
 *Roadmap created: 2026-01-25*
-*Last updated: 2026-01-25 - Phase 12 complete (Natural Language Search)*
+*Last updated: 2026-01-25 - Phase 13 planned (ML Trajectory Prediction)*
