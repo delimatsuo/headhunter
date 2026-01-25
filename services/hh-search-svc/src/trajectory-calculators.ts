@@ -101,7 +101,8 @@ export interface CareerTrajectoryData {
 export function mapTitleToLevel(title: string): number {
   if (!title || typeof title !== 'string') return -1;
 
-  const normalized = title.toLowerCase().trim();
+  // Remove periods and normalize
+  const normalized = title.toLowerCase().trim().replace(/\./g, '');
 
   // Direct lookup
   if (LEVEL_INDEX[normalized] !== undefined) {
@@ -109,22 +110,34 @@ export function mapTitleToLevel(title: string): number {
   }
 
   // Pattern matching for common variations
+  // Order matters: more specific patterns first to avoid false positives
   const patterns: [RegExp, number][] = [
+    // Engineering/technical patterns - check these first
     [/\b(intern|internship)\b/i, 0],
-    [/\b(junior|jr|entry|associate)\b/i, 1],
-    [/\b(mid[-\s]?level|intermediate)\b/i, 2],
-    [/\b(senior|sr)\s+(engineer|developer|architect)/i, 3],
-    [/\b(staff|lead)\s+(engineer|developer)/i, 4],
+    [/\b(junior|jr)\s+(engineer|developer|architect|software)/i, 1],
+    [/\b(entry|associate)\s+(engineer|developer|software)/i, 1],
+    [/\b(mid[-\s]?level|intermediate)\s+(engineer|developer|software)/i, 2],
+    [/\b(senior|sr)\s+(engineer|developer|architect|software)/i, 3],
+    [/\b(staff|lead)\s+(engineer|developer|software)/i, 4],
     [/\b(principal|lead)\s+architect/i, 5],
     [/\b(distinguished|fellow)\b/i, 6],
+    // Engineering management patterns
     [/\bengineering\s+manager\b/i, 7],
-    [/\bmanager\b/i, 7],
-    [/\bsenior\s+manager\b/i, 8],
+    [/\bsenior\s+(engineering|software)\s+manager\b/i, 8],
+    [/\b(engineering|software|technical)\s+director\b/i, 9],
+    [/\bdirector\s+(of\s+)?(engineering|software|technology)\b/i, 9],
+    [/\bsenior\s+(engineering|software|technical)\s+director\b/i, 10],
+    [/\bsenior\s+director\s+(of\s+)?(engineering|software|technology)\b/i, 10],
+    [/\bvp\s+(of\s+)?(engineering|software|technology)\b/i, 11],
+    [/\bvice\s+president\s+(of\s+)?(engineering|software|technology)\b/i, 11],
+    [/\bsenior\s+vice\s+president\s+(of\s+)?(engineering|software|technology)\b/i, 12],
+    [/\bsvp\s+(of\s+)?(engineering|software|technology)\b/i, 12],
+    [/\b(cto|chief\s+technology\s+officer)\b/i, 13],
+    [/\b(ceo|chief\s+executive\s+officer)\b/i, 13],
+    [/\b(coo|chief\s+operating\s+officer)\b/i, 13],
+    [/\b(cfo|chief\s+financial\s+officer)\b/i, 13],
+    // Generic director pattern (last resort, assumed engineering context in absence of other info)
     [/\bdirector\b/i, 9],
-    [/\bsenior\s+director\b/i, 10],
-    [/\b(vp|vice\s+president)\b/i, 11],
-    [/\b(svp|senior\s+vice\s+president)\b/i, 12],
-    [/\b(cto|ceo|coo|cfo|chief)\b/i, 13]
   ];
 
   for (const [pattern, index] of patterns) {
@@ -133,9 +146,16 @@ export function mapTitleToLevel(title: string): number {
     }
   }
 
-  // Fallback: check if title contains level keywords
-  if (/senior/i.test(normalized)) return 3;
-  if (/junior/i.test(normalized) || /jr\b/i.test(normalized)) return 1;
+  // Fallback: check if title contains level keywords with engineering/software context
+  if (/\b(senior|sr)\b/i.test(normalized) && /\b(engineer|developer|software|architect)\b/i.test(normalized)) {
+    return 3;
+  }
+  if (/\b(junior|jr)\b/i.test(normalized) && /\b(engineer|developer|software)\b/i.test(normalized)) {
+    return 1;
+  }
+  if (/\b(lead|staff)\b/i.test(normalized) && /\b(developer)\b/i.test(normalized)) {
+    return 4;
+  }
 
   return -1; // Unknown level
 }
@@ -187,12 +207,31 @@ export function calculateTrajectoryDirection(
     const currIsTech = current <= TECHNICAL_MAX_INDEX;
 
     if (prevIsTech !== currIsTech) {
-      // Track change: compare relative positions within each track
-      // Tech senior (3) -> Manager (7) is roughly lateral (both are mid-career)
-      // Map to relative position: tech 0-6 maps to mgmt 7-13
-      const prevRelative = prevIsTech ? previous : previous - MANAGEMENT_MIN_INDEX;
-      const currRelative = currIsTech ? current : current - MANAGEMENT_MIN_INDEX;
-      deltas.push(currRelative - prevRelative);
+      // Track change: map to equivalent career stages
+      // Rough equivalence:
+      // - Junior IC (1) ≈ entry management (would be non-existent, use 0 as baseline)
+      // - Mid IC (2) ≈ Manager (7), normalized to 3
+      // - Senior IC (3) ≈ Manager (7), normalized to 3
+      // - Staff IC (4) ≈ Senior Manager (8), normalized to 4
+      // - Principal IC (5) ≈ Director (9), normalized to 5
+      // - Distinguished IC (6) ≈ Senior Director+ (10+), normalized to 6
+
+      // For mgmt -> IC mapping, add 3 to bring Manager(7) to Senior(3) equivalent
+      // For IC -> mgmt mapping, we want to preserve relative position
+      let prevEquivalent = previous;
+      let currEquivalent = current;
+
+      if (!prevIsTech && currIsTech) {
+        // Mgmt -> Tech: Map mgmt indices back to tech equivalents
+        // Manager(7)->3, Sr.Mgr(8)->4, Dir(9)->5, Sr.Dir(10)->6, VP+(11+)->6
+        prevEquivalent = Math.min(previous - MANAGEMENT_MIN_INDEX + 3, 6);
+      } else if (prevIsTech && !currIsTech) {
+        // Tech -> Mgmt: Map tech indices to mgmt equivalents
+        // Mid(2)->7, Senior(3)->7, Staff(4)->8, Principal(5)->9, Distinguished(6)->10
+        currEquivalent = Math.min(current - MANAGEMENT_MIN_INDEX + 3, 6);
+      }
+
+      deltas.push(currEquivalent - prevEquivalent);
     } else {
       deltas.push(current - previous);
     }
@@ -304,6 +343,28 @@ export function classifyTrajectoryType(
     return 'lateral_move'; // Default for insufficient data
   }
 
+  // Check for function changes FIRST (before filtering invalid levels)
+  // This ensures we catch pivots even when titles don't map to levels
+  const functionKeywords = titleSequence.map(title => {
+    const lower = title.toLowerCase();
+    if (/\b(front[-\s]?end|frontend|ui|ux)\b/i.test(lower)) return 'frontend';
+    if (/\b(back[-\s]?end|backend|server)\b/i.test(lower)) return 'backend';
+    if (/\b(full[-\s]?stack|fullstack)\b/i.test(lower)) return 'fullstack';
+    if (/\b(data|analytics|ml|machine learning)\b/i.test(lower)) return 'data';
+    if (/\b(devops|sre|infrastructure|platform)\b/i.test(lower)) return 'devops';
+    if (/\b(mobile|ios|android)\b/i.test(lower)) return 'mobile';
+    if (/\b(security|infosec)\b/i.test(lower)) return 'security';
+    return 'general';
+  });
+
+  const uniqueFunctions = new Set(functionKeywords.filter(f => f !== 'general'));
+  const hasFunctionChange = uniqueFunctions.size > 1;
+
+  // If function change detected, it's a pivot regardless of level mapping
+  if (hasFunctionChange) {
+    return 'career_pivot';
+  }
+
   // Map titles to levels
   const levels = titleSequence.map(mapTitleToLevel);
   const validLevels = levels.filter(l => l !== -1);
@@ -339,24 +400,8 @@ export function classifyTrajectoryType(
     }
   }
 
-  // Check for function changes (detected by keyword changes in titles)
-  const functionKeywords = titleSequence.map(title => {
-    const lower = title.toLowerCase();
-    if (/\b(front[-\s]?end|frontend|ui|ux)\b/i.test(lower)) return 'frontend';
-    if (/\b(back[-\s]?end|backend|server)\b/i.test(lower)) return 'backend';
-    if (/\b(full[-\s]?stack|fullstack)\b/i.test(lower)) return 'fullstack';
-    if (/\b(data|analytics|ml|machine learning)\b/i.test(lower)) return 'data';
-    if (/\b(devops|sre|infrastructure|platform)\b/i.test(lower)) return 'devops';
-    if (/\b(mobile|ios|android)\b/i.test(lower)) return 'mobile';
-    if (/\b(security|infosec)\b/i.test(lower)) return 'security';
-    return 'general';
-  });
-
-  const uniqueFunctions = new Set(functionKeywords.filter(f => f !== 'general'));
-  const hasFunctionChange = uniqueFunctions.size > 1;
-
   // Classification logic
-  if (hasTrackChange || hasFunctionChange) {
+  if (hasTrackChange) {
     return 'career_pivot';
   }
 
