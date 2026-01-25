@@ -164,6 +164,25 @@ export async function registerRoutes(
           cacheHit: true,
           rerankApplied: Boolean((cached.metadata as { rerank?: unknown } | undefined)?.rerank)
         });
+
+        // Add Server-Timing headers for observability
+        const serverTimingParts: string[] = [];
+        if (cached.timings.embeddingMs !== undefined) {
+          serverTimingParts.push(`embedding;dur=${cached.timings.embeddingMs};desc="Embedding generation"`);
+        }
+        if (cached.timings.retrievalMs !== undefined) {
+          serverTimingParts.push(`retrieval;dur=${cached.timings.retrievalMs};desc="Vector+Text retrieval"`);
+        }
+        if (cached.timings.rerankMs !== undefined) {
+          serverTimingParts.push(`rerank;dur=${cached.timings.rerankMs};desc="LLM reranking"`);
+        }
+        serverTimingParts.push(`total;dur=${cached.timings.totalMs};desc="Total search time"`);
+        serverTimingParts.push(`cache;desc="hit"`);
+
+        reply.header('Server-Timing', serverTimingParts.join(', '));
+        reply.header('X-Response-Time', `${cached.timings.totalMs}ms`);
+        reply.header('X-Cache-Status', 'hit');
+
         return cacheHitResponse;
       }
 
@@ -179,6 +198,45 @@ export async function registerRoutes(
 
       if (!dependencies.config.redis.disable && response.results.length > 0) {
         await dependencies.redisClient.set(cacheKey, response);
+      }
+
+      // Build Server-Timing header for observability
+      // Format: <name>;dur=<duration>;desc="<description>"
+      const serverTimingParts: string[] = [];
+
+      if (response.timings.embeddingMs !== undefined) {
+        serverTimingParts.push(`embedding;dur=${response.timings.embeddingMs};desc="Embedding generation"`);
+      }
+      if (response.timings.retrievalMs !== undefined) {
+        serverTimingParts.push(`retrieval;dur=${response.timings.retrievalMs};desc="Vector+Text retrieval"`);
+      }
+      if (response.timings.rerankMs !== undefined) {
+        serverTimingParts.push(`rerank;dur=${response.timings.rerankMs};desc="LLM reranking"`);
+      }
+      serverTimingParts.push(`total;dur=${response.timings.totalMs};desc="Total search time"`);
+
+      // Add cache status
+      serverTimingParts.push(`cache;desc="miss"`);
+
+      // Set the headers
+      reply.header('Server-Timing', serverTimingParts.join(', '));
+      reply.header('X-Response-Time', `${response.timings.totalMs}ms`);
+      reply.header('X-Cache-Status', 'miss');
+
+      // Add rerank cache hit header if available
+      if ((response.metadata as { rerank?: { cacheHit?: boolean } })?.rerank?.cacheHit !== undefined) {
+        reply.header('X-Rerank-Cache', (response.metadata as { rerank: { cacheHit: boolean } }).rerank.cacheHit ? 'hit' : 'miss');
+      }
+
+      // Log p95 warning if latency exceeds target
+      const p95Target = 500; // 500ms target from PERF-01
+      if (response.timings.totalMs > p95Target) {
+        app.log.warn({
+          requestId: request.requestContext.requestId,
+          totalMs: response.timings.totalMs,
+          p95Target,
+          timings: response.timings
+        }, 'Search latency exceeded p95 target');
       }
 
       return response;
@@ -250,6 +308,24 @@ export async function registerRoutes(
           rerankApplied: Boolean((cached.metadata as { rerank?: unknown } | undefined)?.rerank)
         });
 
+        // Add Server-Timing headers for observability
+        const serverTimingParts: string[] = [];
+        if (cached.timings.embeddingMs !== undefined) {
+          serverTimingParts.push(`embedding;dur=${cached.timings.embeddingMs};desc="Embedding generation"`);
+        }
+        if (cached.timings.retrievalMs !== undefined) {
+          serverTimingParts.push(`retrieval;dur=${cached.timings.retrievalMs};desc="Vector+Text retrieval"`);
+        }
+        if (cached.timings.rerankMs !== undefined) {
+          serverTimingParts.push(`ranking;dur=${cached.timings.rerankMs};desc="Signal scoring"`);
+        }
+        serverTimingParts.push(`total;dur=${cached.timings.totalMs};desc="Total search time"`);
+        serverTimingParts.push(`cache;desc="hit"`);
+
+        reply.header('Server-Timing', serverTimingParts.join(', '));
+        reply.header('X-Response-Time', `${cached.timings.totalMs}ms`);
+        reply.header('X-Cache-Status', 'hit');
+
         return {
           candidates,
           total: cached.total,
@@ -294,6 +370,40 @@ export async function registerRoutes(
       // Cache the hybrid response for future requests
       if (!dependencies.config.redis.disable && response.results.length > 0) {
         await dependencies.redisClient.set(cacheKey, response);
+      }
+
+      // Build Server-Timing header for observability
+      const serverTimingParts: string[] = [];
+      if (response.timings.embeddingMs !== undefined) {
+        serverTimingParts.push(`embedding;dur=${response.timings.embeddingMs};desc="Embedding generation"`);
+      }
+      if (response.timings.retrievalMs !== undefined) {
+        serverTimingParts.push(`retrieval;dur=${response.timings.retrievalMs};desc="Vector+Text retrieval"`);
+      }
+      if (response.timings.rerankMs !== undefined) {
+        serverTimingParts.push(`ranking;dur=${response.timings.rerankMs};desc="Signal scoring"`);
+      }
+      serverTimingParts.push(`total;dur=${response.timings.totalMs};desc="Total search time"`);
+      serverTimingParts.push(`cache;desc="miss"`);
+
+      reply.header('Server-Timing', serverTimingParts.join(', '));
+      reply.header('X-Response-Time', `${response.timings.totalMs}ms`);
+      reply.header('X-Cache-Status', 'miss');
+
+      // Add rerank cache hit header if available
+      if ((response.metadata as { rerank?: { cacheHit?: boolean } })?.rerank?.cacheHit !== undefined) {
+        reply.header('X-Rerank-Cache', (response.metadata as { rerank: { cacheHit: boolean } }).rerank.cacheHit ? 'hit' : 'miss');
+      }
+
+      // Log p95 warning if latency exceeds target
+      const p95Target = 500; // 500ms target from PERF-01
+      if (response.timings.totalMs > p95Target) {
+        app.log.warn({
+          requestId: request.requestContext.requestId,
+          totalMs: response.timings.totalMs,
+          p95Target,
+          timings: response.timings
+        }, 'Search latency exceeded p95 target');
       }
 
       return {
