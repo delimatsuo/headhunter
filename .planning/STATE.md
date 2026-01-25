@@ -22,13 +22,13 @@
 ## Current Position
 
 **Phase:** 10 of 10 (Pipeline Integration) - IN PROGRESS
-**Plan:** 1 of 5 complete (10-01)
+**Plan:** 2 of 5 complete (10-02)
 **Status:** In progress
-**Last activity:** 2026-01-25 - Completed 10-01-PLAN.md (Pipeline Stage Configuration)
+**Last activity:** 2026-01-25 - Completed 10-02-PLAN.md (3-Stage Pipeline Implementation)
 
-**Progress:** [█████████░] 92%
+**Progress:** [█████████░] 94%
 
-**Next Action:** Execute 10-02 (Retrieval Stage Implementation)
+**Next Action:** Execute 10-03 (Scoring Stage Implementation)
 
 ---
 
@@ -45,9 +45,9 @@
 | 7 | Signal Scoring Implementation | Complete | 5/5 | 100% |
 | 8 | Career Trajectory | Complete | 4/4 | 100% |
 | 9 | Match Transparency | Complete | 7/7 | 100% |
-| 10 | Pipeline Integration | In Progress | 1/5 | 20% |
+| 10 | Pipeline Integration | In Progress | 2/5 | 40% |
 
-**Overall:** 9.2/10 phases complete (92%)
+**Overall:** 9.4/10 phases complete (94%)
 
 ---
 
@@ -155,6 +155,9 @@
 | Default pipeline stages: 500/100/50 | Retrieval=500, scoring=100, rerank=50 for Phase 10 3-stage pipeline | 10.01 |
 | Minimum limits: 100/50/10 | Math.max guards prevent misconfiguration of empty result sets | 10.01 |
 | Pipeline logging enabled by default | pipelineLogStages=true for debugging and SLO tracking | 10.01 |
+| Stage 2 uses scoringLimit for rerank input | Apply pipelineScoringLimit cutoff before calling applyRerankIfEnabled | 10.02 |
+| Stage 3 applies final rerankLimit | Slice to pipelineRerankLimit after reranking completes | 10.02 |
+| Structured stage logging format | Each stage logs: name, requestId, counts, cutoff, latency | 10.02 |
 
 ### Technical Notes
 
@@ -303,8 +306,8 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 10-01-PLAN.md - Pipeline Stage Configuration (Phase 10 IN PROGRESS)
-**Resume file:** None - continue with 10-02 (Retrieval Stage Implementation)
+**Stopped at:** Completed 10-02-PLAN.md - 3-Stage Pipeline Implementation (Phase 10 IN PROGRESS)
+**Resume file:** None - continue with 10-03 (Scoring Stage Implementation)
 
 ### Context for Next Session
 
