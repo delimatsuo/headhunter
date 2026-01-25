@@ -373,6 +373,9 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                   similarityScore={match.similarity}
                   rank={index + 1}
                   searchSkills={[]}
+                  signalScores={match.signalScores}
+                  weightsApplied={match.weightsApplied}
+                  matchRationale={match.matchRationale}
                   onFindSimilar={onFindSimilar ? () => onFindSimilar(match.candidate?.candidate_id || '') : undefined}
                   onEdit={match.candidate ? () => handleEditClick(match.candidate) : undefined}
                 />
