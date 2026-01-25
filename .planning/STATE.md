@@ -24,13 +24,13 @@
 
 **Milestone:** v2.0 Advanced Intelligence
 **Phase:** 11 - Performance Foundation (in progress)
-**Plan:** 11-02 of 5 complete
+**Plan:** 11-04 of 5 complete
 **Status:** Executing Phase 11 plans
-**Last activity:** 2026-01-25 - Completed 11-02-PLAN.md (Connection pool tuning)
+**Last activity:** 2026-01-25 - Completed 11-04-PLAN.md (Multi-layer Redis caching)
 
-**Progress:** [##########] v1.0 100% | [##========] v2.0 Phase 11: 40%
+**Progress:** [##########] v1.0 100% | [####======] v2.0 Phase 11: 80%
 
-**Next Action:** Execute 11-03-PLAN.md (Parallel query execution)
+**Next Action:** Execute 11-05-PLAN.md (Performance tracking + backfill)
 
 ---
 
@@ -92,6 +92,8 @@
 | Runtime tunable search_list_size | Allows recall/latency tradeoff without redeployment | 11 |
 | poolMax=20, poolMin=5 | Cloud Run concurrency + warm connections for sub-500ms p95 | 11 |
 | Parallel pool warmup | Minimize cold-start latency with Promise.all connection acquisition | 11 |
+| Multi-layer cache with TTL jitter | 4 layers (search/rerank/specialty/embedding) with ±20% jitter to prevent cache stampede | 11 |
+| Cache layer TTLs by staleness tolerance | Search 10min, Rerank 6hr, Specialty 24hr based on data volatility | 11 |
 | Semantic Router for NLP | 5-100ms vector-based routing, not LLM-based parsing | 12 |
 | ONNX Runtime for inference | Sub-50ms CPU inference, no GPU dependency, portable | 13 |
 | Shadow mode for ML transition | 4-6 weeks side-by-side to validate ML matches rule-based baseline | 13 |
@@ -133,8 +135,8 @@ None currently identified.
 - [x] Plan Phase 11 (Performance Foundation) - 5 plans created
 - [x] Execute 11-01-PLAN.md (pgvectorscale + StreamingDiskANN)
 - [x] Execute 11-02-PLAN.md (Connection pool tuning)
-- [ ] Execute 11-03-PLAN.md (Parallel query execution)
-- [ ] Execute 11-04-PLAN.md (Multi-layer Redis caching)
+- [x] Execute 11-03-PLAN.md (Parallel query execution)
+- [x] Execute 11-04-PLAN.md (Multi-layer Redis caching)
 - [ ] Execute 11-05-PLAN.md (Performance tracking + backfill)
 - [ ] Verify pgvectorscale Cloud SQL compatibility
 - [ ] Prepare training data for trajectory LSTM (Phase 13 blocker)
@@ -149,8 +151,8 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 11-02-PLAN.md (Connection pool tuning)
-**Resume file:** None - ready for 11-03-PLAN.md
+**Stopped at:** Completed 11-04-PLAN.md (Multi-layer Redis caching)
+**Resume file:** None - ready for 11-05-PLAN.md
 
 ### Context for Next Session
 
