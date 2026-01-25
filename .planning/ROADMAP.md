@@ -251,6 +251,14 @@ Plans:
 
 **Dependencies:** Phase 7 (trajectory is a signal in the scoring framework)
 
+**Plans:** 4 plans in 3 waves
+
+Plans:
+- [ ] 08-01-PLAN.md — Trajectory direction classifier (Wave 1)
+- [ ] 08-02-PLAN.md — Velocity and type classifiers (Wave 1)
+- [ ] 08-03-PLAN.md — Trajectory fit scorer and integration (Wave 2)
+- [ ] 08-04-PLAN.md — Verification checkpoint (Wave 3)
+
 **Requirements:**
 - TRAJ-01: Career direction computed from title sequence analysis
 - TRAJ-02: Career velocity computed (fast/normal/slow progression)
