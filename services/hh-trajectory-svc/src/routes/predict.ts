@@ -1,12 +1,27 @@
 import type { FastifyInstance } from 'fastify';
-import type { PredictRequest, PredictResponse, TrajectoryPrediction } from '../types';
+import type { PredictRequest, PredictResponse } from '../types';
+import { TrajectoryPredictor } from '../inference';
 
 interface State {
   isReady: boolean;
   modelLoaded: boolean;
+  predictor?: TrajectoryPredictor;
 }
 
 export async function predictRoutes(server: FastifyInstance, state: State): Promise<void> {
+  // GET /predict/health - Predictor health check
+  server.get('/predict/health', async (_request, reply) => {
+    const isInitialized = state.predictor?.isInitialized() ?? false;
+
+    const health = {
+      initialized: isInitialized,
+      modelLoaded: state.modelLoaded,
+      status: isInitialized ? 'ready' : 'initializing',
+    };
+
+    return reply.code(isInitialized ? 200 : 503).send(health);
+  });
+
   // POST /predict - Predict career trajectory
   server.post<{ Body: PredictRequest; Reply: PredictResponse }>('/predict', {
     schema: {
@@ -58,8 +73,10 @@ export async function predictRoutes(server: FastifyInstance, state: State): Prom
       }
     }
   }, async (request, reply) => {
-    // Check if model is loaded
-    if (!state.modelLoaded) {
+    const startTime = Date.now();
+
+    // Check if predictor is initialized
+    if (!state.predictor || !state.predictor.isInitialized()) {
       return reply.code(503).send({
         error: 'Service not ready',
         message: 'ONNX model not loaded yet'
@@ -68,31 +85,40 @@ export async function predictRoutes(server: FastifyInstance, state: State): Prom
 
     const { candidateId, titleSequence } = request.body;
 
-    // Stub prediction response (actual ONNX inference in Plan 02)
-    const stubPrediction: TrajectoryPrediction = {
-      nextRole: 'Senior Engineer',
-      nextRoleConfidence: 0.75,
-      tenureMonths: {
-        min: 18,
-        max: 36
-      },
-      hireability: 78,
-      lowConfidence: false
-    };
+    try {
+      // Run ML inference
+      const prediction = await state.predictor.predict(request.body);
 
-    const response: PredictResponse = {
-      candidateId,
-      prediction: stubPrediction,
-      timestamp: new Date().toISOString(),
-      modelVersion: 'stub-v0.1.0'
-    };
+      const response: PredictResponse = {
+        candidateId,
+        prediction,
+        timestamp: new Date().toISOString(),
+        modelVersion: 'trajectory-lstm-v1.0.0',
+      };
 
-    request.log.info({
-      candidateId,
-      titleSequenceLength: titleSequence.length,
-      prediction: stubPrediction
-    }, 'Trajectory prediction (stub)');
+      const duration = Date.now() - startTime;
+      request.log.info({
+        candidateId,
+        titleSequenceLength: titleSequence.length,
+        nextRole: prediction.nextRole,
+        confidence: prediction.nextRoleConfidence,
+        lowConfidence: prediction.lowConfidence,
+        duration,
+      }, 'Trajectory prediction completed');
 
-    return reply.code(200).send(response);
+      return reply.code(200).send(response);
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      request.log.error({
+        candidateId,
+        error: error instanceof Error ? error.message : String(error),
+        duration,
+      }, 'Trajectory prediction failed');
+
+      return reply.code(500).send({
+        error: 'Prediction failed',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      } as any);
+    }
   });
 }

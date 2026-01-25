@@ -3,6 +3,9 @@ import { buildServer, getLogger } from '@hh/common';
 import { getTrajectoryServiceConfig } from './config';
 import { healthRoutes } from './routes/health';
 import { predictRoutes } from './routes/predict';
+import { shadowStatsRoutes } from './routes/shadow-stats';
+import { TrajectoryPredictor, ONNXSession } from './inference';
+import ShadowMode from './shadow/shadow-mode.js';
 
 async function bootstrap(): Promise<void> {
   process.env.SERVICE_NAME = process.env.SERVICE_NAME ?? 'hh-trajectory-svc';
@@ -22,10 +25,24 @@ async function bootstrap(): Promise<void> {
     });
     logger.info('Fastify server built');
 
+    // Initialize shadow mode for ML vs rule-based comparison logging
+    const shadowMode = new ShadowMode({
+      enabled: process.env.SHADOW_MODE_ENABLED === 'true', // Default: false
+      loggerConfig: {
+        batchSize: 100,
+        flushIntervalMs: 60_000, // Flush every 60 seconds
+        storageType: 'memory' // Use in-memory storage for now (TODO: postgres/bigquery)
+      }
+    });
+    logger.info({ shadowModeEnabled: shadowMode.isEnabled() }, 'Shadow mode initialized');
+
     // Track initialization state with mutable dependency container
+    const predictor = new TrajectoryPredictor(config);
     const state = {
       isReady: false,
-      modelLoaded: false
+      modelLoaded: false,
+      predictor,
+      shadowMode
     };
 
     // Register ALL routes BEFORE listen (required by Fastify)
@@ -33,6 +50,7 @@ async function bootstrap(): Promise<void> {
     logger.info('Registering routes (with lazy dependencies)...');
     await healthRoutes(server, state);
     await predictRoutes(server, state);
+    await shadowStatsRoutes(server, shadowMode);
     logger.info('Routes registered');
 
     // Register under-pressure plugin BEFORE listen (required by Fastify)
@@ -62,10 +80,10 @@ async function bootstrap(): Promise<void> {
     // Initialize ONNX model in background (after listen)
     setImmediate(async () => {
       try {
-        logger.info({ modelPath: config.modelPath }, 'Initializing ONNX model...');
+        logger.info({ modelPath: config.modelPath }, 'Initializing trajectory predictor...');
 
-        // Model loading will be implemented in Plan 02
-        // For now, just mark as ready
+        await predictor.initialize();
+
         state.modelLoaded = true;
         state.isReady = true;
 
@@ -74,7 +92,7 @@ async function bootstrap(): Promise<void> {
         const errorDetails = error instanceof Error
           ? { name: error.name, message: error.message, stack: error.stack }
           : { raw: String(error) };
-        logger.error({ error: errorDetails }, 'Failed to initialize ONNX model - service running in degraded mode');
+        logger.error({ error: errorDetails }, 'Failed to initialize trajectory predictor - service running in degraded mode');
         // Service stays up but routes will return errors when accessed
       }
     });
@@ -82,6 +100,13 @@ async function bootstrap(): Promise<void> {
     const shutdown = async () => {
       logger.info('Received shutdown signal.');
       try {
+        // Dispose shadow mode (flush remaining logs)
+        await shadowMode.dispose();
+        logger.info('Shadow mode disposed');
+
+        // Dispose ONNX session
+        await ONNXSession.dispose();
+
         await server.close();
         logger.info('Server closed gracefully.');
         process.exit(0);
