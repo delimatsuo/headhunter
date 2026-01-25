@@ -9,7 +9,7 @@
 
 **Core Value:** Find candidates who are actually qualified, not just candidates who happen to have the right keywords.
 
-**Current Focus:** Phase 4 (Multi-Signal Scoring Framework) in progress. Plan 04-01 complete - SignalWeightConfig types and role-type presets created. Foundation for configurable signal weights established.
+**Current Focus:** Phase 4 (Multi-Signal Scoring Framework) in progress. Plans 04-01 and 04-02 complete - SignalWeightConfig types, role-type presets, and scoring computation utilities created. Ready for Plan 04-03 (Response Enrichment).
 
 **Key Files:**
 - `.planning/PROJECT.md` - Project definition and constraints
@@ -22,13 +22,13 @@
 ## Current Position
 
 **Phase:** 4 of 10 (Multi-Signal Scoring Framework)
-**Plan:** 1 of ? complete
+**Plan:** 2 of ? complete
 **Status:** In Progress
-**Last activity:** 2026-01-24 - Completed 04-01-PLAN.md (SignalWeightConfig Types)
+**Last activity:** 2026-01-25 - Completed 04-02-PLAN.md (Scoring Implementation)
 
-**Progress:** [########..] 70%
+**Progress:** [########..] 72%
 
-**Next Action:** Continue with Plan 04-02 (Scoring Implementation)
+**Next Action:** Continue with Plan 04-03 (Response Enrichment)
 
 ---
 
@@ -39,7 +39,7 @@
 | 1 | Reranking Fix | Complete | 4/4 | 100% |
 | 2 | Search Recall Foundation | Complete | 5/5 | 100% |
 | 3 | Hybrid Search | Complete | 4/4 | 100% |
-| 4 | Multi-Signal Scoring Framework | In Progress | 1/? | 25% |
+| 4 | Multi-Signal Scoring Framework | In Progress | 2/? | 50% |
 | 5 | Skills Infrastructure | Pending | 0/? | 0% |
 | 6 | Skills Intelligence | Pending | 0/? | 0% |
 | 7 | Signal Scoring Implementation | Pending | 0/? | 0% |
@@ -101,6 +101,11 @@
 | Executive preset: function/pedigree weighted | Function (0.25) and companyPedigree (0.20) matter most for exec searches | 4.01 |
 | IC preset: specialty/techStack weighted | Specialty (0.20) and techStack (0.20) matter most for IC searches | 4.01 |
 | GEMINI_BLEND_WEIGHT default 0.7 | Rerank score blending weight configurable | 4.01 |
+| SignalScores mirrors SignalWeightConfig | Same 7 core signals + optional skillsMatch | 4.02 |
+| Missing signals default to 0.5 | Neutral value prevents NaN scores | 4.02 |
+| extractSignalScores reads Phase 2 metadata | Uses _*_score fields from metadata object | 4.02 |
+| normalizeVectorScore handles both scales | 0-100 and 0-1 input normalization | 4.02 |
+| weightsApplied field for transparency | Enables debugging which weights were used | 4.02 |
 
 ### Technical Notes
 
@@ -140,6 +145,13 @@
 - **normalizeWeights():** Ensures weights sum to 1.0 (04-01)
 - **resolveWeights():** Merges request overrides with role presets (04-01)
 - **getSignalWeightDefaults():** Returns env-configured defaults (04-01)
+- **SignalScores interface:** All 7 core signals + optional skillsMatch (04-02)
+- **computeWeightedScore():** Computes final weighted score from signals (04-02)
+- **extractSignalScores():** Extracts Phase 2 scores from PgHybridSearchRow (04-02)
+- **normalizeVectorScore():** Handles 0-100/0-1 scale normalization (04-02)
+- **completeSignalScores():** Ensures all signal fields present (04-02)
+- **HybridSearchRequest extended:** signalWeights, roleType fields added (04-02)
+- **HybridSearchResultItem extended:** signalScores, weightsApplied, roleTypeUsed fields added (04-02)
 
 ### Blockers
 
@@ -163,7 +175,7 @@ None currently identified.
 - [x] Complete 03-03: RRF Scoring SQL
 - [x] Complete 03-04: Hybrid Search Verification
 - [x] Complete 04-01: SignalWeightConfig Types and Role-Type Presets
-- [ ] Complete 04-02: Scoring Implementation (pending)
+- [x] Complete 04-02: Scoring Implementation
 - [ ] Verify EllaAI skills-master.ts format before copying (Phase 5)
 - [ ] Verify search recall improvement after Phase 2 deployment
 - [x] Note: Hard level filter at step 3.5 (career trajectory) - NOW CONVERTED TO SCORING
@@ -172,31 +184,29 @@ None currently identified.
 
 ## Session Continuity
 
-**Last session:** 2026-01-24
-**Stopped at:** Completed 04-01-PLAN.md - SignalWeightConfig Types and Role-Type Presets
-**Resume file:** None - ready for Phase 4 Plan 02
+**Last session:** 2026-01-25
+**Stopped at:** Completed 04-02-PLAN.md - Scoring Implementation
+**Resume file:** None - ready for Phase 4 Plan 03
 
 ### Context for Next Session
 
-Phase 4 (Multi-Signal Scoring Framework) IN PROGRESS. Plan 04-01 complete:
+Phase 4 (Multi-Signal Scoring Framework) IN PROGRESS. Plans 04-01 and 04-02 complete:
 
 | Plan | Name | Status | Commits |
 |------|------|--------|---------|
 | 04-01 | SignalWeightConfig Types | Complete | a6d048a, 724c3d6 |
-| 04-02 | Scoring Implementation | Pending | - |
+| 04-02 | Scoring Implementation | Complete | 6fe692c, 176829f |
 | 04-03 | Response Enrichment | Pending | - |
 
-**Phase 4.01 deliverables:**
-- SignalWeightConfig interface with all 7 core signals
-- Optional skillsMatch for skill-aware searches
-- RoleType union (executive, manager, ic, default)
-- ROLE_WEIGHT_PRESETS with role-specific weight distributions
-- normalizeWeights() for weight sum validation
-- resolveWeights() for merging request overrides with presets
-- SignalWeightEnvConfig with all 8 env config fields
-- SIGNAL_WEIGHT_* environment variables
-- GEMINI_BLEND_WEIGHT environment variable
-- getSignalWeightDefaults() for integration
+**Phase 4.02 deliverables:**
+- SignalScores interface with all 7 core signals + optional skillsMatch
+- HybridSearchRequest extended with signalWeights, roleType fields
+- HybridSearchResultItem extended with signalScores, weightsApplied, roleTypeUsed fields
+- computeWeightedScore() for weighted signal combination
+- extractSignalScores() to extract Phase 2 scores from database rows
+- normalizeVectorScore() for 0-100/0-1 scale handling
+- completeSignalScores() for ensuring all fields present
+- Missing signals default to 0.5 (neutral) preventing NaN
 
 All Phase 1 commits:
 - 01-01: 72954b0, 05b5110, ed14f64, 2e7a888
@@ -219,8 +229,9 @@ All Phase 3 commits:
 
 Phase 4 commits so far:
 - 04-01: a6d048a, 724c3d6
+- 04-02: 6fe692c, 176829f
 
 ---
 
 *State initialized: 2026-01-24*
-*Last updated: 2026-01-24*
+*Last updated: 2026-01-25*
