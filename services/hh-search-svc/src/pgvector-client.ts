@@ -588,27 +588,42 @@ export class PgVectorClient {
   }
 
   private async warmupPool(): Promise<void> {
-    const warmupTarget = Math.min(Math.max(this.config.poolMin, 0), Math.max(this.config.poolMax, 0));
+    // Warm up to poolMin to ensure connections are ready
+    const warmupTarget = Math.min(this.config.poolMin, this.config.poolMax);
     if (warmupTarget <= 0) {
+      this.logger.debug('Pool warmup skipped - poolMin is 0');
       return;
     }
 
     const started = Date.now();
-    let opened = 0;
+    const connections: PoolClient[] = [];
 
-    for (let i = 0; i < warmupTarget; i += 1) {
-      try {
-        const connection = await this.pool.connect();
-        connection.release();
-        opened += 1;
-      } catch (error) {
-        this.logger.warn({ error }, 'Failed to acquire warmup connection.');
-        break;
-      }
+    try {
+      // Acquire connections in parallel for faster warmup
+      const warmupPromises = Array.from({ length: warmupTarget }, async () => {
+        try {
+          return await this.pool.connect();
+        } catch (error) {
+          this.logger.warn({ error }, 'Failed to acquire warmup connection.');
+          return null;
+        }
+      });
+
+      const results = await Promise.all(warmupPromises);
+      results.forEach(client => {
+        if (client) connections.push(client);
+      });
+    } finally {
+      // Release all connections back to pool
+      connections.forEach(client => client.release());
     }
 
     this.logger.info(
-      { warmedConnections: opened, durationMs: Date.now() - started },
+      {
+        warmedConnections: connections.length,
+        targetConnections: warmupTarget,
+        durationMs: Date.now() - started
+      },
       'pgvector pool warmup completed.'
     );
   }
