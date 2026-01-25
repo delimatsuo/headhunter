@@ -1,4 +1,5 @@
 import type { AuthenticatedUser, TenantContext } from '@hh/common';
+import type { SignalWeightConfig, RoleType } from './signal-weights';
 
 export type EmbeddingVector = number[];
 
@@ -22,11 +23,55 @@ export interface HybridSearchRequest {
   limit?: number;
   offset?: number;
   includeDebug?: boolean;
+
+  /**
+   * Override signal weights for this search.
+   * If not provided, role-type defaults are used.
+   * Weights should sum to 1.0 (will be normalized if not).
+   */
+  signalWeights?: Partial<SignalWeightConfig>;
+
+  /**
+   * Role type for weight preset selection.
+   * Options: 'executive', 'manager', 'ic', 'default'
+   * If not provided, defaults to 'default'.
+   */
+  roleType?: RoleType;
 }
 
 export interface CandidateSkillMatch {
   name: string;
   weight: number;
+}
+
+/**
+ * Individual signal scores (0-1 normalized) contributing to final weighted score.
+ * These represent the multi-signal scoring framework's component scores.
+ */
+export interface SignalScores {
+  /** Vector similarity from hybrid search (0-1 normalized) */
+  vectorSimilarity: number;
+
+  /** Level/seniority match alignment (0-1) */
+  levelMatch: number;
+
+  /** Specialty match score (0-1) - backend, frontend, fullstack, etc */
+  specialtyMatch: number;
+
+  /** Tech stack compatibility score (0-1) */
+  techStackMatch: number;
+
+  /** Function alignment score (0-1) - engineering, product, design, etc */
+  functionMatch: number;
+
+  /** Career trajectory fit score (0-1) */
+  trajectoryFit: number;
+
+  /** Company pedigree score (0-1) */
+  companyPedigree: number;
+
+  /** Skills match score (0-1) - for skill-aware searches, optional */
+  skillsMatch?: number;
 }
 
 export interface HybridSearchResultItem {
@@ -53,6 +98,23 @@ export interface HybridSearchResultItem {
     consentRecord?: string | null;
     transferMechanism?: string | null;
   };
+
+  /**
+   * Individual signal scores (0-1 normalized) contributing to final score.
+   * Only present when signal scoring is enabled.
+   */
+  signalScores?: SignalScores;
+
+  /**
+   * The signal weights that were applied to compute the score.
+   * Useful for transparency and debugging.
+   */
+  weightsApplied?: SignalWeightConfig;
+
+  /**
+   * Which role type preset was used for scoring.
+   */
+  roleTypeUsed?: RoleType;
 }
 
 export interface HybridSearchTimings {
