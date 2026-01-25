@@ -23,7 +23,7 @@ The approach is enhancement, not replacement. The existing stack (PostgreSQL + p
 | 2 | Search Recall Foundation | Complete | 4 |
 | 3 | Hybrid Search | Complete | 4 |
 | 4 | Multi-Signal Scoring Framework | Complete | 3 |
-| 5 | Skills Infrastructure | Planned | 2 |
+| 5 | Skills Infrastructure | Complete | 2 |
 | 6 | Skills Intelligence | Pending | 3 |
 | 7 | Signal Scoring Implementation | Pending | 5 |
 | 8 | Career Trajectory | Pending | 4 |
@@ -163,10 +163,10 @@ Plans:
 **Plans:** 4 plans in 3 waves
 
 Plans:
-- [ ] 05-01-PLAN.md — Copy skills-master.ts and create skills-service wrapper (Wave 1)
-- [ ] 05-02-PLAN.md — Refactor vector-search.ts to use skills-service (Wave 2)
-- [ ] 05-03-PLAN.md — Refactor skill-aware-search.ts to use skills-service (Wave 2)
-- [ ] 05-04-PLAN.md — Verification checkpoint (Wave 3)
+- [x] 05-01-PLAN.md — Copy skills-master.ts and create skills-service wrapper (Wave 1)
+- [x] 05-02-PLAN.md — Refactor vector-search.ts to use skills-service (Wave 2)
+- [x] 05-03-PLAN.md — Refactor skill-aware-search.ts to use skills-service (Wave 2)
+- [x] 05-04-PLAN.md — Verification checkpoint (Wave 3)
 
 **Requirements:**
 - SKIL-01: EllaAI skills taxonomy (200+ skills) integrated into search
@@ -347,4 +347,4 @@ All phases are sequential. Each builds on the previous. No parallel execution pa
 ---
 
 *Roadmap created: 2026-01-24*
-*Last updated: 2026-01-25 after Phase 5 planning*
+*Last updated: 2026-01-25 after Phase 5 completion*
