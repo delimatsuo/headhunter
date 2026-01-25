@@ -337,6 +337,10 @@ export class SearchService {
     ranked = ranked.slice(0, scoringLimit);
     const scoringMs = Date.now() - scoringStart;
 
+    // Update pipeline metrics for Stage 2
+    pipelineMetrics.scoringCount = ranked.length;
+    pipelineMetrics.scoringMs = scoringMs;
+
     // Stage 2 logging
     if (this.config.search.pipelineLogStages) {
       this.logger.info({
@@ -407,6 +411,11 @@ export class SearchService {
     ranked = ranked.slice(0, rerankLimit);
     const rerankMs = Date.now() - rerankStart;
 
+    // Update pipeline metrics for Stage 3
+    pipelineMetrics.rerankCount = ranked.length;
+    pipelineMetrics.rerankMs = rerankMs;
+    pipelineMetrics.rerankApplied = Boolean(rerankOutcome && !rerankOutcome.metadata?.usedFallback);
+
     // Stage 3 logging
     if (this.config.search.pipelineLogStages) {
       this.logger.info({
@@ -430,6 +439,9 @@ export class SearchService {
       );
     }
 
+    // Update total pipeline time
+    pipelineMetrics.totalMs = Date.now() - totalStart;
+
     const response: HybridSearchResponse = {
       results: ranked.slice(0, limit),
       total: ranked.length,
@@ -445,6 +457,17 @@ export class SearchService {
           roleType,
           weightsApplied: resolvedWeights
         }
+      },
+      // Pipeline stage metrics (PIPE-01)
+      pipelineMetrics: {
+        retrievalCount: pipelineMetrics.retrievalCount,
+        retrievalMs: pipelineMetrics.retrievalMs,
+        scoringCount: pipelineMetrics.scoringCount,
+        scoringMs: pipelineMetrics.scoringMs,
+        rerankCount: pipelineMetrics.rerankCount,
+        rerankMs: pipelineMetrics.rerankMs,
+        rerankApplied: pipelineMetrics.rerankApplied,
+        totalMs: pipelineMetrics.totalMs
       }
     };
 
@@ -492,11 +515,62 @@ export class SearchService {
           seniorityAlignment: r.signalScores?.seniorityAlignment,
           recencyBoost: r.signalScores?.recencyBoost,
           companyRelevance: r.signalScores?.companyRelevance
-        }))
+        })),
+        // Pipeline stage breakdown
+        pipelineBreakdown: {
+          stage1_retrieval: {
+            count: pipelineMetrics.retrievalCount,
+            target: this.config.search.pipelineRetrievalLimit,
+            latencyMs: pipelineMetrics.retrievalMs
+          },
+          stage2_scoring: {
+            inputCount: pipelineMetrics.retrievalCount,
+            outputCount: pipelineMetrics.scoringCount,
+            cutoff: this.config.search.pipelineScoringLimit,
+            latencyMs: pipelineMetrics.scoringMs
+          },
+          stage3_rerank: {
+            inputCount: pipelineMetrics.scoringCount,
+            outputCount: pipelineMetrics.rerankCount,
+            cutoff: this.config.search.pipelineRerankLimit,
+            rerankApplied: pipelineMetrics.rerankApplied,
+            latencyMs: pipelineMetrics.rerankMs
+          }
+        }
       };
     }
 
     timings.totalMs = Date.now() - totalStart;
+
+    // Pipeline summary log (PIPE-01)
+    this.logger.info(
+      {
+        requestId: context.requestId,
+        tenantId: context.tenant.id,
+        pipeline: {
+          retrieval: pipelineMetrics.retrievalCount,
+          afterScoring: pipelineMetrics.scoringCount,
+          final: pipelineMetrics.rerankCount,
+          rerankApplied: pipelineMetrics.rerankApplied
+        },
+        latency: {
+          retrievalMs: pipelineMetrics.retrievalMs,
+          scoringMs: pipelineMetrics.scoringMs,
+          rerankMs: pipelineMetrics.rerankMs,
+          totalMs: pipelineMetrics.totalMs
+        },
+        targets: {
+          retrieval: this.config.search.pipelineRetrievalLimit,
+          scoring: this.config.search.pipelineScoringLimit,
+          rerank: this.config.search.pipelineRerankLimit
+        }
+      },
+      'Pipeline complete: retrieval(%d) -> scoring(%d) -> rerank(%d)',
+      pipelineMetrics.retrievalCount,
+      pipelineMetrics.scoringCount,
+      pipelineMetrics.rerankCount
+    );
+
     this.logger.info(
       {
         requestId: context.requestId,
