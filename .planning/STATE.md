@@ -24,13 +24,13 @@
 
 **Milestone:** v2.0 Advanced Intelligence
 **Phase:** 13 - ML Trajectory Prediction (IN PROGRESS)
-**Plan:** 2 of 7 executed
-**Status:** Phase 13 in progress - ML training pipeline complete
-**Last activity:** 2026-01-25 - Completed 13-02-PLAN.md (ML training pipeline)
+**Plan:** 1 of 7 executed
+**Status:** Phase 13 in progress - service scaffolding complete
+**Last activity:** 2026-01-25 - Completed 13-01-PLAN.md (hh-trajectory-svc scaffolding)
 
 **Progress:** [##########] v1.0 100% | [####------] v2.0: 2/5 phases (40%)
 
-**Next Action:** Continue Phase 13 execution (13-03 or next plan)
+**Next Action:** Continue Phase 13 execution (13-02 or next plan)
 
 ---
 
@@ -40,7 +40,7 @@
 |-------|------|--------|--------------|----------|
 | 11 | Performance Foundation | Complete | 5 | 100% |
 | 12 | Natural Language Search | Complete | 5 | 100% |
-| 13 | ML Trajectory Prediction | In Progress | 5 | 29% |
+| 13 | ML Trajectory Prediction | In Progress | 5 | 14% |
 | 14 | Bias Reduction | Pending | 5 | 0% |
 | 15 | Compliance Tooling | Pending | 6 | 0% |
 
@@ -113,10 +113,8 @@
 | Shadow mode for ML transition | 4-6 weeks side-by-side to validate ML matches rule-based baseline | 13 |
 | Fairlearn for bias metrics | Actively maintained, simpler API than AIF360 | 14 |
 | PostgreSQL for audit logs | No new databases, 4-year retention in existing infrastructure | 15 |
-| Rename ml-training to ml_training | Python doesn't recognize modules with hyphens in names | 13 |
-| PyTorch dynamo exporter with fallback | Better LSTM handling, fallback ensures compatibility | 13 |
-| Multi-task loss (0.1x auxiliary) | Primary task is next role; auxiliary tasks provide regularization | 13 |
-| hidden_dim=16 for LSTM | Research-validated for career prediction (RESEARCH.md) | 13 |
+| Disable auth and rate-limit temporarily | Focus on core functionality first, enable after Plan 02 ONNX integration | 13 |
+| Use stub responses in predict endpoint | Actual ONNX inference deferred to Plan 02 | 13 |
 
 ### Key Decisions (v1.0 - Archived)
 
@@ -151,18 +149,13 @@
 - NLPSearchConfig added to config.ts with environment variables
 - **153 passing unit tests total**
 
-**Phase 13 Deliverables (IN PROGRESS - 2/7 plans):**
-- hh-trajectory-svc Fastify server (port 7109) with health endpoint
-- TypeScript types: TrajectoryPrediction, MLPredictionConfig
-- ONNX session management singleton pattern
-- Python ML training pipeline (scripts/ml_training/trajectory/)
-- Data preparation with temporal_split (prevents leakage)
-- TitleEncoder with normalization and abbreviation mapping
-- CareerTrajectoryLSTM (bidirectional, hidden_dim=16)
-- Training loop with multi-task loss and early stopping
-- ONNX export with dynamo=True and dynamic_shapes
-- Isotonic calibration with ECE < 0.05 target
-- Evaluation with career changer testing
+**Phase 13 Deliverables (IN PROGRESS - 1/7 plans):**
+- hh-trajectory-svc Fastify server (port 7109) with health and predict endpoints
+- TypeScript types: TrajectoryPrediction, PredictRequest, PredictResponse, ShadowLog, HealthResponse
+- Service configuration with environment variable parsing
+- Lazy initialization pattern for model loading
+- Multi-stage Dockerfile following service mesh patterns
+- Stub prediction responses (actual ONNX inference in Plan 02)
 
 **v1.0 Deliverables:**
 - 3-stage pipeline with 500/100/50 funnel
@@ -193,8 +186,8 @@ None currently identified.
 - [x] Execute 12-05-PLAN.md (SearchService Integration)
 - [x] Execute 12-06-PLAN.md (NLP Integration & Semantic Synonyms)
 - [x] Plan Phase 13 (ML Trajectory Prediction) - 7 plans created
-- [x] Execute 13-01-PLAN.md (hh-trajectory-svc setup)
-- [x] Execute 13-02-PLAN.md (ML training pipeline)
+- [x] Execute 13-01-PLAN.md (hh-trajectory-svc scaffolding)
+- [ ] Execute 13-02-PLAN.md (ONNX integration)
 - [ ] Continue Phase 13 execution (5 more plans)
 - [ ] Verify pgvectorscale Cloud SQL compatibility
 - [ ] Run embedding backfill in production after Cloud SQL migration
@@ -210,10 +203,31 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 13-02-PLAN.md (ML training pipeline)
+**Stopped at:** Completed 13-01-PLAN.md (hh-trajectory-svc scaffolding)
 **Resume file:** None
 
 ### Context for Next Session
+
+**Phase 13 Plan 01 COMPLETE:**
+
+All 3 tasks executed successfully:
+
+- Task 1: Package configuration with onnxruntime-node dependency (Commit 4aaf03e)
+- Task 2: Core service files - config, types, index (Commit 411c9ee)
+- Task 3: Health/predict routes and Dockerfile (Commit 642e7a5)
+
+**Key Deliverables:**
+- hh-trajectory-svc service on port 7109
+- Health endpoint returns service status and modelLoaded flag
+- Predict endpoint accepts career sequences, returns stub predictions
+- Multi-stage Dockerfile with proper user permissions
+- Lazy initialization pattern for future ONNX model loading
+
+**Deviations:**
+- Fixed duplicate /ready route registration
+- Fixed under-pressure health check to throw error when model not loaded
+- Disabled auth and rate-limit temporarily (TODO: re-enable before production)
+- Fixed TypeScript type error in predict route error response
 
 **Phase 12 VERIFIED COMPLETE:**
 
