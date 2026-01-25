@@ -1,7 +1,7 @@
 # Project State: Headhunter AI v2.0 Advanced Intelligence
 
 **Initialized:** 2026-01-24
-**Current Status:** Phase 12 In Progress - Plan 02 complete
+**Current Status:** Phase 12 In Progress - Plan 03 complete
 
 ---
 
@@ -24,13 +24,13 @@
 
 **Milestone:** v2.0 Advanced Intelligence
 **Phase:** 12 - Natural Language Search (IN PROGRESS)
-**Plan:** 2 of 5 executed
-**Status:** Plan 12-02 complete (Entity Extraction)
-**Last activity:** 2026-01-25 - Completed 12-02-PLAN.md (Entity Extraction)
+**Plan:** 3 of 5 executed
+**Status:** Plan 12-03 complete (Query Expansion)
+**Last activity:** 2026-01-25 - Completed 12-03-PLAN.md (Query Expansion)
 
-**Progress:** [##########] v1.0 100% | [####------] v2.0 Phase 12: 40%
+**Progress:** [##########] v1.0 100% | [######----] v2.0 Phase 12: 60%
 
-**Next Action:** Execute 12-03-PLAN.md (Query Expansion)
+**Next Action:** Execute 12-04-PLAN.md (Search Integration)
 
 ---
 
@@ -39,7 +39,7 @@
 | Phase | Name | Status | Requirements | Progress |
 |-------|------|--------|--------------|----------|
 | 11 | Performance Foundation | Complete | 5 | 100% |
-| 12 | Natural Language Search | In Progress | 5 | 40% |
+| 12 | Natural Language Search | In Progress | 5 | 60% |
 | 13 | ML Trajectory Prediction | Pending | 5 | 0% |
 | 14 | Bias Reduction | Pending | 5 | 0% |
 | 15 | Compliance Tooling | Pending | 6 | 0% |
@@ -100,6 +100,9 @@
 | 150ms extraction timeout | Per RESEARCH.md latency budget, fallback to empty on timeout | 12 |
 | Post-extraction hallucination filter | Validate skills against query text instead of relying on LLM | 12 |
 | Bidirectional abbreviation matching | Support js->JavaScript and JavaScript->js lookups | 12 |
+| Copy skills ontology to services workspace | Enables direct imports without cross-workspace path issues | 12 |
+| Default confidence threshold 0.8 for expansion | Balance between recall and precision for skill expansion | 12 |
+| Weight 0.6x for expanded skills | Explicit skills dominate scoring; expanded skills boost recall | 12 |
 | ONNX Runtime for inference | Sub-50ms CPU inference, no GPU dependency, portable | 13 |
 | Shadow mode for ML transition | 4-6 weeks side-by-side to validate ML matches rule-based baseline | 13 |
 | Fairlearn for bias metrics | Actively maintained, simpler API than AIF360 | 14 |
@@ -125,9 +128,11 @@
 **Phase 12 Deliverables (In Progress):**
 - IntentRouter class with semantic routing (NLNG-01)
 - EntityExtractor class with Together AI JSON mode (NLNG-02)
+- QueryExpander class with skills ontology expansion (NLNG-03)
 - NLP types: IntentType, IntentRoute, ParsedQuery, ExtractedEntities
 - Vector utilities: cosineSimilarity, averageEmbeddings
-- 52 passing unit tests (19 intent + 33 entity)
+- Skills ontology (200+ skills) in services workspace
+- 75 passing unit tests (19 intent + 33 entity + 23 query expander)
 
 **v1.0 Deliverables:**
 - 3-stage pipeline with 500/100/50 funnel
@@ -153,7 +158,7 @@ None currently identified.
 - [x] Plan Phase 12 (Natural Language Search) - 5 plans created
 - [x] Execute 12-01-PLAN.md (Semantic Router Lite)
 - [x] Execute 12-02-PLAN.md (Entity Extraction)
-- [ ] Execute 12-03-PLAN.md (Query Expansion)
+- [x] Execute 12-03-PLAN.md (Query Expansion)
 - [ ] Execute 12-04-PLAN.md (Search Integration)
 - [ ] Execute 12-05-PLAN.md (Verification & Tuning)
 - [ ] Verify pgvectorscale Cloud SQL compatibility
@@ -170,33 +175,35 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 12-02-PLAN.md (Entity Extraction)
+**Stopped at:** Completed 12-03-PLAN.md (Query Expansion)
 **Resume file:** None
 
 ### Context for Next Session
 
-**Phase 12 Plan 02 (Entity Extraction) COMPLETE:**
+**Phase 12 Plan 03 (Query Expansion) COMPLETE:**
 
-All 2 tasks executed successfully:
+All 3 tasks executed successfully:
 
-- Task 1: EntityExtractor implementation - `6c33fdb`
-- Task 2: Unit tests (33 passing) - `b764b3f`
+- Task 0: Copy skills ontology to services workspace - `c63bf88`
+- Task 1: Implement QueryExpander - `0d1f314`
+- Task 2: Unit tests (23 passing) - `397ae1b`
 
 **Deliverables:**
-- `services/hh-search-svc/src/nlp/entity-extractor.ts` - EntityExtractor class
-- `services/hh-search-svc/src/nlp/__tests__/entity-extractor.spec.ts` - Unit tests
-- `services/hh-search-svc/package.json` - Added together-ai@0.33.0
+- `services/hh-search-svc/src/shared/skills-master.ts` - 200+ skills database
+- `services/hh-search-svc/src/shared/skills-graph.ts` - BFS expansion with LRU cache
+- `services/hh-search-svc/src/nlp/query-expander.ts` - QueryExpander class
+- `services/hh-search-svc/src/nlp/__tests__/query-expander.spec.ts` - Unit tests
 
 **Key Features:**
-- Together AI JSON mode with schema enforcement
-- Hallucination filtering (validates skills against query)
-- Portuguese term normalization (pleno -> mid, gerente -> manager)
-- Abbreviation matching (js -> JavaScript, k8s -> Kubernetes)
-- 150ms timeout with graceful fallback
+- Configurable depth, confidence threshold, max expansions
+- Explicit skills get confidence 1.0, expanded get 0.6x
+- Only high-confidence direct relations (>=0.8)
+- In-memory graph lookup completes in <5ms
+- Graceful fallback for unknown skills
 
 **Ready for:**
-- 12-03: Query Expansion (uses extracted skills for ontology lookup)
 - 12-04: Search Integration (orchestrates intent + extraction + expansion)
+- 12-05: Verification & Tuning
 
 ---
 
@@ -220,4 +227,4 @@ v2.0 Roadmap complete. 5 phases defined with 26 requirements mapped:
 ---
 
 *State initialized: 2026-01-24*
-*Last updated: 2026-01-25 - Completed Phase 12 Plan 02 (Entity Extraction)*
+*Last updated: 2026-01-25 - Completed Phase 12 Plan 03 (Query Expansion)*
