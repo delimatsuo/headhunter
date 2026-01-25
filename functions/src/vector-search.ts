@@ -7,6 +7,7 @@
 import * as admin from "firebase-admin";
 import { getEmbeddingProvider } from "./embedding-provider";
 import { getPgVectorClient, PgVectorClient, CandidateRecord } from "./pgvector-client";
+import { normalizeSkillName, skillsMatch } from './shared/skills-service';
 
 // Types for vector search
 interface EmbeddingData {
@@ -1263,45 +1264,30 @@ export class VectorSearchService {
 
   /**
    * Find matching skill with fuzzy matching
+   * Uses centralized skills-service for alias resolution
    */
   private findMatchingSkill(candidateSkills: Array<{ skill: string, confidence: number, source: string, category: string }>, targetSkill: string): { skill: string, confidence: number } | null {
-    const target = targetSkill.toLowerCase();
+    // Normalize both target and candidate skills using centralized taxonomy
+    const normalizedTarget = normalizeSkillName(targetSkill);
 
-    // Exact match first
-    const exactMatch = candidateSkills.find(s => s.skill === target);
-    if (exactMatch) {
-      return { skill: exactMatch.skill, confidence: exactMatch.confidence };
+    // Exact match via alias normalization (e.g., "JS" matches "JavaScript")
+    const aliasMatch = candidateSkills.find(s => skillsMatch(s.skill, targetSkill));
+    if (aliasMatch) {
+      return { skill: aliasMatch.skill, confidence: aliasMatch.confidence };
     }
 
-    // Partial match (skill contains target or vice versa)
-    const partialMatch = candidateSkills.find(s =>
-      s.skill.includes(target) || target.includes(s.skill)
-    );
-    if (partialMatch) {
-      return {
-        skill: partialMatch.skill,
-        confidence: partialMatch.confidence * 0.8 // Penalty for partial match
-      };
-    }
-
-    // Synonym matching (basic)
-    const synonyms: Record<string, string[]> = {
-      'javascript': ['js', 'ecmascript', 'node.js', 'nodejs'],
-      'python': ['py', 'python3'],
-      'kubernetes': ['k8s'],
-      'docker': ['containerization', 'containers'],
-      'aws': ['amazon web services'],
-      'machine learning': ['ml', 'ai', 'artificial intelligence']
-    };
-
-    for (const [canonical, alts] of Object.entries(synonyms)) {
-      if (target === canonical || alts.includes(target)) {
-        const synonymMatch = candidateSkills.find(s =>
-          s.skill === canonical || alts.includes(s.skill)
-        );
-        if (synonymMatch) {
-          return { skill: synonymMatch.skill, confidence: synonymMatch.confidence };
-        }
+    // Partial match (skill contains target or vice versa) - only for 3+ characters
+    // This prevents spurious matches like "go" matching "Django"
+    if (targetSkill.length >= 3) {
+      const target = targetSkill.toLowerCase();
+      const partialMatch = candidateSkills.find(s =>
+        s.skill.includes(target) || target.includes(s.skill)
+      );
+      if (partialMatch) {
+        return {
+          skill: partialMatch.skill,
+          confidence: partialMatch.confidence * 0.8 // Penalty for partial match
+        };
       }
     }
 
