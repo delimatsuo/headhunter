@@ -22,7 +22,7 @@ The approach is enhancement, not replacement. The existing stack (PostgreSQL + p
 | 1 | Reranking Fix | Complete | 1 |
 | 2 | Search Recall Foundation | Complete | 4 |
 | 3 | Hybrid Search | Complete | 4 |
-| 4 | Multi-Signal Scoring Framework | Pending | 3 |
+| 4 | Multi-Signal Scoring Framework | Planned | 3 |
 | 5 | Skills Infrastructure | Pending | 2 |
 | 6 | Skills Intelligence | Pending | 3 |
 | 7 | Signal Scoring Implementation | Pending | 5 |
@@ -102,10 +102,10 @@ Plans:
 **Plans:** 4 plans in 2 waves
 
 Plans:
-- [ ] 03-01-PLAN.md — Fix textScore=0 and add FTS diagnostic logging (Wave 1)
-- [ ] 03-02-PLAN.md — Add RRF configuration parameters (Wave 1)
-- [ ] 03-03-PLAN.md — Implement RRF fusion SQL and update types (Wave 2)
-- [ ] 03-04-PLAN.md — Add summary logging and verification checkpoint (Wave 2)
+- [x] 03-01-PLAN.md — Fix textScore=0 and add FTS diagnostic logging (Wave 1)
+- [x] 03-02-PLAN.md — Add RRF configuration parameters (Wave 1)
+- [x] 03-03-PLAN.md — Implement RRF fusion SQL and update types (Wave 2)
+- [x] 03-04-PLAN.md — Add summary logging and verification checkpoint (Wave 2)
 
 **Requirements:**
 - HYBD-01: Vector similarity search via pgvector for semantic matching
@@ -128,6 +128,15 @@ Plans:
 **Goal:** Scoring infrastructure exists to compute weighted combinations of signals.
 
 **Dependencies:** Phase 3 (need hybrid search results to score)
+
+**Plans:** 5 plans in 4 waves
+
+Plans:
+- [ ] 04-01-PLAN.md — Create SignalWeightConfig types and role-type presets (Wave 1)
+- [ ] 04-02-PLAN.md — Extend search types and create scoring utilities (Wave 2)
+- [ ] 04-03-PLAN.md — Integrate signal scoring into SearchService (Wave 3)
+- [ ] 04-04-PLAN.md — Wire API layer and module exports (Wave 3)
+- [ ] 04-05-PLAN.md — Verification checkpoint (Wave 4)
 
 **Requirements:**
 - SCOR-01: Vector similarity score (0-1) as baseline signal
@@ -330,4 +339,4 @@ All phases are sequential. Each builds on the previous. No parallel execution pa
 ---
 
 *Roadmap created: 2026-01-24*
-*Last updated: 2026-01-24 after Phase 3 planning*
+*Last updated: 2026-01-24 after Phase 4 planning*
