@@ -4,6 +4,7 @@ import { CandidateProfile, SkillAssessment, SkillMatchData, SignalScores, Signal
 import { SkillConfidenceDisplay } from '../Skills/SkillConfidenceDisplay';
 import { SignalScoreBreakdown } from '../Match/SignalScoreBreakdown';
 import { SkillChip } from '../Match/SkillChip';
+import { TrajectoryPrediction } from './TrajectoryPrediction';
 import { api } from '../../services/api';
 import './SkillAwareCandidateCard.css';
 
@@ -725,6 +726,16 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
                       <p><strong>Progression:</strong> {trajectory.progression.charAt(0).toUpperCase() + trajectory.progression.slice(1)}</p>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* ML Trajectory Prediction - Phase 13 */}
+              {candidate.mlTrajectory && (
+                <div className="detail-section" style={{ gridColumn: '1 / -1' }}>
+                  <h4 className="text-xs font-medium text-gray-500 mb-2">
+                    ML Trajectory Prediction
+                  </h4>
+                  <TrajectoryPrediction prediction={candidate.mlTrajectory} />
                 </div>
               )}
             </div>
