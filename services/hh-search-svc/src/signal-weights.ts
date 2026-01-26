@@ -7,53 +7,86 @@
  *
  * All weights should sum to 1.0 for normalized scoring.
  *
+ * ## BIAS-02 Compliance
+ *
+ * All signals in this configuration are documented for proxy risk:
+ * - LOW risk: vectorSimilarity, levelMatch, specialtyMatch, techStackMatch,
+ *   functionMatch, trajectoryFit, skillsMatch, skillsExactMatch, skillsInferred,
+ *   seniorityAlignment, recencyBoost
+ * - MEDIUM risk: companyPedigree, companyRelevance (documented justification)
+ * - HIGH risk signals (location, graduationYear, school) are NOT included
+ *
+ * @see docs/SCORING_ALGORITHM.md for full proxy variable audit
  * @module signal-weights
  */
 
 /**
  * Signal weight configuration for multi-signal scoring.
  * All weights are 0-1 normalized and should sum to 1.0.
+ *
+ * @see docs/SCORING_ALGORITHM.md for full documentation
+ * @see BIAS-02 for demographic-blind scoring compliance
  */
 export interface SignalWeightConfig {
-  /** Vector similarity from hybrid search (0-1) */
+  /** Vector similarity from hybrid search (0-1) - PROXY RISK: LOW */
   vectorSimilarity: number;
 
-  /** Level/seniority match score (0-1) */
+  /** Level/seniority match score (0-1) - PROXY RISK: LOW */
   levelMatch: number;
 
-  /** Specialty match score (0-1) - backend, frontend, fullstack, etc */
+  /** Specialty match score (0-1) - backend, frontend, fullstack, etc - PROXY RISK: LOW */
   specialtyMatch: number;
 
-  /** Tech stack compatibility score (0-1) */
+  /** Tech stack compatibility score (0-1) - PROXY RISK: LOW */
   techStackMatch: number;
 
-  /** Function alignment score (0-1) - engineering, product, design, etc */
+  /** Function alignment score (0-1) - engineering, product, design, etc - PROXY RISK: LOW */
   functionMatch: number;
 
-  /** Career trajectory fit score (0-1) */
+  /** Career trajectory fit score (0-1) - PROXY RISK: LOW */
   trajectoryFit: number;
 
-  /** Company pedigree score (0-1) */
+  /**
+   * Company pedigree score (0-1) - PROXY RISK: **MEDIUM**
+   *
+   * This signal correlates with demographic factors (access to elite
+   * institutions/companies). However, prior experience at scale is a
+   * legitimate job requirement for certain roles.
+   *
+   * Mitigation: Weight capped at 12%, excluded from anonymized view,
+   * documented in SCORING_ALGORITHM.md as job-related justification.
+   *
+   * @see docs/SCORING_ALGORITHM.md#medium-risk-variables-used-with-justification
+   */
   companyPedigree: number;
 
-  /** Skills match score (0-1) - for skill-aware searches, optional */
+  /** Skills match score (0-1) - for skill-aware searches, optional - PROXY RISK: LOW */
   skillsMatch?: number;
 
   // ===== PHASE 7 WEIGHTS (all 0-1, optional) =====
 
-  /** SCOR-02: Weight for skills exact match signal */
+  /** SCOR-02: Weight for skills exact match signal - PROXY RISK: LOW */
   skillsExactMatch?: number;
 
-  /** SCOR-03: Weight for skills inferred signal */
+  /** SCOR-03: Weight for skills inferred signal - PROXY RISK: LOW */
   skillsInferred?: number;
 
-  /** SCOR-04: Weight for seniority alignment signal */
+  /** SCOR-04: Weight for seniority alignment signal - PROXY RISK: LOW */
   seniorityAlignment?: number;
 
-  /** SCOR-05: Weight for recency boost signal */
+  /** SCOR-05: Weight for recency boost signal - PROXY RISK: LOW */
   recencyBoost?: number;
 
-  /** SCOR-06: Weight for company relevance signal */
+  /**
+   * SCOR-06: Weight for company relevance signal - PROXY RISK: **MEDIUM**
+   *
+   * Similar to companyPedigree, this correlates with demographic factors.
+   * Job-related justification: industry-specific experience is legitimate.
+   *
+   * Mitigation: Weight capped at 12%, can be overridden per search.
+   *
+   * @see docs/SCORING_ALGORITHM.md#medium-risk-variables-used-with-justification
+   */
   companyRelevance?: number;
 }
 
