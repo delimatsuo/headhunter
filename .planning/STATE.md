@@ -1,7 +1,7 @@
 # Project State: Headhunter AI v2.0 Advanced Intelligence
 
 **Initialized:** 2026-01-24
-**Current Status:** Phase 14 IN PROGRESS - Bias Reduction (Plan 02 Complete)
+**Current Status:** Phase 14 IN PROGRESS - Bias Reduction (Plan 01 Complete)
 
 ---
 
@@ -24,13 +24,13 @@
 
 **Milestone:** v2.0 Advanced Intelligence
 **Phase:** 14 - Bias Reduction (IN PROGRESS)
-**Plan:** 2 of 6 executed
-**Status:** Completed 14-02-PLAN.md (SCORING_ALGORITHM.md documentation)
-**Last activity:** 2026-01-26 - Completed 14-02-PLAN.md (BIAS-02 demographic-blind scoring)
+**Plan:** 1 of 6 executed
+**Status:** Completed 14-01-PLAN.md (Resume anonymization toggle)
+**Last activity:** 2026-01-26 - Completed 14-01-PLAN.md (BIAS-01 anonymization)
 
 **Progress:** [##########] v1.0 100% | [######----] v2.0: 3/5 phases (60%)
 
-**Next Action:** Execute 14-03-PLAN.md (Fairness Metrics)
+**Next Action:** Execute 14-02-PLAN.md (Demographic-blind scoring)
 
 ---
 
@@ -41,7 +41,7 @@
 | 11 | Performance Foundation | Complete | 5 | 100% |
 | 12 | Natural Language Search | Complete | 5 | 100% |
 | 13 | ML Trajectory Prediction | Complete | 5 | 100% |
-| 14 | Bias Reduction | In Progress | 5 | 33% (2/6 plans) |
+| 14 | Bias Reduction | In Progress | 5 | 17% (1/6 plans) |
 | 15 | Compliance Tooling | Pending | 6 | 0% |
 
 **Overall v2.0:** 3/5 phases complete (60%)
@@ -237,7 +237,7 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-26
-**Stopped at:** Completed 14-02-PLAN.md (SCORING_ALGORITHM.md documentation)
+**Stopped at:** Completed 14-01-PLAN.md (Resume anonymization toggle)
 **Resume file:** None
 
 **Phase 13 COMPLETE (All 7 Plans):**
@@ -348,24 +348,21 @@ v2.0 Roadmap complete. 5 phases defined with 26 requirements mapped:
 
 ---
 
-**Phase 14 IN PROGRESS (2/6 Plans):**
+**Phase 14 IN PROGRESS (1/6 Plans):**
 
-**Plan 01 (Wave 1):** Anonymization Types and Configuration (BIAS-01)
-- Anonymization types and configuration for blind review mode
-- Commit: b93dcc5
-
-**Plan 02 (Wave 1):** SCORING_ALGORITHM.md Documentation (BIAS-02)
-- Scoring algorithm documentation with proxy variable audit
-- 297-line documentation with HIGH/MEDIUM/LOW risk analysis
-- JSDoc PROXY RISK annotations in signal-weights.ts (13 signals)
-- Commits: 59c2df7, da9bd9b
+**Plan 01 (Wave 1):** Resume Anonymization Toggle (BIAS-01)
+- Anonymization types: AnonymizationConfig, AnonymizedCandidate, AnonymizedSearchResponse
+- anonymizeCandidate() and anonymizeSearchResponse() functions
+- Match reason filtering for company/school/location mentions
+- API integration: `anonymizedView` param on /v1/search/hybrid
+- 30 unit tests (514 lines)
+- Commits: b93dcc5, 344ba5b, ecd2b4d
 
 **Phase 14 Key Progress:**
-- BIAS-01: Anonymization infrastructure ready
-- BIAS-02: Demographic-blind scoring documented
-- Ready for: BIAS-03 (Fairness metrics)
+- BIAS-01: Resume anonymization toggle COMPLETE
+- Ready for: BIAS-02 (Demographic-blind scoring)
 
 ---
 
 *State initialized: 2026-01-24*
-*Last updated: 2026-01-26 - Phase 14 Plan 02 Complete (BIAS-02 Documentation)*
+*Last updated: 2026-01-26 - Phase 14 Plan 01 Complete (BIAS-01 Anonymization)*
