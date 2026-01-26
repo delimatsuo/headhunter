@@ -1,0 +1,79 @@
+/* AdminPage.css - Styles for admin page layout and tabs */
+
+.admin-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.admin-page .dashboard-header {
+  margin-bottom: 24px;
+}
+
+.admin-page .dashboard-header h1 {
+  margin: 0 0 8px 0;
+  color: #212121;
+}
+
+.admin-page .dashboard-header p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Tab Navigation */
+.admin-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: 24px;
+}
+
+.tab-button {
+  background: none;
+  border: none;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s ease;
+}
+
+.tab-button:hover {
+  color: #1976d2;
+  background: rgba(25, 118, 210, 0.04);
+}
+
+.tab-button.active {
+  color: #1976d2;
+  border-bottom-color: #1976d2;
+}
+
+.tab-button:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+/* Tab Content */
+.tab-content {
+  min-height: 400px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .admin-page {
+    padding: 16px;
+  }
+
+  .admin-tabs {
+    flex-wrap: wrap;
+  }
+
+  .tab-button {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+}
