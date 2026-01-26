@@ -24,13 +24,13 @@
 
 **Milestone:** v2.0 Advanced Intelligence
 **Phase:** 13 - ML Trajectory Prediction (IN PROGRESS)
-**Plan:** 4 of 7 executed
-**Status:** Phase 13 in progress - Shadow mode infrastructure complete
-**Last activity:** 2026-01-25 - Completed 13-04-PLAN.md (Shadow mode for ML validation)
+**Plan:** 6 of 7 executed
+**Status:** Phase 13 in progress - UI components complete
+**Last activity:** 2026-01-25 - Completed 13-06-PLAN.md (ML trajectory UI components)
 
-**Progress:** [##########] v1.0 100% | [####------] v2.0: 2/5 phases (40%)
+**Progress:** [##########] v1.0 100% | [#####-----] v2.0: 2/5 phases (40%)
 
-**Next Action:** Continue Phase 13 execution (13-05 or next plan)
+**Next Action:** Continue Phase 13 execution (13-07 - final plan)
 
 ---
 
@@ -40,7 +40,7 @@
 |-------|------|--------|--------------|----------|
 | 11 | Performance Foundation | Complete | 5 | 100% |
 | 12 | Natural Language Search | Complete | 5 | 100% |
-| 13 | ML Trajectory Prediction | In Progress | 5 | 57% |
+| 13 | ML Trajectory Prediction | In Progress | 5 | 86% |
 | 14 | Bias Reduction | Pending | 5 | 0% |
 | 15 | Compliance Tooling | Pending | 6 | 0% |
 
@@ -119,6 +119,9 @@
 | Linear interpolation for calibration | Matches scikit-learn IsotonicRegression without Python dependency | 13 |
 | Confidence threshold 0.6 for ML predictions | Balance precision vs recall for uncertainty flagging | 13 |
 | Background predictor initialization | Cloud Run fast startup, setImmediate() non-blocking model load | 13 |
+| Confidence color thresholds (UI) | Green >=80%, Yellow 60-79%, Red <60% for visual distinction | 13 |
+| Hireability three-tier labels | High >=0.7, Moderate >=0.4, Lower <0.4 for recruiter guidance | 13 |
+| ML predictions in expanded card | Avoid clutter in collapsed view, keep related to career trajectory section | 13 |
 
 ### Key Decisions (v1.0 - Archived)
 
@@ -153,7 +156,7 @@
 - NLPSearchConfig added to config.ts with environment variables
 - **153 passing unit tests total**
 
-**Phase 13 Deliverables (IN PROGRESS - 3/7 plans):**
+**Phase 13 Deliverables (IN PROGRESS - 6/7 plans):**
 - hh-trajectory-svc Fastify server (port 7109) with health and predict endpoints
 - TypeScript types: TrajectoryPrediction, PredictRequest, PredictResponse, ShadowLog, HealthResponse
 - Service configuration with environment variable parsing
@@ -168,6 +171,12 @@
 - Background initialization with setImmediate for non-blocking startup
 - Graceful shutdown with ONNX session disposal
 - Multi-stage Dockerfile following service mesh patterns
+- Shadow mode infrastructure with ML vs rule-based comparison logging
+- TrajectoryClient with circuit breaker for hh-trajectory-svc communication
+- MLTrajectoryPrediction UI types with confidence, tenure, hireability
+- ConfidenceIndicator component with color-coded badges (green/yellow/red)
+- TrajectoryPrediction display component with icons and uncertainty warnings
+- Candidate card integration for ML predictions in expanded details
 
 **v1.0 Deliverables:**
 - 3-stage pipeline with 500/100/50 funnel
@@ -201,7 +210,10 @@ None currently identified.
 - [x] Execute 13-01-PLAN.md (hh-trajectory-svc scaffolding)
 - [x] Execute 13-02-PLAN.md (Python ML training pipeline)
 - [x] Execute 13-03-PLAN.md (ONNX inference integration)
-- [ ] Continue Phase 13 execution (4 more plans)
+- [x] Execute 13-04-PLAN.md (Shadow mode infrastructure)
+- [x] Execute 13-05-PLAN.md (TrajectoryClient with circuit breaker)
+- [x] Execute 13-06-PLAN.md (ML trajectory UI components)
+- [ ] Continue Phase 13 execution (1 final plan)
 - [ ] Verify pgvectorscale Cloud SQL compatibility
 - [ ] Run embedding backfill in production after Cloud SQL migration
 - [ ] Prepare training data for trajectory LSTM (Phase 13 blocker)
@@ -216,12 +228,12 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed 13-04-PLAN.md (Shadow mode for ML validation)
+**Stopped at:** Completed 13-06-PLAN.md (ML trajectory UI components)
 **Resume file:** None
 
-**Phase 13 Wave 2 COMPLETE (Plans 01-04):**
+**Phase 13 Wave 3 COMPLETE (Plans 01-06):**
 
-All 4 plans executed successfully:
+All 6 plans executed successfully:
 
 **Plan 01 (Wave 1):** hh-trajectory-svc Scaffolding
 - 3 tasks, 3 commits (4aaf03e, 411c9ee, 642e7a5)
@@ -239,20 +251,34 @@ All 4 plans executed successfully:
 - 3 tasks, 3 commits (f470a18, bffd1b6, be39ca3)
 - Comparison logging with promotion readiness tracking
 
+**Plan 05 (Wave 3):** TrajectoryClient with Circuit Breaker
+- 3 tasks, 3 commits (c3f6314, 1e0e747, 7b1c8d2)
+- HTTP client for hh-trajectory-svc with Opossum circuit breaker
+
+**Plan 06 (Wave 3):** ML Trajectory UI Components
+- 3 tasks, 3 commits (b9a0b8b, 5f0fcfd, 745cf56)
+- React components for displaying ML predictions on candidate cards
+
 **Key Deliverables:**
 - hh-trajectory-svc service fully functional
 - ONNX Runtime integration complete
 - Shadow mode for ML vs rule-based validation
 - GET /shadow/stats endpoint (promotion criteria: >85% direction, >80% velocity, >1000 comparisons)
 - Batch logging with 60-second auto-flush
+- TrajectoryClient with Opossum circuit breaker (5s timeout, 50% failure threshold)
+- ConfidenceIndicator React component with green/yellow/red badges
+- TrajectoryPrediction component displaying next role, tenure, hireability
+- Candidate card integration in expanded details section
 
 **Deviations:**
 - None - all plans executed as written
 
-**Next:** Plan 05 (Wave 3) - Training data pipeline or next plan in sequence
+**Next:** Plan 07 (Wave 4) - Search service integration (final plan)
 
+**Notes:**
 - Disabled auth and rate-limit temporarily (TODO: re-enable before production)
 - Fixed TypeScript type error in predict route error response
+- UI components support graceful degradation without ML data
 
 **Phase 12 VERIFIED COMPLETE:**
 
