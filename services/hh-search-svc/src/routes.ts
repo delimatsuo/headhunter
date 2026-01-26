@@ -10,6 +10,7 @@ import type { PerformanceTracker } from './performance-tracker';
 import { hybridSearchSchema, candidateSearchSchema } from './schemas';
 import type { HybridSearchRequest, HybridSearchResponse, HybridSearchFilters } from './types';
 import { SearchService } from './search-service';
+import { anonymizeSearchResponse } from './bias';
 
 interface RegisterRoutesOptions {
   service: SearchService | null;
@@ -221,6 +222,11 @@ export async function registerRoutes(
         reply.header('X-Response-Time', `${cached.timings.totalMs}ms`);
         reply.header('X-Cache-Status', 'hit');
 
+        // Apply anonymization if requested (BIAS-01)
+        if (request.body.anonymizedView) {
+          return anonymizeSearchResponse(cacheHitResponse);
+        }
+
         return cacheHitResponse;
       }
 
@@ -275,6 +281,11 @@ export async function registerRoutes(
           p95Target,
           timings: response.timings
         }, 'Search latency exceeded p95 target');
+      }
+
+      // Apply anonymization if requested (BIAS-01)
+      if (request.body.anonymizedView) {
+        return anonymizeSearchResponse(response);
       }
 
       return response;

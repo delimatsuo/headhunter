@@ -67,6 +67,15 @@ export interface HybridSearchRequest {
    * @default 0.6
    */
   nlpConfidenceThreshold?: number;
+
+  /**
+   * Enable anonymized view for blind hiring workflow.
+   * When true, strips PII (name, title, location, photo) from results.
+   * Preserves candidateId, skills, experience, scores for evaluation.
+   * @default false
+   * @see BIAS-01: Resume anonymization toggle
+   */
+  anonymizedView?: boolean;
 }
 
 export interface CandidateSkillMatch {

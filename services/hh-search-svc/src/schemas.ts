@@ -105,6 +105,11 @@ export const hybridSearchSchema: FastifySchema = {
         minimum: 0,
         maximum: 1,
         description: 'Override NLP confidence threshold (0-1)'
+      },
+      // Bias reduction (BIAS-01)
+      anonymizedView: {
+        type: 'boolean',
+        description: 'Enable anonymized view for blind hiring - strips PII from results'
       }
     }
   },
