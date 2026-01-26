@@ -166,6 +166,8 @@ export interface CandidateProfile {
   };
   matchReasons?: string[];
   overall_score: number;
+  /** ML trajectory prediction from hh-trajectory-svc (Phase 13) */
+  mlTrajectory?: MLTrajectoryPrediction;
 }
 
 export interface MatchRationale {
@@ -398,4 +400,26 @@ export interface VectorSearchResult {
   overall_score?: number;
   profile?: CandidateProfile;
   match_reasons?: string[];
+}
+
+/**
+ * ML trajectory prediction from hh-trajectory-svc (Phase 13).
+ * Provides next role predictions, tenure estimates, and hireability scores.
+ */
+export interface MLTrajectoryPrediction {
+  /** Predicted next role title */
+  nextRole: string;
+  /** Confidence in next role prediction (0-1) */
+  nextRoleConfidence: number;
+  /** Predicted tenure range in months */
+  tenureMonths: {
+    min: number;
+    max: number;
+  };
+  /** Hireability score (0-1) - likelihood to accept offer */
+  hireability: number;
+  /** Flag indicating low confidence prediction (<0.6) */
+  lowConfidence: boolean;
+  /** Explanation for uncertainty if lowConfidence is true */
+  uncertaintyReason?: string;
 }
