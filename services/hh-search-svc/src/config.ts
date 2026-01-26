@@ -139,6 +139,20 @@ export interface NLPSearchConfig {
 }
 
 /**
+ * ML Trajectory configuration for hh-trajectory-svc integration.
+ * Controls ML-based trajectory predictions during shadow mode.
+ * @see Phase 13: ML Trajectory Prediction
+ */
+export interface MLTrajectoryConfig {
+  /** Base URL for hh-trajectory-svc (default: http://localhost:7109) */
+  url: string;
+  /** Enable ML trajectory predictions (default: true) */
+  enabled: boolean;
+  /** Timeout for prediction requests in ms (default: 100) */
+  timeout: number;
+}
+
+/**
  * Signal weight environment configuration for multi-signal scoring.
  * These values provide defaults that can be overridden via request or role-type presets.
  */
@@ -171,6 +185,7 @@ export interface SearchServiceConfig {
   firestoreFallback: FirestoreFallbackConfig;
   signalWeights: SignalWeightEnvConfig;
   nlp: NLPSearchConfig;
+  mlTrajectory: MLTrajectoryConfig;
 }
 
 let cachedConfig: SearchServiceConfig | null = null;
@@ -357,6 +372,13 @@ export function getSearchServiceConfig(): SearchServiceConfig {
     expansionConfidenceThreshold: parseNumber(process.env.NLP_EXPANSION_CONFIDENCE_THRESHOLD, 0.8)
   };
 
+  // ML Trajectory configuration for hh-trajectory-svc integration (Phase 13)
+  const mlTrajectory: MLTrajectoryConfig = {
+    url: normalizeUrl(process.env.ML_TRAJECTORY_URL, 'http://localhost:7109'),
+    enabled: parseBoolean(process.env.ML_TRAJECTORY_ENABLED, true),
+    timeout: parseNumber(process.env.ML_TRAJECTORY_TIMEOUT, 100)
+  };
+
   cachedConfig = {
     base,
     embed,
@@ -366,7 +388,8 @@ export function getSearchServiceConfig(): SearchServiceConfig {
     search,
     firestoreFallback,
     signalWeights,
-    nlp
+    nlp,
+    mlTrajectory
   };
 
   // Production security validation
