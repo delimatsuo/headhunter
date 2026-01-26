@@ -41,7 +41,7 @@ The approach remains enhancement, not replacement. All features integrate with e
 | 11 | Performance Foundation | Complete | 5 |
 | 12 | Natural Language Search | Complete | 5 |
 | 13 | ML Trajectory Prediction | Complete | 5 |
-| 14 | Bias Reduction | Pending | 5 |
+| 14 | Bias Reduction | Planned | 5 |
 | 15 | Compliance Tooling | Pending | 6 |
 
 **v2.0 Total:** 26 requirements across 5 phases
@@ -208,6 +208,23 @@ Plans:
 
 **Dependencies:** Phase 13 (trajectory predictions inform bias analysis)
 
+**Plans:** 6 plans
+
+Plans:
+- [ ] 14-01-PLAN.md - Anonymization middleware and types
+- [ ] 14-02-PLAN.md - Proxy variable audit and scoring documentation
+- [ ] 14-03-PLAN.md - Fairlearn bias metrics worker and selection event logging
+- [ ] 14-04-PLAN.md - Slate diversity analysis
+- [ ] 14-05-PLAN.md - Anonymized candidate UI and toggle
+- [ ] 14-06-PLAN.md - Bias metrics dashboard and impact ratio alerts
+
+**Status:** Planned. 6 plans created across 3 waves.
+
+**Wave Structure:**
+- Wave 1: 14-01 (anonymization middleware), 14-02 (proxy audit) - Foundation, parallel
+- Wave 2: 14-03 (Fairlearn worker), 14-04 (slate diversity) - Depends on Wave 1
+- Wave 3: 14-05 (anonymized UI), 14-06 (bias dashboard) - Depends on Wave 2
+
 **Requirements:**
 - BIAS-01: Resume anonymization toggle (remove name, photo, school names)
 - BIAS-02: Demographic-blind scoring (no demographic proxies in scoring)
@@ -227,7 +244,7 @@ Plans:
 - Anonymization middleware in search response transformation
 - Admin dashboard components in headhunter-ui
 
-**Research Needed:** Medium - proxy variable audit, independent auditor selection for LL144
+**Research Needed:** Medium - research completed in 14-RESEARCH.md
 
 **Critical Pitfalls:**
 - Anonymization proxy leakage (university name reveals demographic info)
@@ -326,4 +343,4 @@ All v2.0 phases are sequential. Performance must be established before adding la
 ---
 
 *Roadmap created: 2026-01-25*
-*Last updated: 2026-01-25 - Phase 13 planned (ML Trajectory Prediction)*
+*Last updated: 2026-01-26 - Phase 14 planned (Bias Reduction)*
