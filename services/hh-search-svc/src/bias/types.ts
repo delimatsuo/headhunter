@@ -166,3 +166,95 @@ export const DEFAULT_ANONYMIZATION_CONFIG: AnonymizationConfig = {
   // Default: also strip proxy fields for full anonymization
   stripProxyFields: true,
 };
+
+// ============================================================================
+// Slate Diversity Types for BIAS-05
+// ============================================================================
+
+/**
+ * Diversity dimension for slate analysis.
+ */
+export type DiversityDimension = 'companyTier' | 'experienceBand' | 'specialty';
+
+/**
+ * Distribution of candidates across a dimension.
+ */
+export interface DimensionDistribution {
+  /** The dimension being analyzed */
+  dimension: DiversityDimension;
+
+  /** Count of candidates per group value */
+  distribution: Record<string, number>;
+
+  /** The dominant group (highest count) */
+  dominantGroup: string;
+
+  /** Concentration percentage (dominant group / total) */
+  concentrationPct: number;
+
+  /** Whether concentration exceeds warning threshold */
+  isConcentrated: boolean;
+}
+
+/**
+ * Warning about slate homogeneity.
+ */
+export interface DiversityWarning {
+  /** Severity level */
+  level: 'info' | 'warning' | 'alert';
+
+  /** Human-readable message */
+  message: string;
+
+  /** The dimension with concentration issue */
+  dimension: DiversityDimension;
+
+  /** Concentration percentage */
+  concentrationPct: number;
+
+  /** Suggested action */
+  suggestion: string;
+}
+
+/**
+ * Complete slate diversity analysis.
+ */
+export interface SlateDiversityAnalysis {
+  /** Total candidates analyzed */
+  totalCandidates: number;
+
+  /** Distribution per dimension */
+  dimensions: DimensionDistribution[];
+
+  /** Generated warnings */
+  warnings: DiversityWarning[];
+
+  /** Summary diversity score (0-100, higher = more diverse) */
+  diversityScore: number;
+
+  /** Whether any dimension has concentration warning */
+  hasConcentrationIssue: boolean;
+}
+
+/**
+ * Configuration for diversity analysis.
+ */
+export interface DiversityConfig {
+  /** Concentration threshold for warnings (default: 0.70 = 70%) */
+  concentrationThreshold: number;
+
+  /** Minimum candidates to analyze (skip if fewer) */
+  minCandidates: number;
+
+  /** Dimensions to analyze */
+  dimensions: DiversityDimension[];
+}
+
+/**
+ * Default diversity configuration.
+ */
+export const DEFAULT_DIVERSITY_CONFIG: DiversityConfig = {
+  concentrationThreshold: 0.70,  // 70% triggers warning
+  minCandidates: 5,              // Need at least 5 to analyze
+  dimensions: ['companyTier', 'experienceBand', 'specialty'],
+};
