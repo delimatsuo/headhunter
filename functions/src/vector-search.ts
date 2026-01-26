@@ -749,6 +749,24 @@ export class VectorSearchService {
         this.searchDirectMatches(query.text_query, query.org_id)
       ]);
 
+      // DEBUG: Log what each search returned
+      console.log(`[SkillAwareSearch] Vector search returned ${vectorResults.length} results`);
+      if (vectorResults.length > 0) {
+        const vectorSample = vectorResults.slice(0, 3).map(r => ({
+          id: r.candidate_id,
+          sim: r.similarity_score?.toFixed(4) || 'undefined'
+        }));
+        console.log(`[SkillAwareSearch] Vector sample similarities: ${JSON.stringify(vectorSample)}`);
+      }
+      console.log(`[SkillAwareSearch] Direct matches returned ${directResults.length} results`);
+      if (directResults.length > 0) {
+        const directSample = directResults.slice(0, 3).map(r => ({
+          id: r.candidate_id,
+          sim: r.similarity_score?.toFixed(4) || 'undefined'
+        }));
+        console.log(`[SkillAwareSearch] Direct match sample: ${JSON.stringify(directSample)}`);
+      }
+
       // Merge results, prioritizing direct matches
       const mergedResultsMap = new Map<string, VectorSearchResult>();
 
@@ -765,6 +783,16 @@ export class VectorSearchService {
       }
 
       const combinedResults = Array.from(mergedResultsMap.values());
+
+      // DEBUG: Log merged results
+      console.log(`[SkillAwareSearch] Combined results: ${combinedResults.length} (${directResults.length} direct + ${vectorResults.length - (vectorResults.length - combinedResults.length + directResults.length)} new from vector)`);
+      if (combinedResults.length > 0) {
+        const combinedSample = combinedResults.slice(0, 3).map(r => ({
+          id: r.candidate_id,
+          sim: r.similarity_score?.toFixed(4) || 'undefined'
+        }));
+        console.log(`[SkillAwareSearch] Combined sample similarities: ${JSON.stringify(combinedSample)}`);
+      }
 
       // Get detailed candidate data including skill assessments
       const enrichedResults: SkillAwareSearchResult[] = [];
@@ -1791,16 +1819,25 @@ export class VectorSearchService {
 
   /**
    * Perform direct lookup for email or name matches
-   */
-  /**
-   * Perform direct lookup for email or name matches using PostgreSQL
-   * Falls back to Firestore if PostgreSQL is not available
+   * IMPORTANT: Only performs direct match if query looks like a name/email, NOT job descriptions
    */
   private async searchDirectMatches(queryText: string, orgId?: string): Promise<VectorSearchResult[]> {
     const results: VectorSearchResult[] = [];
     const normalizedQuery = queryText.trim();
 
     if (!normalizedQuery) return results;
+
+    // CRITICAL: Skip direct matching for job description queries
+    // Direct match is ONLY for searching by specific person name or email
+    // Job descriptions contain words like "senior", "engineer", etc. that could falsely match
+    const looksLikeJobDescription = normalizedQuery.length > 100 ||
+      /\b(experience|required|skills?|years?|description|title)\b/i.test(normalizedQuery) ||
+      normalizedQuery.includes('\n');
+
+    if (looksLikeJobDescription) {
+      console.log(`[searchDirectMatches] Skipping direct match - query looks like job description (${normalizedQuery.length} chars)`);
+      return results;
+    }
 
     try {
       // Try PostgreSQL first (faster, unified database)
@@ -1864,11 +1901,10 @@ export class VectorSearchService {
           const candidateName = (data.name || '').toLowerCase();
           const personalName = (data.personal?.name || '').toLowerCase();
 
-          // Check for partial match
-          const isMatch = candidateName.includes(queryLower) ||
-            queryLower.includes(candidateName) ||
-            personalName.includes(queryLower) ||
-            queryLower.includes(personalName);
+          // Check for partial match - candidate name must be in query (not reverse)
+          // Minimum 3 chars to avoid matching on single letters
+          const isMatch = (candidateName.length >= 3 && queryLower.includes(candidateName)) ||
+            (personalName.length >= 3 && queryLower.includes(personalName));
 
           if (isMatch && candidateName !== 'unknown candidate' && candidateName !== 'processing...') {
             if (!results.some(r => r.candidate_id === doc.id)) {
