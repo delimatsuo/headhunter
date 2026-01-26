@@ -500,7 +500,7 @@ export class VectorSearchService {
             queryEmbedding,
             similarityThreshold,
             fetchLimit,
-            'gemini-embedding-001', // Must match model used to generate embeddings in sourcing.embeddings
+            'text-embedding-004', // Must match model used by sourcing_embeddings.py (Vertex AI)
             'full_profile',
             effectiveFilters // Pass filters including auto-detected country
           );

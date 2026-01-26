@@ -395,7 +395,7 @@ export class PgVectorClient {
           if (isSourcingSchema) {
             params = [
               JSON.stringify(queryEmbedding),
-              modelVersion || 'gemini-embedding-001',
+              modelVersion || 'text-embedding-004', // Must match model used by sourcing_embeddings.py
               similarityThreshold
             ];
           } else {
