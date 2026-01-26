@@ -1,7 +1,7 @@
 # Project State: Headhunter AI v2.0 Advanced Intelligence
 
 **Initialized:** 2026-01-24
-**Current Status:** Phase 14 IN PROGRESS - Bias Reduction (Plan 05 Complete)
+**Current Status:** Phase 14 COMPLETE - Bias Reduction (All 6 Plans)
 
 ---
 
@@ -23,14 +23,14 @@
 ## Current Position
 
 **Milestone:** v2.0 Advanced Intelligence
-**Phase:** 14 - Bias Reduction (IN PROGRESS)
-**Plan:** 5 of 6 executed
-**Status:** Completed 14-05-PLAN.md (Anonymization UI components)
-**Last activity:** 2026-01-26 - Completed 14-05-PLAN.md (BIAS-01/BIAS-05 UI)
+**Phase:** 14 - Bias Reduction (COMPLETE)
+**Plan:** 6 of 6 executed
+**Status:** Completed 14-06-PLAN.md (Bias metrics admin dashboard)
+**Last activity:** 2026-01-26 - Completed 14-06-PLAN.md (BIAS-03/BIAS-04 UI)
 
-**Progress:** [##########] v1.0 100% | [#######---] v2.0: 3/5 phases (60%)
+**Progress:** [##########] v1.0 100% | [########--] v2.0: 4/5 phases (80%)
 
-**Next Action:** Execute 14-06-PLAN.md (Admin bias dashboard)
+**Next Action:** Plan and execute Phase 15 (Compliance Tooling)
 
 ---
 
@@ -41,10 +41,10 @@
 | 11 | Performance Foundation | Complete | 5 | 100% |
 | 12 | Natural Language Search | Complete | 5 | 100% |
 | 13 | ML Trajectory Prediction | Complete | 5 | 100% |
-| 14 | Bias Reduction | In Progress | 5 | 83% (5/6 plans) |
+| 14 | Bias Reduction | Complete | 5 | 100% (6/6 plans) |
 | 15 | Compliance Tooling | Pending | 6 | 0% |
 
-**Overall v2.0:** 3/5 phases complete (60%)
+**Overall v2.0:** 4/5 phases complete (80%)
 
 ---
 
@@ -136,6 +136,8 @@
 | localStorage persistence for anonymized view | Toggle state persists across page refreshes within session for consistent UX | 14 |
 | Frontend candidate conversion | Convert CandidateMatch to AnonymizedCandidate in frontend to avoid API changes | 14 |
 | Filter company signals in anonymized view | Exclude companyPedigree and companyRelevance from anonymized signal scores | 14 |
+| No external charting library | CSS-based bar visualization sufficient for bias metrics dashboard | 14 |
+| Optional PostgreSQL pool in admin-svc | Graceful degradation when bias metrics DB unavailable | 14 |
 
 ### Key Decisions (v1.0 - Archived)
 
@@ -243,7 +245,7 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-26
-**Stopped at:** Completed 14-05-PLAN.md (Anonymization UI components)
+**Stopped at:** Completed 14-06-PLAN.md (Bias metrics admin dashboard) - Phase 14 COMPLETE
 **Resume file:** None
 
 **Phase 13 COMPLETE (All 7 Plans):**
@@ -354,7 +356,7 @@ v2.0 Roadmap complete. 5 phases defined with 26 requirements mapped:
 
 ---
 
-**Phase 14 IN PROGRESS (4/6 Plans):**
+**Phase 14 COMPLETE (All 6 Plans):**
 
 **Plan 01 (Wave 1):** Resume Anonymization Toggle (BIAS-01)
 - Anonymization types: AnonymizationConfig, AnonymizedCandidate, AnonymizedSearchResponse
@@ -397,15 +399,25 @@ v2.0 Roadmap complete. 5 phases defined with 26 requirements mapped:
 - Toggle state persisted in localStorage
 - Commits: 671cad1, 2012455, 42a7180
 
-**Phase 14 Key Progress:**
+**Plan 06 (Wave 3):** Bias Metrics Admin Dashboard (BIAS-03/BIAS-04 UI)
+- BiasMetricsDashboard component (210 lines) with period selector
+- SelectionRateChart with horizontal bar visualization
+- ImpactRatioAlert for adverse impact warnings
+- /admin/bias-metrics and /admin/bias-metrics/history API endpoints
+- PostgreSQL pool in hh-admin-svc for metrics queries
+- Tab navigation in AdminPage (Access Control, Bias Metrics)
+- Commits: e67dcfd, ef4e4e8, a6f7e9f
+
+**Phase 14 COMPLETE:**
 - BIAS-01: Resume anonymization toggle COMPLETE (backend + UI)
 - BIAS-02: Demographic-blind scoring COMPLETE
-- BIAS-03: Selection event logging COMPLETE
-- BIAS-04: Bias metrics computation COMPLETE
+- BIAS-03: Selection event logging + admin dashboard COMPLETE
+- BIAS-04: Bias metrics computation + impact alerts COMPLETE
 - BIAS-05: Slate diversity analysis COMPLETE (backend + UI)
-- Ready for: 14-06 (Admin bias dashboard)
+
+**Ready for:** Phase 15 (Compliance Tooling)
 
 ---
 
 *State initialized: 2026-01-24*
-*Last updated: 2026-01-26 - Phase 14 Plan 05 Complete (Anonymization UI Components)*
+*Last updated: 2026-01-26 - Phase 14 COMPLETE (All 6 Plans)*
