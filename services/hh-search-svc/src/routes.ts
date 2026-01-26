@@ -10,7 +10,16 @@ import type { PerformanceTracker } from './performance-tracker';
 import { hybridSearchSchema, candidateSearchSchema } from './schemas';
 import type { HybridSearchRequest, HybridSearchResponse, HybridSearchFilters } from './types';
 import { SearchService } from './search-service';
-import { anonymizeSearchResponse } from './bias';
+import { anonymizeSearchResponse, analyzeSlateDiversity, shouldShowDiversityWarning } from './bias';
+import type { SlateDiversityAnalysis } from './bias';
+
+/**
+ * Search response enriched with diversity analysis (BIAS-05).
+ */
+interface EnrichedSearchResponse extends HybridSearchResponse {
+  /** Slate diversity analysis - only included when warnings are present */
+  diversityAnalysis?: SlateDiversityAnalysis;
+}
 
 interface RegisterRoutesOptions {
   service: SearchService | null;
@@ -227,7 +236,15 @@ export async function registerRoutes(
           return anonymizeSearchResponse(cacheHitResponse);
         }
 
-        return cacheHitResponse;
+        // Run diversity analysis (BIAS-05) - analyze slate after ranking
+        const diversityAnalysis = analyzeSlateDiversity(cacheHitResponse.results);
+        const enrichedResponse: EnrichedSearchResponse = {
+          ...cacheHitResponse,
+          // Only include diversity analysis when there's something to show
+          ...(shouldShowDiversityWarning(diversityAnalysis) && { diversityAnalysis }),
+        };
+
+        return enrichedResponse;
       }
 
       const context = {
@@ -288,7 +305,15 @@ export async function registerRoutes(
         return anonymizeSearchResponse(response);
       }
 
-      return response;
+      // Run diversity analysis (BIAS-05) - analyze slate after ranking
+      const diversityAnalysis = analyzeSlateDiversity(response.results);
+      const enrichedResponse: EnrichedSearchResponse = {
+        ...response,
+        // Only include diversity analysis when there's something to show
+        ...(shouldShowDiversityWarning(diversityAnalysis) && { diversityAnalysis }),
+      };
+
+      return enrichedResponse;
     }
   );
 
