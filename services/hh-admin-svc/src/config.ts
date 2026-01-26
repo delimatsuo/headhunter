@@ -51,6 +51,19 @@ export interface AdminRefreshDefaults {
   allowForce: boolean;
 }
 
+export interface AdminPgConfig {
+  host: string;
+  port: number;
+  database: string;
+  user: string;
+  password: string;
+  ssl: boolean;
+  poolMax: number;
+  poolMin: number;
+  idleTimeoutMs: number;
+  connectionTimeoutMs: number;
+}
+
 export interface AdminServiceConfig {
   base: ServiceConfig;
   pubsub: AdminPubSubConfig;
@@ -59,6 +72,7 @@ export interface AdminServiceConfig {
   monitoring: AdminMonitoringConfig;
   iam: AdminIamConfig;
   refresh: AdminRefreshDefaults;
+  pg: AdminPgConfig;
 }
 
 let cachedConfig: AdminServiceConfig | null = null;
@@ -163,6 +177,19 @@ export function getAdminServiceConfig(): AdminServiceConfig {
     allowForce: parseBoolean(process.env.ADMIN_REFRESH_ALLOW_FORCE, true)
   } satisfies AdminRefreshDefaults;
 
+  const pg: AdminPgConfig = {
+    host: process.env.PGVECTOR_HOST ?? '127.0.0.1',
+    port: parseNumber(process.env.PGVECTOR_PORT, 5432),
+    database: process.env.PGVECTOR_DATABASE ?? 'headhunter',
+    user: process.env.PGVECTOR_USER ?? 'postgres',
+    password: (process.env.PGVECTOR_PASSWORD ?? '').trim(),
+    ssl: parseBoolean(process.env.PGVECTOR_SSL, false),
+    poolMax: parseNumber(process.env.PGVECTOR_POOL_MAX, 5, 1),
+    poolMin: parseNumber(process.env.PGVECTOR_POOL_MIN, 1, 0),
+    idleTimeoutMs: parseNumber(process.env.PGVECTOR_IDLE_TIMEOUT_MS, 60000, 1000),
+    connectionTimeoutMs: parseNumber(process.env.PGVECTOR_CONNECTION_TIMEOUT_MS, 3000, 1000)
+  } satisfies AdminPgConfig;
+
   cachedConfig = {
     base,
     pubsub,
@@ -170,7 +197,8 @@ export function getAdminServiceConfig(): AdminServiceConfig {
     scheduler,
     monitoring,
     iam,
-    refresh
+    refresh,
+    pg
   } satisfies AdminServiceConfig;
 
   return cachedConfig;

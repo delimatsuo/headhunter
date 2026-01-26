@@ -1,5 +1,6 @@
 import 'dotenv/config';
 
+import { Pool } from 'pg';
 import { buildServer, getLogger } from '@hh/common';
 
 import { AdminService } from './admin-service';
@@ -35,6 +36,7 @@ async function bootstrap(): Promise<void> {
       jobs: null as any,
       monitoring: null as any,
       iam: null as any,
+      pgPool: undefined as Pool | undefined,
       state  // Pass state to routes
     };
 
@@ -73,6 +75,29 @@ async function bootstrap(): Promise<void> {
         logger.info('Initializing Admin service...');
         dependencies.service = new AdminService(config, dependencies.pubsub, dependencies.jobs, dependencies.monitoring);
         logger.info('Admin service initialized');
+
+        // Initialize PostgreSQL pool for bias metrics (optional - continues if fails)
+        try {
+          logger.info('Initializing PostgreSQL pool for bias metrics...');
+          dependencies.pgPool = new Pool({
+            host: config.pg.host,
+            port: config.pg.port,
+            database: config.pg.database,
+            user: config.pg.user,
+            password: config.pg.password,
+            ssl: config.pg.ssl ? { rejectUnauthorized: false } : false,
+            max: config.pg.poolMax,
+            min: config.pg.poolMin,
+            idleTimeoutMillis: config.pg.idleTimeoutMs,
+            connectionTimeoutMillis: config.pg.connectionTimeoutMs
+          });
+          // Test connection
+          await dependencies.pgPool.query('SELECT 1');
+          logger.info('PostgreSQL pool initialized for bias metrics');
+        } catch (pgError) {
+          logger.warn({ error: pgError }, 'PostgreSQL pool initialization failed - bias metrics will be unavailable');
+          dependencies.pgPool = undefined;
+        }
 
         state.isReady = true;
         logger.info('hh-admin-svc fully initialized and ready');
