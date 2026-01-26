@@ -2,8 +2,8 @@
 
 **Created:** 2026-01-25
 **Depth:** Comprehensive
-**Phases:** 15 (v1.0: 1-10, v2.0: 11-15)
-**Coverage:** 26/26 v2.0 requirements mapped
+**Phases:** 14 (v1.0: 1-10, v2.0: 11-14)
+**Coverage:** 20/20 v2.0 requirements mapped (6 deferred to v3.0)
 
 ---
 
@@ -34,7 +34,7 @@ The approach remains enhancement, not replacement. All features integrate with e
 
 **v1.0 Total:** 28 requirements across 10 phases - COMPLETE
 
-### v2.0 Advanced Intelligence (Active)
+### v2.0 Advanced Intelligence (Complete)
 
 | Phase | Name | Status | Requirements |
 |-------|------|--------|--------------|
@@ -42,9 +42,16 @@ The approach remains enhancement, not replacement. All features integrate with e
 | 12 | Natural Language Search | Complete | 5 |
 | 13 | ML Trajectory Prediction | Complete | 5 |
 | 14 | Bias Reduction | Complete | 5 |
-| 15 | Compliance Tooling | Pending | 6 |
 
-**v2.0 Total:** 26 requirements across 5 phases
+**v2.0 Total:** 20 requirements across 4 phases - COMPLETE
+
+### v3.0 Compliance & Beyond (Deferred)
+
+| Phase | Name | Status | Requirements |
+|-------|------|--------|--------------|
+| 15 | Compliance Tooling | Deferred | 6 |
+
+**v3.0 Total:** 6+ requirements (to be scoped)
 
 ---
 
@@ -252,9 +259,11 @@ Plans:
 
 ---
 
-## Phase 15: Compliance Tooling
+## Phase 15: Compliance Tooling (Deferred to v3.0)
 
 **Goal:** System meets NYC Local Law 144 and EU AI Act requirements for AI-assisted hiring.
+
+**Status:** Deferred — Not required for initial v2.0 release. Bias metrics infrastructure from Phase 14 provides foundation when needed.
 
 **Dependencies:** Phase 14 (bias metrics feed into compliance reporting)
 
@@ -306,11 +315,15 @@ Phase 13: ML Trajectory Prediction (LSTM + shadow mode)
     v
 Phase 14: Bias Reduction (anonymization + metrics)
     |
-    v
+    ═══════════════════════════════════════════════
+    v2.0 COMPLETE
+    ═══════════════════════════════════════════════
+    |
+    v (deferred to v3.0)
 Phase 15: Compliance Tooling (audit + reporting)
 ```
 
-All v2.0 phases are sequential. Performance must be established before adding latency-heavy ML features. Bias reduction informs compliance reporting.
+v2.0 phases are sequential. Performance established before latency-heavy ML features. Bias reduction provides foundation for future compliance reporting.
 
 ---
 
@@ -322,9 +335,12 @@ All v2.0 phases are sequential. Performance must be established before adding la
 | Phase 12: NLP Search | 3-4 weeks | 7-10 weeks |
 | Phase 13: ML Trajectory | 6-8 weeks | 13-18 weeks |
 | Phase 14: Bias Reduction | 4-5 weeks | 17-23 weeks |
-| Phase 15: Compliance | 2-3 weeks | 19-26 weeks |
 
-**Total v2.0 Estimate:** 19-26 weeks (5-6 months)
+**v2.0 Actual:** 4 phases complete
+
+| Phase | Duration (Deferred) | Notes |
+|-------|---------------------|-------|
+| Phase 15: Compliance | 2-3 weeks | Deferred to v3.0 |
 
 ---
 
@@ -343,4 +359,4 @@ All v2.0 phases are sequential. Performance must be established before adding la
 ---
 
 *Roadmap created: 2026-01-25*
-*Last updated: 2026-01-26 - Phase 14 complete (Bias Reduction)*
+*Last updated: 2026-01-26 - v2.0 COMPLETE (Phase 15 deferred to v3.0)*

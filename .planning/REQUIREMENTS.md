@@ -39,7 +39,7 @@ Requirements for advanced intelligence milestone. Building on v1.0 leader-level 
 - [x] **BIAS-04**: Impact ratio calculation (four-fifths rule / 80% threshold)
 - [x] **BIAS-05**: Diverse slate generation to prevent homogeneous candidate pools
 
-### Compliance Tooling
+### Compliance Tooling (Deferred to v3.0)
 
 - [ ] **COMP-01**: Comprehensive audit logging (who searched what, when, results shown)
 - [ ] **COMP-02**: Decision explanation storage for each ranking
@@ -47,6 +47,8 @@ Requirements for advanced intelligence milestone. Building on v1.0 leader-level 
 - [ ] **COMP-04**: GDPR data subject access request (DSAR) support
 - [ ] **COMP-05**: Data retention policy enforcement (auto-delete after period)
 - [ ] **COMP-06**: Bias audit report generation for NYC LL144 annual requirement
+
+*Note: Deferred from v2.0. Phase 14 bias infrastructure provides foundation when needed.*
 
 ## Future Requirements
 
@@ -117,18 +119,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BIAS-03 | Phase 14: Bias Reduction | Complete |
 | BIAS-04 | Phase 14: Bias Reduction | Complete |
 | BIAS-05 | Phase 14: Bias Reduction | Complete |
-| COMP-01 | Phase 15: Compliance Tooling | Pending |
-| COMP-02 | Phase 15: Compliance Tooling | Pending |
-| COMP-03 | Phase 15: Compliance Tooling | Pending |
-| COMP-04 | Phase 15: Compliance Tooling | Pending |
-| COMP-05 | Phase 15: Compliance Tooling | Pending |
-| COMP-06 | Phase 15: Compliance Tooling | Pending |
+| COMP-01 | Phase 15: Compliance Tooling | Deferred to v3.0 |
+| COMP-02 | Phase 15: Compliance Tooling | Deferred to v3.0 |
+| COMP-03 | Phase 15: Compliance Tooling | Deferred to v3.0 |
+| COMP-04 | Phase 15: Compliance Tooling | Deferred to v3.0 |
+| COMP-05 | Phase 15: Compliance Tooling | Deferred to v3.0 |
+| COMP-06 | Phase 15: Compliance Tooling | Deferred to v3.0 |
 
 **Coverage:**
-- v2.0 requirements: 26 total
-- Mapped to phases: 26
-- Unmapped: 0
+- v2.0 requirements: 20 total (PERF, NLNG, TRAJ, BIAS)
+- Mapped to phases: 20
+- Complete: 20
+- Deferred to v3.0: 6 (COMP)
 
 ---
 *Requirements defined: 2026-01-25*
-*Last updated: 2026-01-26 - Phase 14 complete (BIAS-01 to BIAS-05)*
+*Last updated: 2026-01-26 - v2.0 COMPLETE (COMP deferred to v3.0)*
