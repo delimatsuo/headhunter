@@ -1,7 +1,7 @@
 # Project State: Headhunter AI v2.0 Advanced Intelligence
 
 **Initialized:** 2026-01-24
-**Current Status:** Phase 13 COMPLETE - Beginning Phase 14 (Bias Reduction)
+**Current Status:** Phase 14 IN PROGRESS - Bias Reduction (Plan 02 Complete)
 
 ---
 
@@ -23,14 +23,14 @@
 ## Current Position
 
 **Milestone:** v2.0 Advanced Intelligence
-**Phase:** 13 - ML Trajectory Prediction (COMPLETE)
-**Plan:** 7 of 7 executed
-**Status:** Phase 13 complete - All requirements verified with 39 passing tests
-**Last activity:** 2026-01-26 - Completed 13-07-PLAN.md (test suite and verification)
+**Phase:** 14 - Bias Reduction (IN PROGRESS)
+**Plan:** 2 of 6 executed
+**Status:** Completed 14-02-PLAN.md (SCORING_ALGORITHM.md documentation)
+**Last activity:** 2026-01-26 - Completed 14-02-PLAN.md (BIAS-02 demographic-blind scoring)
 
 **Progress:** [##########] v1.0 100% | [######----] v2.0: 3/5 phases (60%)
 
-**Next Action:** Begin Phase 14 - Bias Reduction
+**Next Action:** Execute 14-03-PLAN.md (Fairness Metrics)
 
 ---
 
@@ -41,7 +41,7 @@
 | 11 | Performance Foundation | Complete | 5 | 100% |
 | 12 | Natural Language Search | Complete | 5 | 100% |
 | 13 | ML Trajectory Prediction | Complete | 5 | 100% |
-| 14 | Bias Reduction | Pending | 5 | 0% |
+| 14 | Bias Reduction | In Progress | 5 | 33% (2/6 plans) |
 | 15 | Compliance Tooling | Pending | 6 | 0% |
 
 **Overall v2.0:** 3/5 phases complete (60%)
@@ -127,6 +127,9 @@
 | Confidence color thresholds (UI) | Green >=80%, Yellow 60-79%, Red <60% for visual distinction | 13 |
 | Hireability three-tier labels | High >=0.7, Moderate >=0.4, Lower <0.4 for recruiter guidance | 13 |
 | ML predictions in expanded card | Avoid clutter in collapsed view, keep related to career trajectory section | 13 |
+| No HIGH-risk proxies in scoring | Verified absence of location, graduationYear, educationInstitutions | 14 |
+| companyPedigree as MEDIUM risk | Keep in scoring with 12% cap, prior experience at scale is job-related | 14 |
+| yearsExperience filter-only | Used for filtering not scoring, correlates with job seniority requirements | 14 |
 
 ### Key Decisions (v1.0 - Archived)
 
@@ -234,7 +237,7 @@ None currently identified.
 ## Session Continuity
 
 **Last session:** 2026-01-26
-**Stopped at:** Completed 13-07-PLAN.md (test suite and verification)
+**Stopped at:** Completed 14-02-PLAN.md (SCORING_ALGORITHM.md documentation)
 **Resume file:** None
 
 **Phase 13 COMPLETE (All 7 Plans):**
@@ -345,5 +348,24 @@ v2.0 Roadmap complete. 5 phases defined with 26 requirements mapped:
 
 ---
 
+**Phase 14 IN PROGRESS (2/6 Plans):**
+
+**Plan 01 (Wave 1):** Anonymization Types and Configuration (BIAS-01)
+- Anonymization types and configuration for blind review mode
+- Commit: b93dcc5
+
+**Plan 02 (Wave 1):** SCORING_ALGORITHM.md Documentation (BIAS-02)
+- Scoring algorithm documentation with proxy variable audit
+- 297-line documentation with HIGH/MEDIUM/LOW risk analysis
+- JSDoc PROXY RISK annotations in signal-weights.ts (13 signals)
+- Commits: 59c2df7, da9bd9b
+
+**Phase 14 Key Progress:**
+- BIAS-01: Anonymization infrastructure ready
+- BIAS-02: Demographic-blind scoring documented
+- Ready for: BIAS-03 (Fairness metrics)
+
+---
+
 *State initialized: 2026-01-24*
-*Last updated: 2026-01-26 - Phase 13 Complete (ML Trajectory Prediction)*
+*Last updated: 2026-01-26 - Phase 14 Plan 02 Complete (BIAS-02 Documentation)*
