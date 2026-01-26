@@ -19,9 +19,11 @@ interface RegisterRoutesOptions {
   embedClient: EmbedClient | null;
   rerankClient: RerankClient | null;
   performanceTracker: PerformanceTracker;
-  state: { isReady: boolean; nlpInitialized: boolean };
+  state: { isReady: boolean; nlpInitialized: boolean; mlTrajectoryAvailable: boolean };
   /** NLP query parser for health check reporting */
   queryParser?: { isInitialized: () => boolean } | null;
+  /** ML trajectory client for health check reporting */
+  mlTrajectoryClient?: { isAvailable: () => boolean } | null;
 }
 
 interface CandidateSearchRequest {
@@ -110,6 +112,13 @@ export async function registerRoutes(
             status: dependencies.config.nlp.enabled
               ? (dependencies.queryParser?.isInitialized() ? 'ready' : 'initializing')
               : 'disabled'
+          },
+          mlTrajectory: {
+            enabled: dependencies.config.mlTrajectory.enabled,
+            available: dependencies.mlTrajectoryClient?.isAvailable() ?? false,
+            status: dependencies.config.mlTrajectory.enabled
+              ? (dependencies.state.mlTrajectoryAvailable ? 'available' : 'unavailable')
+              : 'disabled'
           }
         },
         metrics: dependencies.performanceTracker.getSnapshot()
@@ -125,6 +134,15 @@ export async function registerRoutes(
         : 'disabled'
     };
 
+    // ML Trajectory health status (Phase 13)
+    const mlTrajectoryHealth = {
+      enabled: dependencies.config.mlTrajectory.enabled,
+      available: dependencies.mlTrajectoryClient?.isAvailable() ?? false,
+      status: dependencies.config.mlTrajectory.enabled
+        ? (dependencies.state.mlTrajectoryAvailable ? 'available' : 'unavailable')
+        : 'disabled'
+    };
+
     return {
       status: 'ok',
       pgvector: pgHealth,
@@ -132,6 +150,7 @@ export async function registerRoutes(
       embeddings: embedHealth,
       rerank: rerankHealth ?? { status: 'disabled' },
       nlp: nlpHealth,
+      mlTrajectory: mlTrajectoryHealth,
       metrics: dependencies.performanceTracker.getSnapshot()
     } satisfies Record<string, unknown>;
   };

@@ -10,6 +10,7 @@ import { RerankClient } from './rerank-client';
 import { PerformanceTracker } from './performance-tracker';
 import { QueryParser } from './nlp';
 import type { NLPConfig } from './nlp/types';
+import { MLTrajectoryClient } from './ml-trajectory-client';
 
 // =============================================================================
 // Module Exports for External Consumers
@@ -82,7 +83,8 @@ async function bootstrap(): Promise<void> {
     // Track initialization state with mutable dependency container
     const state = {
       isReady: false,
-      nlpInitialized: false
+      nlpInitialized: false,
+      mlTrajectoryAvailable: false
     };
     const dependencies = {
       config,
@@ -92,6 +94,7 @@ async function bootstrap(): Promise<void> {
       embedClient: null as EmbedClient | null,
       rerankClient: null as RerankClient | null,
       queryParser: null as QueryParser | null,
+      mlTrajectoryClient: null as MLTrajectoryClient | null,
       performanceTracker,
       state  // Pass state to routes
     };
@@ -224,6 +227,50 @@ async function bootstrap(): Promise<void> {
           logger.info('NLP disabled via configuration');
         }
 
+        // Initialize ML Trajectory Client if enabled (Phase 13)
+        let mlTrajectoryClient: MLTrajectoryClient | null = null;
+        if (config.mlTrajectory.enabled) {
+          logger.info('Initializing ML Trajectory Client...');
+          mlTrajectoryClient = new MLTrajectoryClient({
+            baseUrl: config.mlTrajectory.url,
+            timeout: config.mlTrajectory.timeout,
+            enabled: config.mlTrajectory.enabled,
+            logger: getLogger({ module: 'ml-trajectory-client' })
+          });
+
+          dependencies.mlTrajectoryClient = mlTrajectoryClient;
+
+          // Health check hh-trajectory-svc periodically (every 30s)
+          const healthCheckInterval = setInterval(async () => {
+            const isHealthy = await mlTrajectoryClient!.healthCheck();
+            state.mlTrajectoryAvailable = isHealthy;
+
+            if (!isHealthy && mlTrajectoryClient!.isAvailable()) {
+              logger.warn('hh-trajectory-svc health check failed - predictions may be unavailable');
+            }
+          }, 30_000);
+
+          // Clean up interval on server close
+          server.addHook('onClose', async () => {
+            clearInterval(healthCheckInterval);
+            if (mlTrajectoryClient) {
+              mlTrajectoryClient.dispose();
+            }
+          });
+
+          // Initial health check
+          const initialHealth = await mlTrajectoryClient.healthCheck();
+          state.mlTrajectoryAvailable = initialHealth;
+
+          logger.info({
+            mlTrajectoryUrl: config.mlTrajectory.url,
+            timeout: config.mlTrajectory.timeout,
+            initialHealth
+          }, 'ML Trajectory Client initialized');
+        } else {
+          logger.info('ML Trajectory predictions disabled via configuration');
+        }
+
         logger.info('Initializing search service...');
         dependencies.service = new SearchService({
           config,
@@ -232,6 +279,7 @@ async function bootstrap(): Promise<void> {
           redisClient: dependencies.redisClient ?? undefined,
           rerankClient: dependencies.rerankClient ?? undefined,
           queryParser: queryParser ?? undefined,
+          mlTrajectoryClient: mlTrajectoryClient ?? undefined,
           performanceTracker,
           logger: getLogger({ module: 'search-service' })
         });

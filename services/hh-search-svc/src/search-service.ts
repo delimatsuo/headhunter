@@ -14,7 +14,8 @@ import type {
   NLPParseResult,
   PgHybridSearchRow,
   SearchContext,
-  SignalScores
+  SignalScores,
+  MLTrajectoryPrediction
 } from './types';
 import { QueryParser, type ParsedQuery } from './nlp';
 import type { PgVectorClient } from './pgvector-client';
@@ -22,8 +23,9 @@ import type { SearchRedisClient } from './redis-client';
 import type { RerankClient, RerankCandidate, RerankRequest, RerankResponse, MatchRationale } from './rerank-client';
 import type { PerformanceTracker } from './performance-tracker';
 import { resolveWeights, type SignalWeightConfig, type RoleType } from './signal-weights';
-import { computeWeightedScore, extractSignalScores, normalizeVectorScore, completeSignalScores, type SignalComputationContext } from './scoring';
+import { computeWeightedScore, extractSignalScores, normalizeVectorScore, completeSignalScores, logMLRuleBasedComparison, type SignalComputationContext } from './scoring';
 import { executeParallelPreSearch, RequestCoalescer, calculateParallelSavings } from './parallel-search';
+import { MLTrajectoryClient, type MLTrajectoryRequest } from './ml-trajectory-client';
 
 interface HybridSearchDependencies {
   config: SearchServiceConfig;
@@ -35,6 +37,8 @@ interface HybridSearchDependencies {
   logger?: Logger;
   /** NLP query parser for natural language search (NLNG-05) */
   queryParser?: QueryParser;
+  /** ML trajectory client for ML-based predictions (Phase 13) */
+  mlTrajectoryClient?: MLTrajectoryClient;
 }
 
 function computeSkillMatches(
@@ -137,6 +141,8 @@ export class SearchService {
   private readonly embeddingCoalescer = new RequestCoalescer<number[]>();
   /** NLP query parser for natural language search (NLNG-05) */
   private readonly queryParser: QueryParser | null;
+  /** ML trajectory client for ML-based predictions (Phase 13) */
+  private readonly mlTrajectoryClient: MLTrajectoryClient | null;
 
   constructor(deps: HybridSearchDependencies) {
     this.config = deps.config;
@@ -147,6 +153,7 @@ export class SearchService {
     this.performanceTracker = deps.performanceTracker;
     this.logger = (deps.logger ?? getLogger({ module: 'search-service' })).child({ module: 'search-service' });
     this.queryParser = deps.queryParser ?? null;
+    this.mlTrajectoryClient = deps.mlTrajectoryClient ?? null;
   }
 
   setFirestore(client: Firestore): void {
@@ -627,6 +634,19 @@ export class SearchService {
           'Phase 7 signal statistics computed.'
         );
       }
+    }
+
+    // === ML TRAJECTORY ENRICHMENT (shadow mode) ===
+    // Enrich candidates with ML predictions in parallel with reranking
+    // During shadow mode: predictions returned for UI, not used for scoring
+    const mlEnrichmentStart = Date.now();
+    if (this.mlTrajectoryClient && this.mlTrajectoryClient.isAvailable()) {
+      ranked = await this.enrichWithMLTrajectoryPredictions(ranked, context.requestId);
+      const mlEnrichmentMs = Date.now() - mlEnrichmentStart;
+      this.logger.debug(
+        { requestId: context.requestId, mlEnrichmentMs, candidatesEnriched: ranked.filter(r => r.mlTrajectory).length },
+        'ML trajectory enrichment complete'
+      );
     }
 
     // === STAGE 3: RERANKING (nuance via LLM) ===
@@ -1371,5 +1391,116 @@ export class SearchService {
     }
 
     return parts.join(' | ') || 'No candidate details available';
+  }
+
+  /**
+   * Enrich top candidates with ML trajectory predictions.
+   * Runs predictions in parallel with resilience (Promise.allSettled).
+   * Predictions are attached to candidates for UI display.
+   * During shadow mode, predictions do NOT affect scoring.
+   *
+   * @param candidates - Candidates to enrich
+   * @param requestId - Request ID for logging
+   * @returns Candidates with mlTrajectory field populated
+   */
+  private async enrichWithMLTrajectoryPredictions(
+    candidates: HybridSearchResultItem[],
+    requestId: string
+  ): Promise<HybridSearchResultItem[]> {
+    if (!this.mlTrajectoryClient || !this.mlTrajectoryClient.isAvailable()) {
+      return candidates;
+    }
+
+    // Batch predictions for top N candidates (top 50 for efficiency)
+    const batchSize = Math.min(50, candidates.length);
+    const topCandidates = candidates.slice(0, batchSize);
+
+    const predictionPromises = topCandidates.map(async (candidate) => {
+      // Extract title sequence from candidate metadata
+      const titleSequence = this.extractTitleSequence(candidate);
+
+      if (titleSequence.length < 2) {
+        // Need at least 2 titles for meaningful trajectory
+        return { candidateId: candidate.candidateId, prediction: null };
+      }
+
+      // Build ML trajectory request
+      const mlRequest: MLTrajectoryRequest = {
+        candidateId: candidate.candidateId,
+        titleSequence
+      };
+
+      // Request prediction (with timeout and circuit breaker)
+      const prediction = await this.mlTrajectoryClient!.predict(mlRequest);
+
+      return { candidateId: candidate.candidateId, prediction };
+    });
+
+    // Use allSettled for resilience - don't fail if some predictions fail
+    const results = await Promise.allSettled(predictionPromises);
+
+    // Build map of candidateId -> prediction
+    const predictionMap = new Map<string, MLTrajectoryPrediction>();
+    for (const result of results) {
+      if (result.status === 'fulfilled' && result.value.prediction) {
+        predictionMap.set(result.value.candidateId, result.value.prediction);
+
+        // Log comparison with rule-based scoring (shadow mode monitoring)
+        const candidate = topCandidates.find(c => c.candidateId === result.value.candidateId);
+        if (candidate && candidate.signalScores?.trajectoryFit !== undefined) {
+          logMLRuleBasedComparison(
+            candidate.signalScores.trajectoryFit,
+            result.value.prediction,
+            candidate.candidateId
+          );
+        }
+      }
+    }
+
+    this.logger.info(
+      { requestId, totalCandidates: batchSize, predictionsGenerated: predictionMap.size },
+      'ML trajectory predictions batch complete'
+    );
+
+    // Attach predictions to candidates
+    return candidates.map((candidate) => {
+      const prediction = predictionMap.get(candidate.candidateId);
+      return prediction ? { ...candidate, mlTrajectory: prediction } : candidate;
+    });
+  }
+
+  /**
+   * Extract title sequence from candidate metadata for ML prediction.
+   */
+  private extractTitleSequence(candidate: HybridSearchResultItem): string[] {
+    const metadata = candidate.metadata as Record<string, unknown> | undefined;
+
+    if (!metadata?.intelligent_analysis) {
+      return [];
+    }
+
+    const analysis = metadata.intelligent_analysis as Record<string, unknown>;
+    if (!Array.isArray(analysis.experience)) {
+      return [];
+    }
+
+    // Extract titles from experience in chronological order
+    const experience = analysis.experience as Array<{
+      title?: string;
+      start_date?: string;
+      end_date?: string | null;
+      is_current?: boolean;
+    }>;
+
+    const titles = experience
+      .filter((exp) => exp.title)
+      .sort((a, b) => {
+        const aTime = a.start_date ? new Date(a.start_date).getTime() : 0;
+        const bTime = b.start_date ? new Date(b.start_date).getTime() : 0;
+        return aTime - bTime;
+      })
+      .map((exp) => exp.title as string);
+
+    return titles;
   }
 }
