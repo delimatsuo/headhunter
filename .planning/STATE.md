@@ -24,13 +24,13 @@
 
 **Milestone:** v2.0 Advanced Intelligence
 **Phase:** 13 - ML Trajectory Prediction (IN PROGRESS)
-**Plan:** 6 of 7 executed
-**Status:** Phase 13 in progress - UI components complete
-**Last activity:** 2026-01-25 - Completed 13-06-PLAN.md (ML trajectory UI components)
+**Plan:** 5 of 7 executed
+**Status:** Phase 13 in progress - hh-search-svc integration complete
+**Last activity:** 2026-01-26 - Completed 13-05-PLAN.md (hh-search-svc integration)
 
 **Progress:** [##########] v1.0 100% | [#####-----] v2.0: 2/5 phases (40%)
 
-**Next Action:** Continue Phase 13 execution (13-07 - final plan)
+**Next Action:** Continue Phase 13 execution (13-06 or 13-07)
 
 ---
 
@@ -40,7 +40,7 @@
 |-------|------|--------|--------------|----------|
 | 11 | Performance Foundation | Complete | 5 | 100% |
 | 12 | Natural Language Search | Complete | 5 | 100% |
-| 13 | ML Trajectory Prediction | In Progress | 5 | 86% |
+| 13 | ML Trajectory Prediction | In Progress | 5 | 71% |
 | 14 | Bias Reduction | Pending | 5 | 0% |
 | 15 | Compliance Tooling | Pending | 6 | 0% |
 
@@ -119,6 +119,11 @@
 | Linear interpolation for calibration | Matches scikit-learn IsotonicRegression without Python dependency | 13 |
 | Confidence threshold 0.6 for ML predictions | Balance precision vs recall for uncertainty flagging | 13 |
 | Background predictor initialization | Cloud Run fast startup, setImmediate() non-blocking model load | 13 |
+| 100ms timeout for ML predictions | Must not impact overall search latency budget (<500ms p95) | 13 |
+| Circuit breaker after 3 failures | Prevents cascade failures when hh-trajectory-svc unavailable, 30s cooldown | 13 |
+| Batch predictions for top 50 candidates | Balance ML coverage vs efficiency - most users focus on top results | 13 |
+| Shadow mode for ML scoring | ML predictions returned for UI but don't affect ranking; enables safe A/B comparison | 13 |
+| 30-second health check interval | Detects hh-trajectory-svc recovery, updates observability status | 13 |
 | Confidence color thresholds (UI) | Green >=80%, Yellow 60-79%, Red <60% for visual distinction | 13 |
 | Hireability three-tier labels | High >=0.7, Moderate >=0.4, Lower <0.4 for recruiter guidance | 13 |
 | ML predictions in expanded card | Avoid clutter in collapsed view, keep related to career trajectory section | 13 |
@@ -156,7 +161,7 @@
 - NLPSearchConfig added to config.ts with environment variables
 - **153 passing unit tests total**
 
-**Phase 13 Deliverables (IN PROGRESS - 6/7 plans):**
+**Phase 13 Deliverables (IN PROGRESS - 5/7 plans):**
 - hh-trajectory-svc Fastify server (port 7109) with health and predict endpoints
 - TypeScript types: TrajectoryPrediction, PredictRequest, PredictResponse, ShadowLog, HealthResponse
 - Service configuration with environment variable parsing
@@ -171,12 +176,13 @@
 - Background initialization with setImmediate for non-blocking startup
 - Graceful shutdown with ONNX session disposal
 - Multi-stage Dockerfile following service mesh patterns
-- Shadow mode infrastructure with ML vs rule-based comparison logging
-- TrajectoryClient with circuit breaker for hh-trajectory-svc communication
-- MLTrajectoryPrediction UI types with confidence, tenure, hireability
-- ConfidenceIndicator component with color-coded badges (green/yellow/red)
-- TrajectoryPrediction display component with icons and uncertainty warnings
-- Candidate card integration for ML predictions in expanded details
+- Shadow mode infrastructure with comparison logging
+- GET /shadow/stats endpoint (promotion criteria: >85% direction, >80% velocity, >1000 comparisons)
+- Batch logging with 60-second auto-flush
+- MLTrajectoryClient in hh-search-svc with circuit breaker
+- ML predictions enriching search results (top 50 candidates)
+- Shadow mode comparison logging (ML vs rule-based)
+- Health endpoint reporting ML trajectory availability
 
 **v1.0 Deliverables:**
 - 3-stage pipeline with 500/100/50 funnel
@@ -227,8 +233,8 @@ None currently identified.
 
 ## Session Continuity
 
-**Last session:** 2026-01-25
-**Stopped at:** Completed 13-06-PLAN.md (ML trajectory UI components)
+**Last session:** 2026-01-26
+**Stopped at:** Completed 13-05-PLAN.md (hh-search-svc integration)
 **Resume file:** None
 
 **Phase 13 Wave 3 COMPLETE (Plans 01-06):**
