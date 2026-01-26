@@ -40,7 +40,7 @@ The approach remains enhancement, not replacement. All features integrate with e
 |-------|------|--------|--------------|
 | 11 | Performance Foundation | Complete | 5 |
 | 12 | Natural Language Search | Complete | 5 |
-| 13 | ML Trajectory Prediction | Planned | 5 |
+| 13 | ML Trajectory Prediction | Complete | 5 |
 | 14 | Bias Reduction | Pending | 5 |
 | 15 | Compliance Tooling | Pending | 6 |
 
@@ -157,15 +157,15 @@ Plans:
 **Plans:** 7 plans
 
 Plans:
-- [ ] 13-01-PLAN.md - hh-trajectory-svc service scaffolding (Fastify on port 7109)
-- [ ] 13-02-PLAN.md - Python ML training pipeline (LSTM model, data preparation)
-- [ ] 13-03-PLAN.md - ONNX inference engine integration
-- [ ] 13-04-PLAN.md - Shadow mode infrastructure for ML vs rule-based comparison
-- [ ] 13-05-PLAN.md - hh-search-svc integration with ML trajectory client
-- [ ] 13-06-PLAN.md - UI components for trajectory prediction display
-- [ ] 13-07-PLAN.md - Test suite and phase verification
+- [x] 13-01-PLAN.md - hh-trajectory-svc service scaffolding (Fastify on port 7109)
+- [x] 13-02-PLAN.md - Python ML training pipeline (LSTM model, data preparation)
+- [x] 13-03-PLAN.md - ONNX inference engine integration
+- [x] 13-04-PLAN.md - Shadow mode infrastructure for ML vs rule-based comparison
+- [x] 13-05-PLAN.md - hh-search-svc integration with ML trajectory client
+- [x] 13-06-PLAN.md - UI components for trajectory prediction display
+- [x] 13-07-PLAN.md - Test suite and phase verification
 
-**Status:** Planned. 7 plans in 4 waves ready for execution.
+**Status:** Complete. 7 plans executed across 4 waves. All 5 requirements verified with 39 passing tests.
 
 **Wave Structure:**
 - Wave 1: 13-01 (service scaffold), 13-02 (Python training) - Independent foundation
@@ -193,6 +193,8 @@ Plans:
 - New service: hh-trajectory-svc on port 7109
 
 **Research Needed:** HIGH - research completed in 13-RESEARCH.md
+
+**Verification:** See `.planning/phases/13-ml-trajectory-prediction/13-VERIFICATION.md` for complete requirement evidence.
 
 **Critical Pitfalls:**
 - Rule-to-ML migration must maintain baseline parity (shadow mode for 4-6 weeks)

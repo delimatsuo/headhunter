@@ -25,11 +25,11 @@ Requirements for advanced intelligence milestone. Building on v1.0 leader-level 
 
 ### ML Trajectory Prediction
 
-- [ ] **TRAJ-05**: Next role prediction with confidence score using LSTM model
-- [ ] **TRAJ-06**: Tenure prediction (estimated time candidate will stay in role)
-- [ ] **TRAJ-07**: Model confidence indicators (transparency for uncertain predictions)
-- [ ] **TRAJ-08**: Shadow mode deployment comparing ML vs rule-based predictions
-- [ ] **TRAJ-09**: Hireability prediction (likelihood to join company like ours)
+- [x] **TRAJ-05**: Next role prediction with confidence score using LSTM model
+- [x] **TRAJ-06**: Tenure prediction (estimated time candidate will stay in role)
+- [x] **TRAJ-07**: Model confidence indicators (transparency for uncertain predictions)
+- [x] **TRAJ-08**: Shadow mode deployment comparing ML vs rule-based predictions
+- [x] **TRAJ-09**: Hireability prediction (likelihood to join company like ours)
 
 ### Bias Reduction
 
@@ -107,11 +107,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NLNG-03 | Phase 12: Natural Language Search | Complete |
 | NLNG-04 | Phase 12: Natural Language Search | Complete |
 | NLNG-05 | Phase 12: Natural Language Search | Complete |
-| TRAJ-05 | Phase 13: ML Trajectory Prediction | Pending |
-| TRAJ-06 | Phase 13: ML Trajectory Prediction | Pending |
-| TRAJ-07 | Phase 13: ML Trajectory Prediction | Pending |
-| TRAJ-08 | Phase 13: ML Trajectory Prediction | Pending |
-| TRAJ-09 | Phase 13: ML Trajectory Prediction | Pending |
+| TRAJ-05 | Phase 13: ML Trajectory Prediction | Complete |
+| TRAJ-06 | Phase 13: ML Trajectory Prediction | Complete |
+| TRAJ-07 | Phase 13: ML Trajectory Prediction | Complete |
+| TRAJ-08 | Phase 13: ML Trajectory Prediction | Complete |
+| TRAJ-09 | Phase 13: ML Trajectory Prediction | Complete |
 | BIAS-01 | Phase 14: Bias Reduction | Pending |
 | BIAS-02 | Phase 14: Bias Reduction | Pending |
 | BIAS-03 | Phase 14: Bias Reduction | Pending |
@@ -131,4 +131,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-25*
-*Last updated: 2026-01-25 - Phase 12 complete (NLNG-01 to NLNG-05)*
+*Last updated: 2026-01-26 - Phase 13 complete (TRAJ-05 to TRAJ-09)*
