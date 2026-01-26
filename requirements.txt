@@ -31,3 +31,7 @@ psycopg2-binary>=2.9.0
 tqdm>=4.65.0
 structlog>=23.1.0
 tenacity>=8.2.0
+
+# Bias metrics (Phase 14)
+fairlearn>=0.13.0
+scipy>=1.11.0
