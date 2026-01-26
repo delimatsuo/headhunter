@@ -423,3 +423,63 @@ export interface MLTrajectoryPrediction {
   /** Explanation for uncertainty if lowConfidence is true */
   uncertaintyReason?: string;
 }
+
+/**
+ * Anonymized candidate for blind hiring (BIAS-01)
+ */
+export interface AnonymizedCandidate {
+  candidateId: string;
+  score: number;
+  vectorScore: number;
+  textScore: number;
+  rrfScore?: number;
+  confidence: number;
+  yearsExperience?: number;
+  skills?: Array<{ name: string; weight: number }>;
+  industries?: string[];
+  matchReasons: string[];
+  signalScores?: Omit<SignalScores, 'companyPedigree' | 'companyRelevance'>;
+  weightsApplied?: Record<string, number>;
+  mlTrajectory?: {
+    nextRole: string;
+    nextRoleConfidence: number;
+    tenureMonths: { min: number; max: number };
+    hireability: number;
+    lowConfidence: boolean;
+    uncertaintyReason?: string;
+  };
+  anonymized: true;
+}
+
+/**
+ * Diversity dimension distribution
+ */
+export interface DimensionDistribution {
+  dimension: 'companyTier' | 'experienceBand' | 'specialty';
+  distribution: Record<string, number>;
+  dominantGroup: string;
+  concentrationPct: number;
+  isConcentrated: boolean;
+}
+
+/**
+ * Diversity warning for slate analysis
+ */
+export interface DiversityWarning {
+  level: 'info' | 'warning' | 'alert';
+  message: string;
+  dimension: 'companyTier' | 'experienceBand' | 'specialty';
+  concentrationPct: number;
+  suggestion: string;
+}
+
+/**
+ * Slate diversity analysis (BIAS-05)
+ */
+export interface SlateDiversityAnalysis {
+  totalCandidates: number;
+  dimensions: DimensionDistribution[];
+  warnings: DiversityWarning[];
+  diversityScore: number;
+  hasConcentrationIssue: boolean;
+}
