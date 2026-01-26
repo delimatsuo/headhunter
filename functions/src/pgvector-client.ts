@@ -373,9 +373,10 @@ export class PgVectorClient {
           let sql: string;
           if (isSourcingSchema) {
             // Query sourcing.embeddings table directly (no view permission issues)
+            // CRITICAL: Must cast $1 to vector type explicitly for pgvector similarity
             sql = `
              SELECT e.candidate_id::text as candidate_id,
-                    1 - (e.embedding <=> $1) as similarity,
+                    1 - (e.embedding <=> $1::vector) as similarity,
                     jsonb_build_object('model_version', e.model_version, 'source', 'sourcing') as metadata,
                     e.model_version, 'default' as chunk_type
              FROM sourcing.embeddings e
@@ -384,7 +385,7 @@ export class PgVectorClient {
           } else {
             sql = `
              SELECT ce.candidate_id,
-                    1 - (ce.embedding <=> $1) as similarity,
+                    1 - (ce.embedding <=> $1::vector) as similarity,
                     ce.metadata, ce.model_version, ce.chunk_type
              FROM ${this.schema}.candidate_embeddings ce
            `;
@@ -418,13 +419,13 @@ export class PgVectorClient {
              WHERE e.model_version = $2
                AND c.deleted_at IS NULL
                AND c.consent_status != 'opted_out'
-               AND 1 - (e.embedding <=> $1) > $3
+               AND 1 - (e.embedding <=> $1::vector) > $3
            `;
           } else {
             sql += `
              WHERE ce.model_version = $2
                AND ce.chunk_type = $3
-               AND 1 - (ce.embedding <=> $1) > $4
+               AND 1 - (ce.embedding <=> $1::vector) > $4
            `;
           }
 
@@ -467,6 +468,16 @@ export class PgVectorClient {
           params.push(maxResults);
 
           const result = await client.query(sql, params);
+
+          // Debug: Log sample similarities to diagnose 100% issue
+          if (result.rows.length > 0) {
+            const sampleSims = result.rows.slice(0, 5).map(r => ({
+              id: r.candidate_id,
+              sim: parseFloat(r.similarity).toFixed(4)
+            }));
+            console.log(`[PgVectorClient] Sample similarities: ${JSON.stringify(sampleSims)}`);
+            console.log(`[PgVectorClient] Query embedding first 5 values: ${queryEmbedding.slice(0, 5).map(v => v.toFixed(4)).join(', ')}`);
+          }
 
           return result.rows.map(row => ({
             candidate_id: row.candidate_id,
