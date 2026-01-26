@@ -9,7 +9,7 @@
  */
 
 import type { SignalWeightConfig } from './signal-weights';
-import type { SignalScores, PgHybridSearchRow } from './types';
+import type { SignalScores, PgHybridSearchRow, MLTrajectoryPrediction, TrajectoryConfig } from './types';
 import {
   calculateSkillsExactMatch,
   calculateSkillsInferred,
@@ -25,6 +25,9 @@ import {
   type TrajectoryContext,
   type ExperienceEntry
 } from './trajectory-calculators';
+import { getLogger } from '@hh/common';
+
+const logger = getLogger({ module: 'scoring' });
 
 // Re-export SignalScores for convenience
 export type { SignalScores } from './types';
@@ -417,4 +420,85 @@ function inferTargetTrack(
   if (!roleType || roleType === 'default') return undefined;
   if (roleType === 'ic') return 'technical';
   return 'management'; // executive or manager
+}
+
+/**
+ * Integrate ML trajectory prediction into scoring.
+ * During shadow mode (useMLScoring=false):
+ * - ML prediction is attached to candidate for UI display
+ * - Rule-based trajectoryFit score is used for ranking
+ *
+ * When useMLScoring=true (future, post-shadow):
+ * - ML hireability score replaces trajectoryFit signal
+ * - Confidence weighting applied based on lowConfidence flag
+ *
+ * @param signalScores - Current signal scores (including rule-based trajectoryFit)
+ * @param mlPrediction - ML prediction from hh-trajectory-svc
+ * @param config - Trajectory configuration
+ * @returns Updated signal scores (may include ML-based trajectoryFit)
+ */
+export function applyMLTrajectoryScoring(
+  signalScores: SignalScores,
+  mlPrediction: MLTrajectoryPrediction | null | undefined,
+  config: TrajectoryConfig
+): SignalScores {
+  if (!mlPrediction || !config.useMLScoring) {
+    // Shadow mode: keep rule-based scoring
+    return signalScores;
+  }
+
+  // Post-shadow mode: use ML hireability as trajectoryFit
+  // Normalize hireability (0-100) to 0-1 range
+  let mlTrajectoryFit = mlPrediction.hireability / 100;
+
+  // Apply confidence weighting
+  if (mlPrediction.lowConfidence) {
+    // Reduce weight for low confidence predictions
+    mlTrajectoryFit *= 0.7;
+    logger.debug(
+      { hireability: mlPrediction.hireability, reason: mlPrediction.uncertaintyReason },
+      'ML trajectory prediction has low confidence - applying penalty'
+    );
+  }
+
+  // Clamp to 0-1 range
+  mlTrajectoryFit = Math.max(0, Math.min(1, mlTrajectoryFit));
+
+  return {
+    ...signalScores,
+    trajectoryFit: mlTrajectoryFit
+  };
+}
+
+/**
+ * Compare ML and rule-based trajectory predictions.
+ * Logs when predictions disagree significantly for shadow mode monitoring.
+ *
+ * @param ruleBasedFit - Rule-based trajectoryFit score (0-1)
+ * @param mlPrediction - ML prediction
+ * @param candidateId - Candidate identifier for logging
+ */
+export function logMLRuleBasedComparison(
+  ruleBasedFit: number,
+  mlPrediction: MLTrajectoryPrediction,
+  candidateId: string
+): void {
+  const mlFit = mlPrediction.hireability / 100;
+  const delta = Math.abs(ruleBasedFit - mlFit);
+
+  // Log when predictions disagree by >0.3 (30%)
+  if (delta > 0.3) {
+    logger.info(
+      {
+        candidateId,
+        ruleBasedFit: ruleBasedFit.toFixed(3),
+        mlHireability: mlPrediction.hireability,
+        mlFit: mlFit.toFixed(3),
+        delta: delta.toFixed(3),
+        lowConfidence: mlPrediction.lowConfidence,
+        uncertaintyReason: mlPrediction.uncertaintyReason
+      },
+      'ML and rule-based trajectory predictions disagree significantly'
+    );
+  }
 }

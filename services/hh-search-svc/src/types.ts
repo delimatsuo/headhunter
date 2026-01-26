@@ -168,6 +168,14 @@ export interface HybridSearchResultItem {
    * @see TRNS-03
    */
   matchRationale?: MatchRationale;
+
+  /**
+   * ML trajectory prediction from hh-trajectory-svc.
+   * Present during shadow mode for comparison with rule-based scoring.
+   * Does NOT affect score during shadow mode.
+   * @see Phase 13: ML Trajectory Prediction
+   */
+  mlTrajectory?: MLTrajectoryPrediction;
 }
 
 export interface HybridSearchTimings {
@@ -320,4 +328,38 @@ export interface MatchRationale {
     score: number;
     reason: string;
   }>;
+}
+
+/**
+ * ML trajectory prediction from hh-trajectory-svc.
+ * Used during shadow mode for comparison with rule-based scoring.
+ * @see Phase 13: ML Trajectory Prediction
+ */
+export interface MLTrajectoryPrediction {
+  /** Predicted next job title/role */
+  nextRole: string;
+  /** Confidence score for next role prediction (0-1) */
+  nextRoleConfidence: number;
+  /** Estimated tenure in months (range) */
+  tenureMonths: {
+    min: number;
+    max: number;
+  };
+  /** Hireability score (0-100) */
+  hireability: number;
+  /** Flag indicating prediction has low confidence */
+  lowConfidence: boolean;
+  /** Reason for low confidence (if applicable) */
+  uncertaintyReason?: string;
+}
+
+/**
+ * Trajectory configuration for shadow mode.
+ * Controls whether ML predictions affect scoring or just display.
+ */
+export interface TrajectoryConfig {
+  /** Use ML hireability score in trajectoryFit signal (default: false during shadow mode) */
+  useMLScoring: boolean;
+  /** Include ML predictions in response for UI display (default: true) */
+  includeMLPredictions: boolean;
 }
