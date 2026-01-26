@@ -33,11 +33,11 @@ Requirements for advanced intelligence milestone. Building on v1.0 leader-level 
 
 ### Bias Reduction
 
-- [ ] **BIAS-01**: Resume anonymization toggle (remove name, photo, school names)
-- [ ] **BIAS-02**: Demographic-blind scoring (no demographic proxies in scoring)
-- [ ] **BIAS-03**: Bias metrics dashboard with selection rates by group
-- [ ] **BIAS-04**: Impact ratio calculation (four-fifths rule / 80% threshold)
-- [ ] **BIAS-05**: Diverse slate generation to prevent homogeneous candidate pools
+- [x] **BIAS-01**: Resume anonymization toggle (remove name, photo, school names)
+- [x] **BIAS-02**: Demographic-blind scoring (no demographic proxies in scoring)
+- [x] **BIAS-03**: Bias metrics dashboard with selection rates by group
+- [x] **BIAS-04**: Impact ratio calculation (four-fifths rule / 80% threshold)
+- [x] **BIAS-05**: Diverse slate generation to prevent homogeneous candidate pools
 
 ### Compliance Tooling
 
@@ -112,11 +112,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TRAJ-07 | Phase 13: ML Trajectory Prediction | Complete |
 | TRAJ-08 | Phase 13: ML Trajectory Prediction | Complete |
 | TRAJ-09 | Phase 13: ML Trajectory Prediction | Complete |
-| BIAS-01 | Phase 14: Bias Reduction | Pending |
-| BIAS-02 | Phase 14: Bias Reduction | Pending |
-| BIAS-03 | Phase 14: Bias Reduction | Pending |
-| BIAS-04 | Phase 14: Bias Reduction | Pending |
-| BIAS-05 | Phase 14: Bias Reduction | Pending |
+| BIAS-01 | Phase 14: Bias Reduction | Complete |
+| BIAS-02 | Phase 14: Bias Reduction | Complete |
+| BIAS-03 | Phase 14: Bias Reduction | Complete |
+| BIAS-04 | Phase 14: Bias Reduction | Complete |
+| BIAS-05 | Phase 14: Bias Reduction | Complete |
 | COMP-01 | Phase 15: Compliance Tooling | Pending |
 | COMP-02 | Phase 15: Compliance Tooling | Pending |
 | COMP-03 | Phase 15: Compliance Tooling | Pending |
@@ -131,4 +131,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-25*
-*Last updated: 2026-01-26 - Phase 13 complete (TRAJ-05 to TRAJ-09)*
+*Last updated: 2026-01-26 - Phase 14 complete (BIAS-01 to BIAS-05)*

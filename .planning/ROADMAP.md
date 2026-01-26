@@ -41,7 +41,7 @@ The approach remains enhancement, not replacement. All features integrate with e
 | 11 | Performance Foundation | Complete | 5 |
 | 12 | Natural Language Search | Complete | 5 |
 | 13 | ML Trajectory Prediction | Complete | 5 |
-| 14 | Bias Reduction | Planned | 5 |
+| 14 | Bias Reduction | Complete | 5 |
 | 15 | Compliance Tooling | Pending | 6 |
 
 **v2.0 Total:** 26 requirements across 5 phases
@@ -211,14 +211,14 @@ Plans:
 **Plans:** 6 plans
 
 Plans:
-- [ ] 14-01-PLAN.md - Anonymization middleware and types
-- [ ] 14-02-PLAN.md - Proxy variable audit and scoring documentation
-- [ ] 14-03-PLAN.md - Fairlearn bias metrics worker and selection event logging
-- [ ] 14-04-PLAN.md - Slate diversity analysis
-- [ ] 14-05-PLAN.md - Anonymized candidate UI and toggle
-- [ ] 14-06-PLAN.md - Bias metrics dashboard and impact ratio alerts
+- [x] 14-01-PLAN.md - Anonymization middleware and types
+- [x] 14-02-PLAN.md - Proxy variable audit and scoring documentation
+- [x] 14-03-PLAN.md - Fairlearn bias metrics worker and selection event logging
+- [x] 14-04-PLAN.md - Slate diversity analysis
+- [x] 14-05-PLAN.md - Anonymized candidate UI and toggle
+- [x] 14-06-PLAN.md - Bias metrics dashboard and impact ratio alerts
 
-**Status:** Planned. 6 plans created across 3 waves.
+**Status:** Complete. 6 plans executed across 3 waves. All 5 success criteria code-complete with 83 unit tests. See 14-VERIFICATION.md.
 
 **Wave Structure:**
 - Wave 1: 14-01 (anonymization middleware), 14-02 (proxy audit) - Foundation, parallel
@@ -343,4 +343,4 @@ All v2.0 phases are sequential. Performance must be established before adding la
 ---
 
 *Roadmap created: 2026-01-25*
-*Last updated: 2026-01-26 - Phase 14 planned (Bias Reduction)*
+*Last updated: 2026-01-26 - Phase 14 complete (Bias Reduction)*
