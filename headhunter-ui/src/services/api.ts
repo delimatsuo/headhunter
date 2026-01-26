@@ -20,6 +20,57 @@ import {
   engineSearch,
   getAvailableEngines
 } from '../config/firebase';
+
+// ===== Bias Metrics Types (Phase 14: BIAS-03, BIAS-04) =====
+
+export interface BiasMetricsParams {
+  days?: number;
+  dimension?: 'company_tier' | 'experience_band' | 'specialty' | 'all';
+  tenantId?: string;
+}
+
+export interface SignificanceTest {
+  p_value: number;
+  significant: boolean;
+}
+
+export interface DimensionMetrics {
+  dimension: string;
+  overall_rate: number;
+  selection_rates: Record<string, number>;
+  impact_ratios: Record<string, number>;
+  sample_sizes: Record<string, number>;
+  adverse_impact_detected: boolean;
+  adverse_impact_groups: string[];
+  low_sample_groups: string[];
+  significance_tests: Record<string, SignificanceTest>;
+  warnings: string[];
+}
+
+export interface BiasMetricsResponse {
+  computed_at: string | null;
+  period: {
+    days: number;
+    start: string | null;
+    end: string | null;
+  };
+  dimensions: Record<string, DimensionMetrics>;
+  any_adverse_impact: boolean;
+  all_warnings: string[];
+}
+
+export interface BiasMetricsHistoryResponse {
+  history: Array<{
+    date: string;
+    metrics: DimensionMetrics | Record<string, DimensionMetrics>;
+  }>;
+  days: number;
+  dimension?: string;
+}
+
+// Admin service base URL - defaults to Cloud Run service or local dev
+const ADMIN_SERVICE_URL = process.env.REACT_APP_ADMIN_SERVICE_URL ||
+  (process.env.NODE_ENV === 'development' ? 'http://localhost:7107' : '');
 import {
   JobDescription,
   SearchResponse,
@@ -1035,6 +1086,74 @@ export const apiService = {
           { id: 'agentic', label: '🧠 Deep Analysis', description: 'Comparative reasoning with insights' }
         ],
         default: 'legacy'
+      };
+    }
+  },
+
+  // ===== Bias Metrics API (Phase 14: BIAS-03, BIAS-04) =====
+
+  /**
+   * Fetch current bias metrics for the dashboard.
+   * Returns selection rates by dimension and adverse impact alerts.
+   */
+  async getBiasMetrics(params: BiasMetricsParams = {}): Promise<BiasMetricsResponse> {
+    const searchParams = new URLSearchParams();
+    if (params.days) searchParams.set('days', params.days.toString());
+    if (params.dimension) searchParams.set('dimension', params.dimension);
+    if (params.tenantId) searchParams.set('tenant_id', params.tenantId);
+
+    const url = `${ADMIN_SERVICE_URL}/admin/bias-metrics${searchParams.toString() ? '?' + searchParams.toString() : ''}`;
+
+    try {
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        console.error('[getBiasMetrics] HTTP error:', response.status);
+        throw new ApiError('Failed to fetch bias metrics', response.status);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('[getBiasMetrics] Error:', error);
+      // Return empty state on error for graceful degradation
+      return {
+        computed_at: null,
+        period: { days: params.days || 30, start: null, end: null },
+        dimensions: {},
+        any_adverse_impact: false,
+        all_warnings: ['Unable to connect to admin service. Please try again later.']
+      };
+    }
+  },
+
+  /**
+   * Fetch historical bias metrics for trend analysis.
+   * Returns metrics over time for tracking improvements/regressions.
+   */
+  async getBiasMetricsHistory(params: BiasMetricsParams = {}): Promise<BiasMetricsHistoryResponse> {
+    const searchParams = new URLSearchParams();
+    if (params.days) searchParams.set('days', params.days.toString());
+    if (params.dimension) searchParams.set('dimension', params.dimension);
+    if (params.tenantId) searchParams.set('tenant_id', params.tenantId);
+
+    const url = `${ADMIN_SERVICE_URL}/admin/bias-metrics/history${searchParams.toString() ? '?' + searchParams.toString() : ''}`;
+
+    try {
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        console.error('[getBiasMetricsHistory] HTTP error:', response.status);
+        throw new ApiError('Failed to fetch bias metrics history', response.status);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('[getBiasMetricsHistory] Error:', error);
+      // Return empty state on error
+      return {
+        history: [],
+        days: params.days || 90,
+        dimension: params.dimension
       };
     }
   }
