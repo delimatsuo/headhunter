@@ -163,6 +163,7 @@ services:
       EMBED_SERVICE_URL: http://hh-embed-svc:7101
       EVIDENCE_SERVICE_URL: http://hh-evidence-svc:7104
       RERANK_SERVICE_URL: http://hh-rerank-svc:7103
+      TRAJECTORY_SERVICE_URL: http://hh-trajectory-svc:7109
     ports:
       - '7102:7102'
     depends_on:
@@ -177,6 +178,8 @@ services:
       hh-rerank-svc:
         condition: service_started
       hh-evidence-svc:
+        condition: service_started
+      hh-trajectory-svc:
         condition: service_started
     healthcheck:
       test: ['CMD-SHELL', 'curl -sf http://localhost:7102/health']
@@ -395,6 +398,36 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
+
+  hh-trajectory-svc:
+    build:
+      context: ./services
+      dockerfile: hh-trajectory-svc/Dockerfile
+    container_name: hh-local-trajectory
+    restart: unless-stopped
+    env_file:
+      - ./services/hh-trajectory-svc/.env.local
+    environment:
+      PORT: '7109'
+      NODE_ENV: development
+      NODE_OPTIONS: '--experimental-specifier-resolution=node'
+      SHADOW_MODE_ENABLED: 'true'
+      MODEL_PATH: /app/models/trajectory-lstm.onnx
+      FIRESTORE_EMULATOR_HOST: firestore-emulator:8080
+      ALLOWED_TOKEN_ISSUERS: http://mock-oauth:8081/
+      GATEWAY_AUDIENCE: headhunter-local
+    ports:
+      - '7109:7109'
+    volumes:
+      - ./models:/app/models:ro
+    depends_on:
+      mock-oauth:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:7109/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   postgres_data:
