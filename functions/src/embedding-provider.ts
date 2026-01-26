@@ -132,7 +132,8 @@ class TogetherStubProvider implements EmbeddingProvider {
 class GeminiEmbeddingProvider implements EmbeddingProvider {
   name = "gemini";
   private genAI: GoogleGenerativeAI;
-  private model: string = "gemini-embedding-001";
+  // Must match sourcing_embeddings.py MODEL_NAME for compatible embeddings
+  private model: string = "models/text-embedding-004";
   private dimensions: number;
 
   constructor() {
