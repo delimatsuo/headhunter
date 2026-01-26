@@ -1,0 +1,21 @@
+# Bias Metrics Worker Requirements
+# Used by scripts/bias_metrics_worker.py for EEOC compliance monitoring
+
+# Fairlearn for bias metrics (demographic parity, equalized odds, four-fifths rule)
+fairlearn>=0.13.0
+
+# Scientific computing (required by Fairlearn)
+scipy>=1.11.0
+numpy>=1.24.0
+
+# PostgreSQL database access
+psycopg2-binary>=2.9.9
+
+# Data manipulation
+pandas>=2.0.0
+
+# Logging
+structlog>=23.2.0
+
+# Environment variable loading
+python-dotenv>=1.0.0
