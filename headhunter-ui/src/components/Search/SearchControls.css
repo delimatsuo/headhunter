@@ -1,0 +1,46 @@
+.search-controls {
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.search-controls .control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.search-controls .anonymized-toggle-group {
+  border-left: 3px solid #667eea;
+  padding-left: 12px;
+}
+
+.search-controls .toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.search-controls .toggle-icon {
+  font-size: 16px;
+}
+
+.search-controls .toggle-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.search-controls .anonymized-description {
+  font-size: 12px;
+  color: #666;
+  margin: 4px 0 0 42px;
+  font-style: italic;
+}

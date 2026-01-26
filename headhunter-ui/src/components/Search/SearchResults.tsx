@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { SearchResponse, CandidateProfile, SignalScores, CandidateMatch } from '../../types';
+import { SearchResponse, CandidateProfile, SignalScores, CandidateMatch, SlateDiversityAnalysis, AnonymizedCandidate } from '../../types';
 import { SkillAwareCandidateCard } from '../Candidate/SkillAwareCandidateCard';
+import { AnonymizedCandidateCard } from '../Candidate/AnonymizedCandidateCard';
 import { EditCandidateModal } from '../Candidate/EditCandidateModal';
 import { JobAnalysis } from './JobDescriptionForm';
+import { SearchControls } from './SearchControls';
+import { DiversityIndicator } from './DiversityIndicator';
 
 // Sort options type
 type SortOption = 'overall' | 'skills' | 'trajectory' | 'recency' | 'seniority';
@@ -43,6 +46,12 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     return saved ? parseInt(saved, 10) : 0;
   });
 
+  // Anonymized view state with localStorage persistence (BIAS-01)
+  const [anonymizedView, setAnonymizedView] = useState<boolean>(() => {
+    const saved = localStorage.getItem('hh_search_anonymizedView');
+    return saved === 'true';
+  });
+
   // Persist sort preference to localStorage
   useEffect(() => {
     localStorage.setItem('hh_search_sortBy', sortBy);
@@ -52,6 +61,81 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
   useEffect(() => {
     localStorage.setItem('hh_search_minSkillScore', minSkillScore.toString());
   }, [minSkillScore]);
+
+  // Persist anonymized view preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('hh_search_anonymizedView', anonymizedView.toString());
+  }, [anonymizedView]);
+
+  /**
+   * Convert a CandidateMatch to AnonymizedCandidate for blind hiring view.
+   * Removes personally identifying information while preserving match-relevant data.
+   */
+  const convertToAnonymizedCandidate = (match: CandidateMatch): AnonymizedCandidate => {
+    const candidate = match.candidate;
+    const candidateAny = candidate as any;
+
+    // Extract skills from various possible locations
+    const technicalSkills = candidate.intelligent_analysis?.explicit_skills?.technical_skills || [];
+    const softSkills = candidate.intelligent_analysis?.explicit_skills?.soft_skills || [];
+    const allSkills = [
+      ...technicalSkills.map(s => ({
+        name: typeof s === 'string' ? s : s.skill,
+        weight: typeof s === 'string' ? 1 : (s.confidence || 1)
+      })),
+      ...softSkills.map(s => ({
+        name: typeof s === 'string' ? s : s.skill,
+        weight: typeof s === 'string' ? 0.8 : (s.confidence || 0.8)
+      }))
+    ];
+
+    // Extract years of experience
+    const yearsExperience =
+      candidateAny.years_experience ||
+      candidate.intelligent_analysis?.career_trajectory_analysis?.years_experience ||
+      candidate.resume_analysis?.years_experience ||
+      undefined;
+
+    // Extract industries (these don't identify individuals)
+    const industries = candidateAny.industries || [];
+
+    // Filter match reasons to remove company/school mentions
+    const matchReasons = (candidate.matchReasons || []).filter(reason => {
+      const lower = reason.toLowerCase();
+      // Remove reasons that mention specific companies or schools
+      return !lower.includes('company') && !lower.includes('school') && !lower.includes('university');
+    });
+
+    // Exclude company pedigree signals from signal scores
+    const filteredSignalScores = match.signalScores ? {
+      ...match.signalScores,
+      companyPedigree: undefined,
+      companyRelevance: undefined
+    } : undefined;
+
+    return {
+      candidateId: candidate.candidate_id || candidate.id || `anon-${Math.random().toString(36).slice(2, 8)}`,
+      score: match.score || 0,
+      vectorScore: match.similarity || 0,
+      textScore: 0,
+      confidence: 0.8,
+      yearsExperience,
+      skills: allSkills.slice(0, 20),
+      industries,
+      matchReasons,
+      signalScores: filteredSignalScores as any,
+      weightsApplied: match.weightsApplied as any,
+      mlTrajectory: candidate.mlTrajectory ? {
+        nextRole: candidate.mlTrajectory.nextRole,
+        nextRoleConfidence: candidate.mlTrajectory.nextRoleConfidence,
+        tenureMonths: candidate.mlTrajectory.tenureMonths,
+        hireability: candidate.mlTrajectory.hireability,
+        lowConfidence: candidate.mlTrajectory.lowConfidence,
+        uncertaintyReason: candidate.mlTrajectory.uncertaintyReason
+      } : undefined,
+      anonymized: true
+    };
+  };
 
   const handleEditClick = (candidate: CandidateProfile) => {
     setEditingCandidate(candidate);
@@ -224,6 +308,18 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         )}
       </div>
 
+      {/* Anonymization Toggle (BIAS-01) */}
+      <SearchControls
+        anonymizedView={anonymizedView}
+        onToggleAnonymized={setAnonymizedView}
+        disabled={loading}
+      />
+
+      {/* Diversity Indicator (BIAS-05) */}
+      {(results as any)?.diversityAnalysis && (
+        <DiversityIndicator analysis={(results as any).diversityAnalysis as SlateDiversityAnalysis} />
+      )}
+
       {/* Collapsible AI Analysis Summary */}
       {analysis && (
         <div style={{
@@ -366,19 +462,28 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
           <>
             <div className="candidates-grid">
               {displayedMatches.map((match, index) => (
-                <SkillAwareCandidateCard
-                  key={match.candidate?.candidate_id || index}
-                  candidate={match.candidate}
-                  matchScore={match.score}
-                  similarityScore={match.similarity}
-                  rank={index + 1}
-                  searchSkills={[]}
-                  signalScores={match.signalScores}
-                  weightsApplied={match.weightsApplied}
-                  matchRationale={match.matchRationale}
-                  onFindSimilar={onFindSimilar ? () => onFindSimilar(match.candidate?.candidate_id || '') : undefined}
-                  onEdit={match.candidate ? () => handleEditClick(match.candidate) : undefined}
-                />
+                anonymizedView ? (
+                  <AnonymizedCandidateCard
+                    key={match.candidate?.candidate_id || index}
+                    candidate={convertToAnonymizedCandidate(match)}
+                    rank={index + 1}
+                    searchSkills={[]}
+                  />
+                ) : (
+                  <SkillAwareCandidateCard
+                    key={match.candidate?.candidate_id || index}
+                    candidate={match.candidate}
+                    matchScore={match.score}
+                    similarityScore={match.similarity}
+                    rank={index + 1}
+                    searchSkills={[]}
+                    signalScores={match.signalScores}
+                    weightsApplied={match.weightsApplied}
+                    matchRationale={match.matchRationale}
+                    onFindSimilar={onFindSimilar ? () => onFindSimilar(match.candidate?.candidate_id || '') : undefined}
+                    onEdit={match.candidate ? () => handleEditClick(match.candidate) : undefined}
+                  />
+                )
               ))}
             </div>
 

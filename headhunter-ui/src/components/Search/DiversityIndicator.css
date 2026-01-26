@@ -1,0 +1,142 @@
+.diversity-indicator {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.diversity-indicator.diverse {
+  background: #e8f5e9;
+  border-left: 4px solid #4caf50;
+}
+
+.diversity-indicator.info {
+  background: #e3f2fd;
+  border-left: 4px solid #2196f3;
+}
+
+.diversity-indicator.warning {
+  background: #fff3e0;
+  border-left: 4px solid #ff9800;
+}
+
+.diversity-indicator.alert {
+  background: #ffebee;
+  border-left: 4px solid #f44336;
+}
+
+.diversity-indicator .indicator-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.diversity-indicator .diversity-icon {
+  font-size: 16px;
+}
+
+.diversity-indicator .diversity-text {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.diversity-indicator .expand-chevron {
+  font-size: 10px;
+  transition: transform 0.2s ease;
+}
+
+.diversity-indicator .expand-chevron.expanded {
+  transform: rotate(180deg);
+}
+
+.diversity-indicator .indicator-details {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.diversity-indicator .diversity-score {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.diversity-indicator .score-label {
+  font-size: 13px;
+  color: #555;
+}
+
+.diversity-indicator .score-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+}
+
+.diversity-indicator .score-value.low {
+  color: #f44336;
+}
+
+.diversity-indicator .warning-item {
+  background: rgba(255, 255, 255, 0.5);
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.diversity-indicator .warning-message {
+  font-size: 13px;
+  margin: 0 0 6px 0;
+}
+
+.diversity-indicator .warning-suggestion {
+  font-size: 12px;
+  color: #555;
+  margin: 0;
+}
+
+.diversity-indicator .dimension-breakdown {
+  margin-top: 12px;
+}
+
+.diversity-indicator .dimension-breakdown h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+}
+
+.diversity-indicator .dimension-item {
+  margin-bottom: 8px;
+}
+
+.diversity-indicator .dimension-name {
+  font-size: 12px;
+  color: #666;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.diversity-indicator .distribution-bar {
+  display: flex;
+  height: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #eee;
+}
+
+.diversity-indicator .bar-segment {
+  height: 100%;
+  background: #90caf9;
+  transition: width 0.3s ease;
+}
+
+.diversity-indicator .bar-segment.dominant {
+  background: #1976d2;
+}
+
+.diversity-indicator .bar-segment:not(:last-child) {
+  border-right: 1px solid white;
+}
