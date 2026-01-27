@@ -143,10 +143,18 @@ export class LegacyEngine implements IAIEngine {
             .map((c: string) => c.toLowerCase());
 
         let functionPool: any[] = [];
-        let vectorPool: any[] = (vectorSearchResults || []).map((c: any) => ({
-            ...c,
-            _raw_vector_similarity: c.vector_similarity_score || c.similarity_score || 0
-        }));
+        let vectorPool: any[] = (vectorSearchResults || []).map((c: any) => {
+            // Normalize raw vector similarity to 0-1 range
+            // similarity_score is 0-1, vector_similarity_score is 0-100
+            let rawSimilarity = c.similarity_score || 0;
+            if (!rawSimilarity && c.vector_similarity_score) {
+                rawSimilarity = c.vector_similarity_score / 100; // Normalize from 0-100 to 0-1
+            }
+            return {
+                ...c,
+                _raw_vector_similarity: rawSimilarity
+            };
+        });
 
         // STAGE 1: Log vector pool size from vector search
         console.log(`[LegacyEngine] STAGE 1 - Vector retrieval: ${vectorPool.length} candidates`);
