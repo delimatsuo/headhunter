@@ -463,8 +463,10 @@ export class LegacyEngine implements IAIEngine {
                 sources: []
             };
 
-            // Vector score - higher weight for IC mode
-            entry.vectorScore = weights.vector;
+            // Vector score - actual similarity times weight for IC mode
+            // Get the raw vector similarity (0-1 range) - preserve for UI display
+            const rawVectorSimilarity = candidate._raw_vector_similarity || candidate.similarity_score || 0;
+            entry.vectorScore = rawVectorSimilarity * weights.vector;
             entry.sources.push('vector');
             entry.candidate = { ...entry.candidate, ...candidate };
 
@@ -507,12 +509,13 @@ export class LegacyEngine implements IAIEngine {
             const candidate = entry.candidate;
 
             // PHASE 2: Aggregate all scoring signals
-            // Pre-computed Phase 2 scores (0-1 range) - multiply by appropriate weights
-            const phase2LevelScore = candidate._level_score ?? 1.0;
-            const phase2SpecialtyScore = candidate._specialty_score ?? 1.0;
-            const phase2TechStackScore = candidate._tech_stack_score ?? 0.5; // Neutral if not computed
-            const phase2FunctionTitleScore = candidate._function_title_score ?? 1.0;
-            const phase2TrajectoryScore = candidate._trajectory_score ?? 1.0;
+            // Pre-computed Phase 2 scores (0-1 range) - default to 0.5 (neutral) if not computed
+            // IMPORTANT: Don't default to 1.0 - that falsely shows "perfect match" in UI
+            const phase2LevelScore = candidate._level_score ?? 0.5;
+            const phase2SpecialtyScore = candidate._specialty_score ?? 0.5;
+            const phase2TechStackScore = candidate._tech_stack_score ?? 0.5;
+            const phase2FunctionTitleScore = candidate._function_title_score ?? 0.5;
+            const phase2TrajectoryScore = candidate._trajectory_score ?? 0.5;
 
             // Combine Phase 2 scores as a multiplier (average of all signals)
             // This allows low scores to demote without fully excluding
@@ -537,6 +540,8 @@ export class LegacyEngine implements IAIEngine {
                     ...candidate.score_breakdown,
                     function: entry.functionScore,
                     vector: entry.vectorScore,
+                    // Raw 0-1 vector similarity for UI display (not weighted)
+                    vector_raw: candidate._raw_vector_similarity || 0,
                     company: entry.companyScore,
                     level: entry.levelScore,
                     specialty: entry.specialtyScore,

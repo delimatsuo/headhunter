@@ -108,14 +108,15 @@ function extractSignalScoresFromBreakdown(scoreBreakdown: Record<string, number>
 
   // Map legacy score_breakdown to SignalScores format
   // phase2_* scores are already 0-1 normalized
+  // vector_raw is the raw 0-1 similarity; vector is weighted (0-25 range)
   return {
-    vectorSimilarity: scoreBreakdown.vector ?? 0.5,
+    vectorSimilarity: scoreBreakdown.vector_raw ?? scoreBreakdown.vector ?? 0.5,
     levelMatch: scoreBreakdown.phase2_level ?? 0.5,
     specialtyMatch: scoreBreakdown.phase2_specialty ?? 0.5,
     techStackMatch: scoreBreakdown.phase2_tech_stack ?? 0.5,
-    functionMatch: scoreBreakdown.phase2_function_title ?? scoreBreakdown.function ?? 0.5,
+    functionMatch: scoreBreakdown.phase2_function_title ?? 0.5,
     trajectoryFit: scoreBreakdown.phase2_trajectory ?? 0.5,
-    companyPedigree: scoreBreakdown.company ?? 0.5
+    companyPedigree: scoreBreakdown.phase2_company ?? 0.5
   };
 }
 
