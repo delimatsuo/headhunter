@@ -20,6 +20,18 @@ import {
   engineSearch,
   getAvailableEngines
 } from '../config/firebase';
+import {
+  JobDescription,
+  SearchResponse,
+  CandidateProfile,
+  ApiResponse,
+  DashboardStats,
+  SkillAssessment,
+  SkillMatchData,
+  SavedSearch,
+  VectorSearchResult,
+  SignalScores
+} from '../types';
 
 // ===== Bias Metrics Types (Phase 14: BIAS-03, BIAS-04) =====
 
@@ -71,18 +83,6 @@ export interface BiasMetricsHistoryResponse {
 // Admin service base URL - defaults to Cloud Run service or local dev
 const ADMIN_SERVICE_URL = process.env.REACT_APP_ADMIN_SERVICE_URL ||
   (process.env.NODE_ENV === 'development' ? 'http://localhost:7107' : '');
-import {
-  JobDescription,
-  SearchResponse,
-  CandidateProfile,
-  ApiResponse,
-  DashboardStats,
-  SkillAssessment,
-  SkillMatchData,
-  SavedSearch,
-  VectorSearchResult,
-  SignalScores
-} from '../types';
 
 export class ApiError extends Error {
   constructor(message: string, public statusCode?: number) {

@@ -185,7 +185,7 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
     if (companies && companies.length > 0) return companies;
 
     // Fallback to parsing original_data.experience
-    if (candidate.original_data?.experience) {
+    if (candidate.original_data?.experience && typeof candidate.original_data.experience === 'string') {
       const lines = candidate.original_data.experience.split('\n');
       const extractedCompanies: string[] = [];
       for (const line of lines) {
@@ -219,7 +219,7 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
     }
 
     // Fallback to parsing original_data.education
-    if (candidate.original_data?.education) {
+    if (candidate.original_data?.education && typeof candidate.original_data.education === 'string') {
       const lines = candidate.original_data.education.split('\n');
       const institutions: string[] = [];
       let degree = 'Not specified';
@@ -336,7 +336,8 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
       });
     }
     // Fallback to parsing original_data.experience string
-    return parseExperience(candidate.original_data?.experience);
+    const expData = candidate.original_data?.experience;
+    return parseExperience(typeof expData === 'string' ? expData : undefined);
   };
 
   const timelineData = getTimelineData();
@@ -429,7 +430,8 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
 
   const getRole = () => {
     // First, try to get actual job title from experience timeline (most accurate)
-    const timelineData = parseExperience(c.original_data?.experience);
+    const expData = c.original_data?.experience;
+    const timelineData = parseExperience(typeof expData === 'string' ? expData : undefined);
     if (timelineData.length > 0 && timelineData[0].role && timelineData[0].role !== 'Role not specified') {
       return timelineData[0].role;
     }
