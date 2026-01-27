@@ -23,6 +23,25 @@ const SIGNAL_DISPLAY_NAMES: Record<keyof SignalScores, string> = {
 };
 
 /**
+ * Detailed explanations for each signal metric
+ */
+const SIGNAL_DESCRIPTIONS: Record<keyof SignalScores, string> = {
+  vectorSimilarity: 'AI-powered semantic similarity between the candidate\'s profile and the job description. Higher scores mean the overall experience and skills closely match what you\'re looking for.',
+  levelMatch: 'How well the candidate\'s seniority level (Junior, Mid, Senior, Lead, etc.) matches the target role level.',
+  specialtyMatch: 'How well the candidate\'s domain specialty (e.g., Backend, Frontend, Data Engineering, DevOps) aligns with the role requirements.',
+  techStackMatch: 'Match between the candidate\'s technology stack and the required technologies for the role.',
+  functionMatch: 'How well the candidate\'s job function (e.g., Engineering, Product, Design) matches the role type.',
+  trajectoryFit: 'Career progression pattern - whether the candidate\'s career trajectory suggests readiness for this role.',
+  companyPedigree: 'Quality signals from previous employers (tech companies, scale, industry reputation).',
+  skillsMatch: 'Overall skills match combining exact and inferred skills.',
+  skillsExactMatch: 'Direct match of explicitly listed skills with job requirements.',
+  skillsInferred: 'Skills inferred from experience, projects, and related technologies.',
+  seniorityAlignment: 'Alignment between candidate experience level and role expectations.',
+  recencyBoost: 'How recently the candidate has used the required skills (recent usage scores higher).',
+  companyRelevance: 'Relevance of previous companies to the hiring company\'s industry or domain.'
+};
+
+/**
  * Signal keys in display order (most important first)
  */
 const SIGNAL_ORDER: (keyof SignalScores)[] = [
@@ -125,12 +144,21 @@ export const SignalScoreBreakdown: React.FC<SignalScoreBreakdownProps> = ({
           const displayName = SIGNAL_DISPLAY_NAMES[signalKey];
           const weight = weightsApplied?.[signalKey as keyof SignalWeightConfig];
 
-          const tooltipContent = weight !== undefined
-            ? `${displayName}: ${percentage}% (weight: ${(weight * 100).toFixed(0)}%)`
-            : `${displayName}: ${percentage}%`;
+          const description = SIGNAL_DESCRIPTIONS[signalKey];
+          const tooltipContent = (
+            <div style={{ maxWidth: 280, padding: '4px 0' }}>
+              <div style={{ fontWeight: 600, marginBottom: 4 }}>{displayName}: {percentage}%</div>
+              <div style={{ fontSize: '12px', opacity: 0.9, lineHeight: 1.4 }}>{description}</div>
+              {weight !== undefined && (
+                <div style={{ fontSize: '11px', marginTop: 4, opacity: 0.7 }}>
+                  Weight in scoring: {(weight * 100).toFixed(0)}%
+                </div>
+              )}
+            </div>
+          );
 
           return (
-            <Tooltip key={signalKey} title={tooltipContent} placement="top" arrow>
+            <Tooltip key={signalKey} title={tooltipContent} placement="top" arrow enterDelay={300}>
               <div className="signal-row">
                 <span className="signal-label">{displayName}</span>
                 <div className="signal-bar-container">
