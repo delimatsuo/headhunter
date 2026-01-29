@@ -859,8 +859,16 @@ export class LegacyEngine implements IAIEngine {
             console.log(`[LegacyEngine] Added ${fallbackCandidates.length} fallback candidates, total now: ${candidates.length}`);
         }
 
+        // ===== MINIMUM SCORE THRESHOLD =====
+        // Filter out clearly irrelevant candidates to improve result quality
+        // Executive searches: 55% minimum (SRE Managers, Performance Engineers shouldn't appear for CTO)
+        // IC searches: 40% minimum (very loose, just filter complete mismatches)
+        const minScoreThreshold = isExecutiveSearch ? 55 : 40;
+        const filteredCandidates = candidates.filter((c: any) => (c.overall_score || 0) >= minScoreThreshold);
+        console.log(`[LegacyEngine] Score threshold ${minScoreThreshold}%: ${filteredCandidates.length}/${candidates.length} candidates pass`);
+
         // ===== Convert to standard format =====
-        const matches: CandidateMatch[] = candidates.slice(0, limit).map((c: any) => ({
+        const matches: CandidateMatch[] = filteredCandidates.slice(0, limit).map((c: any) => ({
             candidate_id: c.candidate_id || c.id || '',
             candidate: c,
             score: c.overall_score || 0,
