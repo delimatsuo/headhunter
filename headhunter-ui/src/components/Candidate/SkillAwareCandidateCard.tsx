@@ -146,21 +146,100 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
   // Data extraction helpers - cast to any for flexible property access
   const c = candidate as any;
 
-  const getExperience = () =>
-    c.years_experience ||
-    c.profile?.years_experience ||
-    c.intelligent_analysis?.career_trajectory?.years_experience ||
-    c.intelligent_analysis?.career_trajectory_analysis?.years_experience ||
-    c.resume_analysis?.years_experience ||
-    0;
+  // Handle both nested (legacy) and flat (new enrichment) schemas
+  // NOTE: getLevel must be defined before getExperience since getExperience calls it
 
-  const getLevel = () =>
-    c.current_level ||
-    c.profile?.current_level ||
-    c.intelligent_analysis?.career_trajectory?.current_level ||
-    c.intelligent_analysis?.career_trajectory_analysis?.current_level ||
-    c.resume_analysis?.career_trajectory?.current_level ||
-    'Not specified';
+  const getLevel = () => {
+    // First try explicit level fields - handle both nested and flat schemas
+    const explicitLevel =
+      c.current_level ||
+      c.profile?.current_level ||
+      c.intelligent_analysis?.career_trajectory?.current_level ||
+      c.intelligent_analysis?.career_trajectory_analysis?.current_level ||
+      c.intelligent_analysis?.level ||  // Flat schema from new enrichment
+      c.resume_analysis?.career_trajectory?.current_level ||
+      c.metadata?.current_level ||
+      c.searchable?.level;
+
+    // Normalize explicit level if found
+    if (explicitLevel) {
+      const levelLower = explicitLevel.toLowerCase();
+      // Normalize common variations
+      if (levelLower === 'mid' || levelLower === 'pleno') return 'Mid-Level';
+      if (levelLower === 'jr' || levelLower === 'júnior') return 'Junior';
+      if (levelLower === 'sr' || levelLower === 'sênior') return 'Senior';
+      return explicitLevel;
+    }
+
+    // Try to extract seniority from the role/title AND headline
+    const roleTitle = c.current_role || c.profile?.current_role || c.title || '';
+    const headline = c.headline || '';
+    const combinedText = `${roleTitle} ${headline}`;
+
+    // Patterns include Portuguese equivalents
+    const seniorityPatterns = [
+      { pattern: /\b(principal|staff|diretor|director)\b/i, level: 'Principal' },
+      { pattern: /\b(lead|tech lead|líder|lider)\b/i, level: 'Lead' },
+      // Portuguese: Especialista, Sênior, Senior, Sr
+      { pattern: /\b(senior|sr\.?|sênior|especialista|specialist)\b/i, level: 'Senior' },
+      // Portuguese: Pleno (mid-level)
+      { pattern: /\b(mid[-\s]?level|pleno)\b/i, level: 'Mid-Level' },
+      // Portuguese: Júnior, Junior, Jr
+      { pattern: /\b(junior|jr\.?|júnior)\b/i, level: 'Junior' },
+      { pattern: /\b(intern|estagiário|estagiario|trainee)\b/i, level: 'Intern' },
+    ];
+
+    for (const { pattern, level } of seniorityPatterns) {
+      if (pattern.test(combinedText)) {
+        return level;
+      }
+    }
+
+    return 'Not specified';
+  };
+
+  // Flat schema: intelligent_analysis.years, intelligent_analysis.level
+  // Nested schema: intelligent_analysis.career_trajectory_analysis.years_experience
+  const getExperience = () => {
+    // Try explicit years fields first
+    const explicitYears =
+      c.years_experience ||
+      c.profile?.years_experience ||
+      c.intelligent_analysis?.career_trajectory?.years_experience ||
+      c.intelligent_analysis?.career_trajectory_analysis?.years_experience ||
+      c.intelligent_analysis?.years ||  // Flat schema from new enrichment
+      c.resume_analysis?.years_experience ||
+      c.metadata?.years_experience ||
+      c.searchable?.years_experience;
+
+    if (explicitYears && explicitYears > 0) return explicitYears;
+
+    // Try to calculate from experience_history (oldest start date)
+    const expHistory = (candidate as any).experience_history;
+    if (expHistory && Array.isArray(expHistory) && expHistory.length > 0) {
+      const dates = expHistory
+        .map((exp: any) => exp.start_date)
+        .filter((d: string) => d && /^\d{4}/.test(d))
+        .map((d: string) => parseInt(d.substring(0, 4), 10))
+        .filter((y: number) => y > 1990 && y <= new Date().getFullYear());
+
+      if (dates.length > 0) {
+        const oldestYear = Math.min(...dates);
+        const yearsExp = new Date().getFullYear() - oldestYear;
+        if (yearsExp > 0 && yearsExp < 50) return yearsExp;
+      }
+    }
+
+    // Fallback: estimate years based on detected level (minimum typical experience)
+    // This is a rough estimate when no explicit data is available
+    const level = getLevel();
+    if (level === 'Principal' || level === 'Lead') return 8;  // Principal/Lead typically 8+ years
+    if (level === 'Senior') return 5;  // Senior typically 5+ years
+    if (level === 'Mid-Level') return 3;  // Mid typically 3+ years
+    if (level === 'Junior') return 1;  // Junior typically 1+ years
+
+    return 0;
+  };
 
   const getTechnicalSkills = () => {
     if (candidate.intelligent_analysis?.explicit_skills?.technical_skills) {
@@ -310,9 +389,9 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
     return timeline.slice(0, 5); // Limit to top 5
   };
 
-  // Get timeline data - prefer experience_history from PostgreSQL, fallback to parsing original_data
+  // Get timeline data - prefer experience_history from PostgreSQL, with multiple fallbacks
   const getTimelineData = () => {
-    // Check for experience_history from keywordSearch (PostgreSQL sourcing.experience)
+    // Source 1: experience_history from PostgreSQL sourcing.experience table
     const expHistory = (candidate as any).experience_history;
     if (expHistory && Array.isArray(expHistory) && expHistory.length > 0) {
       // Deduplicate by company + title + start_date
@@ -335,9 +414,109 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
         };
       });
     }
-    // Fallback to parsing original_data.experience string
+
+    // Source 2: intelligent_analysis.experience (array format from AI enrichment)
+    const iaExperience = (candidate as any).intelligent_analysis?.experience;
+    if (iaExperience && Array.isArray(iaExperience) && iaExperience.length > 0) {
+      return iaExperience.slice(0, 5).map((exp: any) => ({
+        date: exp.dates || exp.date_range || '',
+        role: exp.title || exp.role || exp.position || 'Role not specified',
+        company: exp.company || exp.company_name || exp.organization || 'Company not specified'
+      }));
+    }
+
+    // Source 3: original_data.experience (could be string or array)
     const expData = candidate.original_data?.experience;
-    return parseExperience(typeof expData === 'string' ? expData : undefined);
+    // 3a: If it's a string, parse it
+    if (typeof expData === 'string' && expData.trim().length > 0) {
+      const parsed = parseExperience(expData);
+      if (parsed.length > 0) return parsed;
+    }
+    // 3b: If it's an array, map it
+    if (Array.isArray(expData) && expData.length > 0) {
+      return (expData as any[]).slice(0, 5).map((exp: any) => ({
+        date: exp.dates || exp.date_range || exp.start_date || '',
+        role: exp.title || exp.role || exp.position || 'Role not specified',
+        company: exp.company || exp.company_name || 'Company not specified'
+      }));
+    }
+
+    // Source 4: Combine roles + companies from enrichment (if both available)
+    const ia = (candidate as any).intelligent_analysis || {};
+    const roles = ia.roles || [];
+    const companies = ia.companies || [];
+    if (roles.length > 0 && companies.length > 0) {
+      // Zip roles with companies for a rough timeline
+      const maxLen = Math.min(roles.length, companies.length, 5);
+      const timeline: { date: string; role: string; company: string }[] = [];
+      for (let i = 0; i < maxLen; i++) {
+        timeline.push({
+          date: i === 0 ? 'Current' : '',
+          role: roles[i] || 'Role not specified',
+          company: companies[i] || 'Company not specified'
+        });
+      }
+      if (timeline.length > 0) return timeline;
+    }
+
+    // Source 5: Fallback - construct from current role/company if available
+    const currentRole = c.current_role || candidate.current_role || c.title || '';
+    const currentCompany = c.current_company || c.profile?.current_company || '';
+    if (currentRole && currentCompany) {
+      return [{
+        date: 'Current',
+        role: currentRole,
+        company: currentCompany
+      }];
+    }
+
+    // Source 6: Use just companies from enrichment with role from headline
+    if (companies.length > 0) {
+      const roleFromHeadline = (c.headline || '').split(' at ')[0]?.trim() ||
+                               (c.headline || '').split('|')[0]?.trim() ||
+                               'Software Engineer';
+      return companies.slice(0, 3).map((company: string, i: number) => ({
+        date: i === 0 ? 'Current' : '',
+        role: i === 0 ? roleFromHeadline : 'Software Engineer',
+        company: company
+      }));
+    }
+
+    // Source 7: Parse from headline as last resort
+    const headline = c.headline || '';
+    if (headline && headline.includes(' at ')) {
+      const parts = headline.split(' at ');
+      if (parts.length >= 2) {
+        return [{
+          date: 'Current',
+          role: parts[0].trim(),
+          company: parts.slice(1).join(' at ').trim()
+        }];
+      }
+    }
+
+    // Source 8: Parse headline with pipe separator (common format)
+    if (headline && headline.includes('|')) {
+      const parts = headline.split('|').map((p: string) => p.trim());
+      if (parts.length >= 2) {
+        // Usually format is "Role | Company" or "Role at Company | Skills"
+        let role = parts[0];
+        let company = parts[1];
+        // Check if role contains "at" for embedded company
+        if (role.includes(' at ')) {
+          const subParts = role.split(' at ');
+          role = subParts[0].trim();
+          company = subParts.slice(1).join(' at ').trim();
+        }
+        return [{
+          date: 'Current',
+          role: role,
+          company: company
+        }];
+      }
+    }
+
+    return [];
   };
 
   const timelineData = getTimelineData();
@@ -356,33 +535,94 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
     ? `https://${rawLinkedIn}`
     : rawLinkedIn;
 
-  // Generate a dynamic rationale if the backend one is generic
+  // Generate a dynamic, personalized rationale for each candidate
   const generateDynamicRationale = () => {
+    // Check if we have a meaningful backend rationale (not template-like)
     const backendRationale = candidate.rationale?.overall_assessment ||
       (candidate.matchReasons && candidate.matchReasons.length > 0 ? candidate.matchReasons.join('. ') + '.' : '');
 
-    if (backendRationale && backendRationale.length > 50 && !backendRationale.startsWith("Strong match based on")) {
+    // Skip backend rationale if it's template-like (contains common phrases)
+    const isTemplated = backendRationale && (
+      backendRationale.includes('required skills') ||
+      backendRationale.includes('Excellent tech fit') ||
+      backendRationale.includes('Seniority is ideal') ||
+      backendRationale.includes('Missing') && backendRationale.includes('but') ||
+      backendRationale.startsWith('Strong match based on')
+    );
+
+    // Use backend rationale only if it's unique and substantial
+    if (backendRationale && backendRationale.length > 80 && !isTemplated) {
       return backendRationale;
     }
 
-    const role = candidate.current_role || candidate.resume_analysis?.current_role || 'Candidate';
+    // Build personalized rationale from candidate data
+    const parts: string[] = [];
+    const role = candidate.current_role || candidate.resume_analysis?.current_role || c.title || '';
     const years = getExperience();
     const companies = getRecentCompanies();
-    const skills = technicalSkills.slice(0, 3).join(', ');
+    const level = getLevel();
 
-    let synthesized = `${role} with ${years} years of experience.`;
+    // 1. Role and experience summary
+    if (role) {
+      const experiencePhrase = years > 0 ? ` with ${years}+ years` : '';
+      parts.push(`${role}${experiencePhrase}`);
+    }
+
+    // 2. Company context (mention notable companies)
     if (companies.length > 0) {
-      synthesized += ` Previously at ${companies.join(', ')}.`;
-    }
-    if (skills) {
-      synthesized += ` Strong background in ${skills}.`;
-    }
-
-    if (matchScore && matchScore > 80) {
-      synthesized += " Highly aligned with job requirements.";
+      const topCompany = companies[0];
+      if (companies.length === 1) {
+        parts.push(`at ${topCompany}`);
+      } else {
+        parts.push(`currently at ${topCompany}`);
+      }
     }
 
-    return synthesized;
+    // 3. Skill match analysis (personalized based on searched skills)
+    const candidateSkillsLower = technicalSkills.map(s => s.toLowerCase());
+    const matchedSkills = searchSkills.filter(sk =>
+      candidateSkillsLower.some(cs => cs.includes(sk.toLowerCase()) || sk.toLowerCase().includes(cs))
+    );
+
+    if (matchedSkills.length > 0 && searchSkills.length > 0) {
+      const matchPercent = Math.round((matchedSkills.length / searchSkills.length) * 100);
+      if (matchPercent >= 80) {
+        parts.push(`Strong alignment: ${matchedSkills.slice(0, 3).join(', ')}`);
+      } else if (matchPercent >= 50) {
+        parts.push(`Solid fit with ${matchedSkills.slice(0, 3).join(', ')}`);
+      } else if (matchedSkills.length > 0) {
+        parts.push(`Has ${matchedSkills.slice(0, 2).join(', ')}`);
+      }
+    } else if (technicalSkills.length > 0) {
+      parts.push(`Skills: ${technicalSkills.slice(0, 3).join(', ')}`);
+    }
+
+    // 4. Experience fit assessment
+    if (level && level !== 'Not specified') {
+      const levelLower = level.toLowerCase();
+      if (levelLower.includes('senior') || levelLower.includes('lead') || levelLower.includes('principal')) {
+        parts.push('Experienced professional');
+      } else if (levelLower.includes('mid')) {
+        parts.push('Growing professional');
+      }
+    }
+
+    // 5. Score-based qualifier
+    const normalizedScore = matchScore ? (matchScore <= 1 ? matchScore * 100 : matchScore) : 0;
+    if (normalizedScore >= 80) {
+      parts.push('Excellent overall fit');
+    } else if (normalizedScore >= 70) {
+      parts.push('Strong match potential');
+    } else if (normalizedScore >= 60) {
+      parts.push('Good candidate to consider');
+    }
+
+    // Combine into readable sentence
+    if (parts.length === 0) {
+      return 'Profile matches search criteria.';
+    }
+
+    return parts.join('. ') + '.';
   };
 
   const dynamicRationale = generateDynamicRationale();
@@ -656,6 +896,21 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
 
         {/* 2. Smart Skill Cloud - using SkillChip with confidence badges */}
         <div className="highlights-section" style={{ border: 'none', padding: '0 0 16px 0' }}>
+          {/* Skills Legend */}
+          <div className="skills-legend">
+            <Tooltip title="Skills explicitly mentioned in the candidate's profile" arrow placement="top">
+              <span className="legend-item">
+                <span className="legend-chip explicit"></span>
+                <span className="legend-label">Stated</span>
+              </span>
+            </Tooltip>
+            <Tooltip title="Skills AI inferred from experience with high confidence (≥80%)" arrow placement="top">
+              <span className="legend-item">
+                <span className="legend-chip inferred-high"></span>
+                <span className="legend-label">AI Inferred</span>
+              </span>
+            </Tooltip>
+          </div>
           <div className="smart-skill-cloud">
             {getSkillsForDisplay().map((skillData, idx) => (
               <SkillChip
@@ -688,7 +943,7 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
                 <h4>Experience Timeline</h4>
                 {timelineData.length > 0 ? (
                   <div className="visual-timeline">
-                    {timelineData.map((item, idx) => (
+                    {timelineData.map((item: { date: string; role: string; company: string }, idx: number) => (
                       <div key={idx} className="timeline-item">
                         <div className="timeline-dot"></div>
                         <div className="timeline-content">

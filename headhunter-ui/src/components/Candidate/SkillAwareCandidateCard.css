@@ -1067,3 +1067,43 @@
   color: #757575;
   font-style: italic;
 }
+
+/* Skills Legend */
+.skills-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 10px;
+  padding: 6px 10px;
+  background: #f9fafb;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: help;
+}
+
+.legend-chip {
+  width: 12px;
+  height: 12px;
+  border-radius: 6px;
+}
+
+.legend-chip.explicit {
+  background-color: #e3f2fd;
+  border: 1px solid #90caf9;
+}
+
+.legend-chip.inferred-high {
+  background-color: #e8f5e9;
+  border: 1px solid #4caf50;
+}
+
+.legend-label {
+  color: #6b7280;
+  font-weight: 500;
+}

@@ -32,6 +32,25 @@ export const SkillChip: React.FC<SkillChipProps> = ({
     low: 'Possible'
   };
 
+  // Generate tooltip text based on skill type and confidence
+  const getTooltipText = (): string => {
+    if (type === 'explicit') {
+      return `Stated Skill: "${skill}" is explicitly mentioned in the candidate's profile`;
+    }
+
+    // Inferred skill tooltips
+    const confidencePercent = Math.round(confidence * 100);
+    const baseText = evidence || `AI-inferred from experience and context`;
+
+    if (confidenceLevel === 'high') {
+      return `AI Inferred (${confidencePercent}% confident): ${baseText}`;
+    } else if (confidenceLevel === 'medium') {
+      return `Likely Skill (${confidencePercent}% confident): ${baseText}`;
+    } else {
+      return `Possible Skill (${confidencePercent}% confident): ${baseText}`;
+    }
+  };
+
   const chipContent = (
     <span className={`skill-chip ${type} ${confidenceLevel || ''} ${isMatched ? 'matched' : ''}`}>
       {skill}
@@ -43,14 +62,10 @@ export const SkillChip: React.FC<SkillChipProps> = ({
     </span>
   );
 
-  // Wrap in tooltip if there's evidence for inferred skill
-  if (type === 'inferred' && evidence) {
-    return (
-      <Tooltip title={evidence} arrow placement="top">
-        {chipContent}
-      </Tooltip>
-    );
-  }
-
-  return chipContent;
+  // Always wrap in tooltip for explanation
+  return (
+    <Tooltip title={getTooltipText()} arrow placement="top">
+      {chipContent}
+    </Tooltip>
+  );
 };

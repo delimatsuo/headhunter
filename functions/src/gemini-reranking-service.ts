@@ -57,7 +57,7 @@ interface FilterResult {
 
 export class GeminiRerankingService {
     private genAI: GoogleGenerativeAI;
-    private modelName: string = 'gemini-2.0-flash';
+    private modelName: string = 'gemini-2.0-flash';  // Non-thinking model (deprecated March 2026 - migrate to gemini-2.5-flash-lite)
 
     constructor() {
         const apiKey = process.env.GOOGLE_API_KEY || '';
@@ -126,9 +126,14 @@ export class GeminiRerankingService {
                 model: this.modelName,
                 generationConfig: {
                     temperature: 0.1,  // Low temperature for consistent results
-                    maxOutputTokens: 4096,  // Increased for batched responses
-                }
-            });
+                    maxOutputTokens: 8192,  // Increased to handle full batch responses
+                },
+                // Disable thinking for gemini-2.5-flash to prevent token budget exhaustion
+                // Thinking tokens were consuming ~3500 of 4096 tokens, leaving only ~500 for output
+            } as any);
+
+            // Note: thinkingConfig may need to be passed via generateContent() call
+            // if the SDK doesn't support it in getGenerativeModel()
 
             let filteredCandidates: CandidateForReranking[];
 
@@ -294,21 +299,36 @@ ${candidateList}
 
 Return a JSON array ranked best to worst:
 \`\`\`json
-[{"id": "actual_id_here", "score": 88, "reason": "Senior Node.js dev, 8yrs, TypeScript + AWS - exact match"},
- {"id": "actual_id_here", "score": 45, "reason": "Senior Java dev - wrong primary stack for Node.js role"},
- {"id": "actual_id_here", "score": 25, "reason": "Engineering Manager - unlikely to step down to IC"}]
+[{"id": "actual_id_here", "score": 88, "reason": "8yr Node.js/TypeScript at Stripe, AWS certified, exact stack match"},
+ {"id": "actual_id_here", "score": 45, "reason": "Strong Java/Spring background but no Node.js experience"},
+ {"id": "actual_id_here", "score": 25, "reason": "Currently Engineering Manager at Meta, unlikely to return to IC"}]
 \`\`\`
 
-CRITICAL:
+CRITICAL RULES:
 - Use the EXACT ID from "ID: xxx" field
 - Include ALL candidates
 - Score 0-100 based on BOTH tech fit AND career fit
-- Candidates with wrong primary stack should score <60 even if senior
-- Managers/Staff stepping down should score <40`;
+
+REASON FORMAT (BE SPECIFIC, NOT GENERIC):
+- GOOD: "12yr CTO at fintech startup, scaled team 10→200, board experience"
+- GOOD: "Senior Backend at Google, Python/Go/K8s, 6 years"
+- BAD: "Title match is good" (too generic)
+- BAD: "Exact title match is KING" (DO NOT repeat scoring rules)
+- BAD: "Company scale is reasonable" (say WHICH company and WHY)
+
+Each reason MUST mention: candidate's actual company OR specific skills OR years of experience.
+Never repeat phrases from the scoring rubric in the reason.`;
 
         try {
             const result = await model.generateContent(prompt);
-            const responseText = result.response.text();
+            const response = result.response;
+            const responseText = response.text();
+
+            // Log finish reason and token usage for debugging
+            const candidate = response.candidates?.[0];
+            const finishReason = candidate?.finishReason || 'unknown';
+            const tokenCount = response.usageMetadata?.candidatesTokenCount || 'unknown';
+            console.log(`[GeminiRerank] Response: ${responseText.length} chars, finishReason: ${finishReason}, tokens: ${tokenCount}`);
 
             // Parse ranking response with multiple strategies
             const rankings = this.parseRankingResponseRobust(responseText, candidates, jobContext);
@@ -330,7 +350,7 @@ CRITICAL:
         candidates: CandidateForReranking[],
         jobContext: JobContext
     ): Promise<RerankResult[]> {
-        const BATCH_SIZE = 15;  // Process 15 candidates at a time for reliability
+        const BATCH_SIZE = 10;  // Process 10 candidates at a time to avoid response truncation
         const allResults: RerankResult[] = [];
         const processedIds = new Set<string>();
 
@@ -507,6 +527,28 @@ SENIORITY CONSTRAINTS FOR DIRECTOR ROLE:
 - GOOD: Senior Managers stepping up
 - GOOD: VPs at smaller companies
 - UNLIKELY: C-level (stepping down)`,
+
+            'c-level': `
+SENIORITY CONSTRAINTS FOR C-LEVEL ROLE (CTO, CPO, CEO, Chief):
+- IDEAL: Current C-level executives - CTOs, CPOs, CEOs (90-100 score)
+- GOOD: VPs/SVPs stepping up, especially with board exposure (75-89 score)
+- GOOD: Directors from FAANG/large enterprises with broad scope (70-84 score)
+- MARGINAL: Senior/Staff engineers with founder experience (50-69 score)
+- UNLIKELY: Managers, Senior Engineers without leadership scope (30-49 score)
+
+FOR CTO/CPO/CEO SEARCHES:
+- Current executives with same title score highest
+- Company scale matters: CTO at 500+ person company > CTO at 10-person startup
+- Look for: board exposure, investor relations, team scaling experience
+- Don't penalize sparse profiles - executives often have brief LinkedIn summaries`,
+
+            'vp': `
+SENIORITY CONSTRAINTS FOR VP ROLE:
+- IDEAL: VPs, SVPs (exact match) - 85-100 score
+- GOOD: Directors stepping up with strong track record - 70-84 score
+- GOOD: C-level at smaller companies seeking larger scope - 70-84 score
+- MARGINAL: Senior Managers with executive potential - 55-69 score
+- UNLIKELY: ICs without management experience`,
         };
 
         return guidance[level] || guidance['senior'];
@@ -570,6 +612,11 @@ SENIORITY CONSTRAINTS FOR DIRECTOR ROLE:
     ): RerankResult[] {
         const candidateIdSet = new Set(candidates.map(c => c.candidate_id));
         const candidateByIndex = new Map(candidates.map((c, idx) => [String(idx + 1), c.candidate_id]));
+        // Build name-to-ID map for name-based recovery
+        const candidateByName = new Map(candidates.map(c => [
+            (c.name || '').toLowerCase().trim(),
+            c.candidate_id
+        ]));
 
         try {
             // Extract JSON using multiple strategies
@@ -582,16 +629,36 @@ SENIORITY CONSTRAINTS FOR DIRECTOR ROLE:
 
             const parsed = JSON.parse(jsonStr);
 
-            if (!Array.isArray(parsed)) {
-                console.error('[GeminiRerank] Response is not an array');
+            // Handle both array and object-with-array responses
+            let rankings: any[];
+            if (Array.isArray(parsed)) {
+                rankings = parsed;
+            } else if (parsed && typeof parsed === 'object') {
+                // Gemini sometimes wraps in object: {"rankings": [...]} or {"candidates": [...]}
+                rankings = parsed.rankings || parsed.candidates || parsed.results ||
+                           parsed.data || Object.values(parsed).find(v => Array.isArray(v)) as any[];
+                if (!rankings) {
+                    console.error('[GeminiRerank] Object response has no array property:', Object.keys(parsed));
+                    return this.fallbackRanking(candidates, jobContext);
+                }
+                console.log(`[GeminiRerank] Unwrapped array from object wrapper`);
+            } else {
+                console.error('[GeminiRerank] Response is neither array nor object');
                 return this.fallbackRanking(candidates, jobContext);
+            }
+
+            // Log sample of what Gemini returned for debugging
+            if (rankings.length > 0) {
+                const sample = rankings[0];
+                console.log(`[GeminiRerank] Sample item keys: ${Object.keys(sample).join(', ')}`);
+                console.log(`[GeminiRerank] Sample item: id=${sample.id}, candidate_id=${sample.candidate_id}, name=${sample.name}`);
             }
 
             // Map results with ID recovery
             const results: RerankResult[] = [];
             let recoveredCount = 0;
 
-            for (const item of parsed) {
+            for (const item of rankings) {
                 let candidateId = item.id || item.candidate_id || '';
 
                 // Strategy 1: Direct ID match
@@ -629,6 +696,35 @@ SENIORITY CONSTRAINTS FOR DIRECTOR ROLE:
                         score: typeof item.score === 'number' ? item.score : 50,
                         rationale: item.reason || item.rationale || 'Matched candidate'
                     });
+                    continue;
+                }
+
+                // Strategy 4: Name-based recovery (if Gemini returned name instead of ID)
+                const itemName = (item.name || item.candidate_name || '').toLowerCase().trim();
+                if (itemName && candidateByName.has(itemName)) {
+                    const actualId = candidateByName.get(itemName)!;
+                    recoveredCount++;
+                    results.push({
+                        candidate_id: actualId,
+                        score: typeof item.score === 'number' ? item.score : 50,
+                        rationale: item.reason || item.rationale || 'Matched candidate'
+                    });
+                    continue;
+                }
+
+                // Strategy 5: Fuzzy name match (partial name in response)
+                if (itemName) {
+                    const fuzzyMatch = Array.from(candidateByName.entries()).find(([name]) =>
+                        name.includes(itemName) || itemName.includes(name)
+                    );
+                    if (fuzzyMatch) {
+                        recoveredCount++;
+                        results.push({
+                            candidate_id: fuzzyMatch[1],
+                            score: typeof item.score === 'number' ? item.score : 50,
+                            rationale: item.reason || item.rationale || 'Matched candidate'
+                        });
+                    }
                 }
             }
 
@@ -638,7 +734,7 @@ SENIORITY CONSTRAINTS FOR DIRECTOR ROLE:
 
             // If we got some results, return them
             if (results.length > 0) {
-                console.log(`[GeminiRerank] Parsed ${results.length}/${parsed.length} rankings successfully`);
+                console.log(`[GeminiRerank] Parsed ${results.length}/${rankings.length} rankings successfully`);
                 return results;
             }
 
@@ -654,27 +750,168 @@ SENIORITY CONSTRAINTS FOR DIRECTOR ROLE:
 
     /**
      * Extract JSON from response using multiple strategies
+     * Handles: code blocks, trailing text, object wrappers, markdown artifacts, truncated responses
      */
     private extractJson(text: string): string | null {
+        let json: string | null = null;
+
         // Strategy 1: Code block with json marker
         const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
         if (codeBlockMatch) {
-            return codeBlockMatch[1].trim();
+            json = codeBlockMatch[1].trim();
+        } else {
+            // Strategy 2: Find array starting with [ and ending with ]
+            const arrayStart = text.indexOf('[');
+            const arrayEnd = text.lastIndexOf(']');
+            if (arrayStart !== -1 && arrayEnd > arrayStart) {
+                json = text.substring(arrayStart, arrayEnd + 1);
+            } else if (arrayStart !== -1) {
+                // Array started but no closing bracket - truncated response
+                json = text.substring(arrayStart);
+            }
         }
 
-        // Strategy 2: Find array starting with [
-        const arrayMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
-        if (arrayMatch) {
-            return arrayMatch[0];
+        if (!json) {
+            // Strategy 3: Find object starting with { and ending with }
+            const objectStart = text.indexOf('{');
+            const objectEnd = text.lastIndexOf('}');
+            if (objectStart !== -1 && objectEnd > objectStart) {
+                json = text.substring(objectStart, objectEnd + 1);
+            }
         }
 
-        // Strategy 3: Find object starting with {
-        const objectMatch = text.match(/\{\s*"[\s\S]*\}/);
-        if (objectMatch) {
-            return objectMatch[0];
+        if (!json) return null;
+
+        // Try to repair truncated JSON
+        json = this.repairTruncatedJson(json);
+
+        return json;
+    }
+
+    /**
+     * Attempt to repair truncated JSON arrays
+     * Handles cases where Gemini response was cut off mid-array
+     */
+    private repairTruncatedJson(json: string): string {
+        // First, try parsing as-is
+        try {
+            JSON.parse(json);
+            return json; // Valid JSON, return as-is
+        } catch (e) {
+            // JSON is malformed, try to repair
         }
 
-        return null;
+        // Count open/close brackets to detect truncation
+        let openBrackets = 0;
+        let openBraces = 0;
+        let inString = false;
+        let escapeNext = false;
+
+        for (const char of json) {
+            if (escapeNext) {
+                escapeNext = false;
+                continue;
+            }
+            if (char === '\\') {
+                escapeNext = true;
+                continue;
+            }
+            if (char === '"') {
+                inString = !inString;
+                continue;
+            }
+            if (inString) continue;
+
+            if (char === '[') openBrackets++;
+            if (char === ']') openBrackets--;
+            if (char === '{') openBraces++;
+            if (char === '}') openBraces--;
+        }
+
+        // If we have unclosed structures, try to close them
+        if (openBrackets > 0 || openBraces > 0) {
+            console.log(`[GeminiRerank] Attempting to repair truncated JSON (${openBrackets} unclosed brackets, ${openBraces} unclosed braces)`);
+
+            // Find the last complete object in the array
+            // Look for the last "}," or "}" that's properly balanced
+            let repairedJson = json.trim();
+
+            // Remove trailing incomplete content after last complete object
+            // Find last complete object by looking for pattern: }"reason": "..."}
+            const lastCompleteObjectMatch = repairedJson.match(/^([\s\S]*\})\s*,?\s*\{[^}]*$/);
+            if (lastCompleteObjectMatch) {
+                repairedJson = lastCompleteObjectMatch[1];
+            }
+
+            // Close any open braces
+            for (let i = 0; i < openBraces; i++) {
+                repairedJson += '}';
+            }
+
+            // Close any open brackets
+            for (let i = 0; i < openBrackets; i++) {
+                repairedJson += ']';
+            }
+
+            // Verify the repaired JSON is valid
+            try {
+                JSON.parse(repairedJson);
+                console.log(`[GeminiRerank] JSON repair successful`);
+                return repairedJson;
+            } catch (e) {
+                // Repair failed, try more aggressive approach
+                // Find all complete objects and rebuild array
+
+                // Strategy 1: Match objects with complete reason strings
+                let objectMatches = json.matchAll(/\{\s*"id"\s*:\s*"[^"]+"\s*,\s*"score"\s*:\s*\d+\s*,\s*"reason"\s*:\s*"[^"]*"\s*\}/g);
+                let objects = Array.from(objectMatches).map(m => m[0]);
+
+                // Strategy 2: If that fails, try matching objects that end with } even if reason is cut off
+                if (objects.length === 0) {
+                    // Match any object with id and score, reason can be partial
+                    objectMatches = json.matchAll(/\{\s*"id"\s*:\s*"([^"]+)"\s*,\s*"score"\s*:\s*(\d+)\s*,\s*"reason"\s*:\s*"([^}]*)"\s*\}/g);
+                    objects = Array.from(objectMatches).map(m => m[0]);
+                }
+
+                // Strategy 3: Extract id/score pairs and create minimal objects
+                if (objects.length === 0) {
+                    const idScoreMatches = json.matchAll(/"id"\s*:\s*"([^"]+)"\s*,\s*"score"\s*:\s*(\d+)/g);
+                    objects = Array.from(idScoreMatches).map(m =>
+                        `{"id":"${m[1]}","score":${m[2]},"reason":"Parsed from truncated response"}`
+                    );
+                }
+
+                if (objects.length > 0) {
+                    const rebuiltJson = '[' + objects.join(',') + ']';
+                    try {
+                        JSON.parse(rebuiltJson);
+                        console.log(`[GeminiRerank] JSON rebuilt from ${objects.length} complete objects`);
+                        return rebuiltJson;
+                    } catch (e2) {
+                        // Even rebuilt JSON failed, try one more approach
+                        console.error(`[GeminiRerank] Rebuilt JSON still invalid, trying minimal extraction`);
+                    }
+                }
+
+                // Strategy 4: Ultimate fallback - extract any id/score pairs
+                const minimalMatches = json.matchAll(/"id"\s*:\s*"([^"]+)"[^}]*"score"\s*:\s*(\d+)/g);
+                const minimalObjects = Array.from(minimalMatches).map(m =>
+                    `{"id":"${m[1]}","score":${m[2]},"reason":"Extracted from malformed response"}`
+                );
+                if (minimalObjects.length > 0) {
+                    const minimalJson = '[' + minimalObjects.join(',') + ']';
+                    try {
+                        JSON.parse(minimalJson);
+                        console.log(`[GeminiRerank] JSON minimally rebuilt from ${minimalObjects.length} id/score pairs`);
+                        return minimalJson;
+                    } catch (e3) {
+                        // Complete failure
+                    }
+                }
+            }
+        }
+
+        return json; // Return original if repair failed
     }
 
     /**
