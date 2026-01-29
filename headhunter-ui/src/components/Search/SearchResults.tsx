@@ -19,6 +19,8 @@ interface SearchResultsProps {
   onLoadMore?: () => void;
   onShowAll?: () => void;
   analysis?: JobAnalysis | null;
+  onClearSearch?: () => void;
+  onRemoveSkill?: (skill: string) => void;
 }
 
 export const SearchResults: React.FC<SearchResultsProps> = ({
@@ -29,7 +31,9 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
   displayLimit = 20,
   onLoadMore,
   onShowAll,
-  analysis
+  analysis,
+  onClearSearch,
+  onRemoveSkill
 }) => {
   const [editingCandidate, setEditingCandidate] = useState<CandidateProfile | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -256,6 +260,131 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Active Filters Bar */}
+      {analysis && ((analysis.required_skills?.length ?? 0) > 0 || analysis.experience_level || analysis.job_title) && (
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '12px 16px',
+          background: '#EFF6FF',
+          border: '1px solid #BFDBFE',
+          borderRadius: '8px',
+          marginBottom: '16px'
+        }}>
+          <span style={{ fontSize: '13px', fontWeight: '600', color: '#1E40AF', marginRight: '8px' }}>
+            Active Filters:
+          </span>
+
+          {analysis.job_title && (
+            <span style={{
+              padding: '4px 10px',
+              background: '#3B82F6',
+              color: 'white',
+              borderRadius: '16px',
+              fontSize: '12px',
+              fontWeight: '500',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              {analysis.job_title}
+            </span>
+          )}
+
+          {analysis.experience_level && (
+            <span style={{
+              padding: '4px 10px',
+              background: '#8B5CF6',
+              color: 'white',
+              borderRadius: '16px',
+              fontSize: '12px',
+              fontWeight: '500'
+            }}>
+              {analysis.experience_level}
+            </span>
+          )}
+
+          {analysis.required_skills?.slice(0, 5).map((skill, idx) => (
+            <span key={idx} style={{
+              padding: '4px 10px',
+              background: 'white',
+              color: '#1E40AF',
+              borderRadius: '16px',
+              fontSize: '12px',
+              fontWeight: '500',
+              border: '1px solid #93C5FD',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              {skill}
+              {onRemoveSkill && (
+                <button
+                  onClick={() => onRemoveSkill(skill)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '0',
+                    marginLeft: '2px',
+                    cursor: 'pointer',
+                    color: '#6B7280',
+                    fontSize: '14px',
+                    lineHeight: '1',
+                    fontWeight: '600'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.color = '#DC2626'}
+                  onMouseOut={(e) => e.currentTarget.style.color = '#6B7280'}
+                  title={`Remove ${skill}`}
+                >
+                  ×
+                </button>
+              )}
+            </span>
+          ))}
+
+          {analysis.required_skills && analysis.required_skills.length > 5 && (
+            <span style={{
+              padding: '4px 10px',
+              background: '#F1F5F9',
+              color: '#64748B',
+              borderRadius: '16px',
+              fontSize: '12px'
+            }}>
+              +{analysis.required_skills.length - 5} more
+            </span>
+          )}
+
+          <div style={{ flex: 1 }} />
+
+          {onClearSearch && (
+            <button
+              onClick={onClearSearch}
+              style={{
+                padding: '6px 12px',
+                background: 'white',
+                color: '#DC2626',
+                border: '1px solid #FCA5A5',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#FEE2E2';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'white';
+              }}
+            >
+              Clear All
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Sort and Filter Controls */}
       <div className="results-controls">

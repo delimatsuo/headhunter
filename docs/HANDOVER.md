@@ -1,4 +1,4 @@
-# Handover & Recovery Runbook (Updated 2026-01-26)
+# Handover & Recovery Runbook (Updated 2026-01-28)
 
 > Canonical repository path: `/Volumes/Extreme Pro/myprojects/headhunter`. Do **not** work from deprecated clones in `~/Documents/Coding/`.
 > Guardrail: all automation wrappers under `scripts/` source `scripts/utils/repo_guard.sh` and exit immediately when invoked from non-canonical clones.
@@ -9,10 +9,11 @@ This runbook is the single source of truth for resuming work or restoring local 
 
 ## 🎯 EXECUTIVE SUMMARY FOR NEW AI CODING AGENT
 
-**Last Updated**: 2026-01-26
-**Project Status**: 🎉 **v2.0 MILESTONE COMPLETE** — Advanced Intelligence features shipped.
+**Last Updated**: 2026-01-28
+**Project Status**: 🎉 **v2.0 MILESTONE COMPLETE** + Search UX improvements deployed.
 **Milestone Completed**: v2.0 Advanced Intelligence (Phases 11-14)
-**Next Session**: Start v3.0 planning (Compliance Tooling) or production validation of v2.0 features.
+**Latest Features**: Search Reset Fix + Executive Search Tab
+**Next Session**: Continue production validation, consider v3.0 planning.
 
 ### v2.0 Features Shipped (Jan 25-26, 2026)
 
@@ -44,12 +45,14 @@ This runbook is the single source of truth for resuming work or restoring local 
 ls -t docs/SESSION_SUMMARY_*.md
 
 # Read the most recent one
-cat docs/SESSION_SUMMARY_2026-01-03.md
+cat docs/SESSION_SUMMARY_2026-01-27.md
 ```
 
 **Available Session Summaries:**
 | File | Date | Key Topics |
 |------|------|------------|
+| `docs/SESSION_SUMMARY_2026-01-28.md` | Jan 28, 2026 | **🔍 Search Reset Fix + Executive Search Tab** |
+| `docs/SESSION_SUMMARY_2026-01-27.md` | Jan 27, 2026 | **🔧 Critical vector similarity bug fix (100% → real scores)** |
 | `docs/SESSION_SUMMARY_2026-01-26.md` | Jan 26, 2026 | **🎉 v2.0 MILESTONE COMPLETE — All 4 phases shipped** |
 | `docs/SESSION_SUMMARY_2026-01-21.md` | Jan 21, 2026 | Tech stack threading + smart seniority for Gemini reranking |
 | `docs/SESSION_SUMMARY_2026-01-20.md` | Jan 20, 2026 | Keyword search for Quick Find, search quality fix |
@@ -68,7 +71,68 @@ Session summaries provide:
 
 ---
 
-### ✅ RECENT SESSION (Jan 26, 2026) - v2.0 MILESTONE COMPLETE 🎉
+### ✅ RECENT SESSION (Jan 28, 2026) - Search UX Improvements 🔍
+
+**Features Deployed:**
+
+1. **Search Reset Behavior Fixed**
+   - Each new search now resets all state (skills, results, analysis) for fresh processing
+   - "New Search" button prominently displayed in search results header
+   - Active filters bar shows detected skills with individual remove buttons (×)
+   - "Clear All" button to reset everything and start fresh
+
+2. **Executive Search Tab (👔)**
+   - New third tab in search UI: Quick Find | AI Match | Executive
+   - Optimized for finding VPs, Directors, C-suite executives
+   - Different ranking weights emphasizing leadership signals
+
+**Weight Profiles:**
+
+| Signal | Engineer (✨) | Executive (👔) |
+|--------|-------------|---------------|
+| Function Match | 25 | 50 |
+| Vector Similarity | 25 | 15 |
+| Specialty | 25 | 0 |
+| Level | 15 | 35 |
+| Company Pedigree | 10 | 25 |
+
+**Files Modified:**
+- `headhunter-ui/src/components/Dashboard/Dashboard.tsx` - 3-tab UI, reset logic
+- `headhunter-ui/src/components/Search/SearchResults.tsx` - Filter bar with remove buttons
+- `headhunter-ui/src/services/api.ts` - searchType parameter
+- `functions/src/engine-search.ts` - searchType schema + routing
+- `functions/src/engines/types.ts` - SearchOptions interface
+- `functions/src/engines/legacy-engine.ts` - Weight profiles for engineer vs executive
+
+**Deployed:**
+- ✅ Cloud Function `engineSearch` updated
+- ✅ Firebase Hosting (UI) at https://headhunter-ai-0088.web.app
+
+---
+
+### ✅ PREVIOUS SESSION (Jan 27, 2026) - Critical Vector Similarity Bug Fix 🔧
+
+**Bug Fixed: All candidates showing 100% similarity**
+
+Root cause: `searchDirectMatches()` was called with full job description text, and a reverse inclusion check `queryLower.includes(candidateName)` matched 500+ candidates with artificial `similarity_score: 1.0`, overwriting real pgvector scores.
+
+**Fix Applied:**
+1. Skip direct matching for job description queries (>100 chars, contains "experience", "required", etc.)
+2. Removed dangerous reverse inclusion check
+3. Added minimum 3-char requirement for name matching
+
+**Result:** Similarity scores now show real values (71-82% range instead of 100% for all).
+
+**UI Fix:** Fixed `SkillAwareCandidateCard.tsx` crash when `original_data.education` was an object instead of string.
+
+**Search Quality Verified:**
+- Precision@10: 70% (7/10 have relevant skills)
+- Top match: 84% (candidate with exact Node.js+TypeScript+AWS+NestJS stack)
+- Overqualified candidates correctly deprioritized (Principal/Staff get 24-32%)
+
+---
+
+### ✅ PREVIOUS SESSION (Jan 26, 2026) - v2.0 MILESTONE COMPLETE 🎉
 
 **v2.0 Advanced Intelligence Milestone Shipped**
 

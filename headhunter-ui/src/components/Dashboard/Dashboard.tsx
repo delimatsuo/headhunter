@@ -55,8 +55,8 @@ export const Dashboard: React.FC = () => {
   const [currentSearch, setCurrentSearch] = useState<JobDescription | null>(null);
   const [displayLimit, setDisplayLimit] = useState(20);
 
-  // Search Mode State (Quick Find vs AI Match)
-  const [searchMode, setSearchMode] = useState<'quickfind' | 'aimatch'>('quickfind');
+  // Search Mode State (Quick Find vs AI Match vs Executive)
+  const [searchMode, setSearchMode] = useState<'quickfind' | 'aimatch' | 'executive'>('quickfind');
   const [quickFindQuery, setQuickFindQuery] = useState('');
 
   // Saved Searches State
@@ -151,20 +151,31 @@ export const Dashboard: React.FC = () => {
   const [page, setPage] = useState(1);
   const [activeSearchParams, setActiveSearchParams] = useState<JobDescription | null>(null);
 
-  // ... (existing state)
+  // Comprehensive reset function for fresh searches
+  const resetSearchState = () => {
+    setSearchResults(null);
+    setSearchError('');
+    setCurrentSearch(null);
+    setCurrentAnalysis(null);
+    setActiveSearchParams(null);
+    setPage(1);
+    setDisplayLimit(20);
+    setLoadingPhase(null);
+    setSearchStatus('');
+  };
 
   const handleSearch = async (jobDescription: JobDescription, sourcingStrategy?: SourcingStrategy, analysis?: JobAnalysis) => {
+    // Reset previous search state for fresh search
+    resetSearchState();
+
     setSearchLoading(true);
     setLoadingPhase('searching');
     setSearchStatus('⚡ AI Search: Finding best matches...');
     if (analysis) {
       setCurrentAnalysis(analysis);
     }
-    setSearchError('');
-    setSearchResults(null);
     setShowSearchResults(true);
     setCurrentSearch(jobDescription);
-    setDisplayLimit(20); // Reset pagination on new search
 
     try {
       // Step 1: Analyze the query with the Search Agent (for legacy engine)
@@ -203,11 +214,17 @@ export const Dashboard: React.FC = () => {
 
       let results: SearchResponse;
       // Use Fast Match engine (with Vertex AI cross-encoder ranking)
-      setSearchStatus('⚡ AI Search: Cross-encoder ranking...');
+      const isExecutiveSearch = searchMode === 'executive';
+      setSearchStatus(isExecutiveSearch
+        ? '👔 Executive Search: Finding leadership candidates...'
+        : '⚡ AI Search: Cross-encoder ranking...');
       results = await apiService.searchWithEngine(
         'legacy',
         searchParams,
-        { limit: 50 }
+        {
+          limit: 50,
+          searchType: isExecutiveSearch ? 'executive' : 'engineer'
+        }
       );
 
       // Attach agent reasoning to the results for display (optional, if UI supports it)
@@ -266,11 +283,11 @@ export const Dashboard: React.FC = () => {
   const handleQuickFind = async () => {
     if (!quickFindQuery.trim()) return;
 
+    // Reset previous search state for fresh search
+    resetSearchState();
+
     setSearchLoading(true);
-    setSearchError('');
-    setSearchResults(null);
     setShowSearchResults(true);
-    setCurrentSearch(null);
     setDisplayLimit(50);
 
     try {
@@ -378,7 +395,9 @@ export const Dashboard: React.FC = () => {
               linkedin_url: candidate.linkedin_url || '',
               headline: candidate.headline,
               personal: null,
-              documents: null
+              documents: null,
+              // Pass experience history from PostgreSQL
+              experience_history: candidate.experience || []
             },
             score: 100,
             match_reasons: [`Matched keyword: "${quickFindQuery}"`],
@@ -518,10 +537,8 @@ export const Dashboard: React.FC = () => {
   };
 
   const clearSearch = () => {
+    resetSearchState();
     setShowSearchResults(false);
-    setSearchResults(null);
-    setSearchError('');
-    setCurrentSearch(null);
   };
 
   const StatCard = ({ icon, value, label, color }: { icon: React.ReactNode, value: string | number, label: string, color: string }) => (
@@ -606,6 +623,20 @@ export const Dashboard: React.FC = () => {
             >
               ✨ AI Match
             </Button>
+            <Button
+              onClick={() => setSearchMode('executive')}
+              sx={{
+                flex: 1,
+                py: 1.5,
+                borderRadius: 0,
+                borderBottom: searchMode === 'executive' ? '3px solid #7C3AED' : '3px solid transparent',
+                bgcolor: searchMode === 'executive' ? '#F5F3FF' : 'white',
+                fontWeight: searchMode === 'executive' ? 700 : 500,
+                color: searchMode === 'executive' ? '#7C3AED' : 'text.secondary',
+              }}
+            >
+              👔 Executive
+            </Button>
           </Box>
 
           {/* Quick Find Mode */}
@@ -657,6 +688,25 @@ export const Dashboard: React.FC = () => {
               />
             </Box>
           )}
+
+          {/* Executive Search Mode */}
+          {searchMode === 'executive' && (
+            <Box sx={{ p: 3, bgcolor: '#F5F3FF' }}>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ color: '#5B21B6', fontWeight: 600 }}>
+                  Executive & Leadership Search
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                  Optimized for finding VPs, Directors, C-suite executives. Emphasizes leadership scope, team management, and strategic experience.
+                </Typography>
+              </Box>
+              <JobDescriptionForm
+                onSearch={handleSearch}
+                loading={searchLoading}
+                loadingPhase={loadingPhase}
+              />
+            </Box>
+          )}
         </Paper>
 
         {/* Recent Searches (Quick Access) */}
@@ -688,7 +738,19 @@ export const Dashboard: React.FC = () => {
           <Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Typography variant="h5" fontWeight="bold">Search Results</Typography>
-              <Box>
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={() => {
+                    resetSearchState();
+                    setShowSearchResults(false);
+                    setQuickFindQuery('');
+                  }}
+                  sx={{ mr: 1 }}
+                >
+                  ✕ New Search
+                </Button>
                 {searchResults && searchResults.matches && searchResults.matches.length > 0 && (
                   <Button
                     variant="outlined"
@@ -780,6 +842,30 @@ export const Dashboard: React.FC = () => {
               }}
               onShowAll={() => setDisplayLimit(searchResults?.matches?.length || 1000)}
               analysis={currentAnalysis}
+              onClearSearch={() => {
+                resetSearchState();
+                setShowSearchResults(false);
+                setQuickFindQuery('');
+              }}
+              onRemoveSkill={(skill: string) => {
+                // Update the current analysis to remove the skill
+                if (currentAnalysis) {
+                  const updatedAnalysis = {
+                    ...currentAnalysis,
+                    required_skills: currentAnalysis.required_skills?.filter(s => s !== skill) || []
+                  };
+                  setCurrentAnalysis(updatedAnalysis);
+
+                  // Also update active search params if present
+                  if (activeSearchParams) {
+                    const updatedParams = {
+                      ...activeSearchParams,
+                      required_skills: activeSearchParams.required_skills?.filter(s => s !== skill) || []
+                    };
+                    setActiveSearchParams(updatedParams);
+                  }
+                }
+              }}
             />
           </Box>
         </Fade>

@@ -123,6 +123,12 @@ export interface SearchOptions {
     page?: number;
     sourcingStrategy?: SourcingStrategy;
     onProgress?: (message: string) => void;
+    /**
+     * Search type for different ranking weight profiles:
+     * - 'engineer': Optimized for technical IC roles. Emphasizes skills, specialty match, tech stack.
+     * - 'executive': Optimized for leadership roles. Emphasizes leadership scope, company pedigree, strategic experience.
+     */
+    searchType?: 'engineer' | 'executive';
 }
 
 /**

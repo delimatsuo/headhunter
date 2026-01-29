@@ -119,6 +119,8 @@ const EngineSearchRequestSchema = z.object({
             location_preference: z.string().optional().nullable(),
             experience_level: z.string().optional().nullable(),
         }).optional().nullable(),
+        // Search type for different ranking weight profiles
+        searchType: z.enum(['engineer', 'executive']).default('engineer'),
     }).optional().nullable(),
 });
 
@@ -182,12 +184,16 @@ export const engineSearch = onCall(
 
             // Cast engine to access search method with vector results
             const engineWithVectorSearch = engine as any;
+            const searchType = options?.searchType || 'engineer';
+            console.log(`[EngineSearch] Search type: ${searchType}`);
+
             const searchResult = await engineWithVectorSearch.search(
                 job as JobDescription,
                 {
                     limit: options?.limit || 50,
                     page: options?.page || 0,
                     sourcingStrategy: options?.sourcingStrategy,
+                    searchType: searchType, // Pass search type for different ranking weights
                 },
                 vectorResults // Pass vector results to engine
             );

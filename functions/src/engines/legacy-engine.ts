@@ -22,7 +22,7 @@ import * as admin from 'firebase-admin';
 import { Pool } from 'pg';
 import { getVertexRankingService } from '../vertex-ranking-service';
 import { getGeminiRerankingService } from '../gemini-reranking-service';
-import { getJobClassificationService, JobClassification } from '../job-classification-service';
+import { getJobClassificationService, JobClassification, JobFunction, JobLevel } from '../job-classification-service';
 
 const db = admin.firestore();
 
@@ -104,29 +104,79 @@ export class LegacyEngine implements IAIEngine {
         }
 
         // ===== STEP 1: Classify Target Job =====
-        // FAIL FAST: If classification fails, we CANNOT deliver quality results
-        // Returning bad results (general/mid) destroys user trust
+        // With retry logic for rate limits and fallback for persistent failures
         let targetClassification: JobClassification;
-        try {
-            targetClassification = await this.classificationService.classifyJob(
-                job.title || '',
-                job.description
-            );
-            console.log('[LegacyEngine] Target classification:', targetClassification);
-        } catch (error: any) {
-            console.error('[LegacyEngine] Job classification failed:', error.message);
-            // FAIL FAST: Do NOT use fallback classification
-            // Throwing error here returns a clear message to the user
+        const maxRetries = 2;
+        let lastError: any = null;
+
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+                targetClassification = await this.classificationService.classifyJob(
+                    job.title || '',
+                    job.description
+                );
+                console.log('[LegacyEngine] Target classification:', targetClassification);
+                break; // Success, exit retry loop
+            } catch (error: any) {
+                lastError = error;
+                const isRateLimit = error.message?.includes('429') || error.message?.includes('Too Many Requests');
+
+                if (isRateLimit && attempt < maxRetries) {
+                    const backoffMs = Math.pow(2, attempt) * 1000; // 1s, 2s
+                    console.log(`[LegacyEngine] Rate limited, retrying in ${backoffMs}ms (attempt ${attempt + 1}/${maxRetries})`);
+                    await new Promise(resolve => setTimeout(resolve, backoffMs));
+                    continue;
+                }
+
+                console.error('[LegacyEngine] Job classification failed:', error.message);
+
+                // Use fallback classification based on job title parsing
+                const titleLower = (job.title || '').toLowerCase();
+                const descLower = job.description.toLowerCase();
+
+                // Infer level from title
+                let level: JobLevel = 'senior'; // Default
+                if (titleLower.includes('junior') || titleLower.includes('jr.')) level = 'junior';
+                else if (titleLower.includes('intern')) level = 'intern';
+                else if (titleLower.includes('lead') || titleLower.includes('principal')) level = 'principal';
+                else if (titleLower.includes('staff')) level = 'staff';
+                else if (titleLower.includes('manager')) level = 'manager';
+                else if (titleLower.includes('director')) level = 'director';
+                else if (titleLower.includes('vp') || titleLower.includes('vice president')) level = 'vp';
+                else if (titleLower.includes('cto') || titleLower.includes('ceo') || titleLower.includes('chief')) level = 'c-level';
+
+                // Infer function from title/description
+                let func: JobFunction = 'engineering'; // Default
+                if (titleLower.includes('product') && !titleLower.includes('engineer')) func = 'product';
+                else if (titleLower.includes('design') && !titleLower.includes('engineer')) func = 'design';
+                else if (titleLower.includes('data') && (titleLower.includes('scientist') || titleLower.includes('analyst'))) func = 'data';
+                else if (titleLower.includes('sales')) func = 'sales';
+                else if (titleLower.includes('marketing')) func = 'marketing';
+                else if (titleLower.includes('hr') || titleLower.includes('human resources') || titleLower.includes('recruiter')) func = 'hr';
+
+                targetClassification = { function: func, level, domain: [], confidence: 0.5 };
+                console.log('[LegacyEngine] Using fallback classification:', targetClassification);
+                break;
+            }
+        }
+
+        // TypeScript safety - should never happen but just in case
+        if (!targetClassification!) {
             throw new Error('Search temporarily unavailable. Please try again in a moment.');
         }
 
         // ===== STEP 2: Determine Search Mode =====
         // Executive roles (C-level, VP, Director): Function + Level + Company tier
         // IC roles (Manager, Senior, Mid, Junior): Vector PRIMARY + Level
-        const isExecutiveSearch = ['c-level', 'vp', 'director'].includes(targetClassification.level);
+        //
+        // IMPORTANT: If searchType is explicitly set (from UI), use that.
+        // Otherwise, auto-detect based on target classification level.
+        const autoDetectedExecutive = ['c-level', 'vp', 'director'].includes(targetClassification.level);
+        const isExecutiveSearch = options?.searchType === 'executive' ||
+            (options?.searchType !== 'engineer' && autoDetectedExecutive);
         const searchMode = isExecutiveSearch ? 'executive' : 'ic';
 
-        console.log(`[LegacyEngine] Search mode: ${searchMode} (level: ${targetClassification.level})`);
+        console.log(`[LegacyEngine] Search mode: ${searchMode} (level: ${targetClassification.level}, explicit: ${options?.searchType || 'none'})`);
 
         // ===== STEP 2.5: Detect Required Specialties =====
         const targetSpecialties = this.detectSpecialties(job.description, job.title || '');
@@ -388,11 +438,28 @@ export class LegacyEngine implements IAIEngine {
             options.onProgress('Ranking candidates...');
         }
 
-        // Scoring weights based on search mode
-        // Added specialty weight to differentiate backend vs frontend for IC roles
+        // ===== WEIGHT PROFILES =====
+        // Different search types emphasize different signals:
+        //
+        // EXECUTIVE (👔 tab): Finding VPs, Directors, C-suite
+        //   - Function match (50): Must be right function (Product → Product, Engineering → Engineering)
+        //   - Level (35): Seniority matters greatly
+        //   - Company pedigree (25): Track record at known companies matters
+        //   - Vector similarity (15): Semantic match less critical
+        //   - Specialty (0): Not relevant for executive roles
+        //
+        // ENGINEER (✨ tab): Finding ICs (Senior, Staff, Principal)
+        //   - Function match (25): Important but specialty matters more
+        //   - Vector similarity (25): Skills and experience alignment
+        //   - Specialty (25): Backend vs Frontend vs Mobile matters a lot
+        //   - Level (15): Still relevant but less strict
+        //   - Company pedigree (10): Nice to have, not critical
+        //
         const weights = isExecutiveSearch
-            ? { function: 50, vector: 15, company: 25, level: 35, specialty: 0 }  // Executive: function/company/level matter
-            : { function: 25, vector: 25, company: 10, level: 15, specialty: 25 }; // IC: specialty matters for engineering subtypes
+            ? { function: 50, vector: 15, company: 25, level: 35, specialty: 0 }  // Executive profile
+            : { function: 25, vector: 25, company: 10, level: 15, specialty: 25 }; // Engineer profile
+
+        console.log(`[LegacyEngine] Using ${isExecutiveSearch ? 'EXECUTIVE' : 'ENGINEER'} weight profile:`, JSON.stringify(weights));
 
         const candidateScores = new Map<string, {
             candidate: any;

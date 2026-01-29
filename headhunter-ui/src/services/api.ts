@@ -109,14 +109,61 @@ function extractSignalScoresFromBreakdown(scoreBreakdown: Record<string, number>
   // Map legacy score_breakdown to SignalScores format
   // phase2_* scores are already 0-1 normalized
   // vector_raw is the raw 0-1 similarity; vector is weighted (0-25 range)
+  const levelScore = scoreBreakdown.phase2_level ?? 0.5;
+  const techStackScore = scoreBreakdown.phase2_tech_stack ?? 0.5;
+
   return {
     vectorSimilarity: scoreBreakdown.vector_raw ?? scoreBreakdown.vector ?? 0.5,
-    levelMatch: scoreBreakdown.phase2_level ?? 0.5,
+    levelMatch: levelScore,
     specialtyMatch: scoreBreakdown.phase2_specialty ?? 0.5,
-    techStackMatch: scoreBreakdown.phase2_tech_stack ?? 0.5,
+    techStackMatch: techStackScore,
     functionMatch: scoreBreakdown.phase2_function_title ?? 0.5,
     trajectoryFit: scoreBreakdown.phase2_trajectory ?? 0.5,
-    companyPedigree: scoreBreakdown.phase2_company ?? 0.5
+    companyPedigree: scoreBreakdown.phase2_company ?? 0.5,
+    // Map to sort-friendly fields (used by SearchResults sorting)
+    seniorityAlignment: levelScore,  // Same as levelMatch conceptually
+    skillsExactMatch: techStackScore,  // Approximate skills match from tech stack
+    recencyBoost: scoreBreakdown.phase2_trajectory ?? 0.5  // Use trajectory as proxy for recency
+  };
+}
+
+/**
+ * Extract SignalScores from skill-aware search results.
+ * Maps skill_match_score, confidence_score, experience_match_score to SignalScores.
+ */
+function extractSignalScoresFromSkillAware(candidate: any): SignalScores | undefined {
+  // Check if this is a skill-aware search result
+  const hasSkillAwareScores = candidate.skill_match_score !== undefined ||
+    candidate.confidence_score !== undefined ||
+    candidate.experience_match_score !== undefined;
+
+  if (!hasSkillAwareScores) return undefined;
+
+  // Convert 0-100 scores to 0-1 range
+  const skillMatch = (candidate.skill_match_score ?? 50) / 100;
+  const confidence = (candidate.confidence_score ?? 50) / 100;
+  const experienceMatch = (candidate.experience_match_score ?? 50) / 100;
+  const vectorSimilarity = (candidate.vector_similarity_score ?? 50) / 100;
+
+  // Extract seniority alignment from ranking_factors if available
+  const expAlignment = candidate.ranking_factors?.experience_alignment;
+  let seniorityScore = 0.5;
+  if (expAlignment === 'excellent' || expAlignment === 'good') seniorityScore = 0.9;
+  else if (expAlignment === 'fair') seniorityScore = 0.7;
+  else if (expAlignment === 'low') seniorityScore = 0.4;
+
+  return {
+    vectorSimilarity,
+    levelMatch: seniorityScore,
+    specialtyMatch: skillMatch,
+    techStackMatch: skillMatch,
+    functionMatch: skillMatch,
+    trajectoryFit: experienceMatch,
+    companyPedigree: 0.5, // Not available in skill-aware search
+    // Map to sort-friendly fields (used by SearchResults sorting)
+    seniorityAlignment: seniorityScore,
+    skillsExactMatch: skillMatch,
+    recencyBoost: confidence  // Use confidence as proxy for recency (recent skills = higher confidence)
   };
 }
 
@@ -480,7 +527,9 @@ export const apiService = {
                 current_level: c.profile.current_level,
                 domain_expertise: []
               }
-            }
+            },
+            // Ensure experience_history is explicitly passed through for timeline display
+            experience_history: c.profile.experience_history || []
           } : { candidate_id: c.candidate_id };
 
           // If we have the full candidate object in the response (which skillAwareSearch might not return fully),
@@ -504,7 +553,10 @@ export const apiService = {
           return {
             candidate,
             score: c.overall_score / 100, // LLM-influenced match score (0-1 scale)
-            similarity: (c.match_metadata?.raw_vector_similarity || c.vector_similarity_score || 0) / 100, // Raw vector similarity (0-1 scale)
+            // raw_vector_similarity is already 0-1 range from backend
+            // vector_similarity_score is 0-100 range (legacy fallback)
+            similarity: c.match_metadata?.raw_vector_similarity ??
+                       (c.vector_similarity_score ? c.vector_similarity_score / 100 : 0.5), // Raw vector similarity (0-1 scale)
             rationale: {
               overall_assessment: c.rationale && c.rationale.length > 0
                 ? c.rationale.join('. ') + '.'
@@ -921,6 +973,7 @@ export const apiService = {
         target_companies?: string[];
         target_industries?: string[];
       };
+      searchType?: 'engineer' | 'executive';  // Different ranking weights for engineer vs executive
     },
     onProgress?: (status: string) => void
   ): Promise<SearchResponse> {
@@ -944,6 +997,7 @@ export const apiService = {
           page: options?.page || 0,
           includeMatchRationale: options?.includeMatchRationale,  // TRNS-03
           sourcingStrategy: options?.sourcingStrategy,
+          searchType: options?.searchType || 'engineer',  // Executive vs engineer ranking weights
         }
       });
 
@@ -992,8 +1046,10 @@ export const apiService = {
       // Transform to CandidateMatch format for SearchResponse
       // Pass through the FULL candidate object
       const matches = candidates.map((c: any) => {
-        // Extract signalScores from result (if from hh-search-svc) or build from score_breakdown
-        const signalScores = c.signalScores || extractSignalScoresFromBreakdown(c.match_metadata?.score_breakdown);
+        // Extract signalScores from result (if from hh-search-svc) or build from score_breakdown or skill-aware scores
+        const signalScores = c.signalScores ||
+          extractSignalScoresFromBreakdown(c.match_metadata?.score_breakdown) ||
+          extractSignalScoresFromSkillAware(c);
         const weightsApplied = c.weightsApplied;
         const roleTypeUsed = c.roleTypeUsed;
 
@@ -1013,6 +1069,8 @@ export const apiService = {
             intelligent_analysis: c.intelligent_analysis,
             resume_analysis: c.resume_analysis,
             original_data: c.original_data,
+            // Experience history for timeline display (from PostgreSQL sourcing.experience)
+            experience_history: c.profile?.experience_history || [],
             // Include rationale for display
             summary: c.summary,
             rationale: c.rationale?.[0] ? {
@@ -1024,7 +1082,10 @@ export const apiService = {
             matchReasons: c.matchReasons || c.rationale,
           },
           score: c.overall_score / 100, // LLM-influenced match score (0-1 scale)
-          similarity: (c.match_metadata?.raw_vector_similarity || c.vector_similarity_score || 0) / 100, // Raw vector similarity (0-1 scale)
+          // raw_vector_similarity is already 0-1 range from backend
+          // vector_similarity_score is 0-100 range (legacy fallback)
+          similarity: c.match_metadata?.raw_vector_similarity ??
+                     (c.vector_similarity_score ? c.vector_similarity_score / 100 : 0.5), // Raw vector similarity (0-1 scale)
           rationale: {
             overall_assessment: c.summary || 'Matched based on profile similarity',
             strengths: c.rationale || [],
