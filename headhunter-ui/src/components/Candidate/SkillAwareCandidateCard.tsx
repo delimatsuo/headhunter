@@ -896,21 +896,6 @@ export const SkillAwareCandidateCard: React.FC<SkillAwareCandidateCardProps> = (
 
         {/* 2. Smart Skill Cloud - using SkillChip with confidence badges */}
         <div className="highlights-section" style={{ border: 'none', padding: '0 0 16px 0' }}>
-          {/* Skills Legend */}
-          <div className="skills-legend">
-            <Tooltip title="Skills explicitly mentioned in the candidate's profile" arrow placement="top">
-              <span className="legend-item">
-                <span className="legend-chip explicit"></span>
-                <span className="legend-label">Stated</span>
-              </span>
-            </Tooltip>
-            <Tooltip title="Skills AI inferred from experience with high confidence (≥80%)" arrow placement="top">
-              <span className="legend-item">
-                <span className="legend-chip inferred-high"></span>
-                <span className="legend-label">AI Inferred</span>
-              </span>
-            </Tooltip>
-          </div>
           <div className="smart-skill-cloud">
             {getSkillsForDisplay().map((skillData, idx) => (
               <SkillChip

@@ -27,7 +27,7 @@ export const SkillChip: React.FC<SkillChipProps> = ({
 
   const confidenceLevel = type === 'inferred' ? getConfidenceLevel(confidence) : null;
   const confidenceLabels = {
-    high: 'High',
+    high: 'Inferred',
     medium: 'Likely',
     low: 'Possible'
   };
